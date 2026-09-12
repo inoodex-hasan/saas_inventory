@@ -137,6 +137,12 @@
                                 </td>
                                 <td class="py-3.5 px-4 text-right">
                                     <div class="flex items-center justify-end gap-1.5">
+                                        <a href="{{ route('sales.invoice', $order->id) }}" target="_blank" title="Download PDF Invoice" class="px-2.5 py-1 text-indigo-600 hover:text-indigo-800 font-bold bg-indigo-50 hover:bg-indigo-100 rounded-lg text-xs transition">
+                                            📄 Invoice
+                                        </a>
+                                        <a href="{{ route('sales.packing-slip', $order->id) }}" target="_blank" title="Print Warehouse Packing Slip" class="px-2 py-1 text-slate-600 hover:text-slate-800 font-medium bg-slate-100 hover:bg-slate-200 rounded-lg text-xs transition">
+                                            📦 Slip
+                                        </a>
                                         <button wire:click="viewDetails({{ $order->id }})" title="View Details" class="px-2.5 py-1 text-slate-600 hover:text-slate-900 font-medium hover:bg-slate-100 rounded-lg">
                                             View
                                         </button>
@@ -439,7 +445,15 @@
                             @endif
                         </div>
 
-                        <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                        <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <a href="{{ route('sales.invoice', $viewingOrder->id) }}" target="_blank" class="px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 shadow-xs flex items-center gap-1.5">
+                                    <span>📄 Download Invoice PDF</span>
+                                </a>
+                                <a href="{{ route('sales.packing-slip', $viewingOrder->id) }}" target="_blank" class="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-50 shadow-2xs flex items-center gap-1.5">
+                                    <span>📦 Print Packing Slip</span>
+                                </a>
+                            </div>
                             <button type="button" wire:click="closeModal" class="px-4 py-2 text-xs font-semibold bg-slate-200 text-slate-800 rounded-xl hover:bg-slate-300">
                                 Close
                             </button>
