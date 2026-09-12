@@ -72,8 +72,9 @@
     <table class="header-table">
         <tr>
             <td style="width: 50%;">
+                <div style="font-size: 11pt; font-weight: bold; color: #4f46e5; text-transform: uppercase;">{{ $team->displayName() }}</div>
                 <div class="title">PACKING & DISPATCH SLIP</div>
-                <div style="font-size: 10pt; color: #64748b; margin-top: 2px;">
+                <div style="font-size: 9pt; color: #64748b; margin-top: 2px;">
                     Origin Hub: <strong>{{ $order->warehouse->name ?? 'Default Hub' }} ({{ $order->warehouse->code ?? 'WH' }})</strong>
                 </div>
             </td>
@@ -167,7 +168,7 @@
     </table>
 
     <div class="footer">
-        {{ $team->name ?? 'Inoodex Inventory' }} &bull; Packing Slip for {{ $order->order_number }} &bull; Page {PAGENO} of {nbpg}
+        {{ $team->displayName() }} &bull; Packing Slip for {{ $order->order_number }} &bull; Page {PAGENO} of {nbpg}
     </div>
 
 </body>

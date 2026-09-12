@@ -22,7 +22,63 @@ class Team extends JetstreamTeam
     protected $fillable = [
         'name',
         'personal_team',
+        'status',
+        'subscription_plan',
+        'subscription_expires_at',
+        'legal_name',
+        'email',
+        'phone',
+        'tax_id',
+        'address_line1',
+        'address_line2',
+        'city',
+        'state',
+        'postal_code',
+        'country',
+        'currency_symbol',
+        'currency_code',
+        'invoice_prefix',
+        'po_prefix',
     ];
+
+    /**
+     * Get single-line or multi-line formatted company address.
+     */
+    public function formattedAddress(): string
+    {
+        return collect([
+            $this->address_line1,
+            $this->address_line2,
+            $this->city,
+            $this->state,
+            $this->postal_code,
+            $this->country,
+        ])->filter()->join(', ');
+    }
+
+    /**
+     * Get display business name (legal name or team name fallback).
+     */
+    public function displayName(): string
+    {
+        return $this->legal_name ?: $this->name;
+    }
+
+    /**
+     * Determine if tenant account is currently suspended.
+     */
+    public function isSuspended(): bool
+    {
+        return $this->status === 'suspended';
+    }
+
+    /**
+     * Determine if tenant account is active.
+     */
+    public function isActive(): bool
+    {
+        return $this->status === 'active' || $this->status === 'trial';
+    }
 
     /**
      * The event map for the model.
@@ -44,6 +100,7 @@ class Team extends JetstreamTeam
     {
         return [
             'personal_team' => 'boolean',
+            'subscription_expires_at' => 'datetime',
         ];
     }
 }

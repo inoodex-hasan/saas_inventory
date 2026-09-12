@@ -7,10 +7,26 @@
                 <h1 class="text-2xl font-bold tracking-tight text-slate-900">Products & Catalog</h1>
                 <p class="text-sm text-slate-500 mt-1">Manage SKUs, barcodes, multi-warehouse stock levels, reorder alerts, and pricing.</p>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
+                <button wire:click="exportCsv" 
+                        class="inline-flex items-center justify-center px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-xl shadow-xs transition gap-1.5 border border-slate-200">
+                    <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>Export CSV</span>
+                </button>
+
+                <button wire:click="openImportModal" 
+                        class="inline-flex items-center justify-center px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs rounded-xl shadow-xs transition gap-1.5">
+                    <svg class="w-4 h-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    <span>Import Catalog</span>
+                </button>
+
                 <button wire:click="create" 
-                        class="inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl shadow-sm hover:shadow transition-all duration-150 gap-2 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        class="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs rounded-xl shadow-sm hover:shadow transition gap-1.5 focus:ring-2 focus:ring-indigo-500">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
                     <span>New Product</span>
@@ -384,6 +400,135 @@
                                 Close
                             </button>
                         </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        <!-- Bulk CSV Import Modal -->
+        @if($isImportModalOpen)
+            <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="import-modal-title" role="dialog" aria-modal="true">
+                <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" wire:click="closeImportModal"></div>
+                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                    
+                    <div class="relative inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full border border-slate-200">
+                        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-900" id="import-modal-title">Bulk Import Product Catalog</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">Upload a CSV file to create or update thousands of products in one click.</p>
+                            </div>
+                            <button type="button" wire:click="closeImportModal" class="text-slate-400 hover:text-slate-600">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <form wire:submit.prevent="importCsv" class="p-6 space-y-5">
+                            
+                            <!-- Sample Template Notice -->
+                            <div class="p-4 bg-indigo-50/70 border border-indigo-100 rounded-xl flex items-center justify-between">
+                                <div>
+                                    <div class="text-xs font-bold text-indigo-950">Need the correct column format?</div>
+                                    <div class="text-[11px] text-indigo-700">Download our sample CSV with pre-filled headers and instructions.</div>
+                                </div>
+                                <button type="button" wire:click="downloadSampleTemplate" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-indigo-200 rounded-lg text-xs font-bold text-indigo-600 hover:bg-indigo-50 shadow-2xs transition">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                    </svg>
+                                    <span>Sample Template</span>
+                                </button>
+                            </div>
+
+                            <!-- Warehouse for Initial Stock -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                                    Initial Stock Warehouse <span class="text-slate-400 font-normal">(Optional)</span>
+                                </label>
+                                <select wire:model="initialWarehouseId" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500">
+                                    <option value="">No initial stock allocation</option>
+                                    @foreach($warehouses as $wh)
+                                        <option value="{{ $wh->id }}">{{ $wh->name }} ({{ $wh->code }})</option>
+                                    @endforeach
+                                </select>
+                                <p class="text-[11px] text-slate-500 mt-1">If your CSV contains an <code>initial_stock</code> column, units will be added to this warehouse.</p>
+                            </div>
+
+                            <!-- File Upload Drag Box -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                                    Upload CSV File <span class="text-red-500">*</span>
+                                </label>
+                                <div class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-indigo-400 transition bg-slate-50/50">
+                                    <input type="file" wire:model="importFile" accept=".csv,text/csv" class="hidden" id="catalog-file-upload">
+                                    <label for="catalog-file-upload" class="cursor-pointer">
+                                        <div class="w-10 h-10 mx-auto rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mb-2">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                            </svg>
+                                        </div>
+                                        <span class="text-xs font-bold text-indigo-600 hover:text-indigo-500">Click to select CSV file</span>
+                                        <p class="text-[11px] text-slate-400 mt-0.5">Maximum file size: 10MB (.csv format)</p>
+                                    </label>
+                                    @if($importFile)
+                                        <div class="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-700 font-medium">
+                                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                            <span>{{ $importFile->getClientOriginalName() }}</span>
+                                        </div>
+                                    @endif
+                                </div>
+                                @error('importFile') <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span> @enderror
+                            </div>
+
+                            <!-- Import Results Summary -->
+                            @if($importResults)
+                                <div class="p-4 bg-slate-900 text-white rounded-xl text-xs space-y-2">
+                                    <div class="font-bold text-emerald-400 flex items-center gap-1.5">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <span>Import Results:</span>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-2 text-center py-2 bg-slate-800 rounded-lg">
+                                        <div>
+                                            <div class="text-slate-400 text-[10px] uppercase">Created</div>
+                                            <div class="text-emerald-400 font-bold text-base">{{ $importResults['created'] }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-slate-400 text-[10px] uppercase">Updated</div>
+                                            <div class="text-indigo-400 font-bold text-base">{{ $importResults['updated'] }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-slate-400 text-[10px] uppercase">Skipped</div>
+                                            <div class="text-amber-400 font-bold text-base">{{ $importResults['skipped'] }}</div>
+                                        </div>
+                                    </div>
+
+                                    @if(count($importResults['errors']) > 0)
+                                        <div class="text-[11px] text-red-400 max-h-24 overflow-y-auto space-y-1 pt-1">
+                                            @foreach($importResults['errors'] as $err)
+                                                <div>&bull; {{ $err }}</div>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
+
+                            <!-- Modal Footer Actions -->
+                            <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+                                <button type="button" wire:click="closeImportModal" class="px-4 py-2 text-xs font-semibold bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition">
+                                    Cancel
+                                </button>
+                                <button type="submit" class="inline-flex items-center gap-1.5 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition">
+                                    <span wire:loading.remove wire:target="importCsv">Upload & Process</span>
+                                    <span wire:loading wire:target="importCsv">Processing CSV...</span>
+                                </button>
+                            </div>
+
+                        </form>
                     </div>
                 </div>
             </div>

@@ -115,7 +115,24 @@
                         <span>Sales & Dispatches</span>
                     </a>
 
+                    <a href="{{ route('reports.index') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all {{ request()->routeIs('reports.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        <span>Reports & Valuation</span>
+                    </a>
+
                     <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Settings & Team</div>
+
+                    <a href="{{ route('settings.company') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all {{ request()->routeIs('settings.company') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span>Company & Branding</span>
+                    </a>
 
                     <a href="{{ route('teams.show', Auth::user()->currentTeam->id) }}" 
                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all {{ request()->routeIs('teams.show') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
@@ -124,6 +141,17 @@
                         </svg>
                         <span>Team & Roles</span>
                     </a>
+
+                    @if(Auth::user()->isSuperAdmin())
+                        <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-amber-400">Master Control</div>
+                        <a href="{{ route('admin.dashboard') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all {{ request()->routeIs('admin.*') ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/30' : 'text-amber-400 hover:bg-slate-800/60 hover:text-amber-300' }}">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                            <span>Platform Admin</span>
+                        </a>
+                    @endif
                 </nav>
             </div>
 
@@ -172,6 +200,12 @@
                 <!-- Right Topbar Controls -->
                 <div class="flex items-center gap-3">
                     
+                    @if(Auth::user()->isSuperAdmin())
+                        <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 border border-amber-500/30 shadow-2xs transition">
+                            <span>👑 Super Admin</span>
+                        </a>
+                    @endif
+
                     <!-- Team Switcher Dropdown -->
                     @if (Laravel\Jetstream\Jetstream::hasTeamFeatures())
                         <div class="relative" x-data="{ openTeam: false }">
@@ -202,8 +236,11 @@
                                     </form>
                                 @endforeach
                                 <div class="border-t border-slate-100 my-1"></div>
+                                <a href="{{ route('settings.company') }}" class="block px-3 py-1.5 text-slate-600 hover:bg-slate-50">
+                                    🏢 Company & Branding
+                                </a>
                                 <a href="{{ route('teams.show', Auth::user()->currentTeam->id) }}" class="block px-3 py-1.5 text-slate-600 hover:bg-slate-50">
-                                    ⚙️ Team Settings
+                                    ⚙️ Team & Members
                                 </a>
                                 @can('create', Laravel\Jetstream\Jetstream::newTeamModel())
                                     <a href="{{ route('teams.create') }}" class="block px-3 py-1.5 text-indigo-600 hover:bg-slate-50 font-semibold">

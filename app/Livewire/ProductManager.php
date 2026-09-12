@@ -7,13 +7,16 @@ use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\StockLevel;
 use App\Models\Warehouse;
+use App\Services\CatalogImportExportService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 class ProductManager extends Component
 {
-    use WithPagination;
+    use WithPagination, WithFileUploads;
 
     public $search = '';
     public $filter_category = '';
@@ -22,6 +25,12 @@ class ProductManager extends Component
 
     public $isModalOpen = false;
     public $product_id = null;
+
+    // Import Modal State
+    public bool $isImportModalOpen = false;
+    public $importFile = null;
+    public ?int $initialWarehouseId = null;
+    public ?array $importResults = null;
 
     // Form fields
     public $name = '';
@@ -217,6 +226,50 @@ class ProductManager extends Component
         $this->resetValidation();
     }
 
+    public function openImportModal()
+    {
+        $this->importFile = null;
+        $this->initialWarehouseId = null;
+        $this->importResults = null;
+        $this->isImportModalOpen = true;
+    }
+
+    public function closeImportModal()
+    {
+        $this->isImportModalOpen = false;
+        $this->importFile = null;
+        $this->importResults = null;
+    }
+
+    public function downloadSampleTemplate(CatalogImportExportService $service)
+    {
+        return $service->generateSampleCsv();
+    }
+
+    public function exportCsv(CatalogImportExportService $service)
+    {
+        $teamId = Auth::user()->currentTeam->id;
+        return $service->exportCsv($teamId);
+    }
+
+    public function importCsv(CatalogImportExportService $service)
+    {
+        $this->validate([
+            'importFile' => 'required|file|mimes:csv,txt|max:10240',
+            'initialWarehouseId' => 'nullable|exists:warehouses,id',
+        ]);
+
+        $team = Auth::user()->currentTeam;
+        $userId = Auth::id();
+
+        $path = $this->importFile->getRealPath();
+        $this->importResults = $service->importCsv($path, $team->id, $this->initialWarehouseId, $userId);
+
+        if ($this->importResults['created'] > 0 || $this->importResults['updated'] > 0) {
+            session()->flash('success', "Import Complete! {$this->importResults['created']} products created, {$this->importResults['updated']} updated.");
+        }
+    }
+
     public function render()
     {
         $query = Product::with(['category', 'brand', 'stockLevels'])
@@ -248,11 +301,13 @@ class ProductManager extends Component
         $products = $query->latest()->paginate(15);
         $categories = ProductCategory::orderBy('name')->get();
         $brands = Brand::orderBy('name')->get();
+        $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
 
         return view('livewire.product-manager', [
             'products' => $products,
             'categories' => $categories,
             'brands' => $brands,
+            'warehouses' => $warehouses,
         ])->layout('layouts.app');
     }
 }

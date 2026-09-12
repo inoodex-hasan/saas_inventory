@@ -14,6 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->web(append: [
             \App\Http\Middleware\SetTenantContext::class,
+            \App\Http\Middleware\CheckTenantStatus::class,
+        ]);
+
+        $middleware->alias([
+            'super_admin' => \App\Http\Middleware\EnsureSuperAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

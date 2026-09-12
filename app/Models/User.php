@@ -34,6 +34,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'is_super_admin',
         'password',
     ];
 
@@ -67,7 +68,16 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'is_super_admin' => 'boolean',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Determine if the user is a platform super administrator.
+     */
+    public function isSuperAdmin(): bool
+    {
+        return (bool) $this->is_super_admin;
     }
 }
