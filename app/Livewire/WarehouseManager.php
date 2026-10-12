@@ -61,7 +61,8 @@ class WarehouseManager extends Component
 
     public function edit(int $id): void
     {
-        $warehouse = Warehouse::findOrFail($id);
+        $teamId = Auth::user()->current_team_id;
+        $warehouse = Warehouse::where('team_id', $teamId)->findOrFail($id);
         $this->warehouse_id = $warehouse->id;
         $this->name = $warehouse->name;
         $this->code = $warehouse->code ?? '';
@@ -94,7 +95,7 @@ class WarehouseManager extends Component
         }
 
         if ($this->warehouse_id) {
-            $warehouse = Warehouse::findOrFail($this->warehouse_id);
+            $warehouse = Warehouse::where('team_id', $teamId)->findOrFail($this->warehouse_id);
             $warehouse->update([
                 'name' => $this->name,
                 'code' => $this->code,
@@ -136,7 +137,7 @@ class WarehouseManager extends Component
         $teamId = Auth::user()->current_team_id;
         Warehouse::where('team_id', $teamId)->update(['is_default' => false]);
         
-        $warehouse = Warehouse::findOrFail($id);
+        $warehouse = Warehouse::where('team_id', $teamId)->findOrFail($id);
         $warehouse->update(['is_default' => true]);
 
         session()->flash('message', "{$warehouse->name} set as default warehouse hub.");
@@ -144,10 +145,11 @@ class WarehouseManager extends Component
 
     public function delete(int $id): void
     {
-        $warehouse = Warehouse::findOrFail($id);
+        $teamId = Auth::user()->current_team_id;
+        $warehouse = Warehouse::where('team_id', $teamId)->findOrFail($id);
         
         // Prevent deleting default warehouse if others exist
-        if ($warehouse->is_default && Warehouse::count() > 1) {
+        if ($warehouse->is_default && Warehouse::where('team_id', $teamId)->count() > 1) {
             session()->flash('error', 'Please set another warehouse as default before deleting this one.');
             return;
         }
@@ -158,7 +160,8 @@ class WarehouseManager extends Component
 
     public function inspectStock(int $id): void
     {
-        $this->selectedWarehouse = Warehouse::findOrFail($id);
+        $teamId = Auth::user()->current_team_id;
+        $this->selectedWarehouse = Warehouse::where('team_id', $teamId)->findOrFail($id);
         
         $stockLevels = StockLevel::with('product')
             ->where('warehouse_id', $id)

@@ -32,6 +32,26 @@ class ProductManager extends Component
     public ?int $initialWarehouseId = null;
     public ?array $importResults = null;
 
+    // Category & Brand Management State
+    public bool $isCatBrandModalOpen = false;
+    public string $catBrandActiveTab = 'categories'; // 'categories' | 'brands'
+    public string $catBrandSearch = '';
+
+    // Category Form State
+    public ?int $editing_category_id = null;
+    public string $category_name = '';
+    public ?int $category_parent_id = null;
+    public string $category_description = '';
+    public bool $showQuickAddCategory = false;
+    public string $quick_category_name = '';
+
+    // Brand Form State
+    public ?int $editing_brand_id = null;
+    public string $brand_name = '';
+    public string $brand_description = '';
+    public bool $showQuickAddBrand = false;
+    public string $quick_brand_name = '';
+
     // Form fields
     public $name = '';
     public $sku = '';
@@ -103,7 +123,8 @@ class ProductManager extends Component
 
     public function edit($id)
     {
-        $product = Product::findOrFail($id);
+        $teamId = auth()->user()->current_team_id;
+        $product = Product::where('team_id', $teamId)->findOrFail($id);
         $this->product_id = $product->id;
         $this->name = $product->name;
         $this->sku = $product->sku;
@@ -137,7 +158,7 @@ class ProductManager extends Component
         ]);
 
         Product::updateOrCreate(
-            ['id' => $this->product_id],
+            ['id' => $this->product_id, 'team_id' => $teamId],
             [
                 'name' => $this->name,
                 'sku' => $this->sku,
@@ -146,6 +167,7 @@ class ProductManager extends Component
                 'brand_id' => $this->brand_id ?: null,
                 'unit' => $this->unit,
                 'cost_price' => $this->cost_price,
+                'unit_price' => $this->selling_price,
                 'selling_price' => $this->selling_price,
                 'reorder_level' => $this->reorder_level,
                 'reorder_quantity' => $this->reorder_quantity,
@@ -160,10 +182,11 @@ class ProductManager extends Component
 
     public function delete($id)
     {
-        $product = Product::findOrFail($id);
+        $teamId = auth()->user()->current_team_id;
+        $product = Product::where('team_id', $teamId)->findOrFail($id);
         
         // Check if there is physical stock
-        $totalStock = StockLevel::where('product_id', $product->id)->sum('quantity');
+        $totalStock = StockLevel::where('team_id', $teamId)->where('product_id', $product->id)->sum('quantity');
         if ($totalStock > 0) {
             session()->flash('error', "Cannot delete product '{$product->name}' because {$totalStock} units are currently on hand in warehouses.");
             return;
@@ -175,14 +198,17 @@ class ProductManager extends Component
 
     public function inspectStock($productId)
     {
-        $this->selectedProduct = Product::findOrFail($productId);
-        $warehouses = Warehouse::orderBy('name')->get();
+        $teamId = auth()->user()->current_team_id;
+        $this->selectedProduct = Product::where('team_id', $teamId)->findOrFail($productId);
+        $warehouses = Warehouse::where('team_id', $teamId)->orderBy('name')->get();
+        $stockLevels = StockLevel::where('team_id', $teamId)
+            ->where('product_id', $productId)
+            ->get()
+            ->keyBy('warehouse_id');
 
         $breakdown = [];
         foreach ($warehouses as $wh) {
-            $stock = StockLevel::where('warehouse_id', $wh->id)
-                ->where('product_id', $productId)
-                ->first();
+            $stock = $stockLevels->get($wh->id);
 
             $onHand = $stock ? (float) $stock->quantity : 0;
             $reserved = $stock ? (float) $stock->reserved_quantity : 0;
@@ -270,6 +296,233 @@ class ProductManager extends Component
         }
     }
 
+    // ==========================================
+    // Category & Brand Management Actions
+    // ==========================================
+
+    public function openCatBrandModal(string $tab = 'categories')
+    {
+        $this->catBrandActiveTab = $tab;
+        $this->catBrandSearch = '';
+        $this->resetCategoryForm();
+        $this->resetBrandForm();
+        $this->isCatBrandModalOpen = true;
+    }
+
+    public function closeCatBrandModal()
+    {
+        $this->isCatBrandModalOpen = false;
+        $this->resetCategoryForm();
+        $this->resetBrandForm();
+    }
+
+    public function switchCatBrandTab(string $tab)
+    {
+        $this->catBrandActiveTab = $tab;
+        $this->resetCategoryForm();
+        $this->resetBrandForm();
+    }
+
+    public function resetCategoryForm()
+    {
+        $this->editing_category_id = null;
+        $this->category_name = '';
+        $this->category_parent_id = null;
+        $this->category_description = '';
+        $this->resetValidation(['category_name', 'category_parent_id', 'category_description']);
+    }
+
+    public function editCategory(int $id)
+    {
+        $teamId = auth()->user()->current_team_id;
+        $category = ProductCategory::where('team_id', $teamId)->findOrFail($id);
+        $this->editing_category_id = $category->id;
+        $this->category_name = $category->name;
+        $this->category_parent_id = $category->parent_id;
+        $this->category_description = $category->description ?? '';
+    }
+
+    public function saveCategory()
+    {
+        $teamId = auth()->user()->current_team_id;
+        $this->validate([
+            'category_name' => 'required|string|max:255',
+            'category_parent_id' => 'nullable|exists:product_categories,id',
+            'category_description' => 'nullable|string|max:1000',
+        ]);
+
+        $baseSlug = Str::slug($this->category_name);
+        $slug = $baseSlug ?: 'cat-' . Str::random(5);
+        $counter = 1;
+        while (ProductCategory::where('team_id', $teamId)->where('slug', $slug)->where('id', '!=', $this->editing_category_id)->exists()) {
+            $slug = $baseSlug . '-' . $counter++;
+        }
+
+        ProductCategory::updateOrCreate(
+            ['id' => $this->editing_category_id, 'team_id' => $teamId],
+            [
+                'name' => $this->category_name,
+                'slug' => $slug,
+                'parent_id' => $this->category_parent_id ?: null,
+                'description' => $this->category_description ?: null,
+            ]
+        );
+
+        session()->flash('cat_brand_message', $this->editing_category_id ? 'Category updated successfully.' : 'Category created successfully.');
+        $this->resetCategoryForm();
+    }
+
+    public function deleteCategory(int $id)
+    {
+        $teamId = auth()->user()->current_team_id;
+        $category = ProductCategory::where('team_id', $teamId)->findOrFail($id);
+
+        $productCount = $category->products()->count();
+        if ($productCount > 0) {
+            session()->flash('cat_brand_error', "Cannot delete category '{$category->name}' because {$productCount} product(s) are assigned to it.");
+            return;
+        }
+
+        $childCount = $category->children()->count();
+        if ($childCount > 0) {
+            session()->flash('cat_brand_error', "Cannot delete category '{$category->name}' because it has {$childCount} sub-category(ies).");
+            return;
+        }
+
+        $category->delete();
+        session()->flash('cat_brand_message', "Category '{$category->name}' deleted successfully.");
+        if ($this->editing_category_id === $id) {
+            $this->resetCategoryForm();
+        }
+    }
+
+    public function toggleQuickAddCategory()
+    {
+        $this->showQuickAddCategory = !$this->showQuickAddCategory;
+        $this->quick_category_name = '';
+    }
+
+    public function quickAddCategory()
+    {
+        $teamId = auth()->user()->current_team_id;
+        $this->validate([
+            'quick_category_name' => 'required|string|max:255',
+        ]);
+
+        $baseSlug = Str::slug($this->quick_category_name);
+        $slug = $baseSlug ?: 'cat-' . Str::random(5);
+        $counter = 1;
+        while (ProductCategory::where('team_id', $teamId)->where('slug', $slug)->exists()) {
+            $slug = $baseSlug . '-' . $counter++;
+        }
+
+        $category = ProductCategory::create([
+            'team_id' => $teamId,
+            'name' => $this->quick_category_name,
+            'slug' => $slug,
+        ]);
+
+        $this->category_id = $category->id;
+        $this->quick_category_name = '';
+        $this->showQuickAddCategory = false;
+        session()->flash('product_form_message', "Category '{$category->name}' created and selected!");
+    }
+
+    public function resetBrandForm()
+    {
+        $this->editing_brand_id = null;
+        $this->brand_name = '';
+        $this->brand_description = '';
+        $this->resetValidation(['brand_name', 'brand_description']);
+    }
+
+    public function editBrand(int $id)
+    {
+        $teamId = auth()->user()->current_team_id;
+        $brand = Brand::where('team_id', $teamId)->findOrFail($id);
+        $this->editing_brand_id = $brand->id;
+        $this->brand_name = $brand->name;
+        $this->brand_description = $brand->description ?? '';
+    }
+
+    public function saveBrand()
+    {
+        $teamId = auth()->user()->current_team_id;
+        $this->validate([
+            'brand_name' => 'required|string|max:255',
+            'brand_description' => 'nullable|string|max:1000',
+        ]);
+
+        $baseSlug = Str::slug($this->brand_name);
+        $slug = $baseSlug ?: 'brand-' . Str::random(5);
+        $counter = 1;
+        while (Brand::where('team_id', $teamId)->where('slug', $slug)->where('id', '!=', $this->editing_brand_id)->exists()) {
+            $slug = $baseSlug . '-' . $counter++;
+        }
+
+        Brand::updateOrCreate(
+            ['id' => $this->editing_brand_id, 'team_id' => $teamId],
+            [
+                'name' => $this->brand_name,
+                'slug' => $slug,
+                'description' => $this->brand_description ?: null,
+            ]
+        );
+
+        session()->flash('cat_brand_message', $this->editing_brand_id ? 'Brand updated successfully.' : 'Brand created successfully.');
+        $this->resetBrandForm();
+    }
+
+    public function deleteBrand(int $id)
+    {
+        $teamId = auth()->user()->current_team_id;
+        $brand = Brand::where('team_id', $teamId)->findOrFail($id);
+
+        $productCount = $brand->products()->count();
+        if ($productCount > 0) {
+            session()->flash('cat_brand_error', "Cannot delete brand '{$brand->name}' because {$productCount} product(s) are assigned to it.");
+            return;
+        }
+
+        $brand->delete();
+        session()->flash('cat_brand_message', "Brand '{$brand->name}' deleted successfully.");
+        if ($this->editing_brand_id === $id) {
+            $this->resetBrandForm();
+        }
+    }
+
+    public function toggleQuickAddBrand()
+    {
+        $this->showQuickAddBrand = !$this->showQuickAddBrand;
+        $this->quick_brand_name = '';
+    }
+
+    public function quickAddBrand()
+    {
+        $teamId = auth()->user()->current_team_id;
+        $this->validate([
+            'quick_brand_name' => 'required|string|max:255',
+        ]);
+
+        $baseSlug = Str::slug($this->quick_brand_name);
+        $slug = $baseSlug ?: 'brand-' . Str::random(5);
+        $counter = 1;
+        while (Brand::where('team_id', $teamId)->where('slug', $slug)->exists()) {
+            $slug = $baseSlug . '-' . $counter++;
+        }
+
+        $brand = Brand::create([
+            'team_id' => $teamId,
+            'name' => $this->quick_brand_name,
+            'slug' => $slug,
+        ]);
+
+        $this->brand_id = $brand->id;
+        $this->quick_brand_name = '';
+        $this->showQuickAddBrand = false;
+        session()->flash('product_form_message', "Brand '{$brand->name}' created and selected!");
+    }
+
     public function render()
     {
         $query = Product::with(['category', 'brand', 'stockLevels'])
@@ -299,14 +552,31 @@ class ProductManager extends Component
         }
 
         $products = $query->latest()->paginate(15);
-        $categories = ProductCategory::orderBy('name')->get();
-        $brands = Brand::orderBy('name')->get();
+
+        // Filterable lists for Management Modal
+        $categoriesQuery = ProductCategory::withCount('products')->orderBy('name');
+        if ($this->catBrandSearch && $this->catBrandActiveTab === 'categories') {
+            $categoriesQuery->where('name', 'like', "%{$this->catBrandSearch}%");
+        }
+        $categories = $categoriesQuery->get();
+
+        $brandsQuery = Brand::withCount('products')->orderBy('name');
+        if ($this->catBrandSearch && $this->catBrandActiveTab === 'brands') {
+            $brandsQuery->where('name', 'like', "%{$this->catBrandSearch}%");
+        }
+        $brands = $brandsQuery->get();
+
+        // Complete lists for dropdown selectors
+        $allCategories = ProductCategory::orderBy('name')->get();
+        $allBrands = Brand::orderBy('name')->get();
         $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
 
         return view('livewire.product-manager', [
             'products' => $products,
             'categories' => $categories,
             'brands' => $brands,
+            'allCategories' => $allCategories,
+            'allBrands' => $allBrands,
             'warehouses' => $warehouses,
         ])->layout('layouts.app');
     }

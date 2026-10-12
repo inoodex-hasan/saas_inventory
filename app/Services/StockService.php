@@ -45,26 +45,23 @@ class StockService
         ) {
             $teamId = Auth::user()?->current_team_id ?? Product::findOrFail($productId)->team_id;
 
-            // 1. Lock and update/create stock level
-            $stockLevel = StockLevel::where('warehouse_id', $warehouseId)
-                ->where('product_id', $productId)
-                ->where('product_variant_id', $variantId)
-                ->lockForUpdate()
-                ->first();
-
-            if (!$stockLevel) {
-                $stockLevel = StockLevel::create([
-                    'team_id' => $teamId,
+            // 1. Ensure stock level row exists, lock and increment
+            $stockLevel = StockLevel::firstOrCreate(
+                [
                     'warehouse_id' => $warehouseId,
                     'product_id' => $productId,
                     'product_variant_id' => $variantId,
-                    'quantity' => $quantity,
+                ],
+                [
+                    'team_id' => $teamId,
+                    'quantity' => 0,
                     'reserved_quantity' => 0,
-                ]);
-            } else {
-                $stockLevel->quantity += $quantity;
-                $stockLevel->save();
-            }
+                ]
+            );
+
+            $stockLevel = StockLevel::where('id', $stockLevel->id)->lockForUpdate()->first();
+            $stockLevel->quantity += $quantity;
+            $stockLevel->save();
 
             // 2. Create immutable audit ledger record
             return StockMovement::create([
@@ -183,28 +180,25 @@ class StockService
         ) {
             $teamId = Auth::user()?->current_team_id ?? Product::findOrFail($productId)->team_id;
 
-            $stockLevel = StockLevel::where('warehouse_id', $warehouseId)
-                ->where('product_id', $productId)
-                ->where('product_variant_id', $variantId)
-                ->lockForUpdate()
-                ->first();
-
-            $currentQty = $stockLevel ? (float) $stockLevel->quantity : 0.0;
-            $delta = $newPhysicalCount - $currentQty;
-
-            if (!$stockLevel) {
-                $stockLevel = StockLevel::create([
-                    'team_id' => $teamId,
+            $stockLevel = StockLevel::firstOrCreate(
+                [
                     'warehouse_id' => $warehouseId,
                     'product_id' => $productId,
                     'product_variant_id' => $variantId,
-                    'quantity' => $newPhysicalCount,
+                ],
+                [
+                    'team_id' => $teamId,
+                    'quantity' => 0,
                     'reserved_quantity' => 0,
-                ]);
-            } else {
-                $stockLevel->quantity = $newPhysicalCount;
-                $stockLevel->save();
-            }
+                ]
+            );
+
+            $stockLevel = StockLevel::where('id', $stockLevel->id)->lockForUpdate()->first();
+            $currentQty = (float) $stockLevel->quantity;
+            $delta = $newPhysicalCount - $currentQty;
+
+            $stockLevel->quantity = $newPhysicalCount;
+            $stockLevel->save();
 
             // Record movement delta (e.g. +5 or -3)
             return StockMovement::create([
@@ -274,26 +268,23 @@ class StockService
             $sourceLevel->quantity -= $quantity;
             $sourceLevel->save();
 
-            // 2. Lock / Create destination stock level
-            $destLevel = StockLevel::where('warehouse_id', $toWarehouseId)
-                ->where('product_id', $productId)
-                ->where('product_variant_id', $variantId)
-                ->lockForUpdate()
-                ->first();
-
-            if (!$destLevel) {
-                $destLevel = StockLevel::create([
-                    'team_id' => $teamId,
+            // 2. Ensure / Lock destination stock level
+            $destLevel = StockLevel::firstOrCreate(
+                [
                     'warehouse_id' => $toWarehouseId,
                     'product_id' => $productId,
                     'product_variant_id' => $variantId,
-                    'quantity' => $quantity,
+                ],
+                [
+                    'team_id' => $teamId,
+                    'quantity' => 0,
                     'reserved_quantity' => 0,
-                ]);
-            } else {
-                $destLevel->quantity += $quantity;
-                $destLevel->save();
-            }
+                ]
+            );
+
+            $destLevel = StockLevel::where('id', $destLevel->id)->lockForUpdate()->first();
+            $destLevel->quantity += $quantity;
+            $destLevel->save();
 
             $transferNote = $reason ?? "Transfer from WH #{$fromWarehouseId} to WH #{$toWarehouseId}";
 

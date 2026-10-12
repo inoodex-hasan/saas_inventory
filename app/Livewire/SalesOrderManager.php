@@ -169,7 +169,8 @@ class SalesOrderManager extends Component
     public function confirmOrder(int $orderId): void
     {
         try {
-            $order = SalesOrder::findOrFail($orderId);
+            $teamId = Auth::user()->current_team_id;
+            $order = SalesOrder::where('team_id', $teamId)->findOrFail($orderId);
             $soService = app(SalesOrderService::class);
             $soService->confirmOrder($order);
 
@@ -182,7 +183,8 @@ class SalesOrderManager extends Component
     public function dispatchOrder(int $orderId): void
     {
         try {
-            $order = SalesOrder::findOrFail($orderId);
+            $teamId = Auth::user()->current_team_id;
+            $order = SalesOrder::where('team_id', $teamId)->findOrFail($orderId);
             $soService = app(SalesOrderService::class);
             $soService->dispatchOrder($order);
 
@@ -195,7 +197,8 @@ class SalesOrderManager extends Component
     public function cancelOrder(int $orderId): void
     {
         try {
-            $order = SalesOrder::findOrFail($orderId);
+            $teamId = Auth::user()->current_team_id;
+            $order = SalesOrder::where('team_id', $teamId)->findOrFail($orderId);
             $soService = app(SalesOrderService::class);
             $soService->cancelOrder($order);
 
@@ -207,7 +210,8 @@ class SalesOrderManager extends Component
 
     public function openPaymentModal(int $orderId): void
     {
-        $this->payingOrder = SalesOrder::findOrFail($orderId);
+        $teamId = Auth::user()->current_team_id;
+        $this->payingOrder = SalesOrder::where('team_id', $teamId)->findOrFail($orderId);
         $this->paymentAmount = max(0, (float) $this->payingOrder->total_amount - (float) $this->payingOrder->paid_amount);
         $this->isPaymentModalOpen = true;
     }
@@ -228,7 +232,10 @@ class SalesOrderManager extends Component
 
     public function viewDetails(int $orderId): void
     {
-        $this->viewingOrder = SalesOrder::with(['items.product', 'customer', 'warehouse'])->findOrFail($orderId);
+        $teamId = Auth::user()->current_team_id;
+        $this->viewingOrder = SalesOrder::with(['items.product', 'customer', 'warehouse'])
+            ->where('team_id', $teamId)
+            ->findOrFail($orderId);
     }
 
     public function closeModal(): void
@@ -267,8 +274,8 @@ class SalesOrderManager extends Component
 
         $salesOrders = $query->latest('id')->paginate(12);
         $customers = Customer::orderBy('name')->get();
-        $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
-        $products = Product::where('is_active', true)->orderBy('name')->get();
+        $warehouses = $this->isCreateModalOpen ? Warehouse::where('is_active', true)->orderBy('name')->get() : collect();
+        $products = $this->isCreateModalOpen ? Product::where('is_active', true)->orderBy('name')->get() : collect();
 
         return view('livewire.sales-order-manager', [
             'salesOrders' => $salesOrders,

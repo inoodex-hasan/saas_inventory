@@ -12,7 +12,10 @@ use App\Livewire\WarehouseManager;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return auth()->check() ? redirect()->route('dashboard') : view('welcome');
+    if (auth()->check()) {
+        return auth()->user()->isSuperAdmin() ? redirect()->route('admin.dashboard') : redirect()->route('dashboard');
+    }
+    return view('welcome');
 });
 
 Route::get('/suspended', function () {
@@ -46,4 +49,12 @@ Route::middleware([
     'super_admin',
 ])->group(function () {
     Route::get('/admin', SuperAdminDashboard::class)->name('admin.dashboard');
+    Route::get('/admin/exit-tenant', function () {
+        $user = auth()->user();
+        if ($user && $user->isSuperAdmin()) {
+            $user->forceFill(['current_team_id' => null])->save();
+            return redirect()->route('admin.dashboard')->with('success', 'Exited tenant workspace. Back to Platform Super-Admin mode.');
+        }
+        return redirect()->route('dashboard');
+    })->name('admin.exit-tenant');
 });

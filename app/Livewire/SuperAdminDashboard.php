@@ -63,18 +63,20 @@ class SuperAdminDashboard extends Component
 
     public function render()
     {
-        // 1. Platform-wide System Metrics
-        $totalTenants = Team::withoutGlobalScopes()->count();
-        $activeTenants = Team::withoutGlobalScopes()->where('status', '!=', 'suspended')->count();
-        $suspendedTenants = Team::withoutGlobalScopes()->where('status', 'suspended')->count();
-        $totalUsers = User::count();
-        $totalProducts = Product::withoutGlobalScopes()->count();
-        $totalSales = SalesOrder::withoutGlobalScopes()->count();
+        // 1. Platform-wide System Metrics (exclude super admin teams)
+        $clientTeams = Team::withoutGlobalScopes()->whereHas('owner', fn ($q) => $q->where('is_super_admin', false));
+        $totalTenants    = (clone $clientTeams)->count();
+        $activeTenants   = (clone $clientTeams)->where('status', '!=', 'suspended')->count();
+        $suspendedTenants = (clone $clientTeams)->where('status', 'suspended')->count();
+        $totalUsers      = User::where('is_super_admin', false)->count();
+        $totalProducts   = Product::withoutGlobalScopes()->count();
+        $totalSales      = SalesOrder::withoutGlobalScopes()->count();
 
-        // 2. Query Tenants with aggregated counts
+        // 2. Query Tenants with aggregated counts — exclude super admin teams
         $query = Team::withoutGlobalScopes()
             ->with(['owner'])
-            ->withCount(['users', 'teamInvitations']);
+            ->withCount(['users', 'teamInvitations'])
+            ->whereHas('owner', fn ($q) => $q->where('is_super_admin', false));
 
         if ($this->search) {
             $search = '%' . $this->search . '%';

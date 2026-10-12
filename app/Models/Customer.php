@@ -31,4 +31,14 @@ class Customer extends Model
     {
         return $this->hasMany(SalesOrder::class);
     }
+
+    public function getShippingAddressAttribute(): ?string
+    {
+        return $this->address;
+    }
+
+    public function setShippingAddressAttribute($value): void
+    {
+        $this->attributes['address'] = $value;
+    }
 }

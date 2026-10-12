@@ -112,4 +112,12 @@ class SuperAdminControlTest extends TestCase
         $this->superAdmin->refresh();
         $this->assertEquals($this->clientTeam->id, $this->superAdmin->current_team_id);
     }
+
+    public function test_super_admin_personal_team_is_excluded_from_client_list(): void
+    {
+        Livewire::actingAs($this->superAdmin)
+            ->test(SuperAdminDashboard::class)
+            ->assertSee($this->clientTeam->name)
+            ->assertDontSee($this->superAdmin->personalTeam()->name);
+    }
 }

@@ -23,6 +23,11 @@ class DashboardController extends Controller
         $user = Auth::user();
         $team = $user->currentTeam;
 
+        // Super Admin lands on platform management unless actively inspecting a client tenant
+        if ($user->isSuperAdmin() && (!$team || $user->ownedTeams->contains($team))) {
+            return redirect()->route('admin.dashboard');
+        }
+
         if (!$team) {
             return redirect()->route('teams.create');
         }
@@ -53,17 +58,16 @@ class DashboardController extends Controller
             ->sum('total_amount');
 
         // 4. Low Stock Products & Alerts
-        $products = Product::where('team_id', $team->id)
+        $lowStockBaseQuery = Product::where('team_id', $team->id)
             ->where('is_active', true)
-            ->with('stockLevels')
-            ->withSum('stockLevels as total_on_hand', 'quantity')
-            ->get();
+            ->whereRaw('(SELECT COALESCE(SUM(quantity), 0) FROM stock_levels WHERE stock_levels.product_id = products.id) <= products.reorder_level');
 
-        $lowStockProducts = $products->filter(function ($product) {
-            $onHand = (float) ($product->total_on_hand ?? 0);
-            return $onHand <= (float) $product->reorder_level;
-        });
-        $lowStockCount = $lowStockProducts->count();
+        $lowStockCount = (clone $lowStockBaseQuery)->count();
+
+        $lowStockProducts = (clone $lowStockBaseQuery)
+            ->withSum('stockLevels as total_on_hand', 'quantity')
+            ->take(10)
+            ->get();
 
         // 5. Recent Activity
         $recentSalesOrders = SalesOrder::where('team_id', $team->id)

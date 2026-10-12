@@ -167,7 +167,9 @@ class PurchaseOrderService
     {
         $prefix = 'PO-' . Carbon::now()->format('Ymd') . '-';
         
-        $lastOrder = PurchaseOrder::where('order_number', 'LIKE', $prefix . '%')
+        $lastOrder = PurchaseOrder::where('team_id', $teamId)
+            ->where('order_number', 'LIKE', $prefix . '%')
+            ->lockForUpdate()
             ->latest('id')
             ->first();
 

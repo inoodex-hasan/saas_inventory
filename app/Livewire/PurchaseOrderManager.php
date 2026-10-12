@@ -136,7 +136,8 @@ class PurchaseOrderManager extends Component
 
     public function markAsOrdered(int $poId): void
     {
-        $po = PurchaseOrder::findOrFail($poId);
+        $teamId = Auth::user()->current_team_id;
+        $po = PurchaseOrder::where('team_id', $teamId)->findOrFail($poId);
         $poService = app(PurchaseOrderService::class);
         $poService->markAsOrdered($po);
 
@@ -145,7 +146,8 @@ class PurchaseOrderManager extends Component
 
     public function cancelOrder(int $poId): void
     {
-        $po = PurchaseOrder::findOrFail($poId);
+        $teamId = Auth::user()->current_team_id;
+        $po = PurchaseOrder::where('team_id', $teamId)->findOrFail($poId);
         $poService = app(PurchaseOrderService::class);
         $poService->cancelOrder($po);
 
@@ -154,7 +156,10 @@ class PurchaseOrderManager extends Component
 
     public function openReceiveModal(int $poId): void
     {
-        $this->receivingPo = PurchaseOrder::with(['items.product', 'supplier', 'warehouse'])->findOrFail($poId);
+        $teamId = Auth::user()->current_team_id;
+        $this->receivingPo = PurchaseOrder::with(['items.product', 'supplier', 'warehouse'])
+            ->where('team_id', $teamId)
+            ->findOrFail($poId);
         $this->receivingItems = [];
 
         foreach ($this->receivingPo->items as $item) {
@@ -203,7 +208,10 @@ class PurchaseOrderManager extends Component
 
     public function viewDetails(int $poId): void
     {
-        $this->viewingPo = PurchaseOrder::with(['items.product', 'supplier', 'warehouse'])->findOrFail($poId);
+        $teamId = Auth::user()->current_team_id;
+        $this->viewingPo = PurchaseOrder::with(['items.product', 'supplier', 'warehouse'])
+            ->where('team_id', $teamId)
+            ->findOrFail($poId);
     }
 
     public function closeModal(): void
@@ -240,8 +248,8 @@ class PurchaseOrderManager extends Component
 
         $purchaseOrders = $query->latest('id')->paginate(12);
         $suppliers = Supplier::orderBy('name')->get();
-        $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
-        $products = Product::where('is_active', true)->orderBy('name')->get();
+        $warehouses = $this->isCreateModalOpen ? Warehouse::where('is_active', true)->orderBy('name')->get() : collect();
+        $products = $this->isCreateModalOpen ? Product::where('is_active', true)->orderBy('name')->get() : collect();
 
         return view('livewire.purchase-order-manager', [
             'purchaseOrders' => $purchaseOrders,

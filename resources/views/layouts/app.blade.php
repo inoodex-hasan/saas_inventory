@@ -61,96 +61,134 @@
                 </div>
 
                 <!-- Tenant Company Badge -->
-                <div class="px-4 py-3 border-b border-slate-800/60 bg-slate-900/40">
-                    <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">Current Organization</div>
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-6 h-6 rounded-md bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-300 font-bold text-xs">
-                            {{ substr(Auth::user()->currentTeam->name ?? 'T', 0, 1) }}
+                @if(Auth::user()->isSuperAdmin() && Auth::user()->currentTeam)
+                    <div class="px-4 py-3 border-b border-amber-500/30 bg-amber-950/40">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10px] uppercase font-bold text-amber-400 tracking-wider">Inspecting Tenant</span>
+                            <a href="{{ route('admin.exit-tenant') }}" class="text-[10px] font-bold text-amber-300 hover:text-white underline">Exit &rarr;</a>
                         </div>
-                        <span class="font-semibold text-xs text-slate-200 truncate">{{ Auth::user()->currentTeam->name ?? 'Default Workspace' }}</span>
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-6 h-6 rounded-md bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 font-bold text-xs">
+                                {{ substr(Auth::user()->currentTeam->name, 0, 1) }}
+                            </div>
+                            <span class="font-semibold text-xs text-amber-200 truncate">{{ Auth::user()->currentTeam->name }}</span>
+                        </div>
                     </div>
-                </div>
+                @elseif(Auth::user()->currentTeam)
+                    <div class="px-4 py-3 border-b border-slate-800/60 bg-slate-900/40">
+                        <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">Current Organization</div>
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-6 h-6 rounded-md bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-300 font-bold text-xs">
+                                {{ substr(Auth::user()->currentTeam->name, 0, 1) }}
+                            </div>
+                            <span class="font-semibold text-xs text-slate-200 truncate">{{ Auth::user()->currentTeam->name }}</span>
+                        </div>
+                    </div>
+                @else
+                    <div class="px-4 py-3 border-b border-slate-800/60 bg-slate-950/50">
+                        <div class="text-[10px] uppercase font-bold text-amber-400 tracking-wider mb-1">Platform Control</div>
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-6 h-6 rounded-md bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-bold text-xs">
+                                👑
+                            </div>
+                            <span class="font-semibold text-xs text-slate-200 truncate">Platform Super-Admin</span>
+                        </div>
+                    </div>
+                @endif
 
                 <!-- Navigation Links -->
                 <nav class="p-3 space-y-1">
-                    <a href="{{ route('dashboard') }}" 
-                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all {{ request()->routeIs('dashboard') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                        </svg>
-                        <span>Command Dashboard</span>
-                    </a>
-
-                    <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Inventory Operations</div>
-
-                    <a href="{{ route('warehouses.index') }}" 
-                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all {{ request()->routeIs('warehouses.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                        <span>Warehouses & Hubs</span>
-                    </a>
-
-                    <a href="{{ route('products.index') }}" 
-                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all {{ request()->routeIs('products.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                        </svg>
-                        <span>Products & Catalog</span>
-                    </a>
-
-                    <a href="{{ route('purchases.index') }}" 
-                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all {{ request()->routeIs('purchases.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0 0l3-3m-3 3L9 8m-5 5h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293h3.172a1 1 0 00.707-.293l2.414-2.414a1 1 0 01.707-.293H20" />
-                        </svg>
-                        <span>Purchases & Inbound</span>
-                    </a>
-
-                    <a href="{{ route('sales.index') }}" 
-                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all {{ request()->routeIs('sales.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                        </svg>
-                        <span>Sales & Dispatches</span>
-                    </a>
-
-                    <a href="{{ route('reports.index') }}" 
-                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all {{ request()->routeIs('reports.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                        <span>Reports & Valuation</span>
-                    </a>
-
-                    <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Settings & Team</div>
-
-                    <a href="{{ route('settings.company') }}" 
-                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all {{ request()->routeIs('settings.company') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <span>Company & Branding</span>
-                    </a>
-
-                    <a href="{{ route('teams.show', Auth::user()->currentTeam->id) }}" 
-                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all {{ request()->routeIs('teams.show') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                        <span>Team & Roles</span>
-                    </a>
-
-                    @if(Auth::user()->isSuperAdmin())
-                        <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-amber-400">Master Control</div>
+                    @if(Auth::user()->isSuperAdmin() && !Auth::user()->currentTeam)
+                        <div class="pt-1 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-amber-400">Master Control</div>
                         <a href="{{ route('admin.dashboard') }}" 
                            class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all {{ request()->routeIs('admin.*') ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/30' : 'text-amber-400 hover:bg-slate-800/60 hover:text-amber-300' }}">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                             </svg>
-                            <span>Platform Admin</span>
+                            <span>Platform Clients & Health</span>
                         </a>
+                    @else
+                        <a href="{{ route('dashboard') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all {{ request()->routeIs('dashboard') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                            </svg>
+                            <span>Command Dashboard</span>
+                        </a>
+
+                        <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Inventory Operations</div>
+
+                        <a href="{{ route('warehouses.index') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all {{ request()->routeIs('warehouses.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <span>Warehouses & Hubs</span>
+                        </a>
+
+                        <a href="{{ route('products.index') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all {{ request()->routeIs('products.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                            <span>Products & Catalog</span>
+                        </a>
+
+                        <a href="{{ route('purchases.index') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all {{ request()->routeIs('purchases.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0 0l3-3m-3 3L9 8m-5 5h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293h3.172a1 1 0 00.707-.293l2.414-2.414a1 1 0 01.707-.293H20" />
+                            </svg>
+                            <span>Purchases & Inbound</span>
+                        </a>
+
+                        <a href="{{ route('sales.index') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all {{ request()->routeIs('sales.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                            </svg>
+                            <span>Sales & Dispatches</span>
+                        </a>
+
+                        <a href="{{ route('reports.index') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all {{ request()->routeIs('reports.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            <span>Reports & Valuation</span>
+                        </a>
+
+                        <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Settings & Team</div>
+
+                        <a href="{{ route('settings.company') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all {{ request()->routeIs('settings.company') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span>Company & Branding</span>
+                        </a>
+
+                        @if(Auth::user()->currentTeam)
+                            <a href="{{ route('teams.show', Auth::user()->currentTeam->id) }}" 
+                               class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all {{ request()->routeIs('teams.show') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                </svg>
+                                <span>Team & Roles</span>
+                            </a>
+                        @endif
+
+                        @if(Auth::user()->isSuperAdmin())
+                            <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-amber-400">Master Control</div>
+                            <a href="{{ route('admin.dashboard') }}" 
+                               class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all {{ request()->routeIs('admin.*') ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/30' : 'text-amber-400 hover:bg-slate-800/60 hover:text-amber-300' }}">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                </svg>
+                                <span>Platform Admin</span>
+                            </a>
+                        @endif
                     @endif
                 </nav>
             </div>
@@ -193,21 +231,25 @@
                     <div class="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-400">
                         <span>Workspace</span>
                         <span>/</span>
-                        <span class="text-slate-800">{{ Auth::user()->currentTeam->name }}</span>
+                        <span class="text-slate-800">{{ Auth::user()->currentTeam->name ?? 'Platform Super-Admin' }}</span>
                     </div>
                 </div>
 
                 <!-- Right Topbar Controls -->
                 <div class="flex items-center gap-3">
                     
-                    @if(Auth::user()->isSuperAdmin())
+                    @if(Auth::user()->isSuperAdmin() && Auth::user()->currentTeam)
+                        <a href="{{ route('admin.exit-tenant') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-800 hover:bg-amber-500/20 border border-amber-500/30 transition">
+                            <span>👑 Exit Tenant Mode &rarr;</span>
+                        </a>
+                    @elseif(Auth::user()->isSuperAdmin())
                         <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 border border-amber-500/30 shadow-2xs transition">
-                            <span>👑 Super Admin</span>
+                            <span>👑 Platform Admin</span>
                         </a>
                     @endif
 
-                    <!-- Team Switcher Dropdown -->
-                    @if (Laravel\Jetstream\Jetstream::hasTeamFeatures())
+                    <!-- Team Switcher Dropdown (Only for users with active team) -->
+                    @if (Auth::user()->currentTeam && Laravel\Jetstream\Jetstream::hasTeamFeatures())
                         <div class="relative" x-data="{ openTeam: false }">
                             <button @click="openTeam = !openTeam" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200/70 text-slate-700 transition">
                                 <span>🏢 {{ Auth::user()->currentTeam->name }}</span>
@@ -239,9 +281,11 @@
                                 <a href="{{ route('settings.company') }}" class="block px-3 py-1.5 text-slate-600 hover:bg-slate-50">
                                     🏢 Company & Branding
                                 </a>
-                                <a href="{{ route('teams.show', Auth::user()->currentTeam->id) }}" class="block px-3 py-1.5 text-slate-600 hover:bg-slate-50">
-                                    ⚙️ Team & Members
-                                </a>
+                                @if(Auth::user()->currentTeam)
+                                    <a href="{{ route('teams.show', Auth::user()->currentTeam->id) }}" class="block px-3 py-1.5 text-slate-600 hover:bg-slate-50">
+                                        ⚙️ Team & Members
+                                    </a>
+                                @endif
                                 @can('create', Laravel\Jetstream\Jetstream::newTeamModel())
                                     <a href="{{ route('teams.create') }}" class="block px-3 py-1.5 text-indigo-600 hover:bg-slate-50 font-semibold">
                                         ➕ Create New Team

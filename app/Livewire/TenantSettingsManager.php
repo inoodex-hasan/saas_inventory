@@ -83,7 +83,11 @@ class TenantSettingsManager extends Component
         $team = $user->currentTeam;
 
         // Check if user has permission to update tenant settings (owner or admin)
-        if ($team->user_id !== $user->id && !$user->hasRoleInTeam(['owner', 'admin'], $team->id)) {
+        $isOwnerOrAdmin = $user->isSuperAdmin() 
+            || $user->ownsTeam($team) 
+            || $user->hasTeamRole($team, 'admin');
+
+        if (!$isOwnerOrAdmin) {
             session()->flash('error', 'Only Company Owners and Administrators can update organization settings.');
             return;
         }

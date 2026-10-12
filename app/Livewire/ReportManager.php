@@ -148,6 +148,7 @@ class ReportManager extends Component
     protected function getLowStockData(int $teamId)
     {
         $query = Product::with(['category', 'stockLevels.warehouse'])
+            ->where('team_id', $teamId)
             ->where('is_active', true);
 
         if ($this->lowStockSearch) {

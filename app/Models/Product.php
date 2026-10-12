@@ -24,7 +24,9 @@ class Product extends Model
         'unit',
         'cost_price',
         'unit_price',
+        'selling_price',
         'reorder_level',
+        'reorder_quantity',
         'has_variants',
         'is_serialized',
         'is_active',
@@ -34,10 +36,25 @@ class Product extends Model
         'cost_price' => 'decimal:2',
         'unit_price' => 'decimal:2',
         'reorder_level' => 'integer',
+        'reorder_quantity' => 'integer',
         'has_variants' => 'boolean',
         'is_serialized' => 'boolean',
         'is_active' => 'boolean',
     ];
+
+    protected $appends = [
+        'selling_price',
+    ];
+
+    public function getSellingPriceAttribute(): float
+    {
+        return (float) ($this->attributes['unit_price'] ?? 0.00);
+    }
+
+    public function setSellingPriceAttribute($value): void
+    {
+        $this->attributes['unit_price'] = $value;
+    }
 
     public function category(): BelongsTo
     {

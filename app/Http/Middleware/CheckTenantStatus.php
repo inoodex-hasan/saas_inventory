@@ -14,8 +14,11 @@ class CheckTenantStatus
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
+        if (!$user) {
+            return $next($request);
+        }
 
-        if ($user && $user->currentTeam) {
+        if ($user->currentTeam) {
             // Super admins can always view any tenant
             if ($user->isSuperAdmin()) {
                 return $next($request);

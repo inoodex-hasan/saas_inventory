@@ -35,9 +35,19 @@ class SalesOrderService
             $subtotal = 0.00;
             $preparedItems = [];
 
+            $productIds = array_unique(array_filter(array_column($items, 'product_id')));
+            $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+
+            $variantIds = array_unique(array_filter(array_column($items, 'product_variant_id')));
+            $variants = !empty($variantIds) ? ProductVariant::whereIn('id', $variantIds)->get()->keyBy('id') : collect();
+
             foreach ($items as $item) {
-                $product = Product::findOrFail($item['product_id']);
-                $variant = isset($item['product_variant_id']) ? ProductVariant::find($item['product_variant_id']) : null;
+                $product = $products->get($item['product_id']);
+                if (!$product) {
+                    throw new \InvalidArgumentException("Product not found: {$item['product_id']}");
+                }
+                $variantId = $item['product_variant_id'] ?? null;
+                $variant = $variantId ? $variants->get($variantId) : null;
                 
                 // Snapshot cost price (COGS) at the moment of order creation
                 $unitCost = $variant?->cost_price ?? $product->cost_price;
@@ -223,7 +233,9 @@ class SalesOrderService
     {
         $prefix = 'SO-' . Carbon::now()->format('Ymd') . '-';
 
-        $lastOrder = SalesOrder::where('order_number', 'LIKE', $prefix . '%')
+        $lastOrder = SalesOrder::where('team_id', $teamId)
+            ->where('order_number', 'LIKE', $prefix . '%')
+            ->lockForUpdate()
             ->latest('id')
             ->first();
 

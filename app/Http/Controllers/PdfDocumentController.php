@@ -16,11 +16,11 @@ class PdfDocumentController extends Controller
     public function salesInvoice(SalesOrder $order)
     {
         $user = Auth::user();
-        if ($order->team_id !== $user->current_team_id) {
+        $order->load(['customer', 'warehouse', 'items.product', 'team']);
+
+        if (!$user->isSuperAdmin() && (!$order->team || !$user->belongsToTeam($order->team) || $order->team_id !== $user->current_team_id)) {
             abort(403, 'Unauthorized access to tenant document.');
         }
-
-        $order->load(['customer', 'warehouse', 'items.product', 'team']);
 
         $pdf = PDF::loadView('pdf.sales-invoice', [
             'order' => $order,
@@ -47,11 +47,11 @@ class PdfDocumentController extends Controller
     public function salesPackingSlip(SalesOrder $order)
     {
         $user = Auth::user();
-        if ($order->team_id !== $user->current_team_id) {
+        $order->load(['customer', 'warehouse', 'items.product', 'team']);
+
+        if (!$user->isSuperAdmin() && (!$order->team || !$user->belongsToTeam($order->team) || $order->team_id !== $user->current_team_id)) {
             abort(403, 'Unauthorized access to tenant document.');
         }
-
-        $order->load(['customer', 'warehouse', 'items.product', 'team']);
 
         $pdf = PDF::loadView('pdf.packing-slip', [
             'order' => $order,
@@ -78,11 +78,11 @@ class PdfDocumentController extends Controller
     public function purchaseOrder(PurchaseOrder $order)
     {
         $user = Auth::user();
-        if ($order->team_id !== $user->current_team_id) {
+        $order->load(['supplier', 'warehouse', 'items.product', 'team']);
+
+        if (!$user->isSuperAdmin() && (!$order->team || !$user->belongsToTeam($order->team) || $order->team_id !== $user->current_team_id)) {
             abort(403, 'Unauthorized access to tenant document.');
         }
-
-        $order->load(['supplier', 'warehouse', 'items.product', 'team']);
 
         $pdf = PDF::loadView('pdf.purchase-order', [
             'order' => $order,
