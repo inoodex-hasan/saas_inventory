@@ -4,9 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Team;
 use App\Models\User;
-use App\Livewire\SuperAdminDashboard;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Livewire\Livewire;
+use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 class SuperAdminControlTest extends TestCase
@@ -45,7 +44,11 @@ class SuperAdminControlTest extends TestCase
         $response = $this->actingAs($this->superAdmin)->get(route('admin.dashboard'));
 
         $response->assertStatus(200);
-        $response->assertSeeLivewire(SuperAdminDashboard::class);
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Admin/Dashboard')
+            ->has('metrics')
+            ->has('tenants')
+        );
     }
 
     public function test_super_admin_can_suspend_and_reactivate_client_tenant(): void
@@ -53,20 +56,16 @@ class SuperAdminControlTest extends TestCase
         $this->assertEquals('active', $this->clientTeam->status);
 
         // Suspend the tenant
-        Livewire::actingAs($this->superAdmin)
-            ->test(SuperAdminDashboard::class)
-            ->call('toggleStatus', $this->clientTeam->id)
-            ->assertSee("has been suspended");
+        $suspendResponse = $this->actingAs($this->superAdmin)->post(route('admin.tenants.toggle-status', $this->clientTeam->id));
+        $suspendResponse->assertSessionHas('success');
 
         $this->clientTeam->refresh();
         $this->assertEquals('suspended', $this->clientTeam->status);
         $this->assertTrue($this->clientTeam->isSuspended());
 
         // Reactivate the tenant
-        Livewire::actingAs($this->superAdmin)
-            ->test(SuperAdminDashboard::class)
-            ->call('toggleStatus', $this->clientTeam->id)
-            ->assertSee("has been reactivated");
+        $reactivateResponse = $this->actingAs($this->superAdmin)->post(route('admin.tenants.toggle-status', $this->clientTeam->id));
+        $reactivateResponse->assertSessionHas('success');
 
         $this->clientTeam->refresh();
         $this->assertEquals('active', $this->clientTeam->status);
@@ -104,10 +103,8 @@ class SuperAdminControlTest extends TestCase
 
     public function test_super_admin_can_switch_tenant_context(): void
     {
-        Livewire::actingAs($this->superAdmin)
-            ->test(SuperAdminDashboard::class)
-            ->call('switchToTenant', $this->clientTeam->id)
-            ->assertRedirect(route('dashboard'));
+        $response = $this->actingAs($this->superAdmin)->post(route('admin.tenants.switch', $this->clientTeam->id));
+        $response->assertRedirect(route('dashboard'));
 
         $this->superAdmin->refresh();
         $this->assertEquals($this->clientTeam->id, $this->superAdmin->current_team_id);
@@ -115,9 +112,13 @@ class SuperAdminControlTest extends TestCase
 
     public function test_super_admin_personal_team_is_excluded_from_client_list(): void
     {
-        Livewire::actingAs($this->superAdmin)
-            ->test(SuperAdminDashboard::class)
-            ->assertSee($this->clientTeam->name)
-            ->assertDontSee($this->superAdmin->personalTeam()->name);
+        $response = $this->actingAs($this->superAdmin)->get(route('admin.dashboard'));
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Admin/Dashboard')
+            ->where('tenants.data.0.name', $this->clientTeam->name)
+            ->where('tenants.total', 1)
+        );
     }
 }

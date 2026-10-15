@@ -91,6 +91,16 @@ class Team extends JetstreamTeam
         'deleted' => TeamDeleted::class,
     ];
 
+    public function subscription()
+    {
+        return $this->hasOne(TenantSubscription::class);
+    }
+
+    public function subscriptionPayments()
+    {
+        return $this->hasMany(SubscriptionPayment::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *

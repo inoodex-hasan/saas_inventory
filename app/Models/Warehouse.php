@@ -37,4 +37,18 @@ class Warehouse extends Model
     {
         return $this->hasMany(StockMovement::class);
     }
+
+    public function getShortCodeAttribute(): string
+    {
+        if (empty($this->code)) {
+            return '';
+        }
+
+        preg_match('/\d+/', $this->code, $matches);
+        if (!empty($matches[0])) {
+            return str_pad(substr($matches[0], -2), 2, '0', STR_PAD_LEFT);
+        }
+
+        return strtoupper(substr($this->code, 0, 2));
+    }
 }

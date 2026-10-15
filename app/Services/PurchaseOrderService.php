@@ -12,8 +12,11 @@ use Illuminate\Support\Facades\DB;
 class PurchaseOrderService
 {
     public function __construct(
-        protected StockService $stockService
-    ) {}
+        protected StockService $stockService,
+        protected ?SerialService $serialService = null
+    ) {
+        $this->serialService = $serialService ?? app(SerialService::class);
+    }
 
     /**
      * Create a new purchase order with line items.
@@ -41,12 +44,39 @@ class PurchaseOrderService
             $discount = $data['discount_amount'] ?? 0.00;
             $totalAmount = max(0, $subtotal + $tax + $shipping - $discount);
 
+            $paidAmount = (float) ($data['paid_amount'] ?? 0.00);
+            $dueAmount = max(0, $totalAmount - $paidAmount);
+            if (isset($data['payment_status'])) {
+                $paymentStatus = $data['payment_status'];
+            } else {
+                $paymentStatus = ($paidAmount >= $totalAmount && $totalAmount > 0)
+                    ? 'paid'
+                    : ($paidAmount > 0 ? 'partially_paid' : 'unpaid');
+            }
+
+            $supplierId = $data['supplier_id'] ?? null;
+            $newVendorData = $data['new_supplier'] ?? $data['new_vendor'] ?? null;
+            if (!$supplierId && !empty($newVendorData)) {
+                $supplier = \App\Models\Supplier::create([
+                    'team_id' => $teamId,
+                    'name' => $newVendorData['name'],
+                    'phone' => $newVendorData['phone'],
+                    'address' => $newVendorData['address'] ?? null,
+                    'contact_name' => $newVendorData['contact_name'] ?? null,
+                    'email' => $newVendorData['email'] ?? null,
+                    'tax_number' => $newVendorData['tax_number'] ?? null,
+                    'is_active' => true,
+                ]);
+                $supplierId = $supplier->id;
+            }
+
             $order = PurchaseOrder::create([
                 'team_id' => $teamId,
-                'supplier_id' => $data['supplier_id'],
+                'supplier_id' => $supplierId,
                 'warehouse_id' => $data['warehouse_id'],
                 'order_number' => $orderNumber,
                 'status' => $data['status'] ?? 'draft',
+                'payment_status' => $paymentStatus,
                 'order_date' => $data['order_date'] ?? now()->toDateString(),
                 'expected_date' => $data['expected_date'] ?? null,
                 'subtotal' => $subtotal,
@@ -54,6 +84,8 @@ class PurchaseOrderService
                 'shipping_cost' => $shipping,
                 'discount_amount' => $discount,
                 'total_amount' => $totalAmount,
+                'paid_amount' => $paidAmount,
+                'due_amount' => $dueAmount,
                 'notes' => $data['notes'] ?? null,
                 'created_by' => Auth::id(),
             ]);
@@ -65,6 +97,9 @@ class PurchaseOrderService
                     'purchase_order_id' => $order->id,
                     'product_id' => $item['product_id'],
                     'product_variant_id' => $item['product_variant_id'] ?? null,
+                    'batch_number' => $item['batch_number'] ?? null,
+                    'manufacture_date' => $item['manufacture_date'] ?? null,
+                    'expiry_date' => $item['expiry_date'] ?? null,
                     'quantity' => $item['quantity'],
                     'received_quantity' => 0,
                     'unit_cost' => $item['unit_cost'],
@@ -136,6 +171,16 @@ class PurchaseOrderService
                     referenceId: $order->id,
                     reason: "PO #{$order->order_number} Stock Receipt"
                 );
+
+                // Auto-update latest product purchase price on PO receive
+                if ($orderItem->product) {
+                    $orderItem->product->update(['cost_price' => (float) $orderItem->unit_cost]);
+                }
+
+                // Ingest serial numbers if provided
+                if (!empty($receipt['serials'])) {
+                    $this->serialService->ingestSerialsForPurchase($order, $orderItem, (array) $receipt['serials']);
+                }
             }
 
             // Update order status based on remaining quantities
@@ -158,6 +203,29 @@ class PurchaseOrderService
         }
 
         $order->update(['status' => 'cancelled']);
+    }
+
+    /**
+     * Record payment made to vendor/supplier against purchase order.
+     */
+    public function recordPayment(PurchaseOrder $order, float $amount): void
+    {
+        if ($amount <= 0) {
+            throw new InvalidStockOperationException("Payment amount must be greater than zero.");
+        }
+
+        DB::transaction(function () use ($order, $amount) {
+            $order->paid_amount += $amount;
+            $order->due_amount = max(0, (float) $order->total_amount - (float) $order->paid_amount);
+
+            if ($order->paid_amount >= $order->total_amount) {
+                $order->payment_status = 'paid';
+            } else {
+                $order->payment_status = 'partially_paid';
+            }
+
+            $order->save();
+        });
     }
 
     /**

@@ -19,6 +19,7 @@ class SalesOrderItem extends Model
         'quantity',
         'unit_price',
         'unit_cost',
+        'warranty_days',
         'subtotal',
     ];
 
@@ -26,6 +27,7 @@ class SalesOrderItem extends Model
         'quantity' => 'decimal:4',
         'unit_price' => 'decimal:2',
         'unit_cost' => 'decimal:2',
+        'warranty_days' => 'integer',
         'subtotal' => 'decimal:2',
     ];
 
@@ -42,6 +44,11 @@ class SalesOrderItem extends Model
     public function variant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
+    public function serials(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ProductSerial::class);
     }
 
     /**

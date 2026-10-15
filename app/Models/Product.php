@@ -27,6 +27,7 @@ class Product extends Model
         'selling_price',
         'reorder_level',
         'reorder_quantity',
+        'warranty_days',
         'has_variants',
         'is_serialized',
         'is_active',
@@ -37,6 +38,7 @@ class Product extends Model
         'unit_price' => 'decimal:2',
         'reorder_level' => 'integer',
         'reorder_quantity' => 'integer',
+        'warranty_days' => 'integer',
         'has_variants' => 'boolean',
         'is_serialized' => 'boolean',
         'is_active' => 'boolean',
@@ -79,6 +81,11 @@ class Product extends Model
     public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class);
+    }
+
+    public function serials(): HasMany
+    {
+        return $this->hasMany(ProductSerial::class);
     }
 
     /**

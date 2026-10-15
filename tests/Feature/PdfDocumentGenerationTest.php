@@ -147,6 +147,26 @@ class PdfDocumentGenerationTest extends TestCase
         $response->assertHeader('content-type', 'application/pdf');
     }
 
+    public function test_authenticated_tenant_can_stream_sales_pos_slip_pdf(): void
+    {
+        $this->actingAs($this->userA);
+
+        $response = $this->get(route('sales.pos', $this->salesOrderA->id));
+
+        $response->assertStatus(200);
+        $response->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_authenticated_tenant_can_stream_money_receipt_pdf(): void
+    {
+        $this->actingAs($this->userA);
+
+        $response = $this->get(route('sales.receipt', $this->salesOrderA->id));
+
+        $response->assertStatus(200);
+        $response->assertHeader('content-type', 'application/pdf');
+    }
+
     public function test_other_tenant_cannot_access_tenant_documents(): void
     {
         // Act as Tenant B trying to access Tenant A's document

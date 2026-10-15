@@ -16,6 +16,9 @@ class PurchaseOrderItem extends Model
         'purchase_order_id',
         'product_id',
         'product_variant_id',
+        'batch_number',
+        'manufacture_date',
+        'expiry_date',
         'quantity',
         'received_quantity',
         'unit_cost',
@@ -23,6 +26,8 @@ class PurchaseOrderItem extends Model
     ];
 
     protected $casts = [
+        'manufacture_date' => 'date',
+        'expiry_date' => 'date',
         'quantity' => 'decimal:4',
         'received_quantity' => 'decimal:4',
         'unit_cost' => 'decimal:2',
@@ -42,6 +47,11 @@ class PurchaseOrderItem extends Model
     public function variant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
+    public function serials(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ProductSerial::class);
     }
 
     /**

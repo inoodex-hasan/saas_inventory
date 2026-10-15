@@ -10,9 +10,8 @@ use App\Models\SalesOrderItem;
 use App\Models\Team;
 use App\Models\User;
 use App\Models\Warehouse;
-use App\Livewire\TenantSettingsManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Livewire\Livewire;
+use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 class TenantSettingsTest extends TestCase
@@ -35,30 +34,32 @@ class TenantSettingsTest extends TestCase
         $response = $this->actingAs($this->owner)->get(route('settings.company'));
 
         $response->assertStatus(200);
-        $response->assertSeeLivewire(TenantSettingsManager::class);
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Settings/Company')
+            ->has('settings')
+        );
     }
 
     public function test_owner_can_update_company_profile_and_branding(): void
     {
-        Livewire::actingAs($this->owner)
-            ->test(TenantSettingsManager::class)
-            ->set('name', 'Apex Logistics Corp')
-            ->set('legal_name', 'Apex Logistics Corporation Inc.')
-            ->set('email', 'billing@apexlogistics.com')
-            ->set('phone', '+1-800-555-APEX')
-            ->set('tax_id', 'US-EIN-99887766')
-            ->set('address_line1', '770 Innovation Way')
-            ->set('city', 'Austin')
-            ->set('state', 'Texas')
-            ->set('postal_code', '78701')
-            ->set('country', 'United States')
-            ->set('currency_symbol', '€')
-            ->set('currency_code', 'EUR')
-            ->set('invoice_prefix', 'APEX-INV-')
-            ->set('po_prefix', 'APEX-PO-')
-            ->call('save')
-            ->assertHasNoErrors()
-            ->assertSee('Company profile and branding settings updated successfully!');
+        $response = $this->actingAs($this->owner)->put(route('settings.company.update'), [
+            'name' => 'Apex Logistics Corp',
+            'legal_name' => 'Apex Logistics Corporation Inc.',
+            'email' => 'billing@apexlogistics.com',
+            'phone' => '+1-800-555-APEX',
+            'tax_id' => 'US-EIN-99887766',
+            'address_line1' => '770 Innovation Way',
+            'city' => 'Austin',
+            'state' => 'Texas',
+            'postal_code' => '78701',
+            'country' => 'United States',
+            'currency_symbol' => '€',
+            'currency_code' => 'EUR',
+            'invoice_prefix' => 'APEX-INV-',
+            'po_prefix' => 'APEX-PO-',
+        ]);
+
+        $response->assertSessionHasNoErrors();
 
         $this->team->refresh();
 
@@ -86,12 +87,16 @@ class TenantSettingsTest extends TestCase
             'legal_name' => 'Original Legal B',
         ]);
 
-        Livewire::actingAs($this->owner)
-            ->test(TenantSettingsManager::class)
-            ->set('name', 'Modified Team A')
-            ->set('currency_symbol', '¥')
-            ->set('legal_name', 'Modified Legal A')
-            ->call('save');
+        $response = $this->actingAs($this->owner)->put(route('settings.company.update'), [
+            'name' => 'Modified Team A',
+            'currency_symbol' => '¥',
+            'currency_code' => 'JPY',
+            'invoice_prefix' => 'INV-',
+            'po_prefix' => 'PO-',
+            'legal_name' => 'Modified Legal A',
+            'email' => $this->owner->email,
+        ]);
+        $response->assertSessionHasNoErrors();
 
         $otherTeam->refresh();
         $this->assertEquals('Original Team B', $otherTeam->name);

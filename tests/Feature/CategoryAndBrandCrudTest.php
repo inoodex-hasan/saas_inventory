@@ -2,14 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Livewire\ProductManager;
 use App\Models\Brand;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Livewire\Livewire;
 use Tests\TestCase;
 
 class CategoryAndBrandCrudTest extends TestCase
@@ -30,13 +28,12 @@ class CategoryAndBrandCrudTest extends TestCase
 
     public function test_can_create_and_edit_category(): void
     {
-        Livewire::test(ProductManager::class)
-            ->call('openCatBrandModal', 'categories')
-            ->set('category_name', 'Office Supplies')
-            ->set('category_description', 'Pens, paper, and staplers')
-            ->call('saveCategory')
-            ->assertHasNoErrors()
-            ->assertSee('Office Supplies');
+        $response = $this->post(route('products.categories.store'), [
+            'name' => 'Office Supplies',
+            'description' => 'Pens, paper, and staplers',
+        ]);
+
+        $response->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('product_categories', [
             'team_id' => $this->team->id,
@@ -47,13 +44,12 @@ class CategoryAndBrandCrudTest extends TestCase
 
         $category = ProductCategory::where('name', 'Office Supplies')->first();
 
-        Livewire::test(ProductManager::class)
-            ->call('openCatBrandModal', 'categories')
-            ->call('editCategory', $category->id)
-            ->assertSet('category_name', 'Office Supplies')
-            ->set('category_name', 'Office & Desk Supplies')
-            ->call('saveCategory')
-            ->assertHasNoErrors();
+        $updateResponse = $this->put(route('products.categories.update', $category->id), [
+            'name' => 'Office & Desk Supplies',
+            'description' => 'Updated description',
+        ]);
+
+        $updateResponse->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('product_categories', [
             'id' => $category->id,
@@ -81,10 +77,8 @@ class CategoryAndBrandCrudTest extends TestCase
             'reorder_quantity' => 20,
         ]);
 
-        Livewire::test(ProductManager::class)
-            ->call('openCatBrandModal', 'categories')
-            ->call('deleteCategory', $category->id)
-            ->assertSee('Cannot delete category');
+        $deleteResponse = $this->delete(route('products.categories.destroy', $category->id));
+        $deleteResponse->assertSessionHas('error');
 
         $this->assertDatabaseHas('product_categories', [
             'id' => $category->id,
@@ -94,9 +88,8 @@ class CategoryAndBrandCrudTest extends TestCase
         // Remove product and delete should succeed
         $product->delete();
 
-        Livewire::test(ProductManager::class)
-            ->call('openCatBrandModal', 'categories')
-            ->call('deleteCategory', $category->id);
+        $deleteResponseSuccess = $this->delete(route('products.categories.destroy', $category->id));
+        $deleteResponseSuccess->assertSessionHas('success');
 
         $this->assertSoftDeleted('product_categories', [
             'id' => $category->id,
@@ -105,13 +98,12 @@ class CategoryAndBrandCrudTest extends TestCase
 
     public function test_can_create_and_edit_brand(): void
     {
-        Livewire::test(ProductManager::class)
-            ->call('openCatBrandModal', 'brands')
-            ->set('brand_name', 'Logitech')
-            ->set('brand_description', 'Keyboards and mice')
-            ->call('saveBrand')
-            ->assertHasNoErrors()
-            ->assertSee('Logitech');
+        $response = $this->post(route('products.brands.store'), [
+            'name' => 'Logitech',
+            'description' => 'Keyboards and mice',
+        ]);
+
+        $response->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('brands', [
             'team_id' => $this->team->id,
@@ -122,13 +114,12 @@ class CategoryAndBrandCrudTest extends TestCase
 
         $brand = Brand::where('name', 'Logitech')->first();
 
-        Livewire::test(ProductManager::class)
-            ->call('openCatBrandModal', 'brands')
-            ->call('editBrand', $brand->id)
-            ->assertSet('brand_name', 'Logitech')
-            ->set('brand_name', 'Logitech G')
-            ->call('saveBrand')
-            ->assertHasNoErrors();
+        $updateResponse = $this->put(route('products.brands.update', $brand->id), [
+            'name' => 'Logitech G',
+            'description' => 'Gaming gear',
+        ]);
+
+        $updateResponse->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('brands', [
             'id' => $brand->id,
@@ -156,10 +147,8 @@ class CategoryAndBrandCrudTest extends TestCase
             'reorder_quantity' => 10,
         ]);
 
-        Livewire::test(ProductManager::class)
-            ->call('openCatBrandModal', 'brands')
-            ->call('deleteBrand', $brand->id)
-            ->assertSee('Cannot delete brand');
+        $deleteResponse = $this->delete(route('products.brands.destroy', $brand->id));
+        $deleteResponse->assertSessionHas('error');
 
         $this->assertDatabaseHas('brands', [
             'id' => $brand->id,
@@ -168,39 +157,42 @@ class CategoryAndBrandCrudTest extends TestCase
 
         $product->delete();
 
-        Livewire::test(ProductManager::class)
-            ->call('openCatBrandModal', 'brands')
-            ->call('deleteBrand', $brand->id);
+        $deleteSuccess = $this->delete(route('products.brands.destroy', $brand->id));
+        $deleteSuccess->assertSessionHas('success');
 
         $this->assertSoftDeleted('brands', [
             'id' => $brand->id,
         ]);
     }
 
-    public function test_quick_add_category_and_brand_directly_in_product_modal(): void
+    public function test_quick_add_category_and_brand_directly_creates_entities(): void
     {
-        Livewire::test(ProductManager::class)
-            ->call('create')
-            ->call('toggleQuickAddCategory')
-            ->set('quick_category_name', 'Quick Gaming Gear')
-            ->call('quickAddCategory')
-            ->assertHasNoErrors()
-            ->assertSet('showQuickAddCategory', false)
-            ->call('toggleQuickAddBrand')
-            ->set('quick_brand_name', 'Razer')
-            ->call('quickAddBrand')
-            ->assertHasNoErrors()
-            ->assertSet('showQuickAddBrand', false)
-            ->set('name', 'Razer DeathAdder')
-            ->set('cost_price', 30)
-            ->set('selling_price', 69.99)
-            ->set('reorder_level', 5)
-            ->set('reorder_quantity', 20)
-            ->call('save')
-            ->assertHasNoErrors();
+        $catResponse = $this->post(route('products.categories.store'), [
+            'name' => 'Quick Gaming Gear',
+        ]);
+        $catResponse->assertSessionHasNoErrors();
+
+        $brandResponse = $this->post(route('products.brands.store'), [
+            'name' => 'Razer',
+        ]);
+        $brandResponse->assertSessionHasNoErrors();
 
         $category = ProductCategory::where('name', 'Quick Gaming Gear')->firstOrFail();
         $brand = Brand::where('name', 'Razer')->firstOrFail();
+
+        $productResponse = $this->post(route('products.store'), [
+            'name' => 'Razer DeathAdder',
+            'sku' => 'RZR-DA-01',
+            'unit' => 'pcs',
+            'cost_price' => 30,
+            'selling_price' => 69.99,
+            'reorder_level' => 5,
+            'reorder_quantity' => 20,
+            'category_id' => $category->id,
+            'brand_id' => $brand->id,
+        ]);
+
+        $productResponse->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('products', [
             'team_id' => $this->team->id,
@@ -215,22 +207,23 @@ class CategoryAndBrandCrudTest extends TestCase
         $otherUser = User::factory()->withPersonalTeam()->create();
         $otherTeam = $otherUser->currentTeam;
 
-        ProductCategory::create([
+        $otherCat = ProductCategory::create([
             'team_id' => $otherTeam->id,
             'name' => 'Secret Other Category',
             'slug' => 'secret-other-category',
         ]);
 
-        Brand::create([
+        $otherBrand = Brand::create([
             'team_id' => $otherTeam->id,
             'name' => 'Secret Other Brand',
             'slug' => 'secret-other-brand',
         ]);
 
-        Livewire::test(ProductManager::class)
-            ->call('openCatBrandModal', 'categories')
-            ->assertDontSee('Secret Other Category')
-            ->call('switchCatBrandTab', 'brands')
-            ->assertDontSee('Secret Other Brand');
+        // Attempting to delete or update other tenant's category/brand returns 404 due to tenant scoping
+        $catResponse = $this->delete(route('products.categories.destroy', $otherCat->id));
+        $catResponse->assertStatus(404);
+
+        $brandResponse = $this->delete(route('products.brands.destroy', $otherBrand->id));
+        $brandResponse->assertStatus(404);
     }
 }

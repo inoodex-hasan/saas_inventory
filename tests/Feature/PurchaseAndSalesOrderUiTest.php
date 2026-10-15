@@ -2,8 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Livewire\PurchaseOrderManager;
-use App\Livewire\SalesOrderManager;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
@@ -14,7 +12,6 @@ use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\StockService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Livewire\Livewire;
 use Tests\TestCase;
 
 class PurchaseAndSalesOrderUiTest extends TestCase
@@ -58,49 +55,54 @@ class PurchaseAndSalesOrderUiTest extends TestCase
             'name' => 'Apex Parts Global',
             'contact_name' => 'John Doe',
             'email' => 'john@apexparts.com',
+            'phone' => '01711223344',
+            'address' => 'Silicon Valley',
         ]);
 
         $this->customer = Customer::create([
             'team_id' => $this->team->id,
             'name' => 'Tech Solutions LLC',
             'email' => 'orders@techsolutions.com',
+            'phone' => '01811223344',
+            'address' => 'Downtown',
         ]);
     }
 
-    public function test_purchase_order_livewire_can_create_and_receive_goods(): void
+    public function test_purchase_order_can_create_and_receive_goods(): void
     {
-        // 1. Create Purchase Order via Livewire
-        $test = Livewire::test(PurchaseOrderManager::class)
-            ->set('supplier_id', $this->supplier->id)
-            ->set('warehouse_id', $this->warehouse->id)
-            ->set('order_date', now()->format('Y-m-d'))
-            ->set('items', [
+        // 1. Create Purchase Order via Controller
+        $response = $this->post(route('purchases.store'), [
+            'vendor_mode' => 'existing',
+            'supplier_id' => $this->supplier->id,
+            'warehouse_id' => $this->warehouse->id,
+            'order_date' => now()->format('Y-m-d'),
+            'items' => [
                 [
                     'product_id' => $this->product->id,
                     'quantity_ordered' => 20,
                     'unit_cost' => 50.00,
                 ],
-            ])
-            ->call('savePurchaseOrder')
-            ->assertHasNoErrors();
+            ],
+        ]);
+        $response->assertSessionHasNoErrors();
 
         $po = PurchaseOrder::where('supplier_id', $this->supplier->id)->first();
         $this->assertNotNull($po);
-        $this->assertEquals('draft', $po->status);
+        $this->assertEquals('ordered', $po->status);
         $this->assertEquals(1000.00, (float) $po->total_amount);
 
-        // 2. Mark as Ordered
-        $test->call('markAsOrdered', $po->id);
-        $po->refresh();
-        $this->assertEquals('ordered', $po->status);
-
-        // 3. Receive Goods via Livewire
+        // 2. Receive Goods via Controller
         $firstItem = $po->items->first();
-        $test->call('openReceiveModal', $po->id)
-            ->set("receivingItems.{$firstItem->id}.quantity_to_receive", 20)
-            ->set("receivingItems.{$firstItem->id}.batch_number", 'BATCH-001')
-            ->call('processReceive')
-            ->assertHasNoErrors();
+        $receiveResponse = $this->post(route('purchases.receive', $po->id), [
+            'items' => [
+                [
+                    'item_id' => $firstItem->id,
+                    'quantity' => 20,
+                    'batch_number' => 'BATCH-001',
+                ],
+            ],
+        ]);
+        $receiveResponse->assertSessionHasNoErrors();
 
         $po->refresh();
         $this->assertEquals('received', $po->status);
@@ -113,34 +115,34 @@ class PurchaseAndSalesOrderUiTest extends TestCase
         ]);
     }
 
-    public function test_sales_order_livewire_can_create_confirm_dispatch_and_record_payment(): void
+    public function test_sales_order_can_create_confirm_dispatch_and_record_payment(): void
     {
         // Add initial stock of 30 units
         $stockService = app(StockService::class);
         $stockService->stockIn($this->warehouse->id, $this->product->id, 30, 50.00);
 
-        // 1. Create Sales Order via Livewire
-        $test = Livewire::test(SalesOrderManager::class)
-            ->set('customer_id', $this->customer->id)
-            ->set('warehouse_id', $this->warehouse->id)
-            ->set('order_date', now()->format('Y-m-d'))
-            ->set('items', [
+        // 1. Create Sales Order via Controller
+        $response = $this->post(route('sales.store'), [
+            'customer_mode' => 'existing',
+            'customer_id' => $this->customer->id,
+            'warehouse_id' => $this->warehouse->id,
+            'order_date' => now()->format('Y-m-d'),
+            'items' => [
                 [
                     'product_id' => $this->product->id,
                     'quantity' => 10,
                     'unit_price' => 120.00,
                 ],
-            ])
-            ->call('saveSalesOrder')
-            ->assertHasNoErrors();
+            ],
+        ]);
+        $response->assertSessionHasNoErrors();
 
         $order = SalesOrder::where('customer_id', $this->customer->id)->first();
         $this->assertNotNull($order);
-        $this->assertEquals('draft', $order->status);
         $this->assertEquals(1200.00, (float) $order->total_amount);
 
         // 2. Confirm Order (reserves stock)
-        $test->call('confirmOrder', $order->id);
+        $this->post(route('sales.confirm', $order->id))->assertSessionHasNoErrors();
         $order->refresh();
         $this->assertEquals('confirmed', $order->status);
 
@@ -152,7 +154,7 @@ class PurchaseAndSalesOrderUiTest extends TestCase
         ]);
 
         // 3. Dispatch Order (deducts stock)
-        $test->call('dispatchOrder', $order->id);
+        $this->post(route('sales.dispatch', $order->id))->assertSessionHasNoErrors();
         $order->refresh();
         $this->assertEquals('dispatched', $order->status);
 
@@ -164,10 +166,9 @@ class PurchaseAndSalesOrderUiTest extends TestCase
         ]);
 
         // 4. Record Payment
-        $test->call('openPaymentModal', $order->id)
-            ->set('paymentAmount', 1200.00)
-            ->call('recordPayment')
-            ->assertHasNoErrors();
+        $this->post(route('sales.pay', $order->id), [
+            'amount' => 1200.00,
+        ])->assertSessionHasNoErrors();
 
         $order->refresh();
         $this->assertEquals('paid', $order->payment_status);

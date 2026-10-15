@@ -5,3 +5,38 @@
 [x-cloak] {
     display: none;
 }
+
+/* Custom smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Modern sleek custom scrollbar for dark sidebars and data tables */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.25);
+    border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.45);
+}
+
+/* Subtle selection highlight */
+::selection {
+    background-color: #e0e7ff;
+    color: #3730a3;
+}
+
+/* Ensure dropdown arrow never overlaps text in any select element */
+select {
+    padding-right: 2.25rem !important;
+    background-position: right 0.65rem center !important;
+    background-repeat: no-repeat !important;
+}
+

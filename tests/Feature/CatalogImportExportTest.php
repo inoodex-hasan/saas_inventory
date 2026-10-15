@@ -8,12 +8,10 @@ use App\Models\StockLevel;
 use App\Models\Team;
 use App\Models\User;
 use App\Models\Warehouse;
-use App\Livewire\ProductManager;
 use App\Services\CatalogImportExportService;
 use App\Services\StockService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Livewire\Livewire;
 use Tests\TestCase;
 
 class CatalogImportExportTest extends TestCase

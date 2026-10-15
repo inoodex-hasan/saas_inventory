@@ -1,0 +1,116 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Employee;
+use App\Models\Payroll;
+use App\Services\HrService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
+
+class PayrollController extends Controller
+{
+    public function index(Request $request)
+    {
+        $teamId = Auth::user()->current_team_id;
+
+        $search = $request->input('search', '');
+        $status = $request->input('status', '');
+        $monthYear = $request->input('month_year', now()->format('Y-m'));
+
+        $query = Payroll::where('team_id', $teamId)
+            ->with(['employee', 'creator'])
+            ->when($search, function ($q, $search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('payroll_number', 'like', "%{$search}%")
+                        ->orWhereHas('employee', fn ($e) => $e->where('name', 'like', "%{$search}%")->orWhere('employee_code', 'like', "%{$search}%"));
+                });
+            })
+            ->when($status !== '', fn ($q) => $q->where('status', $status))
+            ->when($monthYear !== '', fn ($q) => $q->where('month_year', $monthYear));
+
+        $payrolls = $query->latest('id')->paginate(15)->withQueryString();
+
+        $metrics = [
+            'total_payrolls' => Payroll::where('team_id', $teamId)->where('month_year', $monthYear)->count(),
+            'total_disbursed' => (float) Payroll::where('team_id', $teamId)->where('month_year', $monthYear)->where('status', 'paid')->sum('net_salary'),
+            'total_pending' => (float) Payroll::where('team_id', $teamId)->where('month_year', $monthYear)->whereIn('status', ['draft', 'approved'])->sum('net_salary'),
+        ];
+
+        $employees = Employee::where('team_id', $teamId)->where('status', 'active')->orderBy('name')->get(['id', 'name', 'employee_code', 'basic_salary', 'designation']);
+
+        return Inertia::render('HR/Payroll/Index', [
+            'page_title' => 'Monthly Staff Payroll & Salary Slips',
+            'payrolls' => $payrolls,
+            'metrics' => $metrics,
+            'employees' => $employees,
+            'filters' => [
+                'search' => $search,
+                'status' => $status,
+                'month_year' => $monthYear,
+            ],
+        ]);
+    }
+
+    public function generate(Request $request, HrService $service)
+    {
+        $validated = $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'month_year' => 'required|date_format:Y-m',
+            'other_allowances' => 'nullable|numeric|min:0',
+            'deductions_total' => 'nullable|numeric|min:0',
+            'include_approved_tada' => 'nullable|boolean',
+        ]);
+
+        $employee = Employee::findOrFail($validated['employee_id']);
+        $teamId = Auth::user()->current_team_id;
+        abort_if($employee->team_id !== $teamId, 403);
+
+        try {
+            $payroll = $service->generatePayroll(
+                $employee,
+                $validated['month_year'],
+                (float) ($validated['other_allowances'] ?? 0),
+                (float) ($validated['deductions_total'] ?? 0),
+                (bool) ($validated['include_approved_tada'] ?? true)
+            );
+        } catch (\InvalidArgumentException $e) {
+            return back()->withErrors(['employee_id' => $e->getMessage()]);
+        }
+
+        return back()->with('success', "Payroll statement {$payroll->payroll_number} for {$employee->name} generated.");
+    }
+
+    public function markPaid(Request $request, Payroll $payroll, HrService $service)
+    {
+        $teamId = Auth::user()->current_team_id;
+        abort_if($payroll->team_id !== $teamId, 403);
+
+        $validated = $request->validate([
+            'payment_method' => 'required|string|max:50',
+            'payment_reference' => 'nullable|string|max:100',
+            'payment_date' => 'nullable|date',
+        ]);
+
+        $service->markPayrollPaid(
+            $payroll,
+            $validated['payment_method'],
+            $validated['payment_reference'] ?? null,
+            $validated['payment_date'] ?? null
+        );
+
+        return back()->with('success', "Salary for {$payroll->employee->name} marked as disbursed & paid.");
+    }
+
+    public function destroy(Payroll $payroll)
+    {
+        $teamId = Auth::user()->current_team_id;
+        abort_if($payroll->team_id !== $teamId, 403);
+
+        $num = $payroll->payroll_number;
+        $payroll->delete();
+
+        return back()->with('success', "Payroll statement {$num} deleted.");
+    }
+}

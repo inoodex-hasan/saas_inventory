@@ -14,8 +14,11 @@ use Illuminate\Support\Facades\DB;
 class SalesOrderService
 {
     public function __construct(
-        protected StockService $stockService
-    ) {}
+        protected StockService $stockService,
+        protected ?SerialService $serialService = null
+    ) {
+        $this->serialService = $serialService ?? app(SerialService::class);
+    }
 
     /**
      * Create a new sales order with line items.
@@ -41,6 +44,19 @@ class SalesOrderService
             $variantIds = array_unique(array_filter(array_column($items, 'product_variant_id')));
             $variants = !empty($variantIds) ? ProductVariant::whereIn('id', $variantIds)->get()->keyBy('id') : collect();
 
+            $customerId = $data['customer_id'] ?? null;
+            if (!$customerId && !empty($data['new_customer'])) {
+                $customer = \App\Models\Customer::create([
+                    'team_id' => $teamId,
+                    'name' => $data['new_customer']['name'],
+                    'phone' => $data['new_customer']['phone'],
+                    'address' => $data['new_customer']['address'] ?? null,
+                    'email' => $data['new_customer']['email'] ?? null,
+                    'is_active' => true,
+                ]);
+                $customerId = $customer->id;
+            }
+
             foreach ($items as $item) {
                 $product = $products->get($item['product_id']);
                 if (!$product) {
@@ -52,6 +68,7 @@ class SalesOrderService
                 // Snapshot cost price (COGS) at the moment of order creation
                 $unitCost = $variant?->cost_price ?? $product->cost_price;
                 $unitPrice = $item['unit_price'] ?? ($variant?->unit_price ?? $product->unit_price);
+                $warrantyDays = isset($item['warranty_days']) ? (int) $item['warranty_days'] : (int) ($product->warranty_days ?? 0);
                 $itemSubtotal = $item['quantity'] * $unitPrice;
 
                 $subtotal += $itemSubtotal;
@@ -62,40 +79,57 @@ class SalesOrderService
                     'quantity' => $item['quantity'],
                     'unit_price' => $unitPrice,
                     'unit_cost' => $unitCost,
+                    'warranty_days' => $warrantyDays,
                     'subtotal' => $itemSubtotal,
                 ];
             }
 
-            $tax = $data['tax_amount'] ?? 0.00;
-            $shipping = $data['shipping_cost'] ?? 0.00;
-            $discount = $data['discount_amount'] ?? 0.00;
+            $tax = (float) ($data['tax_amount'] ?? 0.00);
+            $shipping = (float) ($data['shipping_cost'] ?? 0.00);
+            $discount = (float) ($data['discount_amount'] ?? 0.00);
             $totalAmount = max(0, $subtotal + $tax + $shipping - $discount);
+            $paidAmount = (float) ($data['paid_amount'] ?? 0.00);
+            $dueAmount = max(0, $totalAmount - $paidAmount);
+
+            if (isset($data['payment_status'])) {
+                $paymentStatus = $data['payment_status'];
+            } else {
+                $paymentStatus = ($paidAmount >= $totalAmount && $totalAmount > 0) 
+                    ? 'paid' 
+                    : ($paidAmount > 0 ? 'partially_paid' : 'unpaid');
+            }
 
             $initialStatus = 'draft';
 
             $order = SalesOrder::create([
                 'team_id' => $teamId,
-                'customer_id' => $data['customer_id'],
+                'customer_id' => $customerId,
                 'warehouse_id' => $data['warehouse_id'],
                 'order_number' => $orderNumber,
                 'status' => $initialStatus,
-                'payment_status' => $data['payment_status'] ?? 'unpaid',
+                'payment_status' => $paymentStatus,
                 'order_date' => $data['order_date'] ?? now()->toDateString(),
                 'subtotal' => $subtotal,
                 'tax_amount' => $tax,
                 'shipping_cost' => $shipping,
                 'discount_amount' => $discount,
                 'total_amount' => $totalAmount,
-                'paid_amount' => $data['paid_amount'] ?? 0.00,
+                'paid_amount' => $paidAmount,
+                'due_amount' => $dueAmount,
                 'notes' => $data['notes'] ?? null,
                 'created_by' => Auth::id(),
             ]);
 
-            foreach ($preparedItems as $preparedItem) {
-                SalesOrderItem::create(array_merge($preparedItem, [
+            foreach ($preparedItems as $idx => $preparedItem) {
+                $orderItem = SalesOrderItem::create(array_merge($preparedItem, [
                     'team_id' => $teamId,
                     'sales_order_id' => $order->id,
                 ]));
+
+                $serials = $items[$idx]['serials'] ?? [];
+                if (!empty($serials)) {
+                    $this->serialService->allocateSerialsForSale($order, $orderItem, (array) $serials);
+                }
             }
 
             // Auto-confirm if requested
@@ -103,7 +137,7 @@ class SalesOrderService
                 $this->confirmOrder($order);
             }
 
-            return $order->load('items');
+            return $order->load(['items', 'serials']);
         });
     }
 
@@ -200,6 +234,8 @@ class SalesOrderService
                 }
             }
 
+            $this->serialService->releaseSerialsForCancelledSale($order);
+
             $order->update(['status' => 'cancelled']);
         });
     }
@@ -215,6 +251,7 @@ class SalesOrderService
 
         DB::transaction(function () use ($order, $amount) {
             $order->paid_amount += $amount;
+            $order->due_amount = max(0, (float) $order->total_amount - (float) $order->paid_amount);
 
             if ($order->paid_amount >= $order->total_amount) {
                 $order->payment_status = 'paid';

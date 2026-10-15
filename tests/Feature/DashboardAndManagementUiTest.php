@@ -2,8 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Livewire\ProductManager;
-use App\Livewire\WarehouseManager;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Team;
@@ -11,7 +9,7 @@ use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\StockService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Livewire\Livewire;
+use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 class DashboardAndManagementUiTest extends TestCase
@@ -55,22 +53,25 @@ class DashboardAndManagementUiTest extends TestCase
         $response = $this->get(route('dashboard'));
 
         $response->assertStatus(200);
-        $response->assertSee('Operational Dashboard');
-        $response->assertSee('Inventory Value');
-        $response->assertSee('Main Hub');
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Dashboard')
+            ->has('warehouseStockBreakdown')
+            ->where('warehouseStockBreakdown.0.name', 'Main Hub')
+        );
     }
 
-    public function test_warehouse_manager_livewire_can_create_and_manage_warehouses(): void
+    public function test_can_create_and_manage_warehouses(): void
     {
-        Livewire::test(WarehouseManager::class)
-            ->set('code', 'ORD-02')
-            ->set('name', 'O\'Hare Distribution Hub')
-            ->set('city', 'Chicago')
-            ->set('state', 'IL')
-            ->set('is_default', false)
-            ->call('save')
-            ->assertHasNoErrors()
-            ->assertSee('O\'Hare Distribution Hub');
+        $response = $this->post(route('warehouses.store'), [
+            'code' => 'ORD-02',
+            'name' => 'O\'Hare Distribution Hub',
+            'city' => 'Chicago',
+            'state' => 'IL',
+            'is_default' => false,
+            'is_active' => true,
+        ]);
+
+        $response->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('warehouses', [
             'team_id' => $this->team->id,
@@ -79,7 +80,7 @@ class DashboardAndManagementUiTest extends TestCase
         ]);
     }
 
-    public function test_product_manager_livewire_can_create_and_generate_sku(): void
+    public function test_can_create_product_via_controller(): void
     {
         $category = ProductCategory::create([
             'team_id' => $this->team->id,
@@ -87,17 +88,19 @@ class DashboardAndManagementUiTest extends TestCase
             'code' => 'ELEC',
         ]);
 
-        Livewire::test(ProductManager::class)
-            ->set('name', 'Mechanical Keyboard')
-            ->call('generateSku')
-            ->set('category_id', $category->id)
-            ->set('cost_price', 45.00)
-            ->set('selling_price', 89.99)
-            ->set('reorder_level', 10)
-            ->set('reorder_quantity', 50)
-            ->call('save')
-            ->assertHasNoErrors()
-            ->assertSee('Mechanical Keyboard');
+        $response = $this->post(route('products.store'), [
+            'name' => 'Mechanical Keyboard',
+            'sku' => 'ELEC-KEY-001',
+            'category_id' => $category->id,
+            'cost_price' => 45.00,
+            'selling_price' => 89.99,
+            'unit' => 'pcs',
+            'reorder_level' => 10,
+            'reorder_quantity' => 50,
+            'is_active' => true,
+        ]);
+
+        $response->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('products', [
             'team_id' => $this->team->id,

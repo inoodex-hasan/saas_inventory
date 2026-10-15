@@ -27,6 +27,7 @@ class SalesOrder extends Model
         'discount_amount',
         'total_amount',
         'paid_amount',
+        'due_amount',
         'notes',
         'created_by',
     ];
@@ -39,6 +40,7 @@ class SalesOrder extends Model
         'discount_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
+        'due_amount' => 'decimal:2',
     ];
 
     public function customer(): BelongsTo
@@ -59,6 +61,11 @@ class SalesOrder extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function serials(): HasMany
+    {
+        return $this->hasMany(ProductSerial::class);
     }
 
     /**

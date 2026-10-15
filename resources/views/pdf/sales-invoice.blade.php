@@ -215,9 +215,9 @@
                         <div style="font-weight: bold; color: #0f172a;">{{ $item->product->name ?? 'Product' }}</div>
                         <div style="font-family: monospace; font-size: 8pt; color: #6366f1;">SKU: {{ $item->product->sku ?? '—' }}</div>
                     </td>
-                    <td style="text-align: right; color: #475569;">{{ $team->currency_symbol ?? '$' }}{{ number_format($item->unit_price, 2) }}</td>
+                    <td style="text-align: right; color: #475569;">{{ $team->currency_symbol ?? '৳' }}{{ number_format($item->unit_price, 2) }}</td>
                     <td style="text-align: center; font-weight: bold;">{{ number_format($item->quantity) }}</td>
-                    <td style="text-align: right; font-weight: bold; color: #0f172a;">{{ $team->currency_symbol ?? '$' }}{{ number_format($item->subtotal, 2) }}</td>
+                    <td style="text-align: right; font-weight: bold; color: #0f172a;">{{ $team->currency_symbol ?? '৳' }}{{ number_format($item->subtotal, 2) }}</td>
                 </tr>
             @endforeach
         </tbody>
@@ -241,38 +241,38 @@
                 <table class="total-table" style="width: 100%; border: 1px solid #e2e8f0; border-radius: 6px;">
                     <tr>
                         <td class="meta-label">Subtotal:</td>
-                        <td style="text-align: right; font-weight: 600;">{{ $team->currency_symbol ?? '$' }}{{ number_format($order->subtotal, 2) }}</td>
+                        <td style="text-align: right; font-weight: 600;">{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->subtotal, 2) }}</td>
                     </tr>
                     @if($order->tax_amount > 0)
                         <tr>
                             <td class="meta-label">Tax / VAT:</td>
-                            <td style="text-align: right; font-weight: 600;">{{ $team->currency_symbol ?? '$' }}{{ number_format($order->tax_amount, 2) }}</td>
+                            <td style="text-align: right; font-weight: 600;">{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->tax_amount, 2) }}</td>
                         </tr>
                     @endif
                     @if($order->shipping_cost > 0)
                         <tr>
                             <td class="meta-label">Shipping:</td>
-                            <td style="text-align: right; font-weight: 600;">{{ $team->currency_symbol ?? '$' }}{{ number_format($order->shipping_cost, 2) }}</td>
+                            <td style="text-align: right; font-weight: 600;">{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->shipping_cost, 2) }}</td>
                         </tr>
                     @endif
                     @if($order->discount_amount > 0)
                         <tr>
                             <td class="meta-label">Discount:</td>
-                            <td style="text-align: right; color: #dc2626;">-{{ $team->currency_symbol ?? '$' }}{{ number_format($order->discount_amount, 2) }}</td>
+                            <td style="text-align: right; color: #dc2626;">-{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->discount_amount, 2) }}</td>
                         </tr>
                     @endif
                     <tr class="grand-total">
                         <td>Total Due:</td>
-                        <td style="text-align: right;">{{ $team->currency_symbol ?? '$' }}{{ number_format($order->total_amount, 2) }}</td>
+                        <td style="text-align: right;">{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->total_amount, 2) }}</td>
                     </tr>
                     <tr>
                         <td class="meta-label">Amount Paid:</td>
-                        <td style="text-align: right; color: #16a34a; font-weight: bold;">{{ $team->currency_symbol ?? '$' }}{{ number_format($order->paid_amount, 2) }}</td>
+                        <td style="text-align: right; color: #16a34a; font-weight: bold;">{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->paid_amount, 2) }}</td>
                     </tr>
                     <tr>
                         <td class="meta-label">Balance Remaining:</td>
                         <td style="text-align: right; font-weight: bold; color: {{ ($order->total_amount - $order->paid_amount) > 0 ? '#dc2626' : '#16a34a' }};">
-                            {{ $team->currency_symbol ?? '$' }}{{ number_format(max(0, $order->total_amount - $order->paid_amount), 2) }}
+                            {{ $team->currency_symbol ?? '৳' }}{{ number_format(max(0, $order->total_amount - $order->paid_amount), 2) }}
                         </td>
                     </tr>
                 </table>

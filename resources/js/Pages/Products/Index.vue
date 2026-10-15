@@ -1,0 +1,640 @@
+<script setup>
+import { ref } from 'vue';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import axios from 'axios';
+import AppLayout from '@/Layouts/AppLayout.vue';
+import Modal from '@/Components/Modal.vue';
+import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
+import StatusBadge from '@/Components/StatusBadge.vue';
+
+const props = defineProps({
+    products: Object,
+    categories: Array,
+    brands: Array,
+    warehouses: Array,
+    filters: Object,
+});
+
+const search = ref(props.filters?.search || '');
+const categoryFilter = ref(props.filters?.category_id || '');
+const brandFilter = ref(props.filters?.brand_id || '');
+const stockFilter = ref(props.filters?.stock || 'all');
+
+// Modals
+const isInspectModalOpen = ref(false);
+const inspectedProduct = ref(null);
+const inspectedLevels = ref([]);
+const isInspectLoading = ref(false);
+
+const isTaxonomyModalOpen = ref(false);
+const taxonomyTab = ref('categories');
+
+const isImportModalOpen = ref(false);
+
+// Forms for categories / brands
+const categoryForm = useForm({
+    name: '',
+    parent_id: '',
+    description: '',
+});
+
+const brandForm = useForm({
+    name: '',
+    description: '',
+});
+
+const importForm = useForm({
+    file: null,
+    warehouse_id: '',
+});
+
+function applyFilters() {
+    router.get(route('products.index'), {
+        search: search.value,
+        category_id: categoryFilter.value,
+        brand_id: brandFilter.value,
+        stock: stockFilter.value,
+    }, {
+        preserveState: true,
+        replace: true,
+    });
+}
+
+function resetFilters() {
+    search.value = '';
+    categoryFilter.value = '';
+    brandFilter.value = '';
+    stockFilter.value = 'all';
+    applyFilters();
+}
+
+function deleteProduct(prod) {
+    if (confirm(`Are you sure you want to delete product "${prod.name}"?`)) {
+        router.delete(route('products.destroy', prod.id), {
+            preserveScroll: true,
+        });
+    }
+}
+
+async function inspectStock(prod) {
+    inspectedProduct.value = prod;
+    isInspectModalOpen.value = true;
+    isInspectLoading.value = true;
+    inspectedLevels.value = [];
+
+    try {
+        const response = await axios.get(route('products.inspect', prod.id));
+        inspectedLevels.value = response.data.levels || [];
+    } catch (e) {
+        console.error('Failed to inspect product stock distribution', e);
+    } finally {
+        isInspectLoading.value = false;
+    }
+}
+
+function submitCategory() {
+    categoryForm.post(route('products.categories.store'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            categoryForm.reset();
+        },
+    });
+}
+
+function deleteCategory(cat) {
+    if (confirm(`Delete category "${cat.name}"?`)) {
+        router.delete(route('products.categories.destroy', cat.id), {
+            preserveScroll: true,
+        });
+    }
+}
+
+function submitBrand() {
+    brandForm.post(route('products.brands.store'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            brandForm.reset();
+        },
+    });
+}
+
+function deleteBrand(b) {
+    if (confirm(`Delete brand "${b.name}"?`)) {
+        router.delete(route('products.brands.destroy', b.id), {
+            preserveScroll: true,
+        });
+    }
+}
+
+function handleImport(e) {
+    importForm.file = e.target.files[0];
+}
+
+function submitImport() {
+    importForm.post(route('products.import'), {
+        onSuccess: () => {
+            isImportModalOpen.value = false;
+            importForm.reset();
+        },
+    });
+}
+</script>
+
+<template>
+    <AppLayout>
+        <Head title="Products & Catalog" />
+
+        <template #header>
+            <div class="flex items-center justify-between w-full">
+                <div>
+                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Products & Catalog</h1>
+                    <p class="text-xs text-slate-500 font-medium">Manage SKUs, categories, brands, price margins, and warehouse distribution</p>
+                </div>
+            </div>
+        </template>
+
+        <div class="space-y-6">
+            <!-- Filter Bar & Actions -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-4">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <!-- Search Input -->
+                    <div class="relative flex-1 max-w-md">
+                        <input 
+                            type="text" 
+                            v-model="search" 
+                            @keyup.enter="applyFilters"
+                            placeholder="Search by Product Name, SKU, or Barcode..."
+                            class="w-full pl-9 pr-4 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all placeholder:text-slate-400"
+                        />
+                        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <button 
+                            @click="isTaxonomyModalOpen = true" 
+                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all"
+                        >
+                            <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                            <span>Categories & Brands</span>
+                        </button>
+
+                        <a 
+                            :href="route('products.export')" 
+                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all"
+                        >
+                            <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            <span>Export CSV</span>
+                        </a>
+
+                        <button 
+                            @click="isImportModalOpen = true" 
+                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all"
+                        >
+                            <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            <span>Import CSV</span>
+                        </button>
+
+                        <Link 
+                            :href="route('products.create')" 
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm shadow-indigo-600/30 transition-all"
+                        >
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            <span>Add Product</span>
+                        </Link>
+                    </div>
+                </div>
+
+                <!-- Secondary Filter Bar -->
+                <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100 text-xs">
+                    <!-- Category Select -->
+                    <select 
+                        v-model="categoryFilter" 
+                        @change="applyFilters"
+                        class="pl-3 pr-8 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200 min-w-[130px]"
+                    >
+                        <option value="">All Categories</option>
+                        <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+                    </select>
+
+                    <!-- Brand Select -->
+                    <select 
+                        v-model="brandFilter" 
+                        @change="applyFilters"
+                        class="pl-3 pr-8 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200 min-w-[130px]"
+                    >
+                        <option value="">All Brands</option>
+                        <option v-for="b in brands" :key="b.id" :value="b.id">{{ b.name }}</option>
+                    </select>
+
+                    <!-- Stock Status Pills -->
+                    <div class="inline-flex rounded-xl p-0.5 bg-slate-100 border border-slate-200">
+                        <button 
+                            @click="stockFilter = 'all'; applyFilters()" 
+                            class="px-3 py-1 rounded-lg text-xs font-semibold transition-all"
+                            :class="stockFilter === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+                        >
+                            All Stock
+                        </button>
+                        <button 
+                            @click="stockFilter = 'low_stock'; applyFilters()" 
+                            class="px-3 py-1 rounded-lg text-xs font-semibold transition-all"
+                            :class="stockFilter === 'low_stock' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+                        >
+                            Low Stock
+                        </button>
+                        <button 
+                            @click="stockFilter = 'out_of_stock'; applyFilters()" 
+                            class="px-3 py-1 rounded-lg text-xs font-semibold transition-all"
+                            :class="stockFilter === 'out_of_stock' ? 'bg-rose-500 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+                        >
+                            Out of Stock
+                        </button>
+                    </div>
+
+                    <button 
+                        v-if="search || categoryFilter || brandFilter || stockFilter !== 'all'"
+                        @click="resetFilters"
+                        class="text-indigo-600 hover:text-indigo-800 font-semibold text-xs ml-auto"
+                    >
+                        Reset Filters
+                    </button>
+                </div>
+            </div>
+
+            <!-- Products Table -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-bold">
+                                <th class="py-3 px-4">Product & SKU</th>
+                                <th class="py-3 px-4">Taxonomy</th>
+                                <th class="py-3 px-4 text-right">Cost (COGS)</th>
+                                <th class="py-3 px-4 text-right">Selling Price</th>
+                                <th class="py-3 px-4 text-center">Available Stock</th>
+                                <th class="py-3 px-4 text-center">Warranty</th>
+                                <th class="py-3 px-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr v-for="prod in products.data" :key="prod.id" class="hover:bg-slate-50/70 transition-colors">
+                                <!-- Product & SKU -->
+                                <td class="py-3.5 px-4">
+                                    <div class="font-bold text-slate-900 text-sm leading-tight">{{ prod.name }}</div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="font-mono text-indigo-600 font-semibold text-[11px] bg-indigo-50 px-1.5 py-0.5 rounded">
+                                            {{ prod.sku }}
+                                        </span>
+                                        <span v-if="prod.barcode" class="font-mono text-slate-400 text-[10px]">
+                                            UPC: {{ prod.barcode }}
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <!-- Category & Brand -->
+                                <td class="py-3.5 px-4">
+                                    <div class="flex flex-col gap-1">
+                                        <span v-if="prod.category" class="inline-block px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-semibold w-max">
+                                            {{ prod.category.name }}
+                                        </span>
+                                        <span v-if="prod.brand" class="text-[10px] text-slate-500 font-medium">
+                                            Brand: <strong class="text-slate-700">{{ prod.brand.name }}</strong>
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <!-- Cost Price -->
+                                <td class="py-3.5 px-4 text-right font-mono font-medium text-slate-600">
+                                    <CurrencyDisplay :amount="prod.cost_price" />
+                                </td>
+
+                                <!-- Selling Price & Margin -->
+                                <td class="py-3.5 px-4 text-right">
+                                    <div class="font-mono font-bold text-slate-900">
+                                        <CurrencyDisplay :amount="prod.selling_price" />
+                                    </div>
+                                    <div class="text-[10px] font-medium text-emerald-600 mt-0.5">
+                                        +<CurrencyDisplay :amount="prod.selling_price - prod.cost_price" />
+                                    </div>
+                                </td>
+
+                                <!-- Available Stock -->
+                                <td class="py-3.5 px-4 text-center">
+                                    <div 
+                                        class="inline-flex items-center gap-1 font-mono font-bold text-xs px-2.5 py-1 rounded-full border"
+                                        :class="(prod.total_stock || 0) <= prod.reorder_level 
+                                            ? ((prod.total_stock || 0) <= 0 ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-amber-50 text-amber-700 border-amber-200') 
+                                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'"
+                                    >
+                                        <span>{{ prod.total_stock || 0 }}</span>
+                                        <span class="text-[10px] uppercase font-sans text-slate-500 font-semibold">{{ prod.unit }}</span>
+                                    </div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">
+                                        Min: {{ prod.reorder_level }}
+                                    </div>
+                                </td>
+
+                                <!-- Warranty & Serialization -->
+                                <td class="py-3.5 px-4 text-center">
+                                    <div v-if="prod.warranty_days > 0" class="text-xs font-semibold text-indigo-600">
+                                        {{ prod.warranty_days }} Days
+                                    </div>
+                                    <div v-else class="text-slate-400 text-[10px]">
+                                        None
+                                    </div>
+                                    <span v-if="prod.is_serialized" class="inline-block mt-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
+                                        Serialized
+                                    </span>
+                                </td>
+
+                                <!-- Actions -->
+                                <td class="py-3.5 px-4 text-right">
+                                    <div class="flex items-center justify-end gap-1.5">
+                                        <button 
+                                            @click="inspectStock(prod)" 
+                                            title="Inspect Warehouse Stock"
+                                            class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                            </svg>
+                                        </button>
+
+                                        <Link 
+                                            :href="route('products.edit', prod.id)" 
+                                            title="Edit Product"
+                                            class="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                        </Link>
+
+                                        <button 
+                                            @click="deleteProduct(prod)" 
+                                            title="Delete Product"
+                                            class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State -->
+                <div v-if="products.data.length === 0" class="text-center py-16">
+                    <p class="text-xs text-slate-500">No products match your search or filter criteria.</p>
+                </div>
+
+                <!-- Pagination -->
+                <div v-if="products.links && products.links.length > 3" class="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                    <span class="text-xs text-slate-500">
+                        Showing {{ products.from }} to {{ products.to }} of {{ products.total }} items
+                    </span>
+                    <div class="flex items-center gap-1">
+                        <Link 
+                            v-for="(link, i) in products.links" 
+                            :key="i"
+                            :href="link.url || '#'"
+                            v-html="link.label"
+                            class="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all"
+                            :class="link.active ? 'bg-indigo-600 text-white' : (link.url ? 'text-slate-600 hover:bg-slate-200' : 'text-slate-300 cursor-not-allowed')"
+                        />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stock Inspection Modal -->
+        <Modal :show="isInspectModalOpen" @close="isInspectModalOpen = false" maxWidth="2xl">
+            <div class="p-6">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900">
+                            Warehouse Distribution: {{ inspectedProduct?.name }}
+                        </h2>
+                        <p class="text-xs text-slate-500 font-mono">SKU: {{ inspectedProduct?.sku }}</p>
+                    </div>
+                    <button @click="isInspectModalOpen = false" class="text-slate-400 hover:text-slate-600">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div v-if="isInspectLoading" class="text-center py-10 text-slate-400 text-xs">
+                    Loading stock distribution...
+                </div>
+
+                <div v-else-if="inspectedLevels.length > 0" class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-slate-400 font-bold uppercase text-[10px]">
+                                <th class="py-2.5">Warehouse Hub</th>
+                                <th class="py-2.5 text-center">On-Hand</th>
+                                <th class="py-2.5 text-center">Reserved</th>
+                                <th class="py-2.5 text-center">Available</th>
+                                <th class="py-2.5 text-right">Capital Value</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr v-for="(lvl, idx) in inspectedLevels" :key="idx" class="hover:bg-slate-50">
+                                <td class="py-2.5 font-bold text-slate-800">{{ lvl.warehouse_name }}</td>
+                                <td class="py-2.5 text-center font-mono font-bold">{{ lvl.quantity_on_hand }}</td>
+                                <td class="py-2.5 text-center font-mono text-amber-600">{{ lvl.quantity_reserved }}</td>
+                                <td class="py-2.5 text-center font-mono text-emerald-600 font-bold">{{ lvl.quantity_available }}</td>
+                                <td class="py-2.5 text-right font-mono font-bold">
+                                    <CurrencyDisplay :amount="lvl.valuation" />
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div v-else class="text-center py-10 text-slate-400 text-xs">
+                    No active stock currently registered for this product across fulfillment hubs.
+                </div>
+            </div>
+        </Modal>
+
+        <!-- Categories & Brands Manager Modal -->
+        <Modal :show="isTaxonomyModalOpen" @close="isTaxonomyModalOpen = false" maxWidth="3xl">
+            <div class="p-6">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                    <div class="flex items-center gap-3">
+                        <button 
+                            @click="taxonomyTab = 'categories'" 
+                            class="text-sm font-bold pb-1 border-b-2 transition-all"
+                            :class="taxonomyTab === 'categories' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-700'"
+                        >
+                            Categories ({{ categories.length }})
+                        </button>
+                        <button 
+                            @click="taxonomyTab = 'brands'" 
+                            class="text-sm font-bold pb-1 border-b-2 transition-all"
+                            :class="taxonomyTab === 'brands' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-700'"
+                        >
+                            Brands & Manufacturers ({{ brands.length }})
+                        </button>
+                    </div>
+                    <button @click="isTaxonomyModalOpen = false" class="text-slate-400 hover:text-slate-600">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Categories Tab Content -->
+                <div v-if="taxonomyTab === 'categories'" class="space-y-4">
+                    <!-- Inline Add Category Form -->
+                    <form @submit.prevent="submitCategory" class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-2">
+                        <input 
+                            type="text" 
+                            v-model="categoryForm.name" 
+                            placeholder="New Category Name (e.g. Laptops & Notebooks)..."
+                            class="flex-1 px-3 py-1.5 rounded-lg text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200"
+                        />
+                        <button 
+                            type="submit" 
+                            :disabled="categoryForm.processing || !categoryForm.name"
+                            class="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                        >
+                            Add Category
+                        </button>
+                    </form>
+
+                    <!-- Categories List -->
+                    <div class="max-h-72 overflow-y-auto divide-y divide-slate-100 border border-slate-200 rounded-xl">
+                        <div 
+                            v-for="cat in categories" 
+                            :key="cat.id" 
+                            class="p-2.5 px-3.5 flex items-center justify-between hover:bg-slate-50 text-xs"
+                        >
+                            <div>
+                                <span class="font-bold text-slate-800">{{ cat.name }}</span>
+                                <span class="text-[10px] text-slate-400 font-mono ml-2">/{{ cat.slug }}</span>
+                            </div>
+                            <button 
+                                @click="deleteCategory(cat)" 
+                                class="text-rose-500 hover:text-rose-700 text-xs font-semibold"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Brands Tab Content -->
+                <div v-if="taxonomyTab === 'brands'" class="space-y-4">
+                    <!-- Inline Add Brand Form -->
+                    <form @submit.prevent="submitBrand" class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-2">
+                        <input 
+                            type="text" 
+                            v-model="brandForm.name" 
+                            placeholder="New Brand Name (e.g. Asus, Dell, Apple)..."
+                            class="flex-1 px-3 py-1.5 rounded-lg text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200"
+                        />
+                        <button 
+                            type="submit" 
+                            :disabled="brandForm.processing || !brandForm.name"
+                            class="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                        >
+                            Add Brand
+                        </button>
+                    </form>
+
+                    <!-- Brands List -->
+                    <div class="max-h-72 overflow-y-auto divide-y divide-slate-100 border border-slate-200 rounded-xl">
+                        <div 
+                            v-for="b in brands" 
+                            :key="b.id" 
+                            class="p-2.5 px-3.5 flex items-center justify-between hover:bg-slate-50 text-xs"
+                        >
+                            <div>
+                                <span class="font-bold text-slate-800">{{ b.name }}</span>
+                                <span class="text-[10px] text-slate-400 font-mono ml-2">/{{ b.slug }}</span>
+                            </div>
+                            <button 
+                                @click="deleteBrand(b)" 
+                                class="text-rose-500 hover:text-rose-700 text-xs font-semibold"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Modal>
+
+        <!-- Import Modal -->
+        <Modal :show="isImportModalOpen" @close="isImportModalOpen = false" maxWidth="md">
+            <div class="p-6">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                    <h2 class="text-base font-bold text-slate-900">Bulk Import Products (CSV)</h2>
+                    <button @click="isImportModalOpen = false" class="text-slate-400 hover:text-slate-600">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitImport" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">CSV File</label>
+                        <input 
+                            type="file" 
+                            accept=".csv,text/csv" 
+                            @change="handleImport"
+                            required
+                            class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Target Opening Warehouse (Optional)</label>
+                        <select 
+                            v-model="importForm.warehouse_id" 
+                            class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200"
+                        >
+                            <option value="">Do not allocate opening stock</option>
+                            <option v-for="wh in warehouses" :key="wh.id" :value="wh.id">{{ wh.name }}</option>
+                        </select>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                        <button 
+                            type="button" 
+                            @click="isImportModalOpen = false" 
+                            class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            type="submit" 
+                            :disabled="importForm.processing || !importForm.file"
+                            class="px-5 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                        >
+                            Start Import
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </Modal>
+    </AppLayout>
+</template>

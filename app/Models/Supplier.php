@@ -25,4 +25,9 @@ class Supplier extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    public function purchaseOrders(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PurchaseOrder::class);
+    }
 }
