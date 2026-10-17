@@ -131,7 +131,7 @@ function paymentStatusClass(status) {
                             @keyup.enter="applyFilters"
                             type="text"
                             placeholder="Search by TrxID, receipt #, sender number, or tenant name..."
-                            class="w-full pl-10 pr-4 py-2 text-xs bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-amber-500"
+                            class="w-full pl-10 pr-4 py-2 text-xs bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-amber-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                     </div>
                     <select
@@ -248,8 +248,8 @@ function paymentStatusClass(status) {
                         <textarea
                             v-model="rejectForm.rejection_reason"
                             rows="3"
-                            placeholder="e.g. TrxID BKA87X not found in merchant statement, or amount received was ৳500 instead of ৳999."
-                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-rose-500"
+                            placeholder="e.g. TrxID not found or incorrect amount received"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-rose-500 placeholder:text-slate-400 placeholder:text-xs"
                             required
                         ></textarea>
                         <p v-if="rejectForm.errors.rejection_reason" class="text-rose-500 text-[11px] mt-1">{{ rejectForm.errors.rejection_reason }}</p>

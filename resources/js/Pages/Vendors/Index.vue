@@ -4,9 +4,11 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
+import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 
 const props = defineProps({
     vendors: Object,
+    metrics: Object,
     filters: Object,
 });
 
@@ -101,6 +103,37 @@ function deleteVendor(v) {
         </template>
 
         <div class="space-y-6">
+            <!-- Metrics Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Vendors</span>
+                    <div class="text-2xl font-black text-slate-900 mt-2">
+                        {{ metrics?.total_vendors || 0 }}
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Active Trade Partners</span>
+                    <div class="text-2xl font-black text-emerald-600 mt-2">
+                        {{ metrics?.active_vendors || 0 }}
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Open Purchase Orders</span>
+                    <div class="text-2xl font-black text-amber-600 mt-2">
+                        {{ metrics?.pending_orders || 0 }}
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Outstanding Payables</span>
+                    <div class="text-2xl font-black text-rose-600 mt-2">
+                        <CurrencyDisplay :amount="metrics?.total_payables || 0" />
+                    </div>
+                </div>
+            </div>
+
             <!-- Filter & Action Header -->
             <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div class="flex flex-1 items-center gap-2">
@@ -263,8 +296,8 @@ function deleteVendor(v) {
                                 type="text" 
                                 v-model="form.name" 
                                 required
-                                placeholder="e.g. Acme Electronics Ltd"
-                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                placeholder="e.g. Acme Electronics"
+                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <p v-if="form.errors.name" class="text-[11px] text-rose-600 mt-1">{{ form.errors.name }}</p>
                         </div>
@@ -275,7 +308,7 @@ function deleteVendor(v) {
                                 type="text" 
                                 v-model="form.contact_name" 
                                 placeholder="e.g. John Doe"
-                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                     </div>
@@ -287,8 +320,8 @@ function deleteVendor(v) {
                                 type="text" 
                                 v-model="form.phone" 
                                 required
-                                placeholder="+880 1..."
-                                class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                placeholder="e.g. 01711000000"
+                                class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <p v-if="form.errors.phone" class="text-[11px] text-rose-600 mt-1">{{ form.errors.phone }}</p>
                         </div>
@@ -298,8 +331,8 @@ function deleteVendor(v) {
                             <input 
                                 type="email" 
                                 v-model="form.email" 
-                                placeholder="orders@vendor.com"
-                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                placeholder="e.g. orders@vendor.com"
+                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                     </div>
@@ -310,8 +343,8 @@ function deleteVendor(v) {
                             v-model="form.address" 
                             rows="2"
                             required
-                            placeholder="Plot / Road / City / Area..."
-                            class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                            placeholder="e.g. Plot 12, Road 4, Motijheel, Dhaka"
+                            class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         ></textarea>
                         <p v-if="form.errors.address" class="text-[11px] text-rose-600 mt-1">{{ form.errors.address }}</p>
                     </div>
@@ -321,8 +354,8 @@ function deleteVendor(v) {
                         <input 
                             type="text" 
                             v-model="form.tax_number" 
-                            placeholder="TIN-XXXX / Trade ID"
-                            class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                            placeholder="e.g. TIN-12345678"
+                            class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                     </div>
 

@@ -21,6 +21,7 @@ use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\SalesOrderController;
 use App\Http\Controllers\ServiceTicketController;
 use App\Http\Controllers\SuperAdminController;
+use App\Http\Controllers\TeamMemberController;
 use App\Http\Controllers\TenantSettingsController;
 use App\Http\Controllers\TenantSubscriptionController;
 use App\Http\Controllers\VendorController;
@@ -34,7 +35,13 @@ Route::get('/', function () {
     if (auth()->check()) {
         return auth()->user()->isSuperAdmin() ? redirect()->route('admin.dashboard') : redirect()->route('dashboard');
     }
-    return view('welcome');
+    
+    $plans = collect();
+    if (\Illuminate\Support\Facades\Schema::hasTable('plans')) {
+        $plans = \App\Models\Plan::where('is_active', true)->orderBy('sort_order')->get();
+    }
+    
+    return view('welcome', compact('plans'));
 });
 
 Route::get('/suspended', function () {
@@ -188,6 +195,13 @@ Route::middleware([
     // Tenant Subscription & Billing
     Route::get('/settings/subscription', [TenantSubscriptionController::class, 'index'])->name('subscription.index');
     Route::post('/settings/subscription/pay', [TenantSubscriptionController::class, 'submitPayment'])->name('subscription.pay');
+
+    // Tenant Team & Roles Management (Inertia SPA)
+    Route::get('/settings/team', [TeamMemberController::class, 'index'])->name('settings.team');
+    Route::post('/settings/team/members', [TeamMemberController::class, 'addMember'])->name('settings.team.members.add');
+    Route::put('/settings/team/members/{user}', [TeamMemberController::class, 'updateRole'])->name('settings.team.members.update');
+    Route::delete('/settings/team/members/{user}', [TeamMemberController::class, 'removeMember'])->name('settings.team.members.remove');
+    Route::get('/teams/{team}', [TeamMemberController::class, 'index'])->name('teams.show');
 
     // PDF Documents Generation
     Route::get('/sales/{order}/invoice', [PdfDocumentController::class, 'salesInvoice'])->name('sales.invoice');

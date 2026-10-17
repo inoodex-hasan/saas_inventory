@@ -98,54 +98,33 @@ function submitPayment() {
         </template>
 
         <div class="space-y-6">
-
             <!-- Metric Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Sales Invoiced</p>
-                        <p class="text-xl font-bold text-slate-900 mt-0.5"><CurrencyDisplay :amount="metrics.total_sales" /></p>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Sales Invoiced</span>
+                    <div class="text-2xl font-black text-slate-900 mt-2">
+                        <CurrencyDisplay :amount="metrics?.total_sales || 0" />
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Receivables (Due)</p>
-                        <p class="text-xl font-bold text-amber-600 mt-0.5"><CurrencyDisplay :amount="metrics.total_receivables" /></p>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Receivables (Due)</span>
+                    <div class="text-2xl font-black text-amber-600 mt-2">
+                        <CurrencyDisplay :amount="metrics?.total_receivables || 0" />
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pending Fulfillment</p>
-                        <p class="text-xl font-bold text-blue-600 mt-0.5">{{ metrics.pending_dispatch }}</p>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Pending Fulfillment</span>
+                    <div class="text-2xl font-black text-blue-600 mt-2">
+                        {{ metrics?.pending_dispatch || 0 }}
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Orders Logged</p>
-                        <p class="text-xl font-bold text-slate-900 mt-0.5">{{ metrics.total_orders }}</p>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Orders Logged</span>
+                    <div class="text-2xl font-black text-slate-900 mt-2">
+                        {{ metrics?.total_orders || 0 }}
                     </div>
                 </div>
             </div>

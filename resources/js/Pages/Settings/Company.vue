@@ -9,6 +9,33 @@ const props = defineProps({
 
 const activeTab = ref('profile');
 
+const popularCurrencies = [
+    { code: 'BDT', symbol: '৳', name: 'Bangladeshi Taka', flag: '🇧🇩' },
+    { code: 'USD', symbol: '$', name: 'US Dollar', flag: '🇺🇸' },
+    { code: 'EUR', symbol: '€', name: 'Euro', flag: '🇪🇺' },
+    { code: 'GBP', symbol: '£', name: 'British Pound', flag: '🇬🇧' },
+    { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal', flag: '🇸🇦' },
+    { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham', flag: '🇦🇪' },
+    { code: 'INR', symbol: '₹', name: 'Indian Rupee', flag: '🇮🇳' },
+    { code: 'CAD', symbol: '$', name: 'Canadian Dollar', flag: '🇨🇦' },
+    { code: 'AUD', symbol: '$', name: 'Australian Dollar', flag: '🇦🇺' },
+    { code: 'SGD', symbol: '$', name: 'Singapore Dollar', flag: '🇸🇬' },
+    { code: 'MYR', symbol: 'RM', name: 'Malaysian Ringgit', flag: '🇲🇾' },
+    { code: 'JPY', symbol: '¥', name: 'Japanese Yen', flag: '🇯🇵' },
+];
+
+function selectCurrency(curr) {
+    form.currency_code = curr.code;
+    form.currency_symbol = curr.symbol;
+}
+
+function onCurrencyDropdownChange(event) {
+    const selected = popularCurrencies.find(c => c.code === event.target.value);
+    if (selected) {
+        selectCurrency(selected);
+    }
+}
+
 const form = useForm({
     name: props.settings.name || '',
     legal_name: props.settings.legal_name || '',
@@ -215,8 +242,58 @@ function submit() {
                 </div>
 
                 <!-- Tab 3: Currency & Prefixes -->
-                <div v-show="activeTab === 'localization'" class="space-y-4">
-                    <h2 class="text-base font-bold text-slate-900 border-b border-slate-100 pb-2">Financial Localization & Prefixes</h2>
+                <div v-show="activeTab === 'localization'" class="space-y-6">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900 border-b border-slate-100 pb-2">Financial Localization & Prefixes</h2>
+                        <p class="text-xs text-slate-500 mt-1">Select your organization's primary operating currency or customize symbols for quotes, invoices, and ledgers.</p>
+                    </div>
+
+                    <!-- Preset Popular Currencies Picker Card -->
+                    <div class="p-4 rounded-2xl bg-slate-50/90 border border-slate-200/90 space-y-3">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                                <span class="text-xs font-bold text-slate-800 uppercase tracking-wider block">Pre-Set Popular Currencies</span>
+                                <span class="text-[11px] text-slate-500">Click any preset or pick from the dropdown to automatically apply its standard ISO code and symbol.</span>
+                            </div>
+                            <!-- Fast Dropdown Selector -->
+                            <div class="sm:w-72">
+                                <select 
+                                    :value="form.currency_code" 
+                                    @change="onCurrencyDropdownChange"
+                                    class="w-full text-xs font-semibold px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-xs"
+                                >
+                                    <option value="" disabled>-- Select a popular currency --</option>
+                                    <option 
+                                        v-for="curr in popularCurrencies" 
+                                        :key="curr.code" 
+                                        :value="curr.code"
+                                    >
+                                        {{ curr.flag }} {{ curr.name }} — {{ curr.symbol }} ({{ curr.code }})
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Clickable Preset Chips -->
+                        <div class="flex flex-wrap gap-2 pt-1">
+                            <button
+                                v-for="curr in popularCurrencies"
+                                :key="curr.code"
+                                type="button"
+                                @click="selectCurrency(curr)"
+                                :class="[
+                                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border shadow-xs',
+                                    form.currency_code === curr.code
+                                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-indigo-600/25 ring-2 ring-indigo-600/30'
+                                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                                ]"
+                            >
+                                <span class="text-sm leading-none">{{ curr.flag }}</span>
+                                <span class="font-bold">{{ curr.symbol }}</span>
+                                <span class="text-[11px] opacity-80">{{ curr.code }}</span>
+                            </button>
+                        </div>
+                    </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -226,8 +303,9 @@ function submit() {
                                 type="text"
                                 required
                                 placeholder="৳, $, €, £"
-                                class="w-full text-base font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                                class="w-full text-base font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500"
                             />
+                            <p class="text-[11px] text-slate-400 mt-1">Displayed on screen totals, POS slips, and invoices.</p>
                         </div>
 
                         <div>
@@ -237,8 +315,25 @@ function submit() {
                                 type="text"
                                 required
                                 placeholder="BDT, USD, EUR"
-                                class="w-full text-base font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 uppercase"
+                                class="w-full text-base font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 uppercase"
                             />
+                            <p class="text-[11px] text-slate-400 mt-1">3-letter standard ISO currency code (e.g., BDT, USD, SAR).</p>
+                        </div>
+
+                        <!-- Live Visual Format Preview -->
+                        <div class="sm:col-span-2 p-3.5 rounded-xl bg-indigo-50/60 border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                            <div class="flex items-center gap-2 text-indigo-900 font-medium">
+                                <svg class="w-4 h-4 text-indigo-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <span>Live Document Format Preview:</span>
+                            </div>
+                            <div class="font-bold text-indigo-700 bg-white px-3 py-1.5 rounded-lg border border-indigo-200 shadow-xs flex items-center gap-1.5">
+                                <span class="text-slate-500 font-normal">Invoice Grand Total:</span>
+                                <span class="text-indigo-950 font-black text-sm">{{ form.currency_symbol || '$' }} 12,34.56</span>
+                                <span class="text-[10px] text-indigo-500 font-mono">({{ form.currency_code || 'USD' }})</span>
+                            </div>
                         </div>
 
                         <div>
@@ -248,7 +343,7 @@ function submit() {
                                 type="text"
                                 required
                                 placeholder="INV-, SO-"
-                                class="w-full text-sm font-mono px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                                class="w-full text-sm font-mono px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500"
                             />
                         </div>
 
@@ -259,7 +354,7 @@ function submit() {
                                 type="text"
                                 required
                                 placeholder="PO-, ORD-"
-                                class="w-full text-sm font-mono px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                                class="w-full text-sm font-mono px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500"
                             />
                         </div>
                     </div>

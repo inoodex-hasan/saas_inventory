@@ -73,9 +73,8 @@ const filteredHistory = computed(() => {
         <template #header>
             <div class="flex items-center justify-between w-full">
                 <div>
-                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-                        <span>🏦</span>
-                        <span>{{ page_title || 'Bank & Cash Reconciliation' }}</span>
+                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">
+                        {{ page_title || 'Bank & Cash Reconciliation' }}
                     </h1>
                     <p class="text-xs text-slate-500 font-medium">Audit external bank and cash statements against internal general ledger balances</p>
                 </div>
@@ -248,9 +247,8 @@ const filteredHistory = computed(() => {
             <div class="p-6 space-y-4">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div>
-                        <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                            <span>🏦</span>
-                            <span>New Reconciliation Audit</span>
+                        <h3 class="text-base font-extrabold text-slate-900">
+                            New Reconciliation Audit
                         </h3>
                         <p class="text-xs text-slate-500 mt-0.5">Enter closing balance from official bank statement to compare with general ledger</p>
                     </div>
@@ -267,7 +265,7 @@ const filteredHistory = computed(() => {
                         <label class="block font-semibold text-slate-700">Bank / Cash Account *</label>
                         <select
                             v-model="form.chart_of_account_id"
-                            class="w-full pl-3 pr-8 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 font-semibold"
+                            class="w-full text-xs pl-3 pr-8 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 font-semibold"
                             required
                         >
                             <option value="" disabled>Select Bank / Cash Account...</option>
@@ -284,7 +282,7 @@ const filteredHistory = computed(() => {
                             <input
                                 v-model="form.reconciliation_date"
                                 type="date"
-                                class="w-full px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 font-medium"
+                                class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 font-medium"
                                 required
                             />
                             <p v-if="form.errors.reconciliation_date" class="text-rose-500 text-[11px] mt-1">{{ form.errors.reconciliation_date }}</p>
@@ -297,7 +295,7 @@ const filteredHistory = computed(() => {
                                 type="number"
                                 step="0.01"
                                 placeholder="0.00"
-                                class="w-full px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl font-mono focus:bg-white focus:border-indigo-500 font-bold"
+                                class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl font-mono focus:bg-white focus:border-indigo-500 font-bold placeholder:text-slate-400 placeholder:text-xs"
                                 required
                             />
                             <p v-if="form.errors.statement_balance" class="text-rose-500 text-[11px] mt-1">{{ form.errors.statement_balance }}</p>
@@ -309,8 +307,8 @@ const filteredHistory = computed(() => {
                         <textarea
                             v-model="form.notes"
                             rows="2"
-                            placeholder="e.g. Month-end bank statement verification, outstanding transit checks..."
-                            class="w-full px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500"
+                            placeholder="e.g. Month-end statement verification"
+                            class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         ></textarea>
                     </div>
 

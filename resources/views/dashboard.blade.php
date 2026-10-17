@@ -197,7 +197,7 @@
                                     @empty
                                         <tr>
                                             <td colspan="4" class="py-8 text-center text-slate-400 text-xs">
-                                                ✅ All stock levels are in healthy surplus.
+                                                All stock levels are in healthy surplus.
                                             </td>
                                         </tr>
                                     @endforelse

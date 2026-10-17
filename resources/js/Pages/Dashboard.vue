@@ -25,12 +25,12 @@ const activeTab = ref('sales');
 
 <template>
     <AppLayout>
-        <Head title="Command Dashboard" />
+        <Head title="Admin Dashboard" />
 
         <template #header>
             <div class="flex items-center justify-between w-full">
                 <div>
-                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Command Center</h1>
+                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Admin Dashboard</h1>
                     <p class="text-xs text-slate-500 font-medium">Real-time inventory valuation, stock movements & fulfillments</p>
                 </div>
             </div>
@@ -50,7 +50,7 @@ const activeTab = ref('sales');
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
-                        <span>New Sale / POS</span>
+                        <span>New Sale</span>
                     </Link>
 
                     <Link 
@@ -60,7 +60,7 @@ const activeTab = ref('sales');
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
-                        <span>New Inbound PO</span>
+                        <span>New Purchase</span>
                     </Link>
 
                     <Link 
@@ -235,7 +235,7 @@ const activeTab = ref('sales');
                             </table>
                         </div>
                         <div v-else class="text-center py-10 text-slate-400 text-xs">
-                            🎉 All inventory levels are above their reorder thresholds!
+                            No low stock items.
                         </div>
                     </div>
                 </div>

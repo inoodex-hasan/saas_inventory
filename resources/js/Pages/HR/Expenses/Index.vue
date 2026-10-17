@@ -82,21 +82,11 @@ function resetFilters() {
         <template #header>
             <div class="flex items-center justify-between w-full">
                 <div>
-                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-                        <span>💸</span>
-                        <span>{{ page_title }}</span>
+                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">
+                        {{ page_title }}
                     </h1>
                     <p class="text-xs text-slate-500 font-medium">Track operational overheads, office rent, utilities, petty cash, and vendor disbursements</p>
                 </div>
-                <button
-                    @click="openModal"
-                    class="inline-flex items-center gap-2 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-indigo-600/30 transition-all hover:scale-[1.02]"
-                >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    <span>Record Expense</span>
-                </button>
             </div>
         </template>
 
@@ -104,25 +94,25 @@ function resetFilters() {
 
             <!-- KPI Metric Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
                     <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Recorded</div>
-                    <div class="text-xl font-extrabold text-slate-800 mt-1">
+                    <div class="text-2xl font-bold text-slate-900 mt-1">
                         <CurrencyDisplay :amount="metrics.total_expenses" />
                     </div>
                     <div class="text-[10px] text-slate-400 mt-0.5">Across {{ metrics.count }} vouchers</div>
                 </div>
 
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
                     <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">This Month</div>
-                    <div class="text-xl font-extrabold text-rose-600 mt-1">
+                    <div class="text-2xl font-bold text-rose-600 mt-1">
                         <CurrencyDisplay :amount="metrics.this_month" />
                     </div>
                     <div class="text-[10px] text-slate-400 mt-0.5">Current calendar cycle</div>
                 </div>
 
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
                     <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Vouchers</div>
-                    <div class="text-xl font-extrabold text-indigo-600 mt-1">{{ metrics.count }}</div>
+                    <div class="text-2xl font-bold text-indigo-600 mt-1">{{ metrics.count }}</div>
                     <div class="text-[10px] text-slate-400 mt-0.5">Logged expense claims</div>
                 </div>
             </div>
@@ -135,8 +125,8 @@ function resetFilters() {
                             v-model="search"
                             @keyup.enter="applyFilters"
                             type="text"
-                            placeholder="Search expense #, title, payee, receipt..."
-                            class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                            placeholder="Search expenses, payee, voucher..."
+                            class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
                         />
                         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -280,8 +270,8 @@ function resetFilters() {
                             v-model="form.title"
                             type="text"
                             required
-                            placeholder="e.g. Office Internet Bill / Electricity Voucher"
-                            class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                            placeholder="e.g. Office Internet Bill"
+                            class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                         />
                     </div>
 
@@ -293,8 +283,9 @@ function resetFilters() {
                                 type="number"
                                 step="0.01"
                                 min="0.01"
+                                placeholder="0.00"
                                 required
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3 font-bold"
+                                class="w-full text-xs font-bold rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
 
@@ -304,7 +295,7 @@ function resetFilters() {
                                 v-model="form.expense_date"
                                 type="date"
                                 required
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2 px-3"
                             />
                         </div>
                     </div>
@@ -314,7 +305,7 @@ function resetFilters() {
                             <label class="block font-semibold text-slate-700 mb-1">Category</label>
                             <select
                                 v-model="form.expense_category_id"
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2 px-3"
                             >
                                 <option value="">General</option>
                                 <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
@@ -325,7 +316,7 @@ function resetFilters() {
                             <label class="block font-semibold text-slate-700 mb-1">Payment Method</label>
                             <select
                                 v-model="form.payment_method"
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2 px-3"
                             >
                                 <option value="cash">Cash / Petty Cash</option>
                                 <option value="bank_transfer">Bank Transfer</option>
@@ -341,8 +332,8 @@ function resetFilters() {
                             <input
                                 v-model="form.vendor_or_payee"
                                 type="text"
-                                placeholder="Vendor / Store"
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                                placeholder="e.g. Desh Telecom"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
 
@@ -351,8 +342,8 @@ function resetFilters() {
                             <input
                                 v-model="form.receipt_reference"
                                 type="text"
-                                placeholder="Invoice or Voucher #"
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                                placeholder="e.g. INV-1042"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
                     </div>
@@ -361,7 +352,7 @@ function resetFilters() {
                         <label class="block font-semibold text-slate-700 mb-1">Disbursed To Employee (Optional)</label>
                         <select
                             v-model="form.employee_id"
-                            class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                            class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2 px-3"
                         >
                             <option value="">None / Company direct</option>
                             <option v-for="e in employees" :key="e.id" :value="e.id">

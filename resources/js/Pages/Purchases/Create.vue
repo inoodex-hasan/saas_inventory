@@ -159,7 +159,7 @@ function submit() {
                                 v-model="form.new_vendor_name" 
                                 required
                                 placeholder="e.g. Apex Global Supply"
-                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500"
+                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <p v-if="form.errors.new_vendor_name" class="text-[11px] text-rose-600 mt-1">{{ form.errors.new_vendor_name }}</p>
                         </div>
@@ -170,8 +170,8 @@ function submit() {
                                 type="text" 
                                 v-model="form.new_vendor_phone" 
                                 required
-                                placeholder="+880 1..."
-                                class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500"
+                                placeholder="e.g. 01700000000"
+                                class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <p v-if="form.errors.new_vendor_phone" class="text-[11px] text-rose-600 mt-1">{{ form.errors.new_vendor_phone }}</p>
                         </div>
@@ -184,8 +184,8 @@ function submit() {
                                 type="text" 
                                 v-model="form.new_vendor_address" 
                                 required
-                                placeholder="Plot / Road / City / Area"
-                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500"
+                                placeholder="e.g. Plot 10, Tejgaon, Dhaka"
+                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <p v-if="form.errors.new_vendor_address" class="text-[11px] text-rose-600 mt-1">{{ form.errors.new_vendor_address }}</p>
                         </div>
@@ -195,8 +195,8 @@ function submit() {
                             <input 
                                 type="text" 
                                 v-model="form.new_vendor_contact" 
-                                placeholder="Full Name"
-                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500"
+                                placeholder="e.g. John Doe"
+                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                     </div>

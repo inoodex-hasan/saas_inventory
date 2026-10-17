@@ -99,20 +99,10 @@ function deleteProject(project) {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-                        <span>📊</span>
                         <span>{{ page_title }}</span>
                     </h1>
                     <p class="text-xs text-slate-500 font-medium">Track contract budgets, inventory bills of materials, direct expenses, and milestone billings</p>
                 </div>
-                <Link
-                    :href="route('projects.create')"
-                    class="inline-flex items-center gap-2 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-indigo-600/30 transition-all hover:scale-[1.02]"
-                >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    <span>Create New Project</span>
-                </Link>
             </div>
         </template>
 
@@ -377,9 +367,7 @@ function deleteProject(project) {
                             </tr>
 
                             <tr v-if="projects.data.length === 0">
-                                <td colspan="9" class="py-12 text-center text-slate-400">
-                                    <div class="text-3xl mb-2">📁</div>
-                                    <p class="font-semibold text-slate-700">No projects found</p>
+                                <td colspan="9" class="py-12 text-center text-slate-400">                                    <p class="font-semibold text-slate-700">No projects found</p>
                                     <p class="text-xs text-slate-400 mt-1">Start by creating your first client project or job contract.</p>
                                     <div class="mt-4">
                                         <Link

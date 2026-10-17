@@ -284,9 +284,8 @@ function submitStatus() {
                     <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
                         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                             <div>
-                                <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                    <span>📦</span>
-                                    <span>Bill of Materials & Inventory Consumed</span>
+                                <h3 class="text-sm font-bold text-slate-800">
+                                    Bill of Materials & Inventory Consumed
                                 </h3>
                                 <p class="text-[11px] text-slate-400 mt-0.5">Deducted from warehouse stock automatically</p>
                             </div>
@@ -353,9 +352,8 @@ function submitStatus() {
                     <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
                         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                             <div>
-                                <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                    <span>🧾</span>
-                                    <span>Direct Expenses & Subcontractor Invoices</span>
+                                <h3 class="text-sm font-bold text-slate-800">
+                                    Direct Expenses & Subcontractor Invoices
                                 </h3>
                                 <p class="text-[11px] text-slate-400 mt-0.5">Non-inventory expenses, equipment rentals, labor, permits</p>
                             </div>
@@ -422,9 +420,8 @@ function submitStatus() {
                     <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
                         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                             <div>
-                                <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                    <span>📑</span>
-                                    <span>Milestone Billing & Payment Claims</span>
+                                <h3 class="text-sm font-bold text-slate-800">
+                                    Milestone Billing & Payment Claims
                                 </h3>
                                 <p class="text-[11px] text-slate-400 mt-0.5">Generate milestone invoices to submit to client</p>
                             </div>
@@ -482,9 +479,8 @@ function submitStatus() {
                 <div class="space-y-6">
                     <!-- Client Details Card -->
                     <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
-                        <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3 flex items-center gap-2">
-                            <span>👤</span>
-                            <span>Client Profile</span>
+                        <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3">
+                            Client Profile
                         </h3>
 
                         <div v-if="project.client" class="space-y-3 text-xs">
@@ -495,22 +491,22 @@ function submitStatus() {
                                 </div>
                             </div>
 
-                            <div class="space-y-1.5 text-slate-600">
-                                <div v-if="project.client.phone" class="flex items-center gap-2">
-                                    <span class="text-slate-400">📞</span>
-                                    <span>{{ project.client.phone }}</span>
+                            <div class="space-y-2 text-slate-600">
+                                <div v-if="project.client.phone" class="flex items-center justify-between">
+                                    <span class="text-slate-400">Phone:</span>
+                                    <span class="font-medium text-slate-800">{{ project.client.phone }}</span>
                                 </div>
-                                <div v-if="project.client.email" class="flex items-center gap-2">
-                                    <span class="text-slate-400">✉️</span>
-                                    <span>{{ project.client.email }}</span>
+                                <div v-if="project.client.email" class="flex items-center justify-between">
+                                    <span class="text-slate-400">Email:</span>
+                                    <span class="font-medium text-slate-800">{{ project.client.email }}</span>
                                 </div>
-                                <div v-if="project.client.address" class="flex items-center gap-2">
-                                    <span class="text-slate-400">📍</span>
-                                    <span>{{ project.client.address }}</span>
+                                <div v-if="project.client.address" class="flex items-start justify-between gap-2">
+                                    <span class="text-slate-400">Address:</span>
+                                    <span class="font-medium text-slate-800 text-right">{{ project.client.address }}</span>
                                 </div>
-                                <div v-if="project.client.tax_number" class="flex items-center gap-2 font-mono">
-                                    <span class="text-slate-400">🏛️</span>
-                                    <span>Tax: {{ project.client.tax_number }}</span>
+                                <div v-if="project.client.tax_number" class="flex items-center justify-between font-mono">
+                                    <span class="text-slate-400">Tax ID:</span>
+                                    <span class="font-medium text-slate-800">{{ project.client.tax_number }}</span>
                                 </div>
                             </div>
                         </div>
@@ -522,9 +518,8 @@ function submitStatus() {
 
                     <!-- Scope & Project Info Card -->
                     <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4 text-xs">
-                        <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3 flex items-center gap-2">
-                            <span>ℹ️</span>
-                            <span>Contract Specs</span>
+                        <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3">
+                            Contract Specs
                         </h3>
 
                         <div class="space-y-2 text-slate-600">

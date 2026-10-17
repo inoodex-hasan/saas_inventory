@@ -102,7 +102,6 @@ function deleteTicket(ticket) {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-                        <span>🛠️</span>
                         <span>{{ page_title }}</span>
                     </h1>
                     <p class="text-xs text-slate-500 font-medium">Manage workshop repairs, equipment drop-offs, parts consumption, and customer invoices</p>
@@ -366,7 +365,6 @@ function deleteTicket(ticket) {
                             </tr>
                             <tr v-if="!tickets.data || tickets.data.length === 0">
                                 <td colspan="8" class="py-12 text-center text-slate-400">
-                                    <div class="text-3xl mb-2">🛠️</div>
                                     <p class="font-medium text-slate-600">No service job tickets found.</p>
                                     <p class="text-xs text-slate-400 mt-1">Intake a customer device repair to begin tracking.</p>
                                 </td>
@@ -401,9 +399,8 @@ function deleteTicket(ticket) {
         <!-- Collect Payment Modal -->
         <Modal :show="isPayModalOpen" @close="isPayModalOpen = false" max-width="md">
             <div class="p-6">
-                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-1">
-                    <span>💵</span>
-                    <span>Collect Payment — #{{ activeTicketForPay?.ticket_number }}</span>
+                <h3 class="text-base font-bold text-slate-800 mb-1">
+                    Collect Payment — #{{ activeTicketForPay?.ticket_number }}
                 </h3>
                 <p class="text-xs text-slate-500 mb-4">
                     Outstanding balance: <strong class="text-rose-600"><CurrencyDisplay :amount="activeTicketForPay?.due_amount || 0" /></strong>
@@ -485,9 +482,8 @@ function deleteTicket(ticket) {
         <!-- Status Change Modal -->
         <Modal :show="isStatusModalOpen" @close="isStatusModalOpen = false" max-width="sm">
             <div class="p-6">
-                <h3 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
-                    <span>🔄</span>
-                    <span>Update Ticket Status</span>
+                <h3 class="text-base font-bold text-slate-800 mb-1">
+                    Update Ticket Status
                 </h3>
                 <p class="text-xs text-slate-500 mb-4">
                     Change status for #{{ activeTicketForStatus?.ticket_number }}

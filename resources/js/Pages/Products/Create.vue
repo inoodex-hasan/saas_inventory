@@ -36,8 +36,13 @@ const form = useForm({
 // Quick Add State
 const isQuickCategoryOpen = ref(false);
 const quickCategoryName = ref('');
+const quickCategoryLoading = ref(false);
+const quickCategoryError = ref('');
+
 const isQuickBrandOpen = ref(false);
 const quickBrandName = ref('');
+const quickBrandLoading = ref(false);
+const quickBrandError = ref('');
 
 const categoriesList = ref([...props.categories]);
 const brandsList = ref([...props.brands]);
@@ -66,36 +71,65 @@ function setWarrantyPreset(days) {
     form.warranty_days = days;
 }
 
+function openQuickCategory() {
+    quickCategoryName.value = '';
+    quickCategoryError.value = '';
+    isQuickCategoryOpen.value = true;
+}
+
+function openQuickBrand() {
+    quickBrandName.value = '';
+    quickBrandError.value = '';
+    isQuickBrandOpen.value = true;
+}
+
 async function submitQuickCategory() {
-    if (!quickCategoryName.value.trim()) return;
+    const name = quickCategoryName.value.trim();
+    if (!name || quickCategoryLoading.value) return;
+
+    quickCategoryLoading.value = true;
+    quickCategoryError.value = '';
     try {
-        const response = await axios.post(route('products.categories.store'), {
-            name: quickCategoryName.value,
-        });
-        // Reload categories or push
+        const response = await axios.post(route('products.categories.store'), { name });
+        const newCategory = response.data?.category || response.data;
+        if (newCategory && newCategory.id) {
+            if (!categoriesList.value.some(c => c.id === newCategory.id)) {
+                categoriesList.value.push(newCategory);
+            }
+            form.category_id = newCategory.id;
+        }
         isQuickCategoryOpen.value = false;
         quickCategoryName.value = '';
-        router.reload({ only: ['categories'], onSuccess: (page) => {
-            categoriesList.value = page.props.categories;
-        }});
     } catch (e) {
         console.error(e);
+        quickCategoryError.value = e.response?.data?.message || e.response?.data?.errors?.name?.[0] || 'Failed to create category.';
+    } finally {
+        quickCategoryLoading.value = false;
     }
 }
 
 async function submitQuickBrand() {
-    if (!quickBrandName.value.trim()) return;
+    const name = quickBrandName.value.trim();
+    if (!name || quickBrandLoading.value) return;
+
+    quickBrandLoading.value = true;
+    quickBrandError.value = '';
     try {
-        const response = await axios.post(route('products.brands.store'), {
-            name: quickBrandName.value,
-        });
+        const response = await axios.post(route('products.brands.store'), { name });
+        const newBrand = response.data?.brand || response.data;
+        if (newBrand && newBrand.id) {
+            if (!brandsList.value.some(b => b.id === newBrand.id)) {
+                brandsList.value.push(newBrand);
+            }
+            form.brand_id = newBrand.id;
+        }
         isQuickBrandOpen.value = false;
         quickBrandName.value = '';
-        router.reload({ only: ['brands'], onSuccess: (page) => {
-            brandsList.value = page.props.brands;
-        }});
     } catch (e) {
         console.error(e);
+        quickBrandError.value = e.response?.data?.message || e.response?.data?.errors?.name?.[0] || 'Failed to create brand.';
+    } finally {
+        quickBrandLoading.value = false;
     }
 }
 
@@ -144,9 +178,9 @@ function submit() {
                             type="text" 
                             v-model="form.name" 
                             @blur="onNameBlur"
-                            placeholder="e.g. Dell XPS 15 9530 Core i9 32GB RAM"
+                            placeholder="e.g. Dell XPS 15 Laptop"
                             required
-                            class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                            class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                         <p v-if="form.errors.name" class="text-[11px] text-rose-600 mt-1">{{ form.errors.name }}</p>
                     </div>
@@ -159,7 +193,7 @@ function submit() {
                                 type="text" 
                                 v-model="form.sku" 
                                 required
-                                class="flex-1 px-3 py-2 rounded-xl text-xs font-mono font-bold uppercase border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                class="flex-1 px-3 py-2 rounded-xl text-xs font-mono font-bold uppercase border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <button 
                                 type="button" 
@@ -179,8 +213,8 @@ function submit() {
                         <input 
                             type="text" 
                             v-model="form.barcode" 
-                            placeholder="Scan or type barcode number..."
-                            class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                            placeholder="Scan or enter barcode"
+                            class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                         <p v-if="form.errors.barcode" class="text-[11px] text-rose-600 mt-1">{{ form.errors.barcode }}</p>
                     </div>
@@ -194,7 +228,7 @@ function submit() {
                             <label class="text-xs font-semibold text-slate-700">Category</label>
                             <button 
                                 type="button" 
-                                @click="isQuickCategoryOpen = true"
+                                @click="openQuickCategory"
                                 class="text-[10px] font-bold text-indigo-600 hover:text-indigo-800"
                             >
                                 + Quick Add
@@ -215,7 +249,7 @@ function submit() {
                             <label class="text-xs font-semibold text-slate-700">Brand / Maker</label>
                             <button 
                                 type="button" 
-                                @click="isQuickBrandOpen = true"
+                                @click="openQuickBrand"
                                 class="text-[10px] font-bold text-indigo-600 hover:text-indigo-800"
                             >
                                 + Quick Add
@@ -427,28 +461,50 @@ function submit() {
         <!-- Quick Add Category Modal -->
         <Modal :show="isQuickCategoryOpen" @close="isQuickCategoryOpen = false" maxWidth="sm">
             <div class="p-5">
-                <h3 class="font-bold text-slate-900 text-sm mb-3">Quick Add Category</h3>
-                <input 
-                    type="text" 
-                    v-model="quickCategoryName" 
-                    placeholder="Category Name..."
-                    class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 mb-4"
-                />
-                <div class="flex justify-end gap-2">
-                    <button 
-                        type="button" 
-                        @click="isQuickCategoryOpen = false" 
-                        class="px-3 py-1.5 text-xs text-slate-600"
-                    >
-                        Cancel
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-bold text-slate-900 text-sm">Quick Add Category</h3>
+                    <button type="button" @click="isQuickCategoryOpen = false" class="text-slate-400 hover:text-slate-600">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
-                    <button 
-                        type="button" 
-                        @click="submitQuickCategory" 
-                        class="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold"
-                    >
-                        Save
-                    </button>
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Category Name *</label>
+                        <input 
+                            type="text" 
+                            v-model="quickCategoryName" 
+                            @keydown.enter.prevent="submitQuickCategory"
+                            placeholder="e.g. Electronics or Hardware"
+                            class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+                            :disabled="quickCategoryLoading"
+                            autofocus
+                        />
+                        <p v-if="quickCategoryError" class="text-[11px] text-rose-600 mt-1 font-medium">{{ quickCategoryError }}</p>
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2">
+                        <button 
+                            type="button" 
+                            @click="isQuickCategoryOpen = false" 
+                            :disabled="quickCategoryLoading"
+                            class="px-3 py-1.5 text-xs text-slate-600 hover:text-slate-800 font-semibold"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            type="button" 
+                            @click="submitQuickCategory" 
+                            :disabled="quickCategoryLoading || !quickCategoryName.trim()"
+                            class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1.5 shadow-sm"
+                        >
+                            <svg v-if="quickCategoryLoading" class="animate-spin -ml-0.5 mr-1 h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            <span>{{ quickCategoryLoading ? 'Saving...' : 'Add & Select' }}</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </Modal>
@@ -456,28 +512,50 @@ function submit() {
         <!-- Quick Add Brand Modal -->
         <Modal :show="isQuickBrandOpen" @close="isQuickBrandOpen = false" maxWidth="sm">
             <div class="p-5">
-                <h3 class="font-bold text-slate-900 text-sm mb-3">Quick Add Brand</h3>
-                <input 
-                    type="text" 
-                    v-model="quickBrandName" 
-                    placeholder="Brand Name..."
-                    class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 mb-4"
-                />
-                <div class="flex justify-end gap-2">
-                    <button 
-                        type="button" 
-                        @click="isQuickBrandOpen = false" 
-                        class="px-3 py-1.5 text-xs text-slate-600"
-                    >
-                        Cancel
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-bold text-slate-900 text-sm">Quick Add Brand</h3>
+                    <button type="button" @click="isQuickBrandOpen = false" class="text-slate-400 hover:text-slate-600">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
-                    <button 
-                        type="button" 
-                        @click="submitQuickBrand" 
-                        class="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold"
-                    >
-                        Save
-                    </button>
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Brand / Maker Name *</label>
+                        <input 
+                            type="text" 
+                            v-model="quickBrandName" 
+                            @keydown.enter.prevent="submitQuickBrand"
+                            placeholder="e.g. Dell or Apple"
+                            class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+                            :disabled="quickBrandLoading"
+                            autofocus
+                        />
+                        <p v-if="quickBrandError" class="text-[11px] text-rose-600 mt-1 font-medium">{{ quickBrandError }}</p>
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2">
+                        <button 
+                            type="button" 
+                            @click="isQuickBrandOpen = false" 
+                            :disabled="quickBrandLoading"
+                            class="px-3 py-1.5 text-xs text-slate-600 hover:text-slate-800 font-semibold"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            type="button" 
+                            @click="submitQuickBrand" 
+                            :disabled="quickBrandLoading || !quickBrandName.trim()"
+                            class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1.5 shadow-sm"
+                        >
+                            <svg v-if="quickBrandLoading" class="animate-spin -ml-0.5 mr-1 h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            <span>{{ quickBrandLoading ? 'Saving...' : 'Add & Select' }}</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </Modal>

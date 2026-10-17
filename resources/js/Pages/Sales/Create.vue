@@ -170,7 +170,7 @@ function submit() {
                                     type="text"
                                     required
                                     placeholder="e.g. Jahangir Alam"
-                                    class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400 placeholder:text-xs"
                                 />
                                 <div v-if="form.errors.new_customer_name" class="text-xs text-rose-500 mt-1">{{ form.errors.new_customer_name }}</div>
                             </div>
@@ -182,7 +182,7 @@ function submit() {
                                     type="text"
                                     required
                                     placeholder="e.g. 01711223399"
-                                    class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
                                 />
                                 <div v-if="form.errors.new_customer_phone" class="text-xs text-rose-500 mt-1">{{ form.errors.new_customer_phone }}</div>
                             </div>
@@ -193,8 +193,8 @@ function submit() {
                                     v-model="form.new_customer_address"
                                     type="text"
                                     required
-                                    placeholder="e.g. House 14, Road 5, Mirpur-10, Dhaka"
-                                    class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                                    placeholder="e.g. Mirpur-10, Dhaka"
+                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400 placeholder:text-xs"
                                 />
                                 <div v-if="form.errors.new_customer_address" class="text-xs text-rose-500 mt-1">{{ form.errors.new_customer_address }}</div>
                             </div>
@@ -328,7 +328,7 @@ function submit() {
                             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Order Status</label>
                             <select
                                 v-model="form.status"
-                                class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 font-medium"
                             >
                                 <option value="draft">Draft (No reservation yet)</option>
                                 <option value="confirmed">Confirmed (Reserve stock immediately)</option>
@@ -340,8 +340,8 @@ function submit() {
                             <textarea
                                 v-model="form.notes"
                                 rows="2"
-                                placeholder="Special delivery instructions or remarks..."
-                                class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                                placeholder="e.g. Delivery instructions or notes"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400 placeholder:text-xs"
                             ></textarea>
                         </div>
                     </div>

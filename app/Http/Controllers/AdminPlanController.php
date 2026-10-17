@@ -19,9 +19,17 @@ class AdminPlanController extends Controller
 
         $plans = Plan::withCount('subscriptions')->orderBy('sort_order')->get();
 
+        $metrics = [
+            'total_plans' => $plans->count(),
+            'active_plans' => $plans->where('is_active', true)->count(),
+            'total_subscribers' => $plans->sum('subscriptions_count'),
+            'top_tier' => $plans->sortByDesc('price_bdt')->first()?->name ?? 'Standard',
+        ];
+
         return Inertia::render('Admin/Plans/Index', [
             'page_title' => 'SaaS Subscription Plans Manager',
             'plans' => $plans,
+            'metrics' => $metrics,
         ]);
     }
 

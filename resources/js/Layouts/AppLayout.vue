@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -22,6 +22,50 @@ const teamMenuOpen = ref(false);
 const user = computed(() => page.props.auth?.user);
 const currentTeam = computed(() => page.props.auth?.team);
 const flash = computed(() => page.props.flash);
+
+// Flash Alert 3-second Auto-Dismissal
+const showSuccess = ref(false);
+const showError = ref(false);
+const showWarning = ref(false);
+let successTimer = null;
+let errorTimer = null;
+let warningTimer = null;
+
+watch(() => page.props.flash?.success, (val) => {
+    if (val) {
+        showSuccess.value = true;
+        if (successTimer) clearTimeout(successTimer);
+        successTimer = setTimeout(() => {
+            showSuccess.value = false;
+        }, 3000);
+    } else {
+        showSuccess.value = false;
+    }
+}, { immediate: true });
+
+watch(() => page.props.flash?.error, (val) => {
+    if (val) {
+        showError.value = true;
+        if (errorTimer) clearTimeout(errorTimer);
+        errorTimer = setTimeout(() => {
+            showError.value = false;
+        }, 3000);
+    } else {
+        showError.value = false;
+    }
+}, { immediate: true });
+
+watch(() => page.props.flash?.warning, (val) => {
+    if (val) {
+        showWarning.value = true;
+        if (warningTimer) clearTimeout(warningTimer);
+        warningTimer = setTimeout(() => {
+            showWarning.value = false;
+        }, 3000);
+    } else {
+        showWarning.value = false;
+    }
+}, { immediate: true });
 
 const isSuperAdmin = computed(() => Boolean(user.value?.is_super_admin));
 const isImpersonating = computed(() => Boolean(user.value?.is_impersonating));
@@ -202,7 +246,7 @@ function closeAllMenus() {
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                             </svg>
-                            <span>Command Dashboard</span>
+                            <span>Dashboard</span>
                         </Link>
 
                     <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Inventory Operations</div>
@@ -351,7 +395,7 @@ function closeAllMenus() {
                         <span>Projects & Costing</span>
                     </Link>
 
-                    <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">HR & Accounts</div>
+                    <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">HR & Payroll</div>
 
                     <Link 
                         :href="route('employees.index')" 
@@ -514,16 +558,16 @@ function closeAllMenus() {
                         <span>Subscription & Billing</span>
                     </Link>
 
-                    <a 
-                        v-if="currentTeam" 
-                        :href="route('teams.show', currentTeam.id)" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800/60 hover:text-slate-100 transition-all"
+                    <Link 
+                        :href="route('settings.team')" 
+                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
+                        :class="route().current('settings.team') || route().current('teams.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
                     >
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                         </svg>
                         <span>Team & Roles</span>
-                    </a>
+                    </Link>
 
                     <div v-if="isImpersonating" class="pt-3 pb-1">
                         <a 
@@ -653,6 +697,16 @@ function closeAllMenus() {
                                     </svg>
                                     <span>Organization Settings</span>
                                 </Link>
+                                <Link 
+                                    :href="route('settings.team')" 
+                                    @click="topUserMenuOpen = false"
+                                    class="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-indigo-600 font-medium transition cursor-pointer"
+                                >
+                                    <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    </svg>
+                                    <span>Team & Staff Roles</span>
+                                </Link>
                             </div>
                             <div class="pt-1">
                                 <button 
@@ -671,24 +725,99 @@ function closeAllMenus() {
                 </div>
             </header>
 
-            <!-- Flash Alert Messages -->
-            <div v-if="flash?.success" class="mx-4 md:mx-8 mt-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center justify-between shadow-sm">
-                <div class="flex items-center gap-2.5">
-                    <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>{{ flash.success }}</span>
+            <!-- Flash Alert Messages (3-Second Smooth Fade Away) -->
+            <Transition
+                enter-active-class="transition duration-300 ease-out"
+                enter-from-class="opacity-0 -translate-y-2"
+                enter-to-class="opacity-100 translate-y-0"
+                leave-active-class="transition duration-500 ease-in"
+                leave-from-class="opacity-100 translate-y-0"
+                leave-to-class="opacity-0 -translate-y-2"
+            >
+                <div 
+                    v-if="showSuccess && flash?.success" 
+                    class="mx-4 md:mx-8 mt-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center justify-between shadow-sm"
+                >
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span class="truncate">{{ flash.success }}</span>
+                    </div>
+                    <button 
+                        type="button" 
+                        @click="showSuccess = false" 
+                        class="p-1 rounded-lg hover:bg-emerald-100 text-emerald-600 hover:text-emerald-900 transition-colors ml-3 shrink-0"
+                        aria-label="Dismiss alert"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
-            </div>
+            </Transition>
 
-            <div v-if="flash?.error" class="mx-4 md:mx-8 mt-4 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-center justify-between shadow-sm">
-                <div class="flex items-center gap-2.5">
-                    <svg class="w-5 h-5 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>{{ flash.error }}</span>
+            <Transition
+                enter-active-class="transition duration-300 ease-out"
+                enter-from-class="opacity-0 -translate-y-2"
+                enter-to-class="opacity-100 translate-y-0"
+                leave-active-class="transition duration-500 ease-in"
+                leave-from-class="opacity-100 translate-y-0"
+                leave-to-class="opacity-0 -translate-y-2"
+            >
+                <div 
+                    v-if="showError && flash?.error" 
+                    class="mx-4 md:mx-8 mt-4 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-center justify-between shadow-sm"
+                >
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <svg class="w-5 h-5 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span class="truncate">{{ flash.error }}</span>
+                    </div>
+                    <button 
+                        type="button" 
+                        @click="showError = false" 
+                        class="p-1 rounded-lg hover:bg-rose-100 text-rose-600 hover:text-rose-900 transition-colors ml-3 shrink-0"
+                        aria-label="Dismiss alert"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
-            </div>
+            </Transition>
+
+            <Transition
+                enter-active-class="transition duration-300 ease-out"
+                enter-from-class="opacity-0 -translate-y-2"
+                enter-to-class="opacity-100 translate-y-0"
+                leave-active-class="transition duration-500 ease-in"
+                leave-from-class="opacity-100 translate-y-0"
+                leave-to-class="opacity-0 -translate-y-2"
+            >
+                <div 
+                    v-if="showWarning && flash?.warning" 
+                    class="mx-4 md:mx-8 mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm flex items-center justify-between shadow-sm"
+                >
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span class="truncate">{{ flash.warning }}</span>
+                    </div>
+                    <button 
+                        type="button" 
+                        @click="showWarning = false" 
+                        class="p-1 rounded-lg hover:bg-amber-100 text-amber-600 hover:text-amber-900 transition-colors ml-3 shrink-0"
+                        aria-label="Dismiss alert"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </Transition>
 
             <!-- Page Body -->
             <main class="flex-1 p-4 md:p-8 min-w-0 w-full">

@@ -30,8 +30,19 @@ class WarehouseController extends Controller
             ->paginate(12)
             ->withQueryString();
 
+        $metrics = [
+            'total_warehouses' => Warehouse::where('team_id', $teamId)->count(),
+            'active_warehouses' => Warehouse::where('team_id', $teamId)->where('is_active', true)->count(),
+            'total_units' => (float) StockLevel::where('team_id', $teamId)->sum('quantity'),
+            'total_valuation' => (float) (StockLevel::where('stock_levels.team_id', $teamId)
+                ->join('products', 'products.id', '=', 'stock_levels.product_id')
+                ->selectRaw('SUM(stock_levels.quantity * products.cost_price) as total_val')
+                ->value('total_val') ?: 0),
+        ];
+
         return Inertia::render('Warehouses/Index', [
             'warehouses' => $warehouses,
+            'metrics' => $metrics,
             'filters' => [
                 'search' => $search,
             ],

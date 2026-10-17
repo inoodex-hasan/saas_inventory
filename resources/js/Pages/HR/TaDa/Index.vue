@@ -103,23 +103,11 @@ function resetFilters() {
         <Head :title="page_title" />
 
         <template #header>
-            <div class="flex items-center justify-between w-full">
-                <div>
-                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-                        <span>✈️</span>
-                        <span>{{ page_title }}</span>
-                    </h1>
-                    <p class="text-xs text-slate-500 font-medium">Manage field technician travel allowances, per diem fooding, conveyance, and manager approvals</p>
-                </div>
-                <button
-                    @click="openCreateModal"
-                    class="inline-flex items-center gap-2 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-indigo-600/30 transition-all hover:scale-[1.02]"
-                >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    <span>Submit TA/DA Claim</span>
-                </button>
+            <div>
+                <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">
+                    {{ page_title }}
+                </h1>
+                <p class="text-xs text-slate-500 font-medium">Manage field technician travel allowances, per diem fooding, conveyance, and manager approvals</p>
             </div>
         </template>
 
@@ -127,29 +115,29 @@ function resetFilters() {
 
             <!-- Metric Cards -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
                     <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Claims</div>
-                    <div class="text-xl font-extrabold text-slate-800 mt-1">{{ metrics.total_claims }}</div>
+                    <div class="text-2xl font-bold text-slate-900 mt-1">{{ metrics.total_claims }}</div>
                     <div class="text-[10px] text-slate-400 mt-0.5">All field travel logs</div>
                 </div>
 
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
                     <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Pending Approval</div>
-                    <div class="text-xl font-extrabold text-amber-600 mt-1">{{ metrics.pending_approval }}</div>
+                    <div class="text-2xl font-bold text-amber-600 mt-1">{{ metrics.pending_approval }}</div>
                     <div class="text-[10px] text-slate-400 mt-0.5">Awaiting manager review</div>
                 </div>
 
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
                     <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Approved Unreimbursed</div>
-                    <div class="text-xl font-extrabold text-indigo-600 mt-1">
+                    <div class="text-2xl font-bold text-indigo-600 mt-1">
                         <CurrencyDisplay :amount="metrics.approved_unreimbursed" />
                     </div>
                     <div class="text-[10px] text-slate-400 mt-0.5">Ready for payroll cycle</div>
                 </div>
 
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
                     <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Reimbursed</div>
-                    <div class="text-xl font-extrabold text-emerald-600 mt-1">
+                    <div class="text-2xl font-bold text-emerald-600 mt-1">
                         <CurrencyDisplay :amount="metrics.reimbursed_total" />
                     </div>
                     <div class="text-[10px] text-slate-400 mt-0.5">Disbursed with salary</div>
@@ -165,7 +153,7 @@ function resetFilters() {
                             @keyup.enter="applyFilters"
                             type="text"
                             placeholder="Search claim #, staff, destination, purpose..."
-                            class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                            class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
                         />
                         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -328,7 +316,7 @@ function resetFilters() {
                         <select
                             v-model="createForm.employee_id"
                             required
-                            class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                            class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2 px-3"
                         >
                             <option v-for="e in employees" :key="e.id" :value="e.id">
                                 {{ e.name }} ({{ e.employee_code }}) - {{ e.designation }}
@@ -343,7 +331,7 @@ function resetFilters() {
                                 v-model="createForm.travel_date"
                                 type="date"
                                 required
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2 px-3"
                             />
                         </div>
 
@@ -353,8 +341,8 @@ function resetFilters() {
                                 v-model="createForm.destination"
                                 type="text"
                                 required
-                                placeholder="e.g. Chattogram Client Site"
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                                placeholder="e.g. Chattogram Site"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
                     </div>
@@ -365,8 +353,8 @@ function resetFilters() {
                             v-model="createForm.purpose"
                             rows="2"
                             required
-                            placeholder="e.g. Fiber deployment audit and client handover meeting"
-                            class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                            placeholder="e.g. Client visit and site handover audit"
+                            class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                         ></textarea>
                     </div>
 
@@ -378,7 +366,8 @@ function resetFilters() {
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                                placeholder="0.00"
+                                class="w-full text-xs font-bold rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
 
@@ -389,7 +378,8 @@ function resetFilters() {
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                                placeholder="0.00"
+                                class="w-full text-xs font-bold rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
 
@@ -400,7 +390,8 @@ function resetFilters() {
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                                placeholder="0.00"
+                                class="w-full text-xs font-bold rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
                     </div>
@@ -440,8 +431,8 @@ function resetFilters() {
                             v-model="rejectForm.rejection_reason"
                             rows="3"
                             required
-                            placeholder="State reason (e.g. receipts missing, duplicate entry)..."
-                            class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                            placeholder="State reason (e.g. missing receipts)..."
+                            class="w-full text-xs rounded-xl border border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                         ></textarea>
                     </div>
 

@@ -8,6 +8,7 @@ import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 const props = defineProps({
     page_title: String,
     plans: Array,
+    metrics: Object,
 });
 
 const isModalOpen = ref(false);
@@ -99,6 +100,37 @@ function deletePlan(plan) {
         </template>
 
         <div class="space-y-6">
+            <!-- Metrics Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Plan Tiers</span>
+                    <div class="text-2xl font-black text-slate-900 mt-2">
+                        {{ metrics?.total_plans || 0 }}
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Active Public Tiers</span>
+                    <div class="text-2xl font-black text-emerald-600 mt-2">
+                        {{ metrics?.active_plans || 0 }}
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Active Tenant Subscriptions</span>
+                    <div class="text-2xl font-black text-indigo-600 mt-2">
+                        {{ metrics?.total_subscribers || 0 }}
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Top Tier Package</span>
+                    <div class="text-2xl font-black text-amber-600 mt-2">
+                        {{ metrics?.top_tier || 'Enterprise' }}
+                    </div>
+                </div>
+            </div>
+
             <!-- Action Toolbar -->
             <div class="flex flex-col sm:flex-row items-center justify-between gap-2 p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
                 <div>
@@ -211,8 +243,8 @@ function deletePlan(plan) {
                         <input
                             v-model="form.name"
                             type="text"
-                            placeholder="e.g. Professional (মাঝারি ব্যবসা)"
-                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-amber-500"
+                            placeholder="e.g. Professional"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-amber-500 placeholder:text-slate-400 placeholder:text-xs"
                             required
                         />
                         <p v-if="form.errors.name" class="text-rose-500 text-[11px] mt-1">{{ form.errors.name }}</p>
@@ -224,7 +256,7 @@ function deletePlan(plan) {
                             v-model="form.slug"
                             type="text"
                             placeholder="e.g. pro-plus"
-                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:bg-white focus:border-amber-500"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:bg-white focus:border-amber-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                     </div>
 
@@ -236,7 +268,7 @@ function deletePlan(plan) {
                                 type="number"
                                 step="1"
                                 min="0"
-                                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold"
                                 required
                             />
                         </div>
@@ -248,7 +280,7 @@ function deletePlan(plan) {
                                 type="number"
                                 step="1"
                                 min="0"
-                                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold"
                                 required
                             />
                         </div>
@@ -260,7 +292,7 @@ function deletePlan(plan) {
                             <input
                                 v-model.number="form.max_products"
                                 type="number"
-                                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
                                 required
                             />
                         </div>
@@ -270,7 +302,7 @@ function deletePlan(plan) {
                             <input
                                 v-model.number="form.max_warehouses"
                                 type="number"
-                                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
                                 required
                             />
                         </div>
@@ -280,7 +312,7 @@ function deletePlan(plan) {
                             <input
                                 v-model.number="form.max_users"
                                 type="number"
-                                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
                                 required
                             />
                         </div>
@@ -291,7 +323,7 @@ function deletePlan(plan) {
                         <textarea
                             v-model="form.description"
                             rows="2"
-                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-amber-500"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-amber-500 placeholder:text-slate-400 placeholder:text-xs"
                         ></textarea>
                     </div>
 

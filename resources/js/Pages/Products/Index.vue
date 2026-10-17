@@ -12,6 +12,7 @@ const props = defineProps({
     categories: Array,
     brands: Array,
     warehouses: Array,
+    metrics: Object,
     filters: Object,
 });
 
@@ -154,6 +155,37 @@ function submitImport() {
         </template>
 
         <div class="space-y-6">
+            <!-- Metrics Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Products</span>
+                    <div class="text-2xl font-black text-slate-900 mt-2">
+                        {{ metrics?.total_products || 0 }}
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Stock On-Hand</span>
+                    <div class="text-2xl font-black text-indigo-600 mt-2">
+                        {{ Number(metrics?.total_units || 0).toLocaleString() }}
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Low & Out of Stock Alerts</span>
+                    <div class="text-2xl font-black text-amber-600 mt-2">
+                        {{ metrics?.low_stock_count || 0 }}
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Catalog Valuation</span>
+                    <div class="text-2xl font-black text-emerald-600 mt-2">
+                        <CurrencyDisplay :amount="metrics?.total_valuation || 0" />
+                    </div>
+                </div>
+            </div>
+
             <!-- Filter Bar & Actions -->
             <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-4">
                 <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -164,7 +196,7 @@ function submitImport() {
                             v-model="search" 
                             @keyup.enter="applyFilters"
                             placeholder="Search by Product Name, SKU, or Barcode..."
-                            class="w-full pl-9 pr-4 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all placeholder:text-slate-400"
+                            class="w-full pl-9 pr-4 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-400 placeholder:text-xs"
                         />
                         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -507,8 +539,8 @@ function submitImport() {
                         <input 
                             type="text" 
                             v-model="categoryForm.name" 
-                            placeholder="New Category Name (e.g. Laptops & Notebooks)..."
-                            class="flex-1 px-3 py-1.5 rounded-lg text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200"
+                            placeholder="e.g. Laptops or Hardware"
+                            class="flex-1 px-3 py-1.5 rounded-lg text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                         <button 
                             type="submit" 
@@ -547,8 +579,8 @@ function submitImport() {
                         <input 
                             type="text" 
                             v-model="brandForm.name" 
-                            placeholder="New Brand Name (e.g. Asus, Dell, Apple)..."
-                            class="flex-1 px-3 py-1.5 rounded-lg text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200"
+                            placeholder="e.g. Dell or Asus"
+                            class="flex-1 px-3 py-1.5 rounded-lg text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                         <button 
                             type="submit" 

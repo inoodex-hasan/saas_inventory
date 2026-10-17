@@ -57,55 +57,33 @@ function deleteChallan(challan) {
         </template>
 
         <div class="space-y-6">
-
             <!-- Metrics -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-cyan-50 border border-cyan-100 flex items-center justify-center text-cyan-600 shrink-0">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Challans</p>
-                        <p class="text-xl font-bold text-slate-900 mt-0.5">{{ metrics.total_challans }}</p>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Challans</span>
+                    <div class="text-2xl font-black text-slate-900 mt-2">
+                        {{ metrics?.total_challans || 0 }}
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">In Transit / Dispatched</p>
-                        <p class="text-xl font-bold text-blue-600 mt-0.5">{{ metrics.dispatched_count }}</p>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">In Transit / Dispatched</span>
+                    <div class="text-2xl font-black text-blue-600 mt-2">
+                        {{ metrics?.dispatched_count || 0 }}
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Safely Delivered</p>
-                        <p class="text-xl font-bold text-emerald-600 mt-0.5">{{ metrics.delivered_count }}</p>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Safely Delivered</span>
+                    <div class="text-2xl font-black text-emerald-600 mt-2">
+                        {{ metrics?.delivered_count || 0 }}
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 shrink-0">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Preparing / Draft</p>
-                        <p class="text-xl font-bold text-slate-700 mt-0.5">{{ metrics.draft_count }}</p>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Preparing / Draft</span>
+                    <div class="text-2xl font-black text-slate-700 mt-2">
+                        {{ metrics?.draft_count || 0 }}
                     </div>
                 </div>
             </div>

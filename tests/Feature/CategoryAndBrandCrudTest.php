@@ -167,6 +167,26 @@ class CategoryAndBrandCrudTest extends TestCase
 
     public function test_quick_add_category_and_brand_directly_creates_entities(): void
     {
+        // Test JSON responses for instant AJAX quick-add
+        $catJsonResponse = $this->postJson(route('products.categories.store'), [
+            'name' => 'Instant Peripherals',
+        ]);
+        $catJsonResponse->assertStatus(201)
+            ->assertJsonStructure([
+                'message',
+                'category' => ['id', 'name', 'slug', 'team_id'],
+            ]);
+
+        $brandJsonResponse = $this->postJson(route('products.brands.store'), [
+            'name' => 'Logitech G',
+        ]);
+        $brandJsonResponse->assertStatus(201)
+            ->assertJsonStructure([
+                'message',
+                'brand' => ['id', 'name', 'slug', 'team_id'],
+            ]);
+
+        // Standard web post
         $catResponse = $this->post(route('products.categories.store'), [
             'name' => 'Quick Gaming Gear',
         ]);

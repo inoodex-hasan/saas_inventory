@@ -107,20 +107,9 @@ function typeBadgeClass(type) {
 <template>
     <AppLayout title="Chart of Accounts">
         <template #header>
-            <div class="flex items-center justify-between w-full">
-                <div>
-                    <h2 class="text-xl font-bold text-slate-900 tracking-tight">Chart of Accounts (COA)</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Manage master general ledger structure and normal balance rules.</p>
-                </div>
-                <button
-                    @click="openCreateModal"
-                    class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm shadow-indigo-600/30 transition-all"
-                >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    <span>New Account</span>
-                </button>
+            <div>
+                <h2 class="text-xl font-bold text-slate-900 tracking-tight">Chart of Accounts (COA)</h2>
+                <p class="text-xs text-slate-500 mt-0.5">Manage master general ledger structure and normal balance rules.</p>
             </div>
         </template>
 
@@ -165,7 +154,7 @@ function typeBadgeClass(type) {
                             @keyup.enter="applyFilters"
                             type="text"
                             placeholder="Search by account code, name, or subtype..."
-                            class="w-full pl-10 pr-4 py-2 text-xs bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                            class="w-full pl-10 pr-4 py-2 text-xs bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 transition-all"
                         />
                     </div>
                     <select
@@ -313,8 +302,8 @@ function typeBadgeClass(type) {
                         <input
                             v-model="createForm.account_code"
                             type="text"
-                            placeholder="e.g. 1050 or 5210"
-                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            placeholder="e.g. 1050"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             required
                         />
                         <p v-if="createForm.errors.account_code" class="text-rose-500 text-[11px] mt-1">{{ createForm.errors.account_code }}</p>
@@ -325,8 +314,8 @@ function typeBadgeClass(type) {
                         <input
                             v-model="createForm.name"
                             type="text"
-                            placeholder="e.g. Petty Cash or Software Subscriptions"
-                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            placeholder="e.g. Petty Cash"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             required
                         />
                         <p v-if="createForm.errors.name" class="text-rose-500 text-[11px] mt-1">{{ createForm.errors.name }}</p>
@@ -337,7 +326,7 @@ function typeBadgeClass(type) {
                             <label class="block font-semibold text-slate-700 mb-1">Type *</label>
                             <select
                                 v-model="createForm.type"
-                                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                                 required
                             >
                                 <option value="asset">Asset (Normal: Debit)</option>
@@ -353,8 +342,8 @@ function typeBadgeClass(type) {
                             <input
                                 v-model="createForm.subtype"
                                 type="text"
-                                placeholder="e.g. current_asset, operating_expense"
-                                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                                placeholder="e.g. current_asset"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                     </div>
@@ -364,8 +353,8 @@ function typeBadgeClass(type) {
                         <textarea
                             v-model="createForm.description"
                             rows="2"
-                            placeholder="Optional explanation of purpose"
-                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            placeholder="Optional notes or purpose..."
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         ></textarea>
                     </div>
 
@@ -401,7 +390,8 @@ function typeBadgeClass(type) {
                         <input
                             v-model="editForm.name"
                             type="text"
-                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            placeholder="e.g. Petty Cash"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             required
                         />
                         <p v-if="editForm.errors.name" class="text-rose-500 text-[11px] mt-1">{{ editForm.errors.name }}</p>
@@ -412,7 +402,8 @@ function typeBadgeClass(type) {
                         <input
                             v-model="editForm.subtype"
                             type="text"
-                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            placeholder="e.g. current_asset"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                     </div>
 
@@ -421,7 +412,8 @@ function typeBadgeClass(type) {
                         <textarea
                             v-model="editForm.description"
                             rows="2"
-                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            placeholder="Optional notes or purpose..."
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         ></textarea>
                     </div>
 

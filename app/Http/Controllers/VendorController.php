@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -32,8 +33,18 @@ class VendorController extends Controller
             ->paginate(15)
             ->withQueryString();
 
+        $metrics = [
+            'total_vendors' => Supplier::where('team_id', $teamId)->count(),
+            'active_vendors' => Supplier::where('team_id', $teamId)->where('is_active', true)->count(),
+            'pending_orders' => PurchaseOrder::where('team_id', $teamId)
+                ->whereIn('status', ['draft', 'ordered', 'partially_received'])
+                ->count(),
+            'total_payables' => (float) PurchaseOrder::where('team_id', $teamId)->sum('due_amount'),
+        ];
+
         return Inertia::render('Vendors/Index', [
             'vendors' => $vendors,
+            'metrics' => $metrics,
             'filters' => [
                 'search' => $search,
                 'status' => $status,

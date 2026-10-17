@@ -50,11 +50,24 @@ class ProductController extends Controller
         $brands = Brand::where('team_id', $teamId)->orderBy('name')->get();
         $warehouses = Warehouse::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
 
+        $metrics = [
+            'total_products' => Product::where('team_id', $teamId)->count(),
+            'total_units' => (float) StockLevel::where('team_id', $teamId)->sum('quantity'),
+            'low_stock_count' => Product::where('team_id', $teamId)
+                ->whereRaw('(SELECT COALESCE(SUM(quantity), 0) FROM stock_levels WHERE stock_levels.product_id = products.id) <= products.reorder_level')
+                ->count(),
+            'total_valuation' => (float) (StockLevel::where('stock_levels.team_id', $teamId)
+                ->join('products', 'products.id', '=', 'stock_levels.product_id')
+                ->selectRaw('SUM(stock_levels.quantity * products.cost_price) as total_val')
+                ->value('total_val') ?: 0),
+        ];
+
         return Inertia::render('Products/Index', [
             'products' => $products,
             'categories' => $categories,
             'brands' => $brands,
             'warehouses' => $warehouses,
+            'metrics' => $metrics,
             'filters' => [
                 'search' => $search,
                 'category_id' => $categoryId,
@@ -258,6 +271,13 @@ class ProductController extends Controller
             'description' => $validated['description'] ?? null,
         ]);
 
+        if ($request->wantsJson() && ! $request->header('X-Inertia')) {
+            return response()->json([
+                'message' => "Category '{$category->name}' created.",
+                'category' => $category,
+            ], 201);
+        }
+
         return redirect()->back()->with('success', "Category '{$category->name}' created.");
     }
 
@@ -317,6 +337,13 @@ class ProductController extends Controller
             'slug' => $slug,
             'description' => $validated['description'] ?? null,
         ]);
+
+        if ($request->wantsJson() && ! $request->header('X-Inertia')) {
+            return response()->json([
+                'message' => "Brand '{$brand->name}' created.",
+                'brand' => $brand,
+            ], 201);
+        }
 
         return redirect()->back()->with('success', "Brand '{$brand->name}' created.");
     }

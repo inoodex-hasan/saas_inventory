@@ -9,6 +9,7 @@ import StatusBadge from '@/Components/StatusBadge.vue';
 
 const props = defineProps({
     warehouses: Object,
+    metrics: Object,
     filters: Object,
 });
 
@@ -120,6 +121,37 @@ async function inspectStock(wh) {
         </template>
 
         <div class="space-y-6">
+            <!-- Metrics Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Warehouses</span>
+                    <div class="text-2xl font-black text-slate-900 mt-2">
+                        {{ metrics?.total_warehouses || 0 }}
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Active Fulfillment Hubs</span>
+                    <div class="text-2xl font-black text-emerald-600 mt-2">
+                        {{ metrics?.active_warehouses || 0 }}
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Units Stocked</span>
+                    <div class="text-2xl font-black text-indigo-600 mt-2">
+                        {{ Number(metrics?.total_units || 0).toLocaleString() }}
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Inventory Holding Value</span>
+                    <div class="text-2xl font-black text-slate-900 mt-2">
+                        <CurrencyDisplay :amount="metrics?.total_valuation || 0" />
+                    </div>
+                </div>
+            </div>
+
             <!-- Header Action & Search Bar -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white rounded-2xl border border-slate-200/80 shadow-sm">
                 <div class="relative w-full sm:w-80">
@@ -285,7 +317,7 @@ async function inspectStock(wh) {
                                 type="text" 
                                 v-model="form.name" 
                                 placeholder="e.g. Central Hub Dhaka"
-                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <p v-if="form.errors.name" class="text-[11px] text-rose-600 mt-1">{{ form.errors.name }}</p>
                         </div>
@@ -295,7 +327,7 @@ async function inspectStock(wh) {
                                 type="text" 
                                 v-model="form.code" 
                                 placeholder="e.g. HUB-01"
-                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 uppercase font-mono"
+                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 uppercase font-mono placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <p v-if="form.errors.code" class="text-[11px] text-rose-600 mt-1">{{ form.errors.code }}</p>
                         </div>
@@ -306,8 +338,8 @@ async function inspectStock(wh) {
                         <input 
                             type="text" 
                             v-model="form.address" 
-                            placeholder="Plot / Road / City / Area"
-                            class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                            placeholder="e.g. Plot 10, Tejgaon, Dhaka"
+                            class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                         <p v-if="form.errors.address" class="text-[11px] text-rose-600 mt-1">{{ form.errors.address }}</p>
                     </div>
@@ -318,8 +350,8 @@ async function inspectStock(wh) {
                             <input 
                                 type="text" 
                                 v-model="form.phone" 
-                                placeholder="+880 1..."
-                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                placeholder="e.g. 01700000000"
+                                class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                         <div>
@@ -327,8 +359,8 @@ async function inspectStock(wh) {
                             <input 
                                 type="email" 
                                 v-model="form.email" 
-                                placeholder="hub@company.com"
-                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                placeholder="e.g. hub@company.com"
+                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                     </div>

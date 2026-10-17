@@ -69,12 +69,6 @@ function submit() {
                         <p class="text-xs text-slate-500 font-medium">Generate shipping manifest and authorization for warehouse goods release</p>
                     </div>
                 </div>
-                <Link
-                    :href="route('challans.index')"
-                    class="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-xs"
-                >
-                    &larr; Back to Challans
-                </Link>
             </div>
         </template>
 
@@ -88,7 +82,7 @@ function submit() {
                         <select
                             v-model="form.sales_order_id"
                             required
-                            class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-cyan-500"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 font-medium"
                         >
                             <option value="" disabled>-- Select Confirmed Sales Order --</option>
                             <option v-for="o in orders" :key="o.id" :value="o.id">
@@ -104,7 +98,7 @@ function submit() {
                             v-model="form.dispatch_date"
                             type="date"
                             required
-                            class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-cyan-500"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 font-medium"
                         />
                     </div>
                 </div>
@@ -116,8 +110,8 @@ function submit() {
                         <input
                             v-model="form.transport_carrier"
                             type="text"
-                            placeholder="e.g. In-house Fleet, Steadfast Courier"
-                            class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-cyan-500"
+                            placeholder="e.g. In-house fleet or courier"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                     </div>
 
@@ -126,8 +120,8 @@ function submit() {
                         <input
                             v-model="form.vehicle_no"
                             type="text"
-                            placeholder="e.g. DHAKA-METRO-TA-22-1144"
-                            class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-cyan-500"
+                            placeholder="e.g. DH-METRO-1144"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
                         />
                     </div>
 
@@ -138,13 +132,13 @@ function submit() {
                                 v-model="form.driver_name"
                                 type="text"
                                 placeholder="Name"
-                                class="w-1/2 text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-cyan-500"
+                                class="w-1/2 text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <input
                                 v-model="form.driver_phone"
                                 type="text"
                                 placeholder="Phone"
-                                class="w-1/2 text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-cyan-500"
+                                class="w-1/2 text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                     </div>
@@ -156,7 +150,7 @@ function submit() {
                             type="text"
                             required
                             placeholder="Exact physical shipping address"
-                            class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-cyan-500"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                         <div v-if="form.errors.delivery_address" class="text-xs text-rose-500 mt-1">{{ form.errors.delivery_address }}</div>
                     </div>
@@ -198,8 +192,8 @@ function submit() {
                     <textarea
                         v-model="form.notes"
                         rows="2"
-                        placeholder="Gate pass instructions, receiver verification note..."
-                        class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-cyan-500"
+                        placeholder="e.g. Gate pass instructions or delivery notes"
+                        class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 placeholder:text-slate-400 placeholder:text-xs"
                     ></textarea>
                 </div>
 

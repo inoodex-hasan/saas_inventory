@@ -72,54 +72,33 @@ function submitPay() {
         </template>
 
         <div class="space-y-6">
-
             <!-- Metrics -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 shrink-0">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Outstanding Due</p>
-                        <p class="text-xl font-bold text-rose-600 mt-0.5"><CurrencyDisplay :amount="metrics.total_receivables" /></p>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Outstanding Due</span>
+                    <div class="text-2xl font-black text-rose-600 mt-2">
+                        <CurrencyDisplay :amount="metrics?.total_receivables || 0" />
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Collections Paid</p>
-                        <p class="text-xl font-bold text-emerald-600 mt-0.5"><CurrencyDisplay :amount="metrics.total_collections" /></p>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Collections Paid</span>
+                    <div class="text-2xl font-black text-emerald-600 mt-2">
+                        <CurrencyDisplay :amount="metrics?.total_collections || 0" />
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Invoiced Amount</p>
-                        <p class="text-xl font-bold text-slate-900 mt-0.5"><CurrencyDisplay :amount="metrics.total_billed" /></p>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Invoiced Amount</span>
+                    <div class="text-2xl font-black text-slate-900 mt-2">
+                        <CurrencyDisplay :amount="metrics?.total_billed || 0" />
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Customers in Debt</p>
-                        <p class="text-xl font-bold text-amber-600 mt-0.5">{{ metrics.customers_with_due }}</p>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Customers in Debt</span>
+                    <div class="text-2xl font-black text-amber-600 mt-2">
+                        {{ metrics?.customers_with_due || 0 }}
                     </div>
                 </div>
             </div>
@@ -133,7 +112,7 @@ function submitPay() {
                             @keyup.enter="applyFilter"
                             type="text"
                             placeholder="Search customer by name, mobile, address..."
-                            class="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+                            class="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                         <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -166,24 +145,6 @@ function submitPay() {
                             All Clients
                         </button>
                     </div>
-                </div>
-
-                <div class="flex items-center gap-2 w-full md:w-auto justify-end">
-                    <!-- <button
-                        @click="applyFilter"
-                        class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold transition"
-                    >
-                        Filter
-                    </button> -->
-                    <Link
-                        :href="route('sales.create')"
-                        class="inline-flex items-center gap-2 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-rose-600/30 transition-all hover:scale-[1.02] shrink-0"
-                    >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                        <span>New Sale</span>
-                    </Link>
                 </div>
             </div>
 
@@ -274,7 +235,7 @@ function submitPay() {
                             min="0.01"
                             :max="selectedOrder?.due_amount"
                             required
-                            class="w-full text-base font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                            class="w-full text-xs font-bold font-mono px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500"
                         />
                     </div>
 
@@ -282,7 +243,7 @@ function submitPay() {
                         <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Payment Method</label>
                         <select
                             v-model="payForm.payment_method"
-                            class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 font-medium"
                         >
                             <option value="cash">Cash in Hand</option>
                             <option value="bank_transfer">Bank Transfer (EFT / RTGS)</option>
@@ -297,8 +258,8 @@ function submitPay() {
                         <input
                             v-model="payForm.notes"
                             type="text"
-                            placeholder="e.g. Money receipt #MR-902, Bank slip #8829"
-                            class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                            placeholder="e.g. Receipt #MR-902 or bank slip"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                     </div>
 

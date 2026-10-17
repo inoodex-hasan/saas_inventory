@@ -1,1097 +1,1160 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full scroll-smooth">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Inoodex Inventory — Enterprise SaaS Inventory Platform</title>
-        <meta name="description" content="Multi-tenant cloud inventory platform with multi-warehouse management, atomic stock control, purchase orders, sales dispatch, and PDF invoicing. Built for teams that mean business.">
+        <title>Inoodex Inventory & ERP — Enterprise Cloud Inventory, Accounting & Supply Chain Platform</title>
+        <meta name="description" content="Next-generation multi-tenant ERP platform for modern businesses. Multi-warehouse tracking, atomic stock locking, double-entry accounting, POS billing, workshop service ticketing, and vectorized PDF invoicing.">
 
         <!-- Google Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
+        <!-- Vite Asset Bundle -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         <style>
-            *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
             :root {
-                --bg-base: #050810;
-                --bg-card: #0c1120;
-                --bg-card-hover: #111827;
-                --border: rgba(255,255,255,0.06);
-                --text-primary: #f1f5f9;
-                --text-secondary: #94a3b8;
-                --text-muted: #475569;
-                --indigo: #6366f1;
-                --indigo-light: #818cf8;
-                --violet: #8b5cf6;
+                --bg-deep: #050814;
+                --bg-surface: #0a0e22;
+                --bg-card: rgba(14, 20, 44, 0.75);
+                --border-subtle: rgba(255, 255, 255, 0.08);
+                --border-highlight: rgba(99, 102, 241, 0.35);
+                --indigo-glow: rgba(99, 102, 241, 0.18);
             }
 
-            html { scroll-behavior: smooth; }
             body {
-                font-family: 'Inter', sans-serif;
-                background-color: var(--bg-base);
-                color: var(--text-primary);
-                line-height: 1.6;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+                background-color: var(--bg-deep);
+                color: #e2e8f0;
                 overflow-x: hidden;
                 -webkit-font-smoothing: antialiased;
             }
 
-            /* Ambient glows */
-            .ambient-glow {
-                position: fixed; border-radius: 50%;
-                filter: blur(120px); pointer-events: none; z-index: 0;
-                animation: floatGlow 8s ease-in-out infinite;
+            .font-heading {
+                font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
             }
-            .glow-1 { width: 600px; height: 600px; background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%); top: -200px; left: -100px; animation-delay: 0s; }
-            .glow-2 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(139,92,246,0.10) 0%, transparent 70%); top: 40%; right: -150px; animation-delay: -3s; }
-            .glow-3 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(6,182,212,0.08) 0%, transparent 70%); bottom: 10%; left: 20%; animation-delay: -6s; }
+
+            /* Ambient Glow Background Orbs */
+            .ambient-glow {
+                position: fixed;
+                border-radius: 50%;
+                filter: blur(140px);
+                pointer-events: none;
+                z-index: 0;
+            }
+            .glow-primary {
+                width: 650px;
+                height: 650px;
+                background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+                top: -200px;
+                left: -150px;
+                animation: floatGlow 12s ease-in-out infinite alternate;
+            }
+            .glow-secondary {
+                width: 550px;
+                height: 550px;
+                background: radial-gradient(circle, rgba(168, 85, 247, 0.12) 0%, transparent 70%);
+                top: 35%;
+                right: -150px;
+                animation: floatGlow 14s ease-in-out infinite alternate-reverse;
+            }
+            .glow-accent {
+                width: 500px;
+                height: 500px;
+                background: radial-gradient(circle, rgba(6, 182, 212, 0.10) 0%, transparent 70%);
+                bottom: 5%;
+                left: 15%;
+                animation: floatGlow 16s ease-in-out infinite alternate;
+            }
 
             @keyframes floatGlow {
-                0%, 100% { transform: translate(0, 0) scale(1); }
-                33% { transform: translate(30px, -20px) scale(1.05); }
-                66% { transform: translate(-20px, 15px) scale(0.97); }
+                0% { transform: translate(0, 0) scale(1); }
+                100% { transform: translate(40px, 30px) scale(1.08); }
             }
 
-            .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; position: relative; z-index: 1; }
+            /* Subtle Grid Background Pattern */
+            .bg-grid-mesh {
+                background-image: 
+                    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+                background-size: 50px 50px;
+                mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+                -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+            }
 
-            /* Navigation */
-            nav {
-                position: sticky; top: 0; z-index: 100;
-                border-bottom: 1px solid var(--border);
-                background: rgba(5, 8, 16, 0.85);
+            /* Glassmorphism Card Style */
+            .glass-panel {
+                background: var(--bg-card);
                 backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border: 1px solid var(--border-subtle);
+                transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             }
-            .nav-inner {
-                display: flex; align-items: center; justify-content: space-between;
-                padding: 1rem 1.5rem; max-width: 1200px; margin: 0 auto;
+            .glass-panel:hover {
+                border-color: rgba(99, 102, 241, 0.3);
+                box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.5), 0 0 25px 0 rgba(99, 102, 241, 0.08);
             }
-            .logo { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
-            .logo-icon {
-                width: 38px; height: 38px; border-radius: 10px;
-                background: linear-gradient(135deg, #6366f1, #8b5cf6);
-                display: flex; align-items: center; justify-content: center;
-                font-weight: 900; color: #fff; font-size: 1rem;
-                box-shadow: 0 0 20px rgba(99,102,241,0.4); flex-shrink: 0;
-            }
-            .logo-name { font-weight: 800; font-size: 1rem; color: #fff; letter-spacing: -0.02em; display: block; }
-            .logo-sub { font-size: 0.6rem; font-weight: 600; color: var(--indigo-light); text-transform: uppercase; letter-spacing: 0.12em; display: block; }
-            .nav-links { display: flex; align-items: center; gap: 0.375rem; }
-            .btn-ghost {
-                padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600;
-                color: var(--text-secondary); text-decoration: none; transition: color 0.2s, background 0.2s;
-                border: none; cursor: pointer; background: transparent;
-            }
-            .btn-ghost:hover { color: #fff; background: rgba(255,255,255,0.06); }
-            .btn-primary {
-                padding: 0.5rem 1.125rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700;
-                color: #fff; text-decoration: none;
-                background: linear-gradient(135deg, #6366f1, #7c3aed);
-                transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
-                box-shadow: 0 4px 15px rgba(99,102,241,0.35);
-                display: inline-flex; align-items: center; gap: 0.4rem;
-            }
-            .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
 
-            /* Hero */
-            .hero {
-                padding: 5rem 1.5rem 4rem; text-align: center;
-                position: relative; z-index: 1; overflow: hidden;
+            /* Text Gradients */
+            .gradient-title {
+                background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 45%, #a5b4fc 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
             }
-            .hero::before {
-                content: ''; position: absolute; inset: 0;
-                background-image: linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px);
-                background-size: 60px 60px;
-                mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 100%);
-                -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 100%);
-                pointer-events: none;
+            .gradient-accent {
+                background: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f472b6 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
             }
-            .hero-badge {
-                display: inline-flex; align-items: center; gap: 0.5rem;
-                padding: 0.35rem 0.9rem; border-radius: 100px;
-                background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.25);
-                font-size: 0.72rem; font-weight: 600; color: var(--indigo-light);
-                margin-bottom: 1.5rem; animation: fadeSlideUp 0.6s ease both;
-            }
-            .badge-dot {
-                width: 6px; height: 6px; border-radius: 50%;
-                background: var(--indigo-light); box-shadow: 0 0 6px var(--indigo-light);
-                animation: pulse 2s ease-in-out infinite;
-            }
-            @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(0.85)} }
 
-            .hero-title {
-                font-family: 'Plus Jakarta Sans', sans-serif;
-                font-size: clamp(2.4rem, 6vw, 4.25rem);
-                font-weight: 800; line-height: 1.12; letter-spacing: -0.03em;
-                color: #fff; max-width: 860px; margin: 0 auto 1.25rem;
-                animation: fadeSlideUp 0.6s 0.1s ease both;
+            /* Scroll Animations */
+            .reveal {
+                opacity: 0;
+                transform: translateY(24px);
+                transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
             }
-            .gradient-text {
-                background: linear-gradient(135deg, #818cf8 0%, #c084fc 40%, #fb7185 80%);
-                -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            .reveal.active {
+                opacity: 1;
+                transform: translateY(0);
             }
-            .hero-sub {
-                font-size: clamp(0.95rem, 2vw, 1.1rem); color: var(--text-secondary);
-                max-width: 580px; margin: 0 auto 2.25rem; line-height: 1.7;
-                animation: fadeSlideUp 0.6s 0.2s ease both;
-            }
-            .hero-ctas {
-                display: flex; align-items: center; justify-content: center;
-                gap: 0.75rem; flex-wrap: wrap;
-                animation: fadeSlideUp 0.6s 0.3s ease both; margin-bottom: 3.5rem;
-            }
-            .btn-cta-primary {
-                display: inline-flex; align-items: center; gap: 0.5rem;
-                padding: 0.8rem 1.75rem; border-radius: 12px;
-                background: linear-gradient(135deg, #6366f1, #7c3aed);
-                color: #fff; font-weight: 700; font-size: 0.9rem; text-decoration: none;
-                box-shadow: 0 8px 30px rgba(99,102,241,0.4);
-                transition: all 0.25s;
-            }
-            .btn-cta-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(99,102,241,0.5); }
-            .btn-cta-secondary {
-                display: inline-flex; align-items: center; gap: 0.5rem;
-                padding: 0.8rem 1.75rem; border-radius: 12px;
-                background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
-                color: var(--text-primary); font-weight: 600; font-size: 0.9rem; text-decoration: none;
-                transition: all 0.25s;
-            }
-            .btn-cta-secondary:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); }
 
-            /* Dashboard Frame */
-            .hero-visual { position: relative; max-width: 900px; margin: 0 auto; animation: fadeSlideUp 0.8s 0.4s ease both; }
-            .hero-visual-frame {
-                border-radius: 16px; border: 1px solid rgba(255,255,255,0.08);
-                background: var(--bg-card); overflow: hidden;
-                box-shadow: 0 0 0 1px rgba(99,102,241,0.1), 0 40px 80px rgba(0,0,0,0.6), 0 0 100px rgba(99,102,241,0.08);
-            }
-            .frame-bar {
-                display: flex; align-items: center; gap: 0.5rem;
-                padding: 0.7rem 1rem; background: #0a0f1e; border-bottom: 1px solid var(--border);
-            }
-            .frame-dot { width: 10px; height: 10px; border-radius: 50%; }
-            .frame-dot:nth-child(1) { background: #ff5f57; }
-            .frame-dot:nth-child(2) { background: #febc2e; }
-            .frame-dot:nth-child(3) { background: #28c840; }
-            .frame-url {
-                flex: 1; background: rgba(255,255,255,0.04); border-radius: 6px;
-                padding: 0.25rem 0.75rem; font-size: 0.7rem; color: var(--text-muted);
-                text-align: center; margin: 0 0.5rem;
-            }
-            .frame-content { padding: 1.25rem; }
-            .mini-dash { display: grid; gap: 0.75rem; }
-            .mini-dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem; }
-            .mini-dash-title { font-size: 0.85rem; font-weight: 700; color: #fff; }
-            .mini-badge { padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.65rem; font-weight: 600; }
-            .badge-green { background: rgba(16,185,129,0.15); color: #34d399; }
-            .badge-amber { background: rgba(245,158,11,0.15); color: #fbbf24; }
-            .mini-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
-            .mini-stat {
-                padding: 0.85rem; border-radius: 10px;
-                background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-            }
-            .mini-stat-label { font-size: 0.62rem; color: var(--text-muted); font-weight: 500; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.05em; }
-            .mini-stat-value { font-size: 1.2rem; font-weight: 800; color: #fff; line-height: 1; margin-bottom: 0.2rem; }
-            .mini-stat-change { font-size: 0.62rem; font-weight: 600; }
-            .change-up { color: #34d399; }
-            .change-down { color: #f87171; }
-            .mini-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-            .mini-panel { border-radius: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 0.85rem; }
-            .mini-panel-title { font-size: 0.65rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.6rem; }
-            .stock-bar-wrap { display: flex; flex-direction: column; gap: 0.4rem; }
-            .stock-bar-row { display: flex; align-items: center; gap: 0.5rem; }
-            .stock-bar-name { font-size: 0.65rem; color: var(--text-secondary); width: 70px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-            .stock-bar-track { flex: 1; height: 5px; border-radius: 100px; background: rgba(255,255,255,0.05); overflow: hidden; }
-            .stock-bar-fill { height: 100%; border-radius: 100px; }
-            .stock-bar-pct { font-size: 0.6rem; color: var(--text-muted); width: 28px; text-align: right; flex-shrink: 0; }
-            .order-list { display: flex; flex-direction: column; gap: 0.4rem; }
-            .order-row { display: flex; align-items: center; justify-content: space-between; padding: 0.35rem 0.5rem; border-radius: 6px; background: rgba(255,255,255,0.02); }
-            .order-id { font-size: 0.65rem; font-weight: 600; color: #fff; font-family: monospace; }
-            .order-name { font-size: 0.62rem; color: var(--text-secondary); flex: 1; margin: 0 0.5rem; }
-            .order-amount { font-size: 0.65rem; font-weight: 700; color: #fff; }
-            .order-status { font-size: 0.58rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 100px; margin-left: 0.4rem; }
-            .status-dispatched { background: rgba(16,185,129,0.15); color: #34d399; }
-            .status-pending { background: rgba(245,158,11,0.15); color: #fbbf24; }
-            .status-draft { background: rgba(148,163,184,0.1); color: #94a3b8; }
-
-            /* Stats strip */
-            .stats-strip {
-                border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
-                background: rgba(255,255,255,0.015); padding: 2rem 1.5rem; position: relative; z-index: 1;
-            }
-            .stats-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; text-align: center; }
-            .stat-num { font-size: clamp(1.6rem, 3vw, 2.25rem); font-weight: 800; color: #fff; letter-spacing: -0.03em; line-height: 1; }
-            .stat-num span { background: linear-gradient(135deg, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-            .stat-label { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem; font-weight: 500; }
-
-            /* Sections */
-            .section { padding: 5rem 1.5rem; position: relative; z-index: 1; }
-            .section-label {
-                display: inline-flex; align-items: center; gap: 0.5rem;
-                font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
-                color: var(--indigo-light); margin-bottom: 1rem;
-            }
-            .section-label::before { content:''; display: block; width: 20px; height: 2px; background: var(--indigo-light); border-radius: 2px; }
-            .section-title {
-                font-family: 'Plus Jakarta Sans', sans-serif;
-                font-size: clamp(1.75rem, 3.5vw, 2.5rem);
-                font-weight: 800; letter-spacing: -0.025em; color: #fff; line-height: 1.2; margin-bottom: 1rem;
-            }
-            .section-sub { font-size: 1rem; color: var(--text-secondary); max-width: 560px; line-height: 1.7; }
-
-            /* Features grid */
-            .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border-radius: 16px; overflow: hidden; margin-top: 3rem; }
-            .feature-card {
-                background: var(--bg-card); padding: 1.75rem;
-                transition: background 0.25s; position: relative; overflow: hidden;
-            }
-            .feature-card::before { content:''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(99,102,241,0.04), transparent); opacity: 0; transition: opacity 0.3s; }
-            .feature-card:hover { background: var(--bg-card-hover); }
-            .feature-card:hover::before { opacity: 1; }
-            .feature-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 1rem; }
-            .feature-title { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem; }
-            .feature-desc { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; }
-
-            /* Two-col */
-            .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
-            .two-col.reversed { direction: rtl; }
-            .two-col.reversed > * { direction: ltr; }
-
-            /* Benefits */
-            .benefit-list { list-style: none; display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem; }
-            .benefit-item { display: flex; align-items: flex-start; gap: 0.75rem; }
-            .benefit-check { width: 20px; height: 20px; border-radius: 6px; background: rgba(16,185,129,0.15); color: #34d399; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; flex-shrink: 0; margin-top: 2px; }
-            .benefit-text { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5; }
-            .benefit-text strong { color: var(--text-primary); font-weight: 600; }
-
-            /* Mock panels */
-            .mock-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(99,102,241,0.08); }
-            .mock-panel-header { padding: 0.8rem 1.1rem; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-            .mock-panel-title { font-size: 0.78rem; font-weight: 700; color: #fff; }
-            .mock-panel-body { padding: 1.1rem; }
-            .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.75rem; }
-            .kpi-card { padding: 0.65rem 0.75rem; border-radius: 8px; background: rgba(255,255,255,0.025); border: 1px solid var(--border); text-align: center; }
-            .kpi-val { font-size: 1.1rem; font-weight: 800; color: #fff; line-height: 1; }
-            .kpi-lbl { font-size: 0.6rem; color: var(--text-muted); margin-top: 0.2rem; text-transform: uppercase; letter-spacing: 0.06em; }
-            .tenant-list { display: flex; flex-direction: column; gap: 0.5rem; }
-            .tenant-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.75rem; border-radius: 8px; background: rgba(255,255,255,0.025); border: 1px solid var(--border); }
-            .tenant-avatar { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; color: #fff; flex-shrink: 0; }
-            .tenant-info { flex: 1; }
-            .tenant-name { font-size: 0.78rem; font-weight: 600; color: #fff; }
-            .tenant-plan { font-size: 0.62rem; color: var(--text-muted); }
-            .tenant-status { font-size: 0.6rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 100px; }
-            .tenant-active { background: rgba(16,185,129,0.15); color: #34d399; }
-            .tenant-trial { background: rgba(245,158,11,0.12); color: #fbbf24; }
-            .tenant-sus { background: rgba(239,68,68,0.12); color: #f87171; }
-
-            /* CSV visual */
-            .csv-visual { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 1.25rem; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
-            .csv-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
-            .csv-title { font-size: 0.78rem; font-weight: 700; color: #fff; }
-            .csv-table { width: 100%; border-collapse: collapse; font-size: 0.68rem; font-family: monospace; }
-            .csv-table th { background: rgba(99,102,241,0.1); color: var(--indigo-light); padding: 0.35rem 0.5rem; text-align: left; font-weight: 700; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; }
-            .csv-table td { padding: 0.35rem 0.5rem; color: var(--text-secondary); border-bottom: 1px solid rgba(255,255,255,0.03); }
-            .import-result { margin-top: 0.75rem; padding: 0.65rem 0.75rem; border-radius: 8px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); display: flex; align-items: center; gap: 0.5rem; }
-            .import-text { font-size: 0.72rem; color: #34d399; font-weight: 600; }
-
-            /* Pricing */
-            .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-top: 3rem; }
-            .pricing-card { border-radius: 16px; border: 1px solid var(--border); background: var(--bg-card); padding: 2rem; position: relative; overflow: hidden; transition: transform 0.3s, box-shadow 0.3s; }
-            .pricing-card:hover { transform: translateY(-4px); box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
-            .pricing-card.featured { border-color: rgba(99,102,241,0.4); background: linear-gradient(180deg, rgba(99,102,241,0.08) 0%, var(--bg-card) 100%); box-shadow: 0 0 40px rgba(99,102,241,0.12); }
-            .pricing-card.featured::before { content: 'Most Popular'; position: absolute; top: 1.25rem; right: 1.25rem; font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; padding: 0.25rem 0.65rem; border-radius: 100px; }
-            .plan-name { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 0.75rem; }
-            .plan-price { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 2.5rem; font-weight: 800; color: #fff; letter-spacing: -0.03em; line-height: 1; }
-            .plan-price sup { font-size: 1.1rem; font-weight: 600; vertical-align: super; margin-right: 2px; }
-            .plan-price sub { font-size: 0.8rem; font-weight: 500; color: var(--text-muted); vertical-align: baseline; margin-left: 2px; }
-            .plan-desc { font-size: 0.82rem; color: var(--text-secondary); margin: 0.75rem 0 1.5rem; line-height: 1.5; }
-            .plan-divider { height: 1px; background: var(--border); margin-bottom: 1.25rem; }
-            .plan-features { list-style: none; display: flex; flex-direction: column; gap: 0.65rem; margin-bottom: 1.75rem; }
-            .plan-feature { display: flex; align-items: center; gap: 0.6rem; font-size: 0.82rem; color: var(--text-secondary); }
-            .plan-feature-check { color: #34d399; font-size: 0.75rem; flex-shrink: 0; }
-            .plan-feature-x { color: var(--text-muted); font-size: 0.75rem; flex-shrink: 0; }
-            .plan-cta { display: block; text-align: center; padding: 0.7rem; border-radius: 10px; font-size: 0.85rem; font-weight: 700; text-decoration: none; transition: all 0.2s; }
-            .plan-cta-outline { background: transparent; border: 1px solid var(--border); color: var(--text-primary); }
-            .plan-cta-outline:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); }
-            .plan-cta-filled { background: linear-gradient(135deg, #6366f1, #7c3aed); color: #fff; box-shadow: 0 6px 20px rgba(99,102,241,0.3); }
-            .plan-cta-filled:hover { opacity: 0.9; transform: translateY(-1px); }
-
-            /* CTA */
-            .cta-section { padding: 5rem 1.5rem; text-align: center; position: relative; z-index: 1; }
-            .cta-box {
-                max-width: 700px; margin: 0 auto; padding: 3.5rem;
-                border-radius: 24px;
-                background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08));
-                border: 1px solid rgba(99,102,241,0.2);
-                box-shadow: 0 0 60px rgba(99,102,241,0.1);
-                position: relative; overflow: hidden;
-            }
-            .cta-box::before { content: ''; position: absolute; top: -50%; left: 50%; transform: translateX(-50%); width: 400px; height: 300px; background: radial-gradient(ellipse, rgba(99,102,241,0.2) 0%, transparent 70%); pointer-events: none; }
-            .cta-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(1.6rem, 3vw, 2.25rem); font-weight: 800; color: #fff; letter-spacing: -0.025em; margin-bottom: 0.75rem; line-height: 1.2; }
-            .cta-sub { font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 2rem; line-height: 1.6; }
-            .cta-btns { display: flex; align-items: center; justify-content: center; gap: 0.75rem; flex-wrap: wrap; }
-
-            /* Footer */
-            footer { border-top: 1px solid var(--border); padding: 2.5rem 1.5rem; position: relative; z-index: 1; }
-            .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
-            .footer-brand { display: flex; align-items: center; gap: 0.65rem; text-decoration: none; }
-            .footer-logo { width: 28px; height: 28px; border-radius: 7px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.75rem; color: #fff; }
-            .footer-brand-name { font-weight: 700; font-size: 0.88rem; color: var(--text-secondary); }
-            .footer-copy { font-size: 0.78rem; color: var(--text-muted); }
-            .footer-tech { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-            .tech-pill { padding: 0.25rem 0.6rem; border-radius: 100px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); font-size: 0.65rem; color: var(--text-muted); font-weight: 500; }
-
-            /* Animations */
-            @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
-            .animate-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
-            .animate-in.visible { opacity: 1; transform: translateY(0); }
-
-            /* Responsive */
-            @media (max-width: 900px) {
-                .mini-stats { grid-template-columns: repeat(2, 1fr); }
-                .features-grid { grid-template-columns: repeat(2, 1fr); }
-                .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin-left: auto; margin-right: auto; }
-                .two-col { grid-template-columns: 1fr; gap: 2.5rem; }
-                .two-col.reversed { direction: ltr; }
-                .stats-inner { grid-template-columns: repeat(2, 1fr); }
-            }
-            @media (max-width: 600px) {
-                .features-grid { grid-template-columns: 1fr; }
-                .mini-row { grid-template-columns: 1fr; }
-                .hero { padding: 3rem 1.5rem 2.5rem; }
-                .section { padding: 3.5rem 1.5rem; }
-                .cta-box { padding: 2rem 1.25rem; }
+            /* Custom Pill Switch */
+            .toggle-active {
+                background: #6366f1;
+                color: #ffffff;
+                box-shadow: 0 0 16px rgba(99, 102, 241, 0.4);
             }
         </style>
     </head>
 
-    <body>
-        <div class="ambient-glow glow-1"></div>
-        <div class="ambient-glow glow-2"></div>
-        <div class="ambient-glow glow-3"></div>
+    <body class="min-h-screen relative selection:bg-indigo-600 selection:text-white">
+        <!-- Ambient Glowing Aura -->
+        <div class="ambient-glow glow-primary"></div>
+        <div class="ambient-glow glow-secondary"></div>
+        <div class="ambient-glow glow-accent"></div>
 
-        <!-- Navigation -->
-        <nav>
-            <div class="nav-inner">
-                <a href="/" class="logo">
-                    <div class="logo-icon">I</div>
+        <!-- Sticky Navigation Header -->
+        <header id="main-header" class="sticky top-0 z-50 border-b border-white/[0.06] bg-[#050814]/85 backdrop-blur-xl transition-all duration-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+                <!-- Brand Logo -->
+                <a href="/" class="flex items-center gap-3.5 group">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform">
+                        I
+                    </div>
                     <div>
-                        <span class="logo-name">Inoodex</span>
-                        <span class="logo-sub">Cloud Inventory</span>
+                        <div class="flex items-center gap-2">
+                            <span class="font-heading font-extrabold text-lg text-white tracking-tight leading-tight">Inoodex</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">ERP v2.4</span>
+                        </div>
+                        <span class="text-[10px] font-semibold tracking-wider text-slate-400 uppercase block">Cloud Inventory Platform</span>
                     </div>
                 </a>
-                <div class="nav-links">
+
+                <!-- Desktop Nav Links -->
+                <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
+                    <a href="#features" class="hover:text-white transition-colors">Features</a>
+                    <a href="#modules" class="hover:text-white transition-colors">ERP Modules</a>
+                    <a href="#architecture" class="hover:text-white transition-colors">Architecture</a>
+                    <a href="#pricing" class="hover:text-white transition-colors">Pricing</a>
+                    <a href="#faq" class="hover:text-white transition-colors">FAQ</a>
+                </nav>
+
+                <!-- Auth Action Buttons -->
+                <div class="flex items-center gap-3.5">
                     @if (Route::has('login'))
                         @auth
-                            <a href="{{ url('/dashboard') }}" class="btn-primary">
-                                Open Workspace
-                                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                            <a 
+                                href="{{ url('/dashboard') }}" 
+                                id="btn-nav-workspace"
+                                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            >
+                                <span>Open Workspace</span>
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                </svg>
                             </a>
                         @else
-                            <a href="{{ route('login') }}" class="btn-ghost">Sign In</a>
+                            <a 
+                                href="{{ route('login') }}" 
+                                id="btn-nav-login"
+                                class="hidden sm:inline-flex px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/[0.05] rounded-xl transition-colors"
+                            >
+                                Sign In
+                            </a>
                             @if (Route::has('register'))
-                                <a href="{{ route('register') }}" class="btn-primary">
-                                    Get Started
-                                    <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                                <a 
+                                    href="{{ route('register') }}" 
+                                    id="btn-nav-register"
+                                    class="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                >
+                                    <span>Get Started Free</span>
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                    </svg>
                                 </a>
                             @endif
                         @endauth
                     @endif
+
+                    <!-- Mobile Menu Button -->
+                    <button 
+                        id="btn-mobile-menu"
+                        class="md:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.05] focus:outline-none"
+                        aria-label="Toggle Navigation Menu"
+                    >
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
                 </div>
             </div>
-        </nav>
 
-        <!-- Hero -->
-        <section class="hero">
-            <div class="container" style="max-width:1100px;">
-                <div class="hero-badge">
-                    <span class="badge-dot"></span>
-                    Multi-Tenant SaaS &bull; Atomic Stock Control &bull; mPDF Invoicing
-                </div>
-
-                <h1 class="hero-title">
-                    The Inventory Platform<br>Built to <span class="gradient-text">Scale With Your Business</span>
-                </h1>
-
-                <p class="hero-sub">
-                    Full-stack multi-tenant inventory management with multi-warehouse stock control, atomic purchase &amp; sales order flows, automated alerts, and PDF document generation — all scoped per client.
-                </p>
-
-                <div class="hero-ctas">
-                    @auth
-                        <a href="{{ route('dashboard') }}" class="btn-cta-primary">
-                            Open My Workspace
-                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                        </a>
-                    @else
-                        <a href="{{ route('register') }}" class="btn-cta-primary">
-                            Start Free &mdash; Create Account
-                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                        </a>
-                        <a href="{{ route('login') }}" class="btn-cta-secondary">Sign In Existing Team</a>
-                    @endauth
-                </div>
-
-                <!-- Dashboard preview frame -->
-                <div class="hero-visual">
-                    <div class="hero-visual-frame">
-                        <div class="frame-bar">
-                            <div class="frame-dot"></div>
-                            <div class="frame-dot"></div>
-                            <div class="frame-dot"></div>
-                            <div class="frame-url">app.inoodex.com/dashboard</div>
-                        </div>
-                        <div class="frame-content">
-                            <div class="mini-dash">
-                                <div class="mini-dash-header">
-                                    <span class="mini-dash-title">Inventory Dashboard &mdash; Q4 2026</span>
-                                    <span class="mini-badge badge-green">&bull; Live</span>
-                                </div>
-                                <div class="mini-stats">
-                                    <div class="mini-stat">
-                                        <div class="mini-stat-label">Stock Value</div>
-                                        <div class="mini-stat-value">$284k</div>
-                                        <div class="mini-stat-change change-up">&uarr; 12.4%</div>
-                                    </div>
-                                    <div class="mini-stat">
-                                        <div class="mini-stat-label">Orders Dispatched</div>
-                                        <div class="mini-stat-value">1,842</div>
-                                        <div class="mini-stat-change change-up">&uarr; 8.1%</div>
-                                    </div>
-                                    <div class="mini-stat">
-                                        <div class="mini-stat-label">Low-Stock Alerts</div>
-                                        <div class="mini-stat-value">7</div>
-                                        <div class="mini-stat-change change-down">&uarr; 3 items</div>
-                                    </div>
-                                    <div class="mini-stat">
-                                        <div class="mini-stat-label">Warehouses</div>
-                                        <div class="mini-stat-value">4</div>
-                                        <div class="mini-stat-change change-up">All active</div>
-                                    </div>
-                                </div>
-                                <div class="mini-row">
-                                    <div class="mini-panel">
-                                        <div class="mini-panel-title">Top Products by Stock</div>
-                                        <div class="stock-bar-wrap">
-                                            <div class="stock-bar-row">
-                                                <span class="stock-bar-name">Wireless Keyboard</span>
-                                                <div class="stock-bar-track"><div class="stock-bar-fill" style="width:82%;background:linear-gradient(90deg,#6366f1,#8b5cf6)"></div></div>
-                                                <span class="stock-bar-pct">82%</span>
-                                            </div>
-                                            <div class="stock-bar-row">
-                                                <span class="stock-bar-name">USB-C Hub Pro</span>
-                                                <div class="stock-bar-track"><div class="stock-bar-fill" style="width:65%;background:linear-gradient(90deg,#06b6d4,#6366f1)"></div></div>
-                                                <span class="stock-bar-pct">65%</span>
-                                            </div>
-                                            <div class="stock-bar-row">
-                                                <span class="stock-bar-name">Laptop Stand Alum</span>
-                                                <div class="stock-bar-track"><div class="stock-bar-fill" style="width:48%;background:linear-gradient(90deg,#8b5cf6,#c084fc)"></div></div>
-                                                <span class="stock-bar-pct">48%</span>
-                                            </div>
-                                            <div class="stock-bar-row">
-                                                <span class="stock-bar-name">Webcam 4K Auto</span>
-                                                <div class="stock-bar-track"><div class="stock-bar-fill" style="width:21%;background:linear-gradient(90deg,#f59e0b,#f43f5e)"></div></div>
-                                                <span class="stock-bar-pct">21%</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mini-panel">
-                                        <div class="mini-panel-title">Recent Sales Orders</div>
-                                        <div class="order-list">
-                                            <div class="order-row">
-                                                <span class="order-id">SO-0291</span>
-                                                <span class="order-name">Acme Corp</span>
-                                                <span class="order-amount">$4,280</span>
-                                                <span class="order-status status-dispatched">Dispatched</span>
-                                            </div>
-                                            <div class="order-row">
-                                                <span class="order-id">SO-0290</span>
-                                                <span class="order-name">TechStart Ltd</span>
-                                                <span class="order-amount">$1,940</span>
-                                                <span class="order-status status-pending">Confirmed</span>
-                                            </div>
-                                            <div class="order-row">
-                                                <span class="order-id">SO-0289</span>
-                                                <span class="order-name">GlobalTech Inc</span>
-                                                <span class="order-amount">$7,620</span>
-                                                <span class="order-status status-dispatched">Dispatched</span>
-                                            </div>
-                                            <div class="order-row">
-                                                <span class="order-id">SO-0288</span>
-                                                <span class="order-name">Beta Supplies</span>
-                                                <span class="order-amount">$892</span>
-                                                <span class="order-status status-draft">Draft</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Mobile Dropdown Navigation -->
+            <div id="mobile-menu" class="hidden md:hidden border-t border-white/[0.06] bg-[#070b1a]/95 backdrop-blur-xl px-4 pt-3 pb-6 space-y-3">
+                <a href="#features" class="block py-2 text-sm font-medium text-slate-300 hover:text-white">Features</a>
+                <a href="#modules" class="block py-2 text-sm font-medium text-slate-300 hover:text-white">ERP Modules</a>
+                <a href="#architecture" class="block py-2 text-sm font-medium text-slate-300 hover:text-white">Architecture</a>
+                <a href="#pricing" class="block py-2 text-sm font-medium text-slate-300 hover:text-white">Pricing</a>
+                <a href="#faq" class="block py-2 text-sm font-medium text-slate-300 hover:text-white">FAQ</a>
+                <div class="pt-2 border-t border-white/[0.06] flex flex-col gap-2">
+                    <a href="{{ route('login') }}" class="w-full text-center py-2.5 rounded-lg bg-white/[0.05] text-xs font-bold text-white">Sign In</a>
+                    <a href="{{ route('register') }}" class="w-full text-center py-2.5 rounded-lg bg-indigo-600 text-xs font-bold text-white">Get Started Free</a>
                 </div>
             </div>
-        </section>
+        </header>
 
-        <!-- Stats strip -->
-        <div class="stats-strip animate-in">
-            <div class="stats-inner">
-                <div>
-                    <div class="stat-num"><span>100%</span></div>
-                    <div class="stat-label">Tenant Data Isolation</div>
-                </div>
-                <div>
-                    <div class="stat-num"><span>0</span></div>
-                    <div class="stat-label">Race Conditions via Row Locking</div>
-                </div>
-                <div>
-                    <div class="stat-num"><span>87+</span></div>
-                    <div class="stat-label">Automated Tests Passing</div>
-                </div>
-                <div>
-                    <div class="stat-num"><span>&infin;</span></div>
-                    <div class="stat-label">Concurrent Client Tenants</div>
-                </div>
-            </div>
-        </div>
+        <!-- Main Content -->
+        <main>
+            <!-- 1. Hero Section -->
+            <section class="relative pt-12 pb-24 md:pt-20 md:pb-32 overflow-hidden">
+                <div class="absolute inset-0 bg-grid-mesh pointer-events-none"></div>
 
-        <!-- Features grid -->
-        <section class="section">
-            <div class="container">
-                <div class="animate-in">
-                    <div class="section-label">Platform Features</div>
-                    <h2 class="section-title">Everything Your Business Needs,<br>Nothing It Doesn't</h2>
-                    <p class="section-sub">From atomic stock transactions to PDF packing slips &mdash; a complete, production-ready inventory engine you can rent to clients immediately.</p>
-                </div>
-                <div class="features-grid animate-in">
-                    <div class="feature-card">
-                        <div class="feature-icon" style="background:rgba(99,102,241,0.12);">&#127980;</div>
-                        <div class="feature-title">Multi-Warehouse Management</div>
-                        <div class="feature-desc">Track physical on-hand, reserved, and available quantities per location across unlimited distribution hubs with zero drift.</div>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon" style="background:rgba(139,92,246,0.12);">&#9889;</div>
-                        <div class="feature-title">Atomic Stock Locking</div>
-                        <div class="feature-desc">Pessimistic DB row locking wrapped in transactions eliminates race conditions, overselling, and negative stock even under high concurrency.</div>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon" style="background:rgba(6,182,212,0.12);">&#127970;</div>
-                        <div class="feature-title">Strict Multi-Tenancy</div>
-                        <div class="feature-desc">Global query scopes and Jetstream Teams ensure every client's data is fully isolated &mdash; impossible for one tenant to see another's records.</div>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon" style="background:rgba(16,185,129,0.12);">&#128230;</div>
-                        <div class="feature-title">Purchase Order Lifecycle</div>
-                        <div class="feature-desc">Draft &rarr; Ordered &rarr; Partially Received &rarr; Fully Received. Receiving dock triggers atomic stock-in with full movement ledger records.</div>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon" style="background:rgba(245,158,11,0.12);">&#128666;</div>
-                        <div class="feature-title">Sales Order &amp; Dispatch</div>
-                        <div class="feature-desc">Confirmation reserves stock, dispatch releases reservation and deducts. Payment tracking with outstanding balance visibility per order.</div>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon" style="background:rgba(244,63,94,0.12);">&#128196;</div>
-                        <div class="feature-title">mPDF Document Suite</div>
-                        <div class="feature-desc">Vector barcode Sales Invoices, Packing Slips, and Purchase Orders with tenant branding, custom currency symbols, and tax IDs.</div>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon" style="background:rgba(99,102,241,0.12);">&#128202;</div>
-                        <div class="feature-title">Inventory Reports</div>
-                        <div class="feature-desc">Stock valuation (cost vs. selling price), low-stock deficit alerts, and a filterable chronological stock movement audit ledger.</div>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon" style="background:rgba(139,92,246,0.12);">&#128229;</div>
-                        <div class="feature-title">Bulk CSV Import / Export</div>
-                        <div class="feature-desc">Import entire catalogs with auto-category creation, opening stock allocation, and duplicate SKU handling. Export in one click.</div>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon" style="background:rgba(6,182,212,0.12);">&#128081;</div>
-                        <div class="feature-title">Super-Admin Control Plane</div>
-                        <div class="feature-desc">Platform owner dashboard: monitor all client tenants, suspend/reactivate accounts, switch tenant context, and manage plans.</div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Super Admin deep dive -->
-        <section class="section" style="background: rgba(255,255,255,0.01); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
-            <div class="container">
-                <div class="two-col">
-                    <div class="animate-in">
-                        <div class="section-label">Platform Control</div>
-                        <h2 class="section-title">You're the Platform Owner. Act Like It.</h2>
-                        <p class="section-sub">The Super-Admin Control Plane gives you god-mode visibility over every client tenant on your platform &mdash; from a single, dedicated dashboard.</p>
-                        <ul class="benefit-list">
-                            <li class="benefit-item">
-                                <div class="benefit-check">&#10003;</div>
-                                <div class="benefit-text"><strong>Platform-wide KPIs</strong> &mdash; total tenants, active / suspended counts, all-client aggregate inventory valuation</div>
-                            </li>
-                            <li class="benefit-item">
-                                <div class="benefit-check">&#10003;</div>
-                                <div class="benefit-text"><strong>1-Click Suspend / Reactivate</strong> &mdash; instantly block non-paying clients while exempting yourself from the lockout</div>
-                            </li>
-                            <li class="benefit-item">
-                                <div class="benefit-check">&#10003;</div>
-                                <div class="benefit-text"><strong>Tenant Context Switch</strong> &mdash; click "Enter Workspace" to jump into any client's inventory as if you were them</div>
-                            </li>
-                            <li class="benefit-item">
-                                <div class="benefit-check">&#10003;</div>
-                                <div class="benefit-text"><strong>Plan Management</strong> &mdash; update client subscription tier (Starter / Professional / Enterprise) directly</div>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="animate-in">
-                        <div class="mock-panel">
-                            <div class="mock-panel-header">
-                                <span class="mock-panel-title">&#128081; Super-Admin &mdash; /admin</span>
-                                <span class="mini-badge badge-green" style="font-size:0.6rem;">Platform Owner</span>
-                            </div>
-                            <div class="mock-panel-body">
-                                <div class="kpi-row">
-                                    <div class="kpi-card"><div class="kpi-val">24</div><div class="kpi-lbl">Total Clients</div></div>
-                                    <div class="kpi-card"><div class="kpi-val" style="color:#34d399;">21</div><div class="kpi-lbl">Active</div></div>
-                                    <div class="kpi-card"><div class="kpi-val" style="color:#f87171;">3</div><div class="kpi-lbl">Suspended</div></div>
-                                </div>
-                                <div class="tenant-list">
-                                    <div class="tenant-row">
-                                        <div class="tenant-avatar" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">A</div>
-                                        <div class="tenant-info"><div class="tenant-name">Acme Retail Co.</div><div class="tenant-plan">Enterprise &middot; 3 warehouses</div></div>
-                                        <span class="tenant-status tenant-active">Active</span>
-                                    </div>
-                                    <div class="tenant-row">
-                                        <div class="tenant-avatar" style="background:linear-gradient(135deg,#06b6d4,#6366f1);">T</div>
-                                        <div class="tenant-info"><div class="tenant-name">TechStart Ltd</div><div class="tenant-plan">Professional &middot; 1 warehouse</div></div>
-                                        <span class="tenant-status tenant-trial">Trial</span>
-                                    </div>
-                                    <div class="tenant-row">
-                                        <div class="tenant-avatar" style="background:linear-gradient(135deg,#f59e0b,#f43f5e);">G</div>
-                                        <div class="tenant-info"><div class="tenant-name">GlobalTech Inc.</div><div class="tenant-plan">Starter &middot; 1 warehouse</div></div>
-                                        <span class="tenant-status tenant-sus">Suspended</span>
-                                    </div>
-                                    <div class="tenant-row">
-                                        <div class="tenant-avatar" style="background:linear-gradient(135deg,#10b981,#06b6d4);">B</div>
-                                        <div class="tenant-info"><div class="tenant-name">Beta Supplies PH</div><div class="tenant-plan">Professional &middot; 2 warehouses</div></div>
-                                        <span class="tenant-status tenant-active">Active</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- CSV Import deep dive -->
-        <section class="section">
-            <div class="container">
-                <div class="two-col reversed">
-                    <div class="animate-in">
-                        <div class="section-label">Instant Onboarding</div>
-                        <h2 class="section-title">Onboard an Entire Catalog in Seconds</h2>
-                        <p class="section-sub">New clients don't need to type in hundreds of products. Upload a CSV and the platform handles the rest automatically.</p>
-                        <ul class="benefit-list">
-                            <li class="benefit-item">
-                                <div class="benefit-check">&#10003;</div>
-                                <div class="benefit-text"><strong>Auto-creates product categories</strong> &mdash; if a category doesn't exist it's created on-the-fly during import</div>
-                            </li>
-                            <li class="benefit-item">
-                                <div class="benefit-check">&#10003;</div>
-                                <div class="benefit-text"><strong>Updates duplicate SKUs</strong> &mdash; re-importing existing products updates records without throwing key errors</div>
-                            </li>
-                            <li class="benefit-item">
-                                <div class="benefit-check">&#10003;</div>
-                                <div class="benefit-text"><strong>Opening stock allocation</strong> &mdash; specify a warehouse and all imported products get their initial stock registered atomically</div>
-                            </li>
-                            <li class="benefit-item">
-                                <div class="benefit-check">&#10003;</div>
-                                <div class="benefit-text"><strong>Detailed import report</strong> &mdash; see exactly how many products were created, updated, or skipped with per-row error logs</div>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="animate-in">
-                        <div class="csv-visual">
-                            <div class="csv-header">
-                                <span style="font-size:1.1rem;">&#128229;</span>
-                                <span class="csv-title">product_catalog_import.csv</span>
-                                <span class="mini-badge badge-amber" style="margin-left:auto;font-size:0.6rem;">142 rows</span>
-                            </div>
-                            <table class="csv-table">
-                                <thead>
-                                    <tr><th>SKU</th><th>Product Name</th><th>Category</th><th>Cost</th><th>Price</th><th>Qty</th></tr>
-                                </thead>
-                                <tbody>
-                                    <tr><td>KB-WL-001</td><td>Wireless Keyboard</td><td>Peripherals</td><td>18.00</td><td>35.00</td><td>200</td></tr>
-                                    <tr><td>HB-UC-002</td><td>USB-C Hub Pro</td><td>Accessories</td><td>22.50</td><td>49.99</td><td>150</td></tr>
-                                    <tr><td>ST-AL-003</td><td>Aluminium Laptop Stand</td><td>Accessories</td><td>14.00</td><td>29.99</td><td>80</td></tr>
-                                    <tr><td>WC-4K-004</td><td>4K Webcam Auto Focus</td><td>Peripherals</td><td>45.00</td><td>89.00</td><td>60</td></tr>
-                                    <tr><td colspan="6" style="text-align:center;opacity:0.3;padding:0.5rem;">&middot; &middot; &middot; 137 more rows &middot; &middot; &middot;</td></tr>
-                                </tbody>
-                            </table>
-                            <div class="import-result">
-                                <span style="font-size:0.9rem;">&#9989;</span>
-                                <span class="import-text">Import complete &mdash; 139 created, 3 updated, 0 skipped. Opening stock allocated to Warehouse A.</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Pricing -->
-        <section class="section" style="background: rgba(255,255,255,0.01); border-top: 1px solid var(--border);">
-            <div class="container">
-                <div style="text-align:center;" class="animate-in">
-                    <div class="section-label" style="justify-content:center;">Pricing</div>
-                    <h2 class="section-title">Transparent Pricing for Every Scale</h2>
-                    <p class="section-sub" style="margin:0 auto 0;">Choose a plan that fits your client portfolio. All plans include full multi-tenancy, atomic stock control, and PDF generation.</p>
-                </div>
-                <div class="pricing-grid animate-in">
-                    <div class="pricing-card">
-                        <div class="plan-name">Starter</div>
-                        <div class="plan-price"><sup>$</sup>29<sub>/mo</sub></div>
-                        <div class="plan-desc">Perfect for small teams getting started with cloud inventory management.</div>
-                        <div class="plan-divider"></div>
-                        <ul class="plan-features">
-                            <li class="plan-feature"><span class="plan-feature-check">&#10003;</span> 1 Warehouse</li>
-                            <li class="plan-feature"><span class="plan-feature-check">&#10003;</span> Up to 5 Users</li>
-                            <li class="plan-feature"><span class="plan-feature-check">&#10003;</span> 500 Products</li>
-                            <li class="plan-feature"><span class="plan-feature-check">&#10003;</span> CSV Import / Export</li>
-                            <li class="plan-feature"><span class="plan-feature-check">&#10003;</span> PDF Invoices &amp; POs</li>
-                            <li class="plan-feature"><span class="plan-feature-x">&#10007;</span> <span style="opacity:0.4;">Low-Stock Email Alerts</span></li>
-                            <li class="plan-feature"><span class="plan-feature-x">&#10007;</span> <span style="opacity:0.4;">API Access</span></li>
-                        </ul>
-                        <a href="{{ route('register') }}" class="plan-cta plan-cta-outline">Get Started</a>
-                    </div>
-                    <div class="pricing-card featured">
-                        <div class="plan-name">Professional</div>
-                        <div class="plan-price"><sup>$</sup>79<sub>/mo</sub></div>
-                        <div class="plan-desc">For growing businesses managing multi-location inventory across teams.</div>
-                        <div class="plan-divider"></div>
-                        <ul class="plan-features">
-                            <li class="plan-feature"><span class="plan-feature-check">&#10003;</span> Up to 5 Warehouses</li>
-                            <li class="plan-feature"><span class="plan-feature-check">&#10003;</span> Unlimited Users</li>
-                            <li class="plan-feature"><span class="plan-feature-check">&#10003;</span> Unlimited Products</li>
-                            <li class="plan-feature"><span class="plan-feature-check">&#10003;</span> CSV Import / Export</li>
-                            <li class="plan-feature"><span class="plan-feature-check">&#10003;</span> PDF Invoices &amp; POs</li>
-                            <li class="plan-feature"><span class="plan-feature-check">&#10003;</span> Low-Stock Email Alerts</li>
-                            <li class="plan-feature"><span class="plan-feature-x">&#10007;</span> <span style="opacity:0.4;">API Access</span></li>
-                        </ul>
-                        <a href="{{ route('register') }}" class="plan-cta plan-cta-filled">Start Free Trial</a>
-                    </div>
-                    <div class="pricing-card">
-                        <div class="plan-name">Enterprise</div>
-                        <div class="plan-price"><sup>$</sup>199<sub>/mo</sub></div>
-                        <div class="plan-desc">Full-scale deployment for enterprise operations with API access and dedicated support.</div>
-                        <div class="plan-divider"></div>
-                        <ul class="plan-features">
-                            <li class="plan-feature"><span class="plan-feature-check">&#10003;</span> Unlimited Warehouses</li>
-                            <li class="plan-feature"><span class="plan-feature-check">&#10003;</span> Unlimited Users</li>
-                            <li class="plan-feature"><span class="plan-feature-check">&#10003;</span> Unlimited Products</li>
-                            <li class="plan-feature"><span class="plan-feature-check">&#10003;</span> CSV Import / Export</li>
-                            <li class="plan-feature"><span class="plan-feature-check">&#10003;</span> PDF Invoices &amp; POs</li>
-                            <li class="plan-feature"><span class="plan-feature-check">&#10003;</span> Low-Stock Email Alerts</li>
-                            <li class="plan-feature"><span class="plan-feature-check">&#10003;</span> API Access</li>
-                        </ul>
-                        <a href="{{ route('register') }}" class="plan-cta plan-cta-outline">Contact Sales</a>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Final CTA -->
-        <section class="cta-section animate-in">
-            <div class="cta-box">
-                <h2 class="cta-title">Ready to run inventory<br>like a platform?</h2>
-                <p class="cta-sub">Create your organization account in under 60 seconds. No credit card required.</p>
-                <div class="cta-btns">
-                    @auth
-                        <a href="{{ route('dashboard') }}" class="btn-cta-primary">
-                            Open My Workspace
-                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                        </a>
-                    @else
-                        <a href="{{ route('register') }}" class="btn-cta-primary">
-                            Create Free Account
-                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                        </a>
-                        <a href="{{ route('login') }}" class="btn-cta-secondary">Sign In</a>
-                    @endauth
-                </div>
-            </div>
-        </section>
-
-        <!-- Footer -->
-        <footer>
-            <div class="footer-inner">
-                <a href="/" class="footer-brand">
-                    <div class="footer-logo">I</div>
-                    <span class="footer-brand-name">Inoodex Inventory</span>
-                </a>
-                <div class="footer-tech">
-                    <span class="tech-pill">Laravel 11</span>
-                    <span class="tech-pill">Livewire 3</span>
-                    <span class="tech-pill">Jetstream Teams</span>
-                    <span class="tech-pill">Tailwind CSS</span>
-                    <span class="tech-pill">mPDF</span>
-                </div>
-                <div class="footer-copy">&copy; {{ date('Y') }} Inoodex. All rights reserved.</div>
-            </div>
-        </footer>
-
-        <script>
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) entry.target.classList.add('visible');
-                });
-            }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-            document.querySelectorAll('.animate-in').forEach(el => observer.observe(el));
-        </script>
-    </body>
-</html>
-
-        <!-- CSV IMPORT -->
-        <section class="sectsect">
-            <div class="wrap">
-                <div class="twocol r fadeup">
-                    <div>
-                        <div class="sect-eyebrow">Operations</div>
-                        <h2 class="sect-ttl">Onboard catalogs in <em class="serif" style="color:var(--text-2)">minutes, not weeks.</em></h2>
-                        <p class="sect-sub">Drop a CSV into the importer and we'll create categories, open stock, and match SKUs.</p>
-                        <div class="featlist">
-                            <div class="fitem">
-                                <div class="fcheck">
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                </div>
-                                <div class="ftxt"><b>Auto-create categories</b> — map a column and we'll build the taxonomy</div>
-                            </div>
-                            <div class="fitem">
-                                <div class="fcheck">
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                </div>
-                                <div class="ftxt"><b>Column mapping UI</b> — drag-and-drop header matching</div>
-                            </div>
-                            <div class="fitem">
-                                <div class="fcheck">
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                </div>
-                                <div class="ftxt"><b>SKU dedup + dry-run</b> — preview before committing</div>
-                            </div>
-                            <div class="fitem">
-                                <div class="fcheck">
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                </div>
-                                <div class="ftxt"><b>Batch error reporting</b> — line-numbered issues for quick fixes</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="mock">
-                            <div class="mock-hd">
-                                <span class="mock-ttl">Product Import · products_master.csv</span>
-                                <span class="tag tag-g">842 rows</span>
-                            </div>
-                            <div class="mock-body">
-                                <table class="csvtbl">
-                                    <thead>
-                                        <tr>
-                                            <th>SKU</th>
-                                            <th>Name</th>
-                                            <th>Category</th>
-                                            <th>Cost</th>
-                                            <th>Qty</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr><td>KB-AIR-01</td><td>Air Wireless KB</td><td>Peripherals</td><td>$48.00</td><td>820</td></tr>
-                                        <tr><td>MS-OPT-04</td><td>Optical Mouse Pro</td><td>Peripherals</td><td>$12.00</td><td>1,440</td></tr>
-                                        <tr><td>HD-4K-02</td><td>4K Webcam Ultra</td><td>Cameras</td><td>$76.00</td><td>210</td></tr>
-                                        <tr><td>HU-C-240</td><td>USB-C Hub 8-in-1</td><td>Cables</td><td>$22.00</td><td>650</td></tr>
-                                        <tr><td>ST-MTL-09</td><td>Metal Laptop Stand</td><td>Office</td><td>$34.00</td><td>480</td></tr>
-                                    </tbody>
-                                </table>
-                                <div class="importok">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                    842 rows successfully imported · 3 categories created · 0 SKU collisions
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- PRICING -->
-        <section class="sectsect" id="pricing" style="background:#fafafa;border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
-            <div class="wrap">
-                <div class="sect-head fadeup" style="text-align:center">
-                    <div class="sect-eyebrow" style="justify-content:center">Pricing</div>
-                    <h2 class="sect-ttl" style="text-align:center">Simple, scalable pricing.</h2>
-                    <p class="sect-sub" style="text-align:center;margin:0 auto">Start free, upgrade as your tenancy grows. No per-seat lock-in.</p>
-                </div>
-
-                <div class="price-grid fadeup">
-                    <div class="price-card">
-                        <div class="pln-nm">Starter</div>
-                        <div class="pln-pr">
-                            <span class="pln-dol">$</span><span class="pln-num">29</span><span class="pln-per">/mo</span>
-                        </div>
-                        <div class="pln-desc">For a single client or small team launching their first inventory operation.</div>
-                        <div class="pln-div"></div>
-                        <ul class="pln-list">
-                            <li class="pln-li">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                Up to 3 tenant accounts
-                            </li>
-                            <li class="pln-li">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                2 warehouses per tenant
-                            </li>
-                            <li class="pln-li">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                Full PDF document suite
-                            </li>
-                            <li class="pln-li">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                CSV Import &amp; Export
-                            </li>
-                            <li class="pln-li muted">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                Super-Admin control plane
-                            </li>
-                        </ul>
-                        <a href="{{ Route::has('register') ? route('register') : '#' }}" class="pln-cta o">Get Started</a>
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+                    <!-- Notification Chip -->
+                    <div class="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold mb-8 backdrop-blur-md">
+                        <span class="flex h-2 w-2 relative">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                        </span>
+                        <span>Enterprise Multi-Tenant SaaS &bull; 99.99% Uptime SLA &bull; Zero Race Conditions</span>
                     </div>
 
-                    <div class="price-card featured">
-                        <div class="pln-nm">Professional</div>
-                        <div class="pln-pr">
-                            <span class="pln-dol">$</span><span class="pln-num">79</span><span class="pln-per">/mo</span>
-                        </div>
-                        <div class="pln-desc">For consultancies and agencies managing multiple inventory clients.</div>
-                        <div class="pln-div"></div>
-                        <ul class="pln-list">
-                            <li class="pln-li">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                Up to 20 tenant accounts
-                            </li>
-                            <li class="pln-li">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                Unlimited warehouses
-                            </li>
-                            <li class="pln-li">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                Full PDF document suite
-                            </li>
-                            <li class="pln-li">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                Super-Admin control plane
-                            </li>
-                            <li class="pln-li">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                Priority email support
-                            </li>
-                        </ul>
-                        <a href="{{ Route::has('register') ? route('register') : '#' }}" class="pln-cta s">Start Free Trial</a>
-                    </div>
+                    <!-- Main H1 Headline -->
+                    <h1 class="font-heading font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-7xl tracking-tight leading-[1.08] max-w-5xl mx-auto mb-6">
+                        The Operating System for <br class="hidden sm:inline" />
+                        <span class="gradient-accent">Modern Inventory & Supply Chains</span>
+                    </h1>
 
-                    <div class="price-card">
-                        <div class="pln-nm">Enterprise</div>
-                        <div class="pln-pr">
-                            <span class="pln-dol">$</span><span class="pln-num">199</span><span class="pln-per">/mo</span>
-                        </div>
-                        <div class="pln-desc">For companies with large tenancies, custom workflow, and dedicated support.</div>
-                        <div class="pln-div"></div>
-                        <ul class="pln-list">
-                            <li class="pln-li">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                Unlimited tenant accounts
-                            </li>
-                            <li class="pln-li">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                Unlimited warehouses
-                            </li>
-                            <li class="pln-li">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                Custom tenant branding &amp; logos
-                            </li>
-                            <li class="pln-li">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                Super-Admin control plane
-                            </li>
-                            <li class="pln-li">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                SLA + dedicated manager
-                            </li>
-                        </ul>
-                        <a href="mailto:hello@inoodex.com" class="pln-cta o">Contact Sales</a>
-                    </div>
-                </div>
-            </div>
-        </section>
+                    <!-- Subheadline -->
+                    <p class="text-base sm:text-lg md:text-xl text-slate-400 max-w-3xl mx-auto mb-10 leading-relaxed font-normal">
+                        Empower your organization with multi-warehouse tracking, atomic stock reservation, double-entry financial accounting, POS checkout, workshop service ticketing, and vectorized PDF invoicing — completely tenant-isolated.
+                    </p>
 
-        <!-- FINAL CTA -->
-        <section class="fin">
-            <div class="cta-box fadeup">
-                <h3 class="cta-ttl">Inventory SaaS infrastructure — <em class="serif" style="color:var(--text-2)">ready today.</em></h3>
-                <p class="cta-sub">Provision your first tenant in under 2 minutes. No credit card required.</p>
-                <div class="cta-btns">
-                    @if (Route::has('login'))
+                    <!-- Call To Action Buttons -->
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
                         @auth
-                            <a href="{{ url('/dashboard') }}" class="btn btn-solid btn-lg">
-                                Open Dashboard
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                            <a 
+                                href="{{ route('dashboard') }}" 
+                                id="btn-hero-workspace"
+                                class="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-[1.02]"
+                            >
+                                <span>Go to Dashboard</span>
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                </svg>
                             </a>
                         @else
-                            <a href="{{ route('register') }}" class="btn btn-solid btn-lg">
-                                Start Free Trial
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                            <a 
+                                href="{{ route('register') }}" 
+                                id="btn-hero-trial"
+                                class="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-[1.02]"
+                            >
+                                <span>Start 14-Day Free Trial</span>
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                </svg>
                             </a>
-                            <a href="{{ route('login') }}" class="btn btn-outline btn-lg">Sign in</a>
+                            <a 
+                                href="#modules" 
+                                id="btn-hero-explore"
+                                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 border border-white/[0.1] font-semibold text-sm transition-all"
+                            >
+                                <span>Explore Modules</span>
+                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </a>
                         @endauth
-                    @endif
-                </div>
-            </div>
-        </section>
+                    </div>
 
-        <!-- FOOTER -->
-        <footer>
-            <div class="frow">
-                <div class="fleft">
-                    <div class="brand-mark" style="width:24px;height:24px;border-radius:6px;font-size:12px">I</div>
-                    <span class="fname">Inoodex · Multi-tenant Inventory SaaS</span>
+                    <!-- Trust Indicators -->
+                    <div class="flex flex-wrap items-center justify-center gap-y-3 gap-x-8 text-xs font-medium text-slate-400">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>No Credit Card Required</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>Instant Setup & Seeding</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>Pessimistic Row-Locking</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>bKash, Nagad & Cards Supported</span>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Browser Mockup Window -->
+                    <div class="mt-14 max-w-5xl mx-auto rounded-2xl p-1 sm:p-2 bg-gradient-to-b from-white/[0.12] to-transparent shadow-2xl shadow-indigo-950/80">
+                        <div class="rounded-xl bg-[#0a0f24] border border-white/[0.08] overflow-hidden shadow-2xl">
+                            <!-- Window Top Bar -->
+                            <div class="px-4 py-3 bg-[#070b1a] border-b border-white/[0.06] flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 rounded-full bg-rose-500/80"></div>
+                                    <div class="w-3 h-3 rounded-full bg-amber-500/80"></div>
+                                    <div class="w-3 h-3 rounded-full bg-emerald-500/80"></div>
+                                    <div class="ml-3 hidden sm:flex items-center gap-2 px-3 py-1 rounded-md bg-white/[0.04] text-[11px] font-mono text-slate-400 border border-white/[0.04]">
+                                        <svg class="w-3 h-3 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                        <span>https://app.inoodex.com/dashboard</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 text-xs">
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20 text-[10px]">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                        Live Tenant Session
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Mockup Application Interior -->
+                            <div class="p-4 sm:p-6 text-left space-y-6">
+                                <!-- Top KPI Metrics Strip -->
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                                    <div class="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                                        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Inventory Valuation</div>
+                                        <div class="text-xl sm:text-2xl font-extrabold text-white mt-1">৳ 48,250,000</div>
+                                        <div class="text-[11px] font-medium text-emerald-400 mt-1 flex items-center gap-1">
+                                            <span>&uarr; 14.8%</span>
+                                            <span class="text-slate-500">vs last quarter</span>
+                                        </div>
+                                    </div>
+                                    <div class="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                                        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Monthly Net Revenue</div>
+                                        <div class="text-xl sm:text-2xl font-extrabold text-indigo-400 mt-1">৳ 12,480,000</div>
+                                        <div class="text-[11px] font-medium text-emerald-400 mt-1 flex items-center gap-1">
+                                            <span>&uarr; 9.2%</span>
+                                            <span class="text-slate-500">824 orders fulfilled</span>
+                                        </div>
+                                    </div>
+                                    <div class="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                                        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Active Warehouses</div>
+                                        <div class="text-xl sm:text-2xl font-extrabold text-white mt-1">4 Hubs</div>
+                                        <div class="text-[11px] font-medium text-slate-400 mt-1">Dhaka, Ctg &amp; Sylhet</div>
+                                    </div>
+                                    <div class="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                                        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Low Stock Radar</div>
+                                        <div class="text-xl sm:text-2xl font-extrabold text-amber-400 mt-1">3 Items</div>
+                                        <div class="text-[11px] font-medium text-amber-400/80 mt-1">Reorder threshold reached</div>
+                                    </div>
+                                </div>
+
+                                <!-- Middle Panels: Stock Ledger & Orders -->
+                                <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                                    <!-- Stock Allocation Chart -->
+                                    <div class="lg:col-span-7 p-4 sm:p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-3">
+                                        <div class="flex items-center justify-between">
+                                            <div class="text-xs font-bold text-white uppercase tracking-wider">Warehouse Distribution</div>
+                                            <span class="text-[11px] text-indigo-400 font-semibold">Real-Time Sync</span>
+                                        </div>
+                                        <div class="space-y-3 pt-2">
+                                            <div>
+                                                <div class="flex justify-between text-xs mb-1 font-medium">
+                                                    <span class="text-slate-300">Central Hub — Motijheel (MCH-01)</span>
+                                                    <span class="text-white font-bold">14,800 units (74%)</span>
+                                                </div>
+                                                <div class="w-full h-2 rounded-full bg-white/[0.05] overflow-hidden">
+                                                    <div class="h-full bg-gradient-to-r from-indigo-500 to-indigo-400 rounded-full" style="width: 74%"></div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="flex justify-between text-xs mb-1 font-medium">
+                                                    <span class="text-slate-300">Chittagong Port Terminal (CPT-02)</span>
+                                                    <span class="text-white font-bold">8,450 units (56%)</span>
+                                                </div>
+                                                <div class="w-full h-2 rounded-full bg-white/[0.05] overflow-hidden">
+                                                    <div class="h-full bg-gradient-to-r from-violet-500 to-purple-400 rounded-full" style="width: 56%"></div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="flex justify-between text-xs mb-1 font-medium">
+                                                    <span class="text-slate-300">Sylhet Regional Depot (SRD-03)</span>
+                                                    <span class="text-white font-bold">3,200 units (32%)</span>
+                                                </div>
+                                                <div class="w-full h-2 rounded-full bg-white/[0.05] overflow-hidden">
+                                                    <div class="h-full bg-gradient-to-r from-cyan-500 to-teal-400 rounded-full" style="width: 32%"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Recent Dispatches List -->
+                                    <div class="lg:col-span-5 p-4 sm:p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-3">
+                                        <div class="flex items-center justify-between">
+                                            <div class="text-xs font-bold text-white uppercase tracking-wider">Live Fulfillment Feed</div>
+                                            <span class="text-[11px] text-slate-400 font-mono">PO / SO</span>
+                                        </div>
+                                        <div class="space-y-2 pt-1 text-xs">
+                                            <div class="p-2.5 rounded-lg bg-white/[0.02] flex items-center justify-between border border-white/[0.04]">
+                                                <div>
+                                                    <div class="font-bold text-slate-200">SO-2026-0894</div>
+                                                    <div class="text-[11px] text-slate-400">Apex Traders Ltd &bull; 40 units</div>
+                                                </div>
+                                                <span class="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 font-bold text-[10px] border border-emerald-500/20">Dispatched</span>
+                                            </div>
+                                            <div class="p-2.5 rounded-lg bg-white/[0.02] flex items-center justify-between border border-white/[0.04]">
+                                                <div>
+                                                    <div class="font-bold text-slate-200">PO-2026-0412</div>
+                                                    <div class="text-[11px] text-slate-400">Lenovo Global &bull; Inbound dock</div>
+                                                </div>
+                                                <span class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 font-bold text-[10px] border border-amber-500/20">Dock Receiving</span>
+                                            </div>
+                                            <div class="p-2.5 rounded-lg bg-white/[0.02] flex items-center justify-between border border-white/[0.04]">
+                                                <div>
+                                                    <div class="font-bold text-slate-200">SRV-2026-0158</div>
+                                                    <div class="text-[11px] text-slate-400">Workshop &bull; GPU replacement</div>
+                                                </div>
+                                                <span class="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 font-bold text-[10px] border border-indigo-500/20">In Repair</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="fcopy">© {{ date('Y') }} Inoodex. All rights reserved.</div>
-                <div class="fpills">
-                    <span class="fpill">Laravel 11</span>
-                    <span class="fpill">Livewire 3</span>
-                    <span class="fpill">Jetstream Teams</span>
-                    <span class="fpill">Tailwind CSS</span>
-                    <span class="fpill">mPDF</span>
+            </section>
+
+            <!-- 2. Architectural Metrics Bar -->
+            <section id="architecture" class="border-y border-white/[0.06] bg-white/[0.015] py-14">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center divide-y lg:divide-y-0 lg:divide-x divide-white/[0.06]">
+                        <div class="pt-4 lg:pt-0">
+                            <div class="font-heading font-extrabold text-3xl sm:text-4xl text-white tracking-tight">100%</div>
+                            <div class="text-xs font-bold uppercase tracking-wider text-indigo-400 mt-1">Tenant Isolation</div>
+                            <div class="text-xs text-slate-400 mt-1">Scoped at Eloquent query &amp; DB level</div>
+                        </div>
+                        <div class="pt-4 lg:pt-0">
+                            <div class="font-heading font-extrabold text-3xl sm:text-4xl text-emerald-400 tracking-tight">0</div>
+                            <div class="text-xs font-bold uppercase tracking-wider text-emerald-400 mt-1">Race Conditions</div>
+                            <div class="text-xs text-slate-400 mt-1">Pessimistic row locking on all movements</div>
+                        </div>
+                        <div class="pt-4 lg:pt-0">
+                            <div class="font-heading font-extrabold text-3xl sm:text-4xl text-white tracking-tight">99.99%</div>
+                            <div class="text-xs font-bold uppercase tracking-wider text-indigo-400 mt-1">Uptime Reliability</div>
+                            <div class="text-xs text-slate-400 mt-1">High-availability cloud infrastructure</div>
+                        </div>
+                        <div class="pt-4 lg:pt-0">
+                            <div class="font-heading font-extrabold text-3xl sm:text-4xl text-violet-400 tracking-tight">&lt; 40ms</div>
+                            <div class="text-xs font-bold uppercase tracking-wider text-violet-400 mt-1">Median Response</div>
+                            <div class="text-xs text-slate-400 mt-1">High-throughput indexed database engine</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. Comprehensive 10-Module ERP Suite -->
+            <section id="modules" class="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-3xl mx-auto mb-16">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-4 border border-indigo-500/20">
+                        Unified Business Operating System
+                    </div>
+                    <h2 class="font-heading font-extrabold text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-tight">
+                        Ten Enterprise Engines.<br>
+                        <span class="gradient-accent">Zero Third-Party Clutter.</span>
+                    </h2>
+                    <p class="text-slate-400 mt-4 text-base sm:text-lg">
+                        Replace messy spreadsheets and fragmented apps. Inoodex brings warehouse operations, sales, double-entry accounting, workshop services, and payroll into one cohesive platform.
+                    </p>
+                </div>
+
+                <!-- 10 Modules Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Module 1 -->
+                    <div class="glass-panel rounded-2xl p-7 relative group">
+                        <div class="w-12 h-12 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 mb-5 group-hover:scale-110 transition-transform">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        </div>
+                        <h3 class="font-heading font-bold text-lg text-white mb-2">1. Multi-Warehouse Stock Engine</h3>
+                        <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                            Unlimited distribution hubs, default fulfillment routing, inter-warehouse atomic transfers, and cycle-count stock adjustments with audit reasons.
+                        </p>
+                        <div class="mt-4 pt-4 border-t border-white/[0.06] flex items-center gap-2 text-[11px] font-semibold text-indigo-400">
+                            <span>Pessimistic Row-Locking</span> &bull; <span>Bin Locations</span>
+                        </div>
+                    </div>
+
+                    <!-- Module 2 -->
+                    <div class="glass-panel rounded-2xl p-7 relative group">
+                        <div class="w-12 h-12 rounded-xl bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-violet-400 mb-5 group-hover:scale-110 transition-transform">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                        </div>
+                        <h3 class="font-heading font-bold text-lg text-white mb-2">2. Procurement &amp; Vendor Dues</h3>
+                        <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                            Supplier directory, multi-stage purchase orders (Draft ➔ Ordered ➔ Received), advance deposits, partial dock stock-in, and printable payment vouchers.
+                        </p>
+                        <div class="mt-4 pt-4 border-t border-white/[0.06] flex items-center gap-2 text-[11px] font-semibold text-violet-400">
+                            <span>Vendor Ledger</span> &bull; <span>Payables Tracking</span>
+                        </div>
+                    </div>
+
+                    <!-- Module 3 -->
+                    <div class="glass-panel rounded-2xl p-7 relative group">
+                        <div class="w-12 h-12 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mb-5 group-hover:scale-110 transition-transform">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
+                        <h3 class="font-heading font-bold text-lg text-white mb-2">3. Sales, POS &amp; Customer CRM</h3>
+                        <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                            Quotations with 1-click PO/SO conversion, fast-checkout POS counter with barcode support, stock reservations upon confirmation, and customer due ledgers.
+                        </p>
+                        <div class="mt-4 pt-4 border-t border-white/[0.06] flex items-center gap-2 text-[11px] font-semibold text-cyan-400">
+                            <span>Stock Reservation</span> &bull; <span>Credit Limits</span>
+                        </div>
+                    </div>
+
+                    <!-- Module 4 -->
+                    <div class="glass-panel rounded-2xl p-7 relative group">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-5 group-hover:scale-110 transition-transform">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
+                        <h3 class="font-heading font-bold text-lg text-white mb-2">4. Double-Entry Accounting</h3>
+                        <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                            Standardized Chart of Accounts (COA), automated journal entries from sales/inventory, Trial Balance, real-time Profit &amp; Loss, and Balance Sheet generation.
+                        </p>
+                        <div class="mt-4 pt-4 border-t border-white/[0.06] flex items-center gap-2 text-[11px] font-semibold text-emerald-400">
+                            <span>General Ledger</span> &bull; <span>Balanced Debits/Credits</span>
+                        </div>
+                    </div>
+
+                    <!-- Module 5 -->
+                    <div class="glass-panel rounded-2xl p-7 relative group">
+                        <div class="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-5 group-hover:scale-110 transition-transform">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                        </div>
+                        <h3 class="font-heading font-bold text-lg text-white mb-2">5. Bank &amp; Account Reconciliation</h3>
+                        <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                            Bank and cash account ledgers, interactive statement audits, discrepancy variance calculation, and audit state verification (`In Progress`, `Reconciled`).
+                        </p>
+                        <div class="mt-4 pt-4 border-t border-white/[0.06] flex items-center gap-2 text-[11px] font-semibold text-amber-400">
+                            <span>Audit Logs</span> &bull; <span>Statement Verification</span>
+                        </div>
+                    </div>
+
+                    <!-- Module 6 -->
+                    <div class="glass-panel rounded-2xl p-7 relative group">
+                        <div class="w-12 h-12 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 mb-5 group-hover:scale-110 transition-transform">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        </div>
+                        <h3 class="font-heading font-bold text-lg text-white mb-2">6. Workshop &amp; Repair Services</h3>
+                        <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                            Complete service ticketing pipeline, technician assignment, spare parts consumption automatically deducting inventory, printable tokens, and repair invoices.
+                        </p>
+                        <div class="mt-4 pt-4 border-t border-white/[0.06] flex items-center gap-2 text-[11px] font-semibold text-rose-400">
+                            <span>Spare Inventory Sync</span> &bull; <span>Service Slips</span>
+                        </div>
+                    </div>
+
+                    <!-- Module 7 -->
+                    <div class="glass-panel rounded-2xl p-7 relative group">
+                        <div class="w-12 h-12 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400 mb-5 group-hover:scale-110 transition-transform">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        </div>
+                        <h3 class="font-heading font-bold text-lg text-white mb-2">7. Warranties &amp; Returns (RMA)</h3>
+                        <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                            Serial-number warranty lookups, customer defective claim registration, supplier return dispatch, and scrap or restock routing.
+                        </p>
+                        <div class="mt-4 pt-4 border-t border-white/[0.06] flex items-center gap-2 text-[11px] font-semibold text-blue-400">
+                            <span>Serial Validation</span> &bull; <span>RMA Claims</span>
+                        </div>
+                    </div>
+
+                    <!-- Module 8 -->
+                    <div class="glass-panel rounded-2xl p-7 relative group">
+                        <div class="w-12 h-12 rounded-xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center text-orange-400 mb-5 group-hover:scale-110 transition-transform">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                        </div>
+                        <h3 class="font-heading font-bold text-lg text-white mb-2">8. Manufacturing &amp; Assembly (BOM)</h3>
+                        <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                            Bill of Materials (BOM) recipes, raw material consumption runs, finished goods production orders, scrap tracking, and output valuation.
+                        </p>
+                        <div class="mt-4 pt-4 border-t border-white/[0.06] flex items-center gap-2 text-[11px] font-semibold text-orange-400">
+                            <span>Assembly Recipes</span> &bull; <span>Yield Calculations</span>
+                        </div>
+                    </div>
+
+                    <!-- Module 9 -->
+                    <div class="glass-panel rounded-2xl p-7 relative group">
+                        <div class="w-12 h-12 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-400 mb-5 group-hover:scale-110 transition-transform">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                        </div>
+                        <h3 class="font-heading font-bold text-lg text-white mb-2">9. HR, Staff &amp; Automated Payroll</h3>
+                        <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                            Employee records, department taxonomy, attendance tracking, 1-click monthly salary generation, deductions, bonuses, and downloadable PDF payslips.
+                        </p>
+                        <div class="mt-4 pt-4 border-t border-white/[0.06] flex items-center gap-2 text-[11px] font-semibold text-teal-400">
+                            <span>Salary Slips</span> &bull; <span>Attendance Auditing</span>
+                        </div>
+                    </div>
+
+                    <!-- Module 10 -->
+                    <div class="glass-panel rounded-2xl p-7 relative group md:col-span-2 lg:col-span-3 bg-gradient-to-r from-amber-500/[0.04] via-indigo-500/[0.04] to-violet-500/[0.04]">
+                        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                            <div>
+                                <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-bold uppercase tracking-wider mb-2 border border-amber-500/30">
+                                    Platform Operator Hub
+                                </div>
+                                <h3 class="font-heading font-bold text-xl text-white mb-2">10. Super Admin Platform Control Plane</h3>
+                                <p class="text-slate-400 text-xs sm:text-sm max-w-3xl leading-relaxed">
+                                    Complete platform management: monitor all client tenants, suspend/reactivate non-paying organizations, approve manual offline payments (bKash, Nagad TrxID), configure plans, and jump into any tenant workspace via safe Impersonation Mode.
+                                </p>
+                            </div>
+                            <div class="shrink-0 flex items-center gap-3">
+                                <span class="px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-slate-300">
+                                    /admin &bull; Master Mode
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. Deep-Dive Spotlight Feature (Pessimistic Concurrency) -->
+            <section class="py-20 border-t border-white/[0.06] bg-white/[0.01]">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                        <div>
+                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-4 border border-emerald-500/20">
+                                Zero Data Drift
+                            </div>
+                            <h2 class="font-heading font-extrabold text-3xl sm:text-4xl text-white tracking-tight leading-tight mb-6">
+                                Industrial Concurrency Engine.<br>
+                                <span class="gradient-accent">Never Oversell Again.</span>
+                            </h2>
+                            <p class="text-slate-400 text-sm sm:text-base leading-relaxed mb-6">
+                                When multiple counter cashiers, sales agents, and wholesale channels confirm orders at the exact same second, ordinary inventory software crashes into negative stock and dirty reads.
+                            </p>
+                            <div class="space-y-4 text-xs sm:text-sm text-slate-300">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-6 h-6 rounded-md bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">&check;</div>
+                                    <div><strong>Hardware-Grade Atomic Lock Queue</strong>: Eliminates simultaneous conflicting writes by serializing stock deductions in microsecond queues.</div>
+                                </div>
+                                <div class="flex items-start gap-3">
+                                    <div class="w-6 h-6 rounded-md bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">&check;</div>
+                                    <div><strong>Immutable Stock Movement Ledger</strong>: Every single transaction creates a permanent timestamped record with user ID, model reference, and before/after counts.</div>
+                                </div>
+                                <div class="flex items-start gap-3">
+                                    <div class="w-6 h-6 rounded-md bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">&check;</div>
+                                    <div><strong>Two-Stage Reservation Pipeline</strong>: Sales order confirmation instantly reserves available stock, while physical loading dock dispatch deducts on-hand balances.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Live Visual Concurrency Simulation (No raw code!) -->
+                        <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-white/[0.08] shadow-2xl relative overflow-hidden">
+                            <div class="flex items-center justify-between pb-4 mb-6 border-b border-white/[0.06]">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                                    <span class="font-heading font-bold text-sm text-white">Active Concurrency Guard</span>
+                                </div>
+                                <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 text-[11px] font-bold border border-emerald-500/20">
+                                    100% Stock Equilibrium
+                                </span>
+                            </div>
+
+                            <!-- Live Visual Timeline / Flow -->
+                            <div class="space-y-4">
+                                <!-- Order Request A -->
+                                <div class="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold text-xs shrink-0">
+                                            POS
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-bold text-white">Counter Cashier 1 &bull; Checkout 5 Units</div>
+                                            <div class="text-[11px] text-slate-400">SKU: PROD-RTX4080 &bull; Timestamp: 14:02:18.102</div>
+                                        </div>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20 shrink-0">
+                                        Reserved &amp; Locked
+                                    </span>
+                                </div>
+
+                                <!-- Order Request B (Simultaneous) -->
+                                <div class="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-violet-400 font-bold text-xs shrink-0">
+                                            WEB
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-bold text-white">E-Commerce Channel &bull; Checkout 8 Units</div>
+                                            <div class="text-[11px] text-slate-400">SKU: PROD-RTX4080 &bull; Timestamp: 14:02:18.104</div>
+                                        </div>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 text-[10px] font-bold border border-indigo-500/20 shrink-0">
+                                        Queued (0.2ms)
+                                    </span>
+                                </div>
+
+                                <!-- Transaction Resolution Indicator -->
+                                <div class="p-4 rounded-xl bg-gradient-to-r from-emerald-500/[0.08] to-indigo-500/[0.08] border border-emerald-500/25">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-xs font-bold text-emerald-300">Warehouse Inventory Audit</span>
+                                        <span class="text-[11px] text-slate-300 font-mono">Real-Time Balance</span>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-2 text-center pt-1">
+                                        <div class="p-2 rounded-lg bg-white/[0.03]">
+                                            <div class="text-[10px] uppercase text-slate-400 font-semibold">Physical Stock</div>
+                                            <div class="text-base font-extrabold text-white mt-0.5">25 Units</div>
+                                        </div>
+                                        <div class="p-2 rounded-lg bg-white/[0.03]">
+                                            <div class="text-[10px] uppercase text-amber-400 font-semibold">Reserved</div>
+                                            <div class="text-base font-extrabold text-amber-300 mt-0.5">13 Units</div>
+                                        </div>
+                                        <div class="p-2 rounded-lg bg-white/[0.03]">
+                                            <div class="text-[10px] uppercase text-emerald-400 font-semibold">Available</div>
+                                            <div class="text-base font-extrabold text-emerald-300 mt-0.5">12 Units</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Safety Guarantee Badges -->
+                                <div class="pt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 font-medium">
+                                    <div class="flex items-center gap-1.5 text-emerald-400">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        <span>Zero Negative Stock</span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 text-emerald-400">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        <span>Zero Race Conditions</span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 text-emerald-400">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        <span>Permanent Audit Log</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. Transparent Bangladeshi SaaS Pricing Section -->
+            <section id="pricing" class="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-3xl mx-auto mb-14">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-4 border border-indigo-500/20">
+                        Transparent Pricing
+                    </div>
+                    <h2 class="font-heading font-extrabold text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-tight">
+                        Predictable Plans for <br>
+                        <span class="gradient-accent">Growing Bangladeshi Enterprises</span>
+                    </h2>
+                    <p class="text-slate-400 mt-4 text-sm sm:text-base">
+                        Start with a full 14-day trial. Upgrade seamlessly with bKash, Nagad, or Bank Transfer. No hidden fees or per-user lock-in.
+                    </p>
+
+                    <!-- Billing Cycle Toggle -->
+                    <div class="mt-8 inline-flex items-center p-1.5 rounded-2xl bg-white/[0.04] border border-white/[0.08]">
+                        <button 
+                            type="button"
+                            id="toggle-monthly"
+                            class="px-5 py-2 rounded-xl text-xs font-bold transition-all toggle-active"
+                            onclick="setBillingCycle('monthly')"
+                        >
+                            Monthly Billing
+                        </button>
+                        <button 
+                            type="button"
+                            id="toggle-annual"
+                            class="px-5 py-2 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-white flex items-center gap-1.5"
+                            onclick="setBillingCycle('annual')"
+                        >
+                            <span>Annual Billing</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Save 17%</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Plans Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+                    @forelse ($plans->where('slug', '!=', 'trial') as $plan)
+                        @php
+                            $isPopular = $plan->slug === 'professional';
+                            $monthlyPrice = (float) $plan->price_bdt;
+                            $annualPrice = (float) $plan->annual_price_bdt;
+                            $effectiveAnnualMonthly = round($annualPrice / 12);
+                        @endphp
+                        <div class="glass-panel rounded-3xl p-8 relative flex flex-col justify-between {{ $isPopular ? 'border-indigo-500/50 shadow-2xl shadow-indigo-600/15 bg-gradient-to-b from-indigo-950/30 via-slate-900/60 to-slate-950/80 ring-1 ring-indigo-500/40' : '' }}">
+                            @if ($isPopular)
+                                <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-[11px] font-extrabold uppercase tracking-wider shadow-md">
+                                    Most Popular Choice
+                                </div>
+                            @endif
+
+                            <div>
+                                <div class="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-2">{{ $plan->name }}</div>
+                                <p class="text-xs text-slate-400 min-h-[36px]">{{ $plan->description }}</p>
+
+                                <div class="mt-6 mb-6 pb-6 border-b border-white/[0.06]">
+                                    <div class="flex items-baseline gap-1">
+                                        <span class="text-2xl font-bold text-slate-400">৳</span>
+                                        <span class="font-heading font-black text-4xl sm:text-5xl text-white tracking-tight plan-price" data-monthly="{{ number_format($monthlyPrice, 0) }}" data-annual="{{ number_format($effectiveAnnualMonthly, 0) }}">
+                                            {{ number_format($monthlyPrice, 0) }}
+                                        </span>
+                                        <span class="text-xs text-slate-400 font-semibold plan-period">/ month</span>
+                                    </div>
+                                    <div class="text-[11px] text-slate-400 mt-1 font-medium plan-subtext" data-monthly="Billed monthly" data-annual="৳{{ number_format($annualPrice, 0) }} billed annually">
+                                        Billed monthly
+                                    </div>
+                                </div>
+
+                                <!-- Plan Limits Quotas -->
+                                <div class="space-y-3 mb-8 text-xs text-slate-300">
+                                    <div class="flex items-center gap-2 font-semibold">
+                                        <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        <span>{{ $plan->max_warehouses === -1 ? 'Unlimited' : $plan->max_warehouses }} Warehouse {{ $plan->max_warehouses === 1 ? 'Hub' : 'Hubs' }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 font-semibold">
+                                        <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        <span>{{ $plan->max_products === -1 ? 'Unlimited' : number_format($plan->max_products) }} Products &amp; SKUs</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 font-semibold">
+                                        <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        <span>{{ $plan->max_users === -1 ? 'Unlimited' : $plan->max_users }} Team Staff Users</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-slate-400">
+                                        <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        <span>POS Billing &amp; Barcode Printing</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 {{ !empty($plan->features['accounting']) ? 'text-slate-300' : 'text-slate-600' }}">
+                                        @if (!empty($plan->features['accounting']))
+                                            <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                            <span class="font-medium">Double-Entry Accounting &amp; Ledger</span>
+                                        @else
+                                            <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            <span class="line-through">Double-Entry Accounting</span>
+                                        @endif
+                                    </div>
+                                    <div class="flex items-center gap-2 {{ !empty($plan->features['payroll']) ? 'text-slate-300' : 'text-slate-600' }}">
+                                        @if (!empty($plan->features['payroll']))
+                                            <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                            <span class="font-medium">HR, Attendance &amp; Automated Payroll</span>
+                                        @else
+                                            <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            <span class="line-through">HR &amp; Automated Payroll</span>
+                                        @endif
+                                    </div>
+                                    <div class="flex items-center gap-2 {{ !empty($plan->features['service_workshop']) ? 'text-slate-300' : 'text-slate-600' }}">
+                                        @if (!empty($plan->features['service_workshop']))
+                                            <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                            <span class="font-medium">Workshop Repair &amp; Service Ticketing</span>
+                                        @else
+                                            <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            <span class="line-through">Workshop Repair Services</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+
+                            <a 
+                                href="{{ route('register') }}" 
+                                class="w-full text-center py-3.5 rounded-xl font-bold text-xs shadow-md transition-all {{ $isPopular ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/30' : 'bg-white/[0.06] hover:bg-white/[0.1] text-slate-200 border border-white/[0.1]' }}"
+                            >
+                                {{ $isPopular ? 'Choose Professional Plan' : 'Select Plan' }}
+                            </a>
+                        </div>
+                    @empty
+                        <!-- Fallback Hardcoded Clean Pricing if DB unseeded -->
+                        <div class="glass-panel rounded-3xl p-8 flex flex-col justify-between">
+                            <div>
+                                <div class="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-2">Starter (ছোট ব্যবসা)</div>
+                                <p class="text-xs text-slate-400 mb-6">Ideal for single retail shops &amp; computer vendors.</p>
+                                <div class="text-4xl font-black text-white mb-6">৳ 999 <span class="text-xs text-slate-400 font-normal">/ mo</span></div>
+                                <div class="space-y-3 text-xs text-slate-300 mb-8">
+                                    <div>&check; 1 Warehouse Hub</div>
+                                    <div>&check; Up to 500 Products</div>
+                                    <div>&check; 3 Team Staff Users</div>
+                                    <div>&check; POS Billing &amp; Invoices</div>
+                                </div>
+                            </div>
+                            <a href="{{ route('register') }}" class="w-full text-center py-3.5 rounded-xl bg-white/[0.08] text-white text-xs font-bold">Select Plan</a>
+                        </div>
+                    @endforelse
+                </div>
+            </section>
+
+            <!-- 6. Frequently Asked Questions (Accordion) -->
+            <section id="faq" class="py-20 border-t border-white/[0.06] bg-white/[0.01]">
+                <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center mb-14">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-4 border border-indigo-500/20">
+                            Got Questions?
+                        </div>
+                        <h2 class="font-heading font-extrabold text-3xl sm:text-4xl text-white tracking-tight leading-tight">
+                            Frequently Asked Questions
+                        </h2>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- FAQ 1 -->
+                        <div class="glass-panel rounded-2xl p-5 border border-white/[0.08]">
+                            <button 
+                                type="button" 
+                                class="w-full flex items-center justify-between text-left text-sm sm:text-base font-bold text-white focus:outline-none"
+                                onclick="toggleFaq(1)"
+                            >
+                                <span>Is our company data completely isolated from other tenants?</span>
+                                <svg id="faq-icon-1" class="w-5 h-5 text-indigo-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div id="faq-answer-1" class="hidden mt-3 text-xs sm:text-sm text-slate-400 leading-relaxed pt-2 border-t border-white/[0.04]">
+                                Yes, absolutely. Every query executed in Inoodex passes through an automatic global tenant scope (`BelongsToTenant`) that enforces `WHERE team_id = current_team_id`. Cross-tenant ID enumeration returns 403 Forbidden or 404 Not Found at all times.
+                            </div>
+                        </div>
+
+                        <!-- FAQ 2 -->
+                        <div class="glass-panel rounded-2xl p-5 border border-white/[0.08]">
+                            <button 
+                                type="button" 
+                                class="w-full flex items-center justify-between text-left text-sm sm:text-base font-bold text-white focus:outline-none"
+                                onclick="toggleFaq(2)"
+                            >
+                                <span>How does pessimistic row locking prevent overselling?</span>
+                                <svg id="faq-icon-2" class="w-5 h-5 text-indigo-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div id="faq-answer-2" class="hidden mt-3 text-xs sm:text-sm text-slate-400 leading-relaxed pt-2 border-t border-white/[0.04]">
+                                When an order reservation is placed, MySQL row-level locking (`lockForUpdate()`) serializes concurrent access within an ACID database transaction. No two orders can claim the same physical inventory unit simultaneously, preventing dirty reads and negative stock.
+                            </div>
+                        </div>
+
+                        <!-- FAQ 3 -->
+                        <div class="glass-panel rounded-2xl p-5 border border-white/[0.08]">
+                            <button 
+                                type="button" 
+                                class="w-full flex items-center justify-between text-left text-sm sm:text-base font-bold text-white focus:outline-none"
+                                onclick="toggleFaq(3)"
+                            >
+                                <span>How do we pay with bKash, Nagad, or Bank Transfer?</span>
+                                <svg id="faq-icon-3" class="w-5 h-5 text-indigo-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div id="faq-answer-3" class="hidden mt-3 text-xs sm:text-sm text-slate-400 leading-relaxed pt-2 border-t border-white/[0.04]">
+                                In addition to card gateways via SSLCommerz, you can submit manual bKash or Nagad Transaction IDs (TrxID) directly inside your billing portal. Our Super Admin team verifies the transaction in the admin payment portal, instantly updating your plan quotas.
+                            </div>
+                        </div>
+
+                        <!-- FAQ 4 -->
+                        <div class="glass-panel rounded-2xl p-5 border border-white/[0.08]">
+                            <button 
+                                type="button" 
+                                class="w-full flex items-center justify-between text-left text-sm sm:text-base font-bold text-white focus:outline-none"
+                                onclick="toggleFaq(4)"
+                            >
+                                <span>Can we print vector invoices with custom barcodes and logos?</span>
+                                <svg id="faq-icon-4" class="w-5 h-5 text-indigo-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div id="faq-answer-4" class="hidden mt-3 text-xs sm:text-sm text-slate-400 leading-relaxed pt-2 border-t border-white/[0.04]">
+                                Yes! Our integrated high-resolution vector PDF engine dynamically renders your company logo, tax registration number, custom currency symbol (৳, $, €, etc.), and barcode tracking for Sales Invoices, Packing Slips, POs, and Service Tokens.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. High-Conversion Final Call-To-Action Banner -->
+            <section class="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="rounded-3xl p-8 sm:p-14 bg-gradient-to-r from-indigo-900/60 via-violet-900/50 to-indigo-950/70 border border-indigo-500/30 text-center relative overflow-hidden shadow-2xl">
+                    <div class="max-w-2xl mx-auto relative z-10">
+                        <h2 class="font-heading font-extrabold text-3xl sm:text-4xl md:text-5xl text-white tracking-tight leading-tight mb-4">
+                            Ready to run your operations like an enterprise?
+                        </h2>
+                        <p class="text-slate-300 text-sm sm:text-base mb-8">
+                            Join high-growth retailers, wholesalers, and manufacturers running on Inoodex. Start your 14-day free trial in under 60 seconds.
+                        </p>
+                        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                            @auth
+                                <a 
+                                    href="{{ route('dashboard') }}" 
+                                    class="w-full sm:w-auto px-8 py-4 rounded-xl bg-white text-indigo-950 hover:bg-slate-100 font-extrabold text-sm shadow-xl transition-all hover:scale-[1.02]"
+                                >
+                                    Open Your Workspace &rarr;
+                                </a>
+                            @else
+                                <a 
+                                    href="{{ route('register') }}" 
+                                    class="w-full sm:w-auto px-8 py-4 rounded-xl bg-white text-indigo-950 hover:bg-slate-100 font-extrabold text-sm shadow-xl transition-all hover:scale-[1.02]"
+                                >
+                                    Create Free Account
+                                </a>
+                                <a 
+                                    href="{{ route('login') }}" 
+                                    class="w-full sm:w-auto px-8 py-4 rounded-xl bg-white/[0.08] hover:bg-white/[0.12] text-white border border-white/[0.15] font-bold text-sm transition-all"
+                                >
+                                    Sign In Existing Account
+                                </a>
+                            @endauth
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="border-t border-white/[0.06] bg-[#03060f] py-14">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-8 pb-10 border-b border-white/[0.06]">
+                    <div class="md:col-span-2">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-black text-sm">
+                                I
+                            </div>
+                            <span class="font-heading font-extrabold text-lg text-white">Inoodex Inventory</span>
+                        </div>
+                        <p class="text-xs text-slate-400 max-w-sm leading-relaxed mb-4">
+                            Cloud inventory, supply chain management, and double-entry accounting software designed for resilient enterprises.
+                        </p>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-semibold flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                99.99% Guaranteed SLA Uptime
+                            </span>
+                            <span class="px-2.5 py-1 rounded-full bg-white/[0.04] text-slate-300 border border-white/[0.06] text-[11px] font-semibold">
+                                256-Bit SSL Encrypted
+                            </span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="text-xs font-bold uppercase tracking-wider text-white mb-3">Platform</div>
+                        <ul class="space-y-2 text-xs text-slate-400">
+                            <li><a href="#features" class="hover:text-white transition-colors">Warehouse Engine</a></li>
+                            <li><a href="#modules" class="hover:text-white transition-colors">Double-Entry Accounting</a></li>
+                            <li><a href="#modules" class="hover:text-white transition-colors">Workshop Services</a></li>
+                            <li><a href="#modules" class="hover:text-white transition-colors">HR &amp; Payroll</a></li>
+                            <li><a href="#pricing" class="hover:text-white transition-colors">Pricing Matrix</a></li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <div class="text-xs font-bold uppercase tracking-wider text-white mb-3">Security &amp; Legal</div>
+                        <ul class="space-y-2 text-xs text-slate-400">
+                            <li><span class="text-slate-500">Tenant Data Isolation</span></li>
+                            <li><span class="text-slate-500">Row-Locking Concurrency</span></li>
+                            <li><span class="text-slate-500">Daily Automated Backups</span></li>
+                            <li><span class="text-slate-500">Terms of Service</span></li>
+                            <li><span class="text-slate-500">Privacy Policy</span></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
+                    <div>
+                        &copy; {{ date('Y') }} Inoodex Inventory. All rights reserved.
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span>Designed for high-scale enterprise supply chains</span>
+                    </div>
                 </div>
             </div>
         </footer>
 
+        <!-- Interactive Script for Toggle and Accordion -->
         <script>
-            // Fade-up on scroll
-            (function () {
-                var els = document.querySelectorAll('.fadeup');
-                if (!('IntersectionObserver' in window)) {
-                    els.forEach(function (el) { el.classList.add('is'); });
-                    return;
-                }
-                var io = new IntersectionObserver(function (entries) {
-                    entries.forEach(function (entry) {
-                        if (entry.isIntersecting) {
-                            entry.target.classList.add('is');
-                            io.unobserve(entry.target);
-                        }
-                    });
-                }, { threshold: 0.08, rootMargin: '0px 0px -60px 0px' });
-                els.forEach(function (el) { io.observe(el); });
-            })();
-        </script>
+            // Mobile Menu Toggle
+            const btnMobileMenu = document.getElementById('btn-mobile-menu');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (btnMobileMenu && mobileMenu) {
+                btnMobileMenu.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
 
+            // Billing Cycle Toggle (Monthly vs Annual)
+            function setBillingCycle(cycle) {
+                const btnMonthly = document.getElementById('toggle-monthly');
+                const btnAnnual = document.getElementById('toggle-annual');
+                const prices = document.querySelectorAll('.plan-price');
+                const periods = document.querySelectorAll('.plan-period');
+                const subtexts = document.querySelectorAll('.plan-subtext');
+
+                if (cycle === 'annual') {
+                    btnAnnual.classList.add('toggle-active');
+                    btnAnnual.classList.remove('text-slate-400');
+                    btnMonthly.classList.remove('toggle-active');
+                    btnMonthly.classList.add('text-slate-400');
+
+                    prices.forEach(el => {
+                        el.textContent = el.getAttribute('data-annual');
+                    });
+                    periods.forEach(el => {
+                        el.textContent = '/ mo (annual)';
+                    });
+                    subtexts.forEach(el => {
+                        el.textContent = el.getAttribute('data-annual');
+                    });
+                } else {
+                    btnMonthly.classList.add('toggle-active');
+                    btnMonthly.classList.remove('text-slate-400');
+                    btnAnnual.classList.remove('toggle-active');
+                    btnAnnual.classList.add('text-slate-400');
+
+                    prices.forEach(el => {
+                        el.textContent = el.getAttribute('data-monthly');
+                    });
+                    periods.forEach(el => {
+                        el.textContent = '/ month';
+                    });
+                    subtexts.forEach(el => {
+                        el.textContent = el.getAttribute('data-monthly');
+                    });
+                }
+            }
+
+            // FAQ Accordion
+            function toggleFaq(id) {
+                const answer = document.getElementById('faq-answer-' + id);
+                const icon = document.getElementById('faq-icon-1' === 'faq-icon-' + id ? 'faq-icon-1' : 'faq-icon-' + id);
+                if (!answer) return;
+
+                const isHidden = answer.classList.contains('hidden');
+                // Close all
+                document.querySelectorAll('[id^="faq-answer-"]').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('[id^="faq-icon-"]').forEach(el => el.classList.remove('rotate-180'));
+
+                if (isHidden) {
+                    answer.classList.remove('hidden');
+                    if (icon) icon.classList.add('rotate-180');
+                }
+            }
+
+            // Header Shadow on Scroll
+            window.addEventListener('scroll', () => {
+                const header = document.getElementById('main-header');
+                if (window.scrollY > 30) {
+                    header.classList.add('shadow-xl', 'shadow-black/50', 'bg-[#050814]/95');
+                } else {
+                    header.classList.remove('shadow-xl', 'shadow-black/50', 'bg-[#050814]/95');
+                }
+            });
+        </script>
     </body>
 </html>

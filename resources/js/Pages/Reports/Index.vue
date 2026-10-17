@@ -512,13 +512,13 @@ function printReport() {
                                             v-else-if="m.type === 'transfer'"
                                             class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-sky-50 text-sky-600 border border-sky-200"
                                         >
-                                            ⇄ Transfer
+                                            Transfer
                                         </span>
                                         <span
                                             v-else
                                             class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-50 text-amber-700 border border-amber-200"
                                         >
-                                            ⚙ Adjust
+                                            Adjustment
                                         </span>
                                     </td>
                                     <td class="px-5 py-3.5">

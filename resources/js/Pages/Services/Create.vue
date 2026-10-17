@@ -86,6 +86,10 @@ const remainingDue = computed(() => {
     return Math.max(0, grandTotal.value - paid);
 });
 
+function setFullPayment() {
+    form.paid_amount = grandTotal.value;
+}
+
 function submitForm() {
     form.post(route('services.store'));
 }
@@ -96,21 +100,23 @@ function submitForm() {
         <Head :title="page_title" />
 
         <template #header>
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 w-full">
-                <div>
-                    <div class="flex items-center gap-2">
-                        <Link :href="route('services.index')" class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1">
-                            &larr; Back to Services
-                        </Link>
+            <div class="flex items-center justify-between w-full">
+                <div class="flex items-center gap-3">
+                    <Link :href="route('services.index')" class="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </Link>
+                    <div>
+                        <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Intake Service Ticket</h1>
+                        <p class="text-xs text-slate-500 font-medium">Record device drop-off, initial diagnosis, and preliminary service estimates</p>
                     </div>
-                    <h2 class="text-xl font-bold text-slate-900 tracking-tight mt-1">
-                        Intake Service Job Ticket
-                    </h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Record device drop-off, initial diagnosis, and preliminary service estimates</p>
                 </div>
-                <div class="bg-indigo-50 border border-indigo-100 rounded-xl px-3.5 py-2 text-right">
-                    <div class="text-[10px] font-bold text-indigo-500 uppercase tracking-wider">Ticket Sequence</div>
-                    <div class="font-mono text-base font-extrabold text-indigo-700">{{ nextTicketNumber }}</div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-semibold text-slate-500">Ticket #</span>
+                    <span class="font-mono text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-800">
+                        {{ nextTicketNumber }}
+                    </span>
                 </div>
             </div>
         </template>
@@ -118,32 +124,28 @@ function submitForm() {
         <div class="space-y-6">
             <form @submit.prevent="submitForm" class="space-y-6">
                 <!-- Section 1: Customer Information -->
-                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
+                <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                        <div class="flex items-center gap-2">
-                            <span class="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                            </span>
-                            <h2 class="text-sm font-bold text-slate-800">1. Customer Information</h2>
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900">Customer Information</h2>
+                            <p class="text-xs text-slate-500">Select an existing registered client or create a new one on the fly</p>
                         </div>
 
                         <!-- Segmented Mode Toggle -->
-                        <div class="inline-flex bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+                        <div class="flex items-center bg-slate-100 p-0.5 rounded-lg text-xs font-semibold">
                             <button
                                 type="button"
                                 @click="form.customer_mode = 'existing'"
-                                class="px-3 py-1 rounded-lg transition-all"
-                                :class="form.customer_mode === 'existing' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+                                :class="form.customer_mode === 'existing' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-900'"
+                                class="px-3 py-1 rounded-md transition"
                             >
                                 Existing Customer
                             </button>
                             <button
                                 type="button"
                                 @click="form.customer_mode = 'new'"
-                                class="px-3 py-1 rounded-lg transition-all"
-                                :class="form.customer_mode === 'new' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+                                :class="form.customer_mode === 'new' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-900'"
+                                class="px-3 py-1 rounded-md transition"
                             >
                                 + New Customer
                             </button>
@@ -155,7 +157,7 @@ function submitForm() {
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Select Customer <span class="text-rose-500">*</span></label>
                         <select
                             v-model="form.customer_id"
-                            class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                            class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                             required
                         >
                             <option value="">-- Choose Existing Customer --</option>
@@ -174,7 +176,7 @@ function submitForm() {
                                 v-model="form.new_customer_name"
                                 type="text"
                                 placeholder="Customer Name"
-                                class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                                 required
                             />
                             <div v-if="form.errors.new_customer_name" class="text-xs text-rose-500 mt-1">{{ form.errors.new_customer_name }}</div>
@@ -185,7 +187,7 @@ function submitForm() {
                                 v-model="form.new_customer_phone"
                                 type="text"
                                 placeholder="017XXXXXXXX"
-                                class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                                 required
                             />
                             <div v-if="form.errors.new_customer_phone" class="text-xs text-rose-500 mt-1">{{ form.errors.new_customer_phone }}</div>
@@ -196,7 +198,7 @@ function submitForm() {
                                 v-model="form.new_customer_email"
                                 type="email"
                                 placeholder="client@example.com"
-                                class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                             />
                         </div>
                         <div>
@@ -205,21 +207,17 @@ function submitForm() {
                                 v-model="form.new_customer_address"
                                 type="text"
                                 placeholder="House, Road, City"
-                                class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                             />
                         </div>
                     </div>
                 </div>
 
                 <!-- Section 2: Equipment & Device Profile -->
-                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
-                    <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
-                        <span class="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                        </span>
-                        <h2 class="text-sm font-bold text-slate-800">2. Equipment & Device Profile</h2>
+                <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4">
+                    <div class="border-b border-slate-100 pb-3">
+                        <h2 class="text-base font-bold text-slate-900">Equipment & Device Profile</h2>
+                        <p class="text-xs text-slate-500">Specify hardware model, serial number, and physical accessories handed over</p>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -228,8 +226,8 @@ function submitForm() {
                             <input
                                 v-model="form.device_name"
                                 type="text"
-                                placeholder="e.g. iPhone 13 Pro / HP 15s"
-                                class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 font-semibold"
+                                placeholder="e.g. iPhone 13 Pro"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-semibold placeholder:text-slate-400 placeholder:text-xs"
                                 required
                             />
                             <div v-if="form.errors.device_name" class="text-xs text-rose-500 mt-1">{{ form.errors.device_name }}</div>
@@ -240,8 +238,8 @@ function submitForm() {
                             <input
                                 v-model="form.device_brand"
                                 type="text"
-                                placeholder="e.g. Apple, Dell, Lenovo"
-                                class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                placeholder="e.g. Apple or Dell"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
 
@@ -250,8 +248,8 @@ function submitForm() {
                             <input
                                 v-model="form.serial_no"
                                 type="text"
-                                placeholder="Device S/N or IMEI"
-                                class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 font-mono"
+                                placeholder="Device serial or IMEI"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
 
@@ -260,22 +258,18 @@ function submitForm() {
                             <input
                                 v-model="form.accessories_received"
                                 type="text"
-                                placeholder="e.g. Charger, Bag, Case"
-                                class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                placeholder="e.g. Charger or bag"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                     </div>
                 </div>
 
-                <!-- Section 3: Problem Description & Workshop Logistics -->
-                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
-                    <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
-                        <span class="p-1.5 bg-amber-50 text-amber-600 rounded-lg">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                        </span>
-                        <h2 class="text-sm font-bold text-slate-800">3. Problem Description & Diagnosis</h2>
+                <!-- Section 3: Problem Description & Diagnosis -->
+                <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4">
+                    <div class="border-b border-slate-100 pb-3">
+                        <h2 class="text-base font-bold text-slate-900">Problem Description & Diagnosis</h2>
+                        <p class="text-xs text-slate-500">Customer complaints, technical observations, scheduling, and warranty policy</p>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -284,20 +278,20 @@ function submitForm() {
                             <textarea
                                 v-model="form.problem_description"
                                 rows="3"
-                                placeholder="Describe symptoms, customer complaints, errors..."
-                                class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                placeholder="Describe symptoms or complaints..."
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                                 required
                             ></textarea>
                             <div v-if="form.errors.problem_description" class="text-xs text-rose-500 mt-1">{{ form.errors.problem_description }}</div>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Initial Technician Diagnosis Remarks</label>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Initial Technician Diagnosis</label>
                             <textarea
                                 v-model="form.initial_diagnosis"
                                 rows="3"
-                                placeholder="Preliminary bench checks, visible damages, power state..."
-                                class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                placeholder="Preliminary checks or visible damages..."
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             ></textarea>
                         </div>
                     </div>
@@ -307,7 +301,7 @@ function submitForm() {
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Assign Technician</label>
                             <select
                                 v-model="form.technician_id"
-                                class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                             >
                                 <option value="">-- Unassigned --</option>
                                 <option v-for="u in technicians" :key="u.id" :value="u.id">{{ u.name }}</option>
@@ -318,7 +312,7 @@ function submitForm() {
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Job Priority</label>
                             <select
                                 v-model="form.priority"
-                                class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 font-bold"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 font-semibold"
                             >
                                 <option value="low">Low</option>
                                 <option value="normal">Normal</option>
@@ -328,11 +322,11 @@ function submitForm() {
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Received Date</label>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Received Date <span class="text-rose-500">*</span></label>
                             <input
                                 v-model="form.received_date"
                                 type="date"
-                                class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                                 required
                             />
                         </div>
@@ -342,130 +336,153 @@ function submitForm() {
                             <input
                                 v-model="form.estimated_completion_date"
                                 type="date"
-                                class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                             />
                         </div>
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Service Warranty Coverage (Days)</label>
-                        <div class="flex items-center gap-3">
+                    <div class="pt-2">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Service Warranty Coverage (Days)</label>
+                        <div class="flex flex-wrap items-center gap-3">
                             <input
                                 v-model="form.warranty_days"
                                 type="number"
                                 min="0"
-                                class="w-32 text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 font-bold"
+                                class="w-28 text-xs font-mono font-bold px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                             />
-                            <div class="flex gap-1.5">
-                                <button type="button" @click="form.warranty_days = 0" class="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded font-semibold text-slate-600">None</button>
-                                <button type="button" @click="form.warranty_days = 15" class="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded font-semibold text-slate-600">15 Days</button>
-                                <button type="button" @click="form.warranty_days = 30" class="text-[10px] bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded font-semibold text-indigo-700">30 Days (Standard)</button>
-                                <button type="button" @click="form.warranty_days = 90" class="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded font-semibold text-slate-600">90 Days</button>
+                            <div class="flex items-center gap-1.5">
+                                <button
+                                    type="button"
+                                    @click="form.warranty_days = 0"
+                                    :class="form.warranty_days === 0 ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'"
+                                    class="px-3 py-1.5 rounded-xl border text-xs font-medium transition"
+                                >
+                                    None
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="form.warranty_days = 15"
+                                    :class="form.warranty_days === 15 ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'"
+                                    class="px-3 py-1.5 rounded-xl border text-xs font-medium transition"
+                                >
+                                    15 Days
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="form.warranty_days = 30"
+                                    :class="form.warranty_days === 30 ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'"
+                                    class="px-3 py-1.5 rounded-xl border text-xs font-medium transition"
+                                >
+                                    30 Days (Standard)
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="form.warranty_days = 90"
+                                    :class="form.warranty_days === 90 ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'"
+                                    class="px-3 py-1.5 rounded-xl border text-xs font-medium transition"
+                                >
+                                    90 Days
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Section 4: Initial Spare Parts (Optional) -->
-                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
+                <!-- Section 4: Spare Parts Consumed (Optional) -->
+                <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                        <div class="flex items-center gap-2">
-                            <span class="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                </svg>
-                            </span>
-                            <div>
-                                <h2 class="text-sm font-bold text-slate-800">4. Spare Parts Consumed (Optional)</h2>
-                                <p class="text-[11px] text-slate-400">Parts linked to inventory will automatically be deducted from warehouse stock upon saving</p>
-                            </div>
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900">Spare Parts Consumed (Optional)</h2>
+                            <p class="text-xs text-slate-500">Parts linked to catalog inventory will automatically be deducted from warehouse stock upon saving</p>
                         </div>
                         <button
                             type="button"
                             @click="addPartRow"
-                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-xs font-bold transition-all"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition"
                         >
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                             </svg>
-                            <span>+ Add Spare Part</span>
+                            <span>Add Spare Part</span>
                         </button>
                     </div>
 
                     <div v-if="form.parts.length > 0" class="overflow-x-auto">
                         <table class="w-full text-left border-collapse text-xs">
                             <thead>
-                                <tr class="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold uppercase text-[10px]">
-                                    <th class="py-2 px-3">Inventory Product (Optional)</th>
-                                    <th class="py-2 px-3">Part Description</th>
-                                    <th class="py-2 px-3">Deduct From Hub</th>
-                                    <th class="py-2 px-3 text-center w-20">Qty</th>
-                                    <th class="py-2 px-3 text-right w-28">Price (৳)</th>
-                                    <th class="py-2 px-3 text-right w-28">Subtotal</th>
-                                    <th class="py-2 px-3 text-center w-12"></th>
+                                <tr class="bg-slate-50/75 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                                    <th class="py-2.5 px-3">Inventory Product (Optional)</th>
+                                    <th class="py-2.5 px-3">Part Description</th>
+                                    <th class="py-2.5 px-3">Warehouse / Hub</th>
+                                    <th class="py-2.5 px-3 text-center w-24">Qty</th>
+                                    <th class="py-2.5 px-3 text-right w-32">Unit Price</th>
+                                    <th class="py-2.5 px-3 text-right w-32">Subtotal</th>
+                                    <th class="py-2.5 px-3 text-center w-12"></th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
                                 <tr v-for="(part, idx) in form.parts" :key="idx" class="hover:bg-slate-50/50">
-                                    <td class="py-2 px-3">
+                                    <td class="py-2.5 px-3">
                                         <select
                                             v-model="part.product_id"
                                             @change="onProductSelected(idx)"
-                                            class="w-full text-xs rounded-lg border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                            class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                                         >
                                             <option value="">-- Custom Part / Non-catalog --</option>
                                             <option v-for="p in products" :key="p.id" :value="p.id">
-                                                {{ p.name }} (৳{{ p.unit_price }})
+                                                {{ p.name }}
                                             </option>
                                         </select>
                                     </td>
-                                    <td class="py-2 px-3">
+                                    <td class="py-2.5 px-3">
                                         <input
                                             v-model="part.part_name"
                                             type="text"
                                             placeholder="Part name or component..."
-                                            class="w-full text-xs rounded-lg border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 font-medium"
+                                            class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 font-medium"
                                             required
                                         />
                                     </td>
-                                    <td class="py-2 px-3">
+                                    <td class="py-2.5 px-3">
                                         <select
                                             v-model="part.warehouse_id"
                                             :disabled="!part.product_id"
-                                            class="w-full text-xs rounded-lg border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-400"
+                                            class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-50 disabled:text-slate-400"
                                         >
                                             <option v-for="w in warehouses" :key="w.id" :value="w.id">{{ w.name }}</option>
                                         </select>
                                     </td>
-                                    <td class="py-2 px-3">
+                                    <td class="py-2.5 px-3">
                                         <input
                                             v-model="part.quantity"
                                             type="number"
                                             min="1"
-                                            class="w-full text-xs text-center rounded-lg border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 font-bold"
+                                            class="w-full text-xs text-center font-mono font-bold px-2 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                                             required
                                         />
                                     </td>
-                                    <td class="py-2 px-3">
+                                    <td class="py-2.5 px-3">
                                         <input
                                             v-model="part.unit_price"
                                             type="number"
                                             step="0.01"
                                             min="0"
-                                            class="w-full text-xs text-right rounded-lg border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 font-bold"
+                                            class="w-full text-xs text-right font-mono font-bold px-2 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                                             required
                                         />
                                     </td>
-                                    <td class="py-2 px-3 text-right font-bold text-slate-800">
-                                        ৳{{ ((parseFloat(part.quantity) || 0) * (parseFloat(part.unit_price) || 0)).toFixed(2) }}
+                                    <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-800">
+                                        <CurrencyDisplay :amount="(parseFloat(part.quantity) || 0) * (parseFloat(part.unit_price) || 0)" />
                                     </td>
-                                    <td class="py-2 px-3 text-center">
+                                    <td class="py-2.5 px-3 text-center">
                                         <button
                                             type="button"
                                             @click="removePartRow(idx)"
-                                            class="text-slate-400 hover:text-rose-600 font-bold text-base leading-none"
+                                            class="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
                                         >
-                                            &times;
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
                                         </button>
                                     </td>
                                 </tr>
@@ -477,46 +494,52 @@ function submitForm() {
                     </div>
                 </div>
 
-                <!-- Section 5: Billing & Advance Payment Breakdown -->
-                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
-                    <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
-                        <span class="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </span>
-                        <h2 class="text-sm font-bold text-slate-800">5. Service Billing & Advance Collection</h2>
+                <!-- Section 5: Billing & Advance Collection -->
+                <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-6">
+                    <div class="border-b border-slate-100 pb-3">
+                        <h2 class="text-base font-bold text-slate-900">Service Billing & Advance Collection</h2>
+                        <p class="text-xs text-slate-500">Service charge estimation, customer advance deposit, and balance calculations</p>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                        <div class="space-y-4">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                        <!-- Inputs Left (7 cols) -->
+                        <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Labor & Service Charge (৳) <span class="text-rose-500">*</span></label>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Labor & Service Charge <span class="text-rose-500">*</span></label>
                                 <input
                                     v-model="form.service_charge"
                                     type="number"
                                     step="0.01"
                                     min="0"
                                     placeholder="500.00"
-                                    class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 font-bold"
+                                    class="w-full text-xs font-mono font-bold px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                                     required
                                 />
                             </div>
 
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Discount Amount (৳)</label>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Discount Amount</label>
                                 <input
                                     v-model="form.discount_amount"
                                     type="number"
                                     step="0.01"
                                     min="0"
                                     placeholder="0.00"
-                                    class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                    class="w-full text-xs font-mono px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                                 />
                             </div>
 
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Advance Payment Received Now (৳)</label>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="block text-xs font-semibold text-slate-700">Advance Paid Now</label>
+                                    <button
+                                        type="button"
+                                        @click="setFullPayment"
+                                        class="text-[10px] font-bold text-indigo-600 hover:text-indigo-800"
+                                    >
+                                        Pay Full (100%)
+                                    </button>
+                                </div>
                                 <input
                                     v-model="form.paid_amount"
                                     type="number"
@@ -524,7 +547,7 @@ function submitForm() {
                                     min="0"
                                     :max="grandTotal"
                                     placeholder="0.00"
-                                    class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 font-bold text-emerald-700"
+                                    class="w-full text-xs font-mono font-bold text-emerald-600 px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                                 />
                             </div>
 
@@ -533,44 +556,44 @@ function submitForm() {
                                 <input
                                     v-model="form.remarks"
                                     type="text"
-                                    placeholder="Optional note for technicians..."
-                                    class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder="Optional workshop notes..."
+                                    class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                                 />
                             </div>
                         </div>
 
-                        <!-- Financial Summary Box -->
-                        <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 space-y-3">
+                        <!-- Summary Breakdown Right (5 cols) -->
+                        <div class="lg:col-span-5 bg-slate-50 border border-slate-200/80 rounded-2xl p-5 space-y-3">
                             <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Invoice Summary</div>
                             
                             <div class="flex justify-between text-xs text-slate-600">
                                 <span>Labor & Diagnosis Fee:</span>
-                                <span class="font-bold">৳{{ (parseFloat(form.service_charge) || 0).toFixed(2) }}</span>
+                                <span class="font-bold text-slate-800"><CurrencyDisplay :amount="form.service_charge || 0" /></span>
                             </div>
 
                             <div class="flex justify-between text-xs text-slate-600">
                                 <span>Spare Parts Total:</span>
-                                <span class="font-bold">৳{{ partsTotal.toFixed(2) }}</span>
+                                <span class="font-bold text-slate-800"><CurrencyDisplay :amount="partsTotal" /></span>
                             </div>
 
                             <div v-if="parseFloat(form.discount_amount) > 0" class="flex justify-between text-xs text-rose-600">
                                 <span>Discount:</span>
-                                <span class="font-bold">- ৳{{ (parseFloat(form.discount_amount) || 0).toFixed(2) }}</span>
+                                <span class="font-bold">- <CurrencyDisplay :amount="form.discount_amount || 0" /></span>
                             </div>
 
-                            <div class="border-t border-slate-200 pt-2 flex justify-between text-sm font-extrabold text-slate-800">
+                            <div class="border-t border-slate-200 pt-2.5 flex justify-between text-sm font-extrabold text-slate-900">
                                 <span>Grand Total Billed:</span>
-                                <span class="text-indigo-600">৳{{ grandTotal.toFixed(2) }}</span>
+                                <span class="text-indigo-600"><CurrencyDisplay :amount="grandTotal" /></span>
                             </div>
 
                             <div class="flex justify-between text-xs text-emerald-700 font-bold">
                                 <span>Paid Advance:</span>
-                                <span>৳{{ (parseFloat(form.paid_amount) || 0).toFixed(2) }}</span>
+                                <span><CurrencyDisplay :amount="form.paid_amount || 0" /></span>
                             </div>
 
-                            <div class="border-t border-slate-200 pt-2 flex justify-between text-xs font-bold text-rose-600">
+                            <div class="border-t border-slate-200 pt-2.5 flex justify-between text-xs font-bold" :class="remainingDue > 0 ? 'text-rose-600' : 'text-emerald-700'">
                                 <span>Estimated Due Balance:</span>
-                                <span>৳{{ remainingDue.toFixed(2) }}</span>
+                                <span><CurrencyDisplay :amount="remainingDue" /></span>
                             </div>
                         </div>
                     </div>
@@ -580,14 +603,14 @@ function submitForm() {
                 <div class="flex items-center justify-end gap-3 pt-2">
                     <Link
                         :href="route('services.index')"
-                        class="px-5 py-2.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-all"
+                        class="px-5 py-2.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition"
                     >
                         Cancel
                     </Link>
                     <button
                         type="submit"
                         :disabled="form.processing"
-                        class="px-6 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-600/30 transition-all hover:scale-[1.02] disabled:opacity-50"
+                        class="px-6 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-600/30 transition disabled:opacity-50"
                     >
                         Create Service Ticket & Print Token
                     </button>

@@ -156,7 +156,7 @@ function submitPayment() {
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+                <!-- <div class="flex items-center gap-2 w-full md:w-auto justify-end">
                     <button 
                         @click="applyFilters"
                         class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold transition"
@@ -172,7 +172,7 @@ function submitPayment() {
                         </svg>
                         <span>New Purchase Order</span>
                     </Link>
-                </div>
+                </div> -->
             </div>
 
             <!-- Ledger Table -->
@@ -320,8 +320,8 @@ function submitPayment() {
                         <input 
                             type="text" 
                             v-model="payForm.notes" 
-                            placeholder="e.g. Bank Ref # / Cheque #..."
-                            class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500"
+                            placeholder="e.g. Bank ref or cheque #"
+                            class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                     </div>
 

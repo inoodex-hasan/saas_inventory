@@ -11,6 +11,18 @@ class TeamPolicy
     use HandlesAuthorization;
 
     /**
+     * Perform pre-authorization checks.
+     */
+    public function before(User $user, string $ability): ?bool
+    {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        return null;
+    }
+
+    /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool

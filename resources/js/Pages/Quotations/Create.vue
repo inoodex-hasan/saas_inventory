@@ -101,12 +101,6 @@ function submit(statusValue = 'draft') {
                         <p class="text-xs text-slate-500 font-medium">Issue branded estimate or commercial proposal with pricing terms</p>
                     </div>
                 </div>
-                <Link
-                    :href="route('quotations.index')"
-                    class="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-xs"
-                >
-                    &larr; Back to Quotations
-                </Link>
             </div>
         </template>
 
@@ -162,7 +156,7 @@ function submit(statusValue = 'draft') {
                                     type="text"
                                     required
                                     placeholder="e.g. Standard Bank Ltd"
-                                    class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
+                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-blue-500 placeholder:text-slate-400 placeholder:text-xs"
                                 />
                             </div>
 
@@ -173,7 +167,7 @@ function submit(statusValue = 'draft') {
                                     type="text"
                                     required
                                     placeholder="e.g. 01911887766"
-                                    class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
+                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-blue-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
                                 />
                             </div>
 
@@ -183,7 +177,7 @@ function submit(statusValue = 'draft') {
                                     v-model="form.new_customer_address"
                                     type="text"
                                     placeholder="e.g. Motijheel C/A, Dhaka"
-                                    class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
+                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-blue-500 placeholder:text-slate-400 placeholder:text-xs"
                                 />
                             </div>
                         </div>
@@ -282,7 +276,7 @@ function submit(statusValue = 'draft') {
                             <input
                                 :value="quotationNumber"
                                 readonly
-                                class="w-full text-sm px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 font-semibold cursor-not-allowed"
+                                class="w-full text-xs px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 font-semibold cursor-not-allowed font-mono"
                             />
                         </div>
 
@@ -292,7 +286,7 @@ function submit(statusValue = 'draft') {
                                 v-model="form.quotation_date"
                                 type="date"
                                 required
-                                class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-blue-500 font-medium"
                             />
                         </div>
 
@@ -302,7 +296,7 @@ function submit(statusValue = 'draft') {
                                 v-model="form.valid_until"
                                 type="date"
                                 required
-                                class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-blue-500 font-medium"
                             />
                         </div>
 

@@ -425,9 +425,8 @@ function transitionTo(status) {
         <!-- Add Spare Part Modal -->
         <Modal :show="isAddPartModalOpen" @close="isAddPartModalOpen = false" max-width="lg">
             <div class="p-6">
-                <h3 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
-                    <span>🔩</span>
-                    <span>Consume Spare Part — #{{ ticket.ticket_number }}</span>
+                <h3 class="text-base font-bold text-slate-800 mb-1">
+                    Consume Spare Part — #{{ ticket.ticket_number }}
                 </h3>
                 <p class="text-xs text-slate-500 mb-4">
                     Link to inventory catalog to deduct stock or enter a custom part name.
@@ -528,9 +527,8 @@ function transitionTo(status) {
         <!-- Collect Payment Modal -->
         <Modal :show="isPayModalOpen" @close="isPayModalOpen = false" max-width="md">
             <div class="p-6">
-                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-1">
-                    <span>💵</span>
-                    <span>Collect Payment — #{{ ticket.ticket_number }}</span>
+                <h3 class="text-base font-bold text-slate-800 mb-1">
+                    Collect Payment — #{{ ticket.ticket_number }}
                 </h3>
                 <p class="text-xs text-slate-500 mb-4">
                     Outstanding balance: <strong class="text-rose-600"><CurrencyDisplay :amount="ticket.due_amount" /></strong>

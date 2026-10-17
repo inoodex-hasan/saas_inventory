@@ -110,23 +110,11 @@ function resetFilters() {
         <Head :title="page_title" />
 
         <template #header>
-            <div class="flex items-center justify-between w-full">
-                <div>
-                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-                        <span>👥</span>
-                        <span>{{ page_title }}</span>
-                    </h1>
-                    <p class="text-xs text-slate-500 font-medium">Manage staff profiles, designations, salary baselines, and bank credentials</p>
-                </div>
-                <button
-                    @click="openCreateModal"
-                    class="inline-flex items-center gap-2 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-indigo-600/30 transition-all hover:scale-[1.02]"
-                >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    <span>Add New Staff</span>
-                </button>
+            <div>
+                <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">
+                    {{ page_title }}
+                </h1>
+                <p class="text-xs text-slate-500 font-medium">Manage staff profiles, designations, salary baselines, and bank credentials</p>
             </div>
         </template>
 
@@ -134,21 +122,21 @@ function resetFilters() {
 
             <!-- Metric Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
                     <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Headcount</div>
-                    <div class="text-xl font-extrabold text-slate-800 mt-1">{{ metrics.total_employees }} Staff</div>
+                    <div class="text-2xl font-bold text-slate-900 mt-1">{{ metrics.total_employees }} Staff</div>
                     <div class="text-[10px] text-slate-400 mt-0.5">Across all departments</div>
                 </div>
 
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
                     <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Staff</div>
-                    <div class="text-xl font-extrabold text-emerald-600 mt-1">{{ metrics.active_employees }} Active</div>
+                    <div class="text-2xl font-bold text-emerald-600 mt-1">{{ metrics.active_employees }} Active</div>
                     <div class="text-[10px] text-slate-400 mt-0.5">Currently on payroll</div>
                 </div>
 
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
                     <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Monthly Base Payroll</div>
-                    <div class="text-xl font-extrabold text-indigo-600 mt-1">
+                    <div class="text-2xl font-bold text-indigo-600 mt-1">
                         <CurrencyDisplay :amount="metrics.total_payroll_cost" />
                     </div>
                     <div class="text-[10px] text-slate-400 mt-0.5">Estimated gross commitment</div>
@@ -164,7 +152,7 @@ function resetFilters() {
                             @keyup.enter="applyFilters"
                             type="text"
                             placeholder="Search name, code, designation, phone..."
-                            class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                            class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
                         />
                         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -313,7 +301,8 @@ function resetFilters() {
                                 v-model="form.name"
                                 type="text"
                                 required
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                                placeholder="e.g. Hasan Mahmud"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
 
@@ -323,8 +312,8 @@ function resetFilters() {
                                 v-model="form.designation"
                                 type="text"
                                 required
-                                placeholder="e.g. Senior Network Engineer"
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                                placeholder="e.g. Network Engineer"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
 
@@ -333,8 +322,8 @@ function resetFilters() {
                             <input
                                 v-model="form.department"
                                 type="text"
-                                placeholder="e.g. Technical Operations"
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                                placeholder="e.g. Operations"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
 
@@ -345,8 +334,9 @@ function resetFilters() {
                                 type="number"
                                 step="0.01"
                                 min="0"
+                                placeholder="0.00"
                                 required
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3 font-bold"
+                                class="w-full text-xs font-bold rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
 
@@ -355,7 +345,8 @@ function resetFilters() {
                             <input
                                 v-model="form.phone"
                                 type="text"
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                                placeholder="e.g. 01700-000000"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
 
@@ -364,7 +355,8 @@ function resetFilters() {
                             <input
                                 v-model="form.email"
                                 type="email"
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                                placeholder="e.g. staff@company.com"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
 
@@ -373,7 +365,7 @@ function resetFilters() {
                             <input
                                 v-model="form.joining_date"
                                 type="date"
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2 px-3"
                             />
                         </div>
 
@@ -381,7 +373,7 @@ function resetFilters() {
                             <label class="block font-semibold text-slate-700 mb-1">Status</label>
                             <select
                                 v-model="form.status"
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2 px-3"
                             >
                                 <option value="active">Active</option>
                                 <option value="on_leave">On Leave</option>
@@ -394,8 +386,8 @@ function resetFilters() {
                             <input
                                 v-model="form.bank_name"
                                 type="text"
-                                placeholder="e.g. City Bank Ltd"
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                                placeholder="e.g. City Bank"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
 
@@ -404,8 +396,8 @@ function resetFilters() {
                             <input
                                 v-model="form.bank_account_no"
                                 type="text"
-                                placeholder="Account #"
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                                placeholder="e.g. 1234567890"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
 
@@ -414,8 +406,8 @@ function resetFilters() {
                             <input
                                 v-model="form.mobile_banking_no"
                                 type="text"
-                                placeholder="Mobile wallet number"
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+                                placeholder="e.g. 017XXXXXXXX (bKash)"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
                     </div>
