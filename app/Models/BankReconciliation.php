@@ -25,7 +25,7 @@ class BankReconciliation extends Model
     ];
 
     protected $casts = [
-        'reconciliation_date' => 'date',
+        'reconciliation_date' => 'date:Y-m-d',
         'statement_balance' => 'decimal:2',
         'ledger_balance' => 'decimal:2',
         'difference' => 'decimal:2',

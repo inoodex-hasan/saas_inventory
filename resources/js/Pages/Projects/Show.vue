@@ -5,6 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import Modal from '@/Components/Modal.vue';
+import { formatDate } from '@/Utils/date';
 
 const props = defineProps({
     page_title: String,
@@ -153,7 +154,7 @@ function submitStatus() {
                         <p class="text-xs text-slate-500 mt-1">
                             Client: <span class="font-semibold text-slate-700">{{ project.client?.name || 'Walk-in / Direct' }}</span>
                             <span v-if="project.client?.company_name" class="text-slate-400"> ({{ project.client.company_name }})</span>
-                            <span v-if="project.start_date" class="ml-2 text-slate-400">| Timeline: {{ new Date(project.start_date).toLocaleDateString() }}</span>
+                            <span v-if="project.start_date" class="ml-2 text-slate-400">| Timeline: {{ formatDate(project.start_date) }}</span>
                         </p>
                     </div>
                 </div>
@@ -380,7 +381,7 @@ function submitStatus() {
                                 <tbody class="divide-y divide-slate-100">
                                     <tr v-for="cost in project.costs" :key="cost.id" class="hover:bg-slate-50/60">
                                         <td class="py-2.5 px-3 text-slate-500">
-                                            {{ cost.cost_date ? new Date(cost.cost_date).toLocaleDateString() : '-' }}
+                                            {{ formatDate(cost.cost_date, '-') }}
                                         </td>
                                         <td class="py-2.5 px-3 text-slate-600 font-medium">
                                             {{ cost.category?.name || 'General' }}
@@ -454,7 +455,7 @@ function submitStatus() {
                                             <div v-if="bill.notes" class="text-[10px] text-slate-400">{{ bill.notes }}</div>
                                         </td>
                                         <td class="py-2.5 px-3 text-slate-500">
-                                            {{ bill.due_date ? new Date(bill.due_date).toLocaleDateString() : '-' }}
+                                            {{ formatDate(bill.due_date, '-') }}
                                         </td>
                                         <td class="py-2.5 px-3 text-center">
                                             <StatusBadge :status="bill.status" />
@@ -530,12 +531,12 @@ function submitStatus() {
 
                             <div class="flex justify-between py-1 border-b border-slate-50">
                                 <span class="text-slate-400">Start Date:</span>
-                                <span class="font-semibold text-slate-800">{{ project.start_date ? new Date(project.start_date).toLocaleDateString() : '-' }}</span>
+                                <span class="font-semibold text-slate-800">{{ formatDate(project.start_date, '-') }}</span>
                             </div>
 
                             <div class="flex justify-between py-1 border-b border-slate-50">
                                 <span class="text-slate-400">Target Completion:</span>
-                                <span class="font-semibold text-slate-800">{{ project.end_date ? new Date(project.end_date).toLocaleDateString() : '-' }}</span>
+                                <span class="font-semibold text-slate-800">{{ formatDate(project.end_date, '-') }}</span>
                             </div>
 
                             <div class="flex justify-between py-1 border-b border-slate-50">

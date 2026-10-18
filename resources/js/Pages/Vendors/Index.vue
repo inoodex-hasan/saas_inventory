@@ -5,6 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
+import ActionDropdown from '@/Components/ActionDropdown.vue';
 
 const props = defineProps({
     vendors: Object,
@@ -78,6 +79,14 @@ function toggleActive(v) {
     router.post(route('vendors.toggle-active', v.id), {}, {
         preserveScroll: true,
     });
+}
+
+function setVendorStatus(v, newStatus) {
+    const isCurrentlyActive = Boolean(v.is_active);
+    const wantActive = newStatus === '1';
+    if (isCurrentlyActive !== wantActive) {
+        toggleActive(v);
+    }
 }
 
 function deleteVendor(v) {
@@ -215,33 +224,45 @@ function deleteVendor(v) {
                                 </td>
 
                                 <td class="py-3.5 px-4 text-center">
-                                    <button 
-                                        @click="toggleActive(v)"
-                                        title="Click to toggle status"
+                                    <select 
+                                        :value="v.is_active ? '1' : '0'"
+                                        @change="(e) => setVendorStatus(v, e.target.value)"
+                                        class="inline-flex items-center text-xs font-semibold pl-3 pr-7 py-1 rounded-full border transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1"
+                                        :class="v.is_active 
+                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 focus:ring-emerald-400 hover:bg-emerald-100/70' 
+                                            : 'bg-slate-100 text-slate-600 border-slate-200 focus:ring-slate-400 hover:bg-slate-200/70'"
                                     >
-                                        <StatusBadge :status="v.is_active ? 'active' : 'inactive'" />
-                                    </button>
+                                        <option value="1">Active</option>
+                                        <option value="0">Inactive</option>
+                                    </select>
                                 </td>
 
                                 <td class="py-3.5 px-4 text-right">
-                                    <div class="flex items-center justify-end gap-1.5">
-                                        <button 
-                                            @click="openEditModal(v)" 
-                                            class="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors"
-                                        >
-                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                            </svg>
-                                        </button>
-                                        <button 
-                                            @click="deleteVendor(v)" 
-                                            class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                                        >
-                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                    </div>
+                                    <ActionDropdown>
+                                        <div class="p-1 space-y-0.5">
+                                            <button 
+                                                @click="openEditModal(v)" 
+                                                type="button"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                                <span>Edit Vendor</span>
+                                            </button>
+
+                                            <button 
+                                                @click="deleteVendor(v)" 
+                                                type="button"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                                <span>Delete Vendor</span>
+                                            </button>
+                                        </div>
+                                    </ActionDropdown>
                                 </td>
                             </tr>
                         </tbody>

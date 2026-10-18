@@ -25,7 +25,7 @@ class JournalEntry extends Model
     ];
 
     protected $casts = [
-        'entry_date' => 'date',
+        'entry_date' => 'date:Y-m-d',
         'is_posted' => 'boolean',
     ];
 

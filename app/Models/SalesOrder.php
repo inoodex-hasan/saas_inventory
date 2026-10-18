@@ -33,7 +33,7 @@ class SalesOrder extends Model
     ];
 
     protected $casts = [
-        'order_date' => 'date',
+        'order_date' => 'date:Y-m-d',
         'subtotal' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'shipping_cost' => 'decimal:2',

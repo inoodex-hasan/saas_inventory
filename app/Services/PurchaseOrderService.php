@@ -112,6 +112,116 @@ class PurchaseOrderService
     }
 
     /**
+     * Update an existing purchase order with new line items and details.
+     */
+    public function updateOrder(PurchaseOrder $order, array $data, array $items): PurchaseOrder
+    {
+        if (in_array($order->status, ['received', 'cancelled'])) {
+            throw new InvalidStockOperationException("Cannot update an order that is already '{$order->status}'.");
+        }
+
+        if (empty($items)) {
+            throw new InvalidStockOperationException("A purchase order must contain at least one line item.");
+        }
+
+        return DB::transaction(function () use ($order, $data, $items) {
+            $teamId = $order->team_id;
+
+            // Compute subtotal from line items
+            $subtotal = 0.00;
+            foreach ($items as $item) {
+                $subtotal += ($item['quantity'] * $item['unit_cost']);
+            }
+
+            $tax = (float) ($data['tax_amount'] ?? $order->tax_amount ?? 0.00);
+            $shipping = (float) ($data['shipping_cost'] ?? $order->shipping_cost ?? 0.00);
+            $discount = (float) ($data['discount_amount'] ?? $order->discount_amount ?? 0.00);
+            $totalAmount = max(0, $subtotal + $tax + $shipping - $discount);
+
+            $paidAmount = (float) $order->paid_amount;
+            $dueAmount = max(0, $totalAmount - $paidAmount);
+            $paymentStatus = ($paidAmount >= $totalAmount && $totalAmount > 0)
+                ? 'paid'
+                : ($paidAmount > 0 ? 'partially_paid' : 'unpaid');
+
+            $order->update([
+                'supplier_id' => $data['supplier_id'] ?? $order->supplier_id,
+                'warehouse_id' => $data['warehouse_id'] ?? $order->warehouse_id,
+                'order_date' => $data['order_date'] ?? $order->order_date,
+                'expected_date' => $data['expected_date'] ?? $order->expected_date,
+                'subtotal' => $subtotal,
+                'tax_amount' => $tax,
+                'shipping_cost' => $shipping,
+                'discount_amount' => $discount,
+                'total_amount' => $totalAmount,
+                'due_amount' => $dueAmount,
+                'payment_status' => $paymentStatus,
+                'notes' => $data['notes'] ?? $order->notes,
+            ]);
+
+            // Sync items: find existing items
+            $existingItems = $order->items()->get()->keyBy('id');
+            $keptItemIds = [];
+
+            foreach ($items as $itemData) {
+                $itemId = $itemData['id'] ?? null;
+                $quantity = (float) $itemData['quantity'];
+                $unitCost = (float) $itemData['unit_cost'];
+                $itemSubtotal = $quantity * $unitCost;
+
+                if ($itemId && isset($existingItems[$itemId])) {
+                    $existingItem = $existingItems[$itemId];
+                    if ($quantity < $existingItem->received_quantity) {
+                        throw new InvalidStockOperationException(
+                            "Cannot reduce ordered quantity below already received quantity ({$existingItem->received_quantity})."
+                        );
+                    }
+
+                    $existingItem->update([
+                        'product_id' => $itemData['product_id'],
+                        'quantity' => $quantity,
+                        'unit_cost' => $unitCost,
+                        'batch_number' => $itemData['batch_number'] ?? $existingItem->batch_number,
+                        'manufacture_date' => $itemData['manufacture_date'] ?? $existingItem->manufacture_date,
+                        'expiry_date' => $itemData['expiry_date'] ?? $existingItem->expiry_date,
+                        'subtotal' => $itemSubtotal,
+                    ]);
+                    $keptItemIds[] = $itemId;
+                } else {
+                    $newItem = PurchaseOrderItem::create([
+                        'team_id' => $teamId,
+                        'purchase_order_id' => $order->id,
+                        'product_id' => $itemData['product_id'],
+                        'product_variant_id' => $itemData['product_variant_id'] ?? null,
+                        'batch_number' => $itemData['batch_number'] ?? null,
+                        'manufacture_date' => $itemData['manufacture_date'] ?? null,
+                        'expiry_date' => $itemData['expiry_date'] ?? null,
+                        'quantity' => $quantity,
+                        'received_quantity' => 0,
+                        'unit_cost' => $unitCost,
+                        'subtotal' => $itemSubtotal,
+                    ]);
+                    $keptItemIds[] = $newItem->id;
+                }
+            }
+
+            // Delete removed items (ensure they haven't received items)
+            foreach ($existingItems as $oldId => $oldItem) {
+                if (!in_array($oldId, $keptItemIds)) {
+                    if ($oldItem->received_quantity > 0) {
+                        throw new InvalidStockOperationException(
+                            "Cannot remove an item that has already been partially received."
+                        );
+                    }
+                    $oldItem->delete();
+                }
+            }
+
+            return $order->fresh(['items.product', 'supplier', 'warehouse']);
+        });
+    }
+
+    /**
      * Mark purchase order as ordered/sent to supplier.
      */
     public function markAsOrdered(PurchaseOrder $order): void

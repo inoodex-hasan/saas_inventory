@@ -4,6 +4,7 @@ import { Head, useForm, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
+import ActionDropdown from '@/Components/ActionDropdown.vue';
 
 const props = defineProps({
     page_title: String,
@@ -208,20 +209,30 @@ function deletePlan(plan) {
                                         Disabled
                                     </span>
                                 </td>
-                                <td class="py-3 px-4 text-right space-x-1">
-                                    <button
-                                        @click="openEditModal(plan)"
-                                        class="px-2.5 py-1 text-slate-600 hover:text-amber-600 hover:bg-slate-100 rounded-lg font-medium transition-colors"
-                                    >
-                                        Edit
-                                    </button>
-                                    <button
-                                        v-if="plan.subscriptions_count === 0 && plan.slug !== 'trial'"
-                                        @click="deletePlan(plan)"
-                                        class="px-2.5 py-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg font-medium transition-colors"
-                                    >
-                                        Delete
-                                    </button>
+                                <td class="py-3 px-4 text-right">
+                                    <div class="flex items-center justify-end">
+                                        <ActionDropdown align="right">
+                                            <button
+                                                @click="openEditModal(plan)"
+                                                class="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                                <span>Edit Plan Tier</span>
+                                            </button>
+                                            <button
+                                                v-if="plan.subscriptions_count === 0 && plan.slug !== 'trial'"
+                                                @click="deletePlan(plan)"
+                                                class="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-rose-600 hover:bg-rose-50 font-semibold transition-colors"
+                                            >
+                                                <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                                <span>Delete Plan</span>
+                                            </button>
+                                        </ActionDropdown>
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>

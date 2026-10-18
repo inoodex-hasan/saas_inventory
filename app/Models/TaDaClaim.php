@@ -33,7 +33,7 @@ class TaDaClaim extends Model
     ];
 
     protected $casts = [
-        'travel_date' => 'date',
+        'travel_date' => 'date:Y-m-d',
         'travel_allowance' => 'decimal:2',
         'daily_allowance' => 'decimal:2',
         'other_expenses' => 'decimal:2',

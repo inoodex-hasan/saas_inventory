@@ -5,6 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import Pagination from '@/Components/Pagination.vue';
+import { formatDate } from '@/Utils/date';
 
 const props = defineProps({
     page_title: String,
@@ -216,7 +217,7 @@ function paymentStatusBadge(status) {
                                     <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
-                                    <span>Renews / Expires: <strong class="text-slate-200">{{ usage.subscription?.ends_at ? new Date(usage.subscription.ends_at).toLocaleDateString() : 'N/A' }}</strong></span>
+                                    <span>Renews / Expires: <strong class="text-slate-200">{{ formatDate(usage.subscription?.ends_at, 'N/A') }}</strong></span>
                                 </div>
                                 <div class="flex items-center gap-1.5">
                                     <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -671,7 +672,7 @@ function paymentStatusBadge(status) {
                                     </span>
                                 </td>
                                 <td class="py-3 px-4 text-slate-600 whitespace-nowrap">
-                                    {{ new Date(pmt.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) }}
+                                    {{ formatDate(pmt.created_at) }}
                                 </td>
                                 <td class="py-3 px-4">
                                     <span class="font-bold text-slate-800">{{ pmt.plan?.name }}</span>

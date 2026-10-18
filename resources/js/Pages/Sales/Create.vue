@@ -3,13 +3,28 @@ import { ref, computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 
 const props = defineProps({
     customers: Array,
     warehouses: Array,
     products: Array,
+    financialAccounts: Array,
     defaultWarehouseId: Number,
     todayDate: String,
+});
+
+const defaultAccount = (props.financialAccounts || []).find(a => a.is_default) || props.financialAccounts?.[0];
+
+const accountOptions = computed(() => {
+    return (props.financialAccounts || []).map(acc => ({
+        value: acc.id,
+        label: acc.name,
+        sublabel: acc.type === 'cash'
+            ? `Balance: ৳${Number(acc.current_balance).toFixed(2)}`
+            : `${acc.institution_name} (${acc.account_number}) - Bal: ৳${Number(acc.current_balance).toFixed(2)}`,
+        group: acc.type === 'cash' ? 'Cash Registers' : (acc.type === 'bank' ? 'Bank Accounts' : 'MFS Wallets'),
+    }));
 });
 
 const form = useForm({
@@ -26,6 +41,8 @@ const form = useForm({
     tax_amount: 0,
     shipping_cost: 0,
     paid_amount: 0,
+    financial_account_id: defaultAccount?.id || '',
+    payment_reference: '',
     status: 'draft',
     items: [
         {
@@ -148,17 +165,15 @@ function submit() {
                         <!-- Existing Customer dropdown -->
                         <div v-if="form.customer_mode === 'existing'">
                             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Select Customer *</label>
-                            <select
+                            <SearchableSelect
                                 v-model="form.customer_id"
-                                required
-                                class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
-                            >
-                                <option value="" disabled>-- Select registered customer --</option>
-                                <option v-for="c in customers" :key="c.id" :value="c.id">
-                                    {{ c.name }} ({{ c.phone }})
-                                </option>
-                            </select>
-                            <div v-if="form.errors.customer_id" class="text-xs text-rose-500 mt-1">{{ form.errors.customer_id }}</div>
+                                :options="customers"
+                                labelKey="name"
+                                sublabelKey="phone"
+                                placeholder="Search & select customer by name or phone..."
+                                searchPlaceholder="Type customer name or phone..."
+                                :error="form.errors.customer_id"
+                            />
                         </div>
 
                         <!-- Inline New Customer fields -->
@@ -225,17 +240,15 @@ function submit() {
                             >
                                 <div class="flex-1 w-full sm:w-auto">
                                     <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-0.5">Product / SKU</label>
-                                    <select
+                                    <SearchableSelect
                                         v-model="item.product_id"
-                                        @change="onProductSelected(idx)"
-                                        required
-                                        class="w-full text-sm px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
-                                    >
-                                        <option value="" disabled>-- Select Catalog Product --</option>
-                                        <option v-for="p in products" :key="p.id" :value="p.id">
-                                            {{ p.name }} (SKU: {{ p.sku }}) - Unit: ৳{{ p.unit_price }}
-                                        </option>
-                                    </select>
+                                        :options="products"
+                                        labelKey="name"
+                                        sublabelKey="sku"
+                                        placeholder="Search product by name or SKU..."
+                                        searchPlaceholder="Type name or SKU..."
+                                        @change="() => onProductSelected(idx)"
+                                    />
                                 </div>
 
                                 <div class="w-24">
@@ -418,6 +431,35 @@ function submit() {
                                     <span :class="dueAmount > 0 ? 'text-rose-600 font-bold' : 'text-emerald-600 font-bold'">
                                         <CurrencyDisplay :amount="dueAmount" />
                                     </span>
+                                </div>
+
+                                <!-- Dynamic Deposit Account & Reference -->
+                                <div v-if="form.paid_amount > 0" class="pt-2 space-y-3 bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                                            Deposit Into Account *
+                                        </label>
+                                        <SearchableSelect
+                                            v-model="form.financial_account_id"
+                                            :options="accountOptions"
+                                            placeholder="Select deposit account..."
+                                            searchPlaceholder="Type account name or bank..."
+                                            size="compact"
+                                            :error="form.errors.financial_account_id"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                                            Transaction Ref / TrxID #
+                                        </label>
+                                        <input
+                                            v-model="form.payment_reference"
+                                            type="text"
+                                            placeholder="e.g. bKash TrxID, Cheque #, or deposit slip"
+                                            class="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400 placeholder:text-xs font-mono"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>

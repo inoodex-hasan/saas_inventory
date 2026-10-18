@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\FinancialAccount;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
@@ -25,6 +26,7 @@ class VendorDueAndBatchTest extends TestCase
     private Supplier $vendorWithDue;
     private Supplier $vendorPaid;
     private PurchaseOrder $dueOrder;
+    private FinancialAccount $financialAccount;
 
     protected function setUp(): void
     {
@@ -35,6 +37,14 @@ class VendorDueAndBatchTest extends TestCase
         $this->user->current_team_id = $this->team->id;
         $this->user->save();
         $this->actingAs($this->user);
+
+        $this->financialAccount = FinancialAccount::create([
+            'team_id' => $this->team->id,
+            'name' => 'Main Bank',
+            'account_type' => 'bank',
+            'current_balance' => 500000,
+            'is_active' => true,
+        ]);
 
         $this->warehouse = Warehouse::create([
             'team_id' => $this->team->id,
@@ -111,6 +121,7 @@ class VendorDueAndBatchTest extends TestCase
             'warehouse_id' => $this->warehouse->id,
             'order_date' => now()->toDateString(),
             'paid_amount' => 4000,
+            'financial_account_id' => $this->financialAccount->id,
             'items' => [
                 [
                     'product_id' => $this->product->id,
@@ -184,6 +195,7 @@ class VendorDueAndBatchTest extends TestCase
         $response1 = $this->post(route('vendor-dues.pay'), [
             'order_id' => $this->dueOrder->id,
             'amount' => 8000,
+            'financial_account_id' => $this->financialAccount->id,
             'payment_method' => 'bank_transfer',
             'notes' => 'TRX-987654',
         ]);
@@ -198,6 +210,7 @@ class VendorDueAndBatchTest extends TestCase
         $response2 = $this->post(route('vendor-dues.pay'), [
             'order_id' => $this->dueOrder->id,
             'amount' => 12000,
+            'financial_account_id' => $this->financialAccount->id,
             'payment_method' => 'bank_transfer',
         ]);
         $response2->assertSessionHasNoErrors();

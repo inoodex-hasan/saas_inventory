@@ -1,17 +1,34 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import Modal from '@/Components/Modal.vue';
+import ActionDropdown from '@/Components/ActionDropdown.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
+import { formatDate } from '@/Utils/date';
 
 const props = defineProps({
     orders: Object,
     customers: Array,
     warehouses: Array,
+    financialAccounts: Array,
     metrics: Object,
     filters: Object,
+});
+
+const defaultAccount = (props.financialAccounts || []).find(a => a.is_default) || props.financialAccounts?.[0];
+
+const accountOptions = computed(() => {
+    return (props.financialAccounts || []).map(acc => ({
+        value: acc.id,
+        label: acc.name,
+        sublabel: acc.type === 'cash'
+            ? `Balance: ৳${Number(acc.current_balance).toFixed(2)}`
+            : `${acc.institution_name} (${acc.account_number}) - Bal: ৳${Number(acc.current_balance).toFixed(2)}`,
+        group: acc.type === 'cash' ? 'Cash Registers' : (acc.type === 'bank' ? 'Bank Accounts' : 'MFS Wallets'),
+    }));
 });
 
 const search = ref(props.filters.search || '');
@@ -24,6 +41,10 @@ const selectedOrder = ref(null);
 
 const paymentForm = useForm({
     amount: '',
+    financial_account_id: defaultAccount?.id || '',
+    payment_reference: '',
+    payment_date: new Date().toISOString().slice(0, 10),
+    notes: '',
 });
 
 function applyFilter() {
@@ -70,6 +91,11 @@ function cancelOrder(order) {
 function openPaymentModal(order) {
     selectedOrder.value = order;
     paymentForm.amount = order.due_amount > 0 ? order.due_amount : '';
+    paymentForm.financial_account_id = defaultAccount?.id || '';
+    paymentForm.payment_reference = '';
+    paymentForm.payment_date = new Date().toISOString().slice(0, 10);
+    paymentForm.notes = '';
+    paymentForm.clearErrors();
     isPaymentModalOpen.value = true;
 }
 
@@ -217,7 +243,7 @@ function submitPayment() {
                             <tr v-for="order in orders.data" :key="order.id" class="hover:bg-slate-50/70 transition">
                                 <td class="py-3.5 px-4">
                                     <div class="font-semibold text-slate-900">{{ order.order_number }}</div>
-                                    <div class="text-xs text-slate-400">{{ order.order_date }}</div>
+                                    <div class="text-xs text-slate-400">{{ formatDate(order.order_date) }}</div>
                                 </td>
                                 <td class="py-3.5 px-4">
                                     <div class="font-medium text-slate-900">{{ order.customer?.name || 'Walk-in Customer' }}</div>
@@ -241,87 +267,86 @@ function submitPayment() {
                                 <td class="py-3.5 px-4">
                                     <StatusBadge :status="order.payment_status" />
                                 </td>
-                                <td class="py-3.5 px-4 text-right space-x-1">
-                                    <!-- Print PDF buttons -->
-                                    <a
-                                        :href="route('sales.invoice', order.id)"
-                                        target="_blank"
-                                        title="Print Invoice"
-                                        class="inline-flex p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                                        </svg>
-                                    </a>
+                                <td class="py-3.5 px-4 text-right">
+                                    <ActionDropdown>
+                                        <div class="p-1 space-y-0.5">
+                                            <!-- Print Invoice -->
+                                            <a
+                                                :href="route('sales.invoice', order.id)"
+                                                target="_blank"
+                                                class="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                                </svg>
+                                                <span>Print Invoice</span>
+                                            </a>
 
-                                    <a
-                                        :href="route('sales.pos', order.id)"
-                                        target="_blank"
-                                        title="Print POS Thermal Slip"
-                                        class="inline-flex p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
-                                        </svg>
-                                    </a>
 
-                                    <!-- Status Transitions -->
-                                    <button
-                                        v-if="order.status === 'draft'"
-                                        @click="confirmOrder(order)"
-                                        title="Confirm Order"
-                                        class="inline-flex p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                    </button>
+                                            <!-- Collect Payment -->
+                                            <button
+                                                v-if="order.due_amount > 0 && order.status !== 'cancelled'"
+                                                @click="openPaymentModal(order)"
+                                                type="button"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-50 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                </svg>
+                                                <span>Collect Payment</span>
+                                            </button>
 
-                                    <button
-                                        v-if="order.status === 'confirmed'"
-                                        @click="dispatchOrder(order)"
-                                        title="Dispatch Goods"
-                                        class="inline-flex p-1.5 text-slate-400 hover:text-purple-600 rounded-lg hover:bg-purple-50 transition"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                        </svg>
-                                    </button>
+                                            <!-- Status Actions -->
+                                            <button
+                                                v-if="order.status === 'draft'"
+                                                @click="confirmOrder(order)"
+                                                type="button"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                <span>Confirm Order</span>
+                                            </button>
 
-                                    <button
-                                        v-if="order.status === 'dispatched'"
-                                        @click="completeOrder(order)"
-                                        title="Mark Fulfilled"
-                                        class="inline-flex p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                    </button>
+                                            <button
+                                                v-if="order.status === 'confirmed'"
+                                                @click="dispatchOrder(order)"
+                                                type="button"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-purple-600 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                                </svg>
+                                                <span>Dispatch Goods</span>
+                                            </button>
 
-                                    <!-- Record Payment -->
-                                    <button
-                                        v-if="order.due_amount > 0 && order.status !== 'cancelled'"
-                                        @click="openPaymentModal(order)"
-                                        title="Collect Payment"
-                                        class="inline-flex p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                                        </svg>
-                                    </button>
+                                            <button
+                                                v-if="order.status === 'dispatched'"
+                                                @click="completeOrder(order)"
+                                                type="button"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-emerald-600 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span>Mark Fulfilled</span>
+                                            </button>
 
-                                    <!-- Cancel Order -->
-                                    <button
-                                        v-if="['draft', 'confirmed'].includes(order.status)"
-                                        @click="cancelOrder(order)"
-                                        title="Cancel Order"
-                                        class="inline-flex p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
+                                            <!-- Cancel Order -->
+                                            <button
+                                                v-if="['draft', 'confirmed'].includes(order.status)"
+                                                @click="cancelOrder(order)"
+                                                type="button"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                                <span>Cancel Order</span>
+                                            </button>
+                                        </div>
+                                    </ActionDropdown>
                                 </td>
                             </tr>
 
@@ -367,13 +392,56 @@ function submitPayment() {
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Amount Paid *</label>
                         <input
-                            v-model="paymentForm.amount"
+                            v-model.number="paymentForm.amount"
                             type="number"
                             step="0.01"
                             min="0.01"
                             :max="selectedOrder?.due_amount"
                             required
-                            class="w-full text-base font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                            class="w-full text-base font-mono font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                        />
+                        <div v-if="paymentForm.errors.amount" class="text-xs text-rose-500 mt-1">{{ paymentForm.errors.amount }}</div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Deposit Into Account *</label>
+                        <SearchableSelect
+                            v-model="paymentForm.financial_account_id"
+                            :options="accountOptions"
+                            placeholder="Select deposit account..."
+                            searchPlaceholder="Type account name or bank..."
+                            :error="paymentForm.errors.financial_account_id"
+                        />
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Ref / TrxID #</label>
+                            <input
+                                v-model="paymentForm.payment_reference"
+                                type="text"
+                                placeholder="bKash TrxID / Cheque #"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 font-mono"
+                            />
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Payment Date</label>
+                            <input
+                                v-model="paymentForm.payment_date"
+                                type="date"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Remarks / Note</label>
+                        <input
+                            v-model="paymentForm.notes"
+                            type="text"
+                            placeholder="Optional payment notes..."
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
                         />
                     </div>
 

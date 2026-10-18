@@ -5,6 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import Modal from '@/Components/Modal.vue';
+import ActionDropdown from '@/Components/ActionDropdown.vue';
 
 const props = defineProps({
     returns: Object,
@@ -206,7 +207,7 @@ function completeReturn(ret) {
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
-                        <span>Log Return Request</span>
+                        <span>Create Return Request</span>
                     </button>
                 </div>
             </div>
@@ -246,54 +247,61 @@ function completeReturn(ret) {
                                 <td class="py-3.5 px-4">
                                     <StatusBadge :status="ret.status" />
                                 </td>
-                                <td class="py-3.5 px-4 text-right space-x-1">
-                                    <!-- Credit Note PDF -->
-                                    <a
-                                        :href="route('returns.credit-note', ret.id)"
-                                        target="_blank"
-                                        title="Print Credit Note Slip"
-                                        class="inline-flex p-1.5 text-slate-400 hover:text-purple-600 rounded-lg hover:bg-purple-50 transition"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                                        </svg>
-                                    </a>
+                                <td class="py-3.5 px-4 text-right">
+                                    <ActionDropdown>
+                                        <div class="p-1 space-y-0.5">
+                                            <!-- Credit Note PDF -->
+                                            <a
+                                                :href="route('returns.credit-note', ret.id)"
+                                                target="_blank"
+                                                class="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-purple-600 rounded-lg transition"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                                </svg>
+                                                <span>Print / PDF</span>
+                                            </a>
 
-                                    <!-- Approve -->
-                                    <button
-                                        v-if="ret.status === 'pending'"
-                                        @click="approveReturn(ret)"
-                                        title="Approve RMA"
-                                        class="inline-flex p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                    </button>
+                                            <!-- Approve -->
+                                            <button
+                                                v-if="ret.status === 'pending'"
+                                                @click="approveReturn(ret)"
+                                                type="button"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                <span>Approve</span>
+                                            </button>
 
-                                    <!-- Reject -->
-                                    <button
-                                        v-if="ret.status === 'pending'"
-                                        @click="openRejectModal(ret)"
-                                        title="Reject RMA"
-                                        class="inline-flex p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
+                                            <!-- Complete / Restock -->
+                                            <button
+                                                v-if="ret.status === 'approved'"
+                                                @click="completeReturn(ret)"
+                                                type="button"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-50 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                </svg>
+                                                <span>Restock & Refund</span>
+                                            </button>
 
-                                    <!-- Complete / Restock -->
-                                    <button
-                                        v-if="ret.status === 'approved'"
-                                        @click="completeReturn(ret)"
-                                        title="Execute Restock & Refund"
-                                        class="inline-flex p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                        </svg>
-                                    </button>
+                                            <!-- Reject -->
+                                            <button
+                                                v-if="ret.status === 'pending'"
+                                                @click="openRejectModal(ret)"
+                                                type="button"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                                <span>Reject</span>
+                                            </button>
+                                        </div>
+                                    </ActionDropdown>
                                 </td>
                             </tr>
 

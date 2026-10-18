@@ -31,7 +31,7 @@ class DeliveryChallan extends Model
     ];
 
     protected $casts = [
-        'dispatch_date' => 'date',
+        'dispatch_date' => 'date:Y-m-d',
     ];
 
     public function salesOrder(): BelongsTo

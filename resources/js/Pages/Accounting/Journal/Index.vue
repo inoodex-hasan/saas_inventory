@@ -4,6 +4,8 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import Pagination from '@/Components/Pagination.vue';
+import ActionDropdown from '@/Components/ActionDropdown.vue';
+import { formatDate } from '@/Utils/date';
 
 const props = defineProps({
     page_title: String,
@@ -157,7 +159,7 @@ function resetFilters() {
                                     </Link>
                                 </td>
                                 <td class="py-3 px-4 font-mono text-slate-600">
-                                    {{ entry.entry_date }}
+                                    {{ formatDate(entry.entry_date) }}
                                 </td>
                                 <td class="py-3 px-4 font-medium text-slate-800 max-w-xs truncate">
                                     {{ entry.narration }}
@@ -178,12 +180,29 @@ function resetFilters() {
                                     {{ entry.creator?.name || 'System' }}
                                 </td>
                                 <td class="py-3 px-4 text-right">
-                                    <Link
-                                        :href="route('journal.show', entry.id)"
-                                        class="px-3 py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 rounded-lg font-semibold transition-colors inline-block"
-                                    >
-                                        View Voucher
-                                    </Link>
+                                    <div class="flex items-center justify-end">
+                                        <ActionDropdown align="right">
+                                            <Link
+                                                :href="route('journal.show', entry.id)"
+                                                class="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-indigo-600 hover:bg-indigo-50 font-semibold transition-colors"
+                                            >
+                                                <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                                <span>View Voucher Details</span>
+                                            </Link>
+                                            <Link
+                                                :href="route('accounting.ledger')"
+                                                class="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                                <span>Open General Ledger</span>
+                                            </Link>
+                                        </ActionDropdown>
+                                    </div>
                                 </td>
                             </tr>
                             <tr v-if="!entries.data || entries.data.length === 0">

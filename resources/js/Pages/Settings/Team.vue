@@ -3,6 +3,8 @@ import { ref, computed } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
+import ActionDropdown from '@/Components/ActionDropdown.vue';
+import { formatDate } from '@/Utils/date';
 
 const props = defineProps({
     team: Object,
@@ -206,25 +208,31 @@ function removeMember(member) {
                                 </td>
 
                                 <td class="py-3.5 px-4 text-slate-500 font-mono text-[11px]">
-                                    {{ member.joined_at }}
+                                    {{ formatDate(member.joined_at) }}
                                 </td>
 
                                 <td class="py-3.5 px-4 text-right" v-if="canManage">
-                                    <div v-if="!member.is_owner" class="flex items-center justify-end gap-2">
-                                        <button
-                                            @click="openRoleModal(member)"
-                                            class="px-2.5 py-1 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg text-xs font-semibold transition"
-                                            title="Change role"
-                                        >
-                                            Change Role
-                                        </button>
-                                        <button
-                                            @click="removeMember(member)"
-                                            class="px-2.5 py-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg text-xs font-semibold transition"
-                                            title="Remove member"
-                                        >
-                                            Remove
-                                        </button>
+                                    <div v-if="!member.is_owner" class="flex items-center justify-end">
+                                        <ActionDropdown align="right">
+                                            <button
+                                                @click="openRoleModal(member)"
+                                                class="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-indigo-600 hover:bg-indigo-50 font-semibold transition-colors"
+                                            >
+                                                <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                </svg>
+                                                <span>Change Access Role</span>
+                                            </button>
+                                            <button
+                                                @click="removeMember(member)"
+                                                class="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-rose-600 hover:bg-rose-50 font-semibold transition-colors"
+                                            >
+                                                <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                                <span>Remove from Team</span>
+                                            </button>
+                                        </ActionDropdown>
                                     </div>
                                     <span v-else class="text-slate-400 text-[11px] italic">Permanent Owner</span>
                                 </td>

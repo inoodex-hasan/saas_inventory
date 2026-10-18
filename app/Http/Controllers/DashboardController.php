@@ -110,19 +110,67 @@ class DashboardController extends Controller
                 ];
             });
 
+        // 7. Monthly Sales vs Procurement Trend (Last 6 Months)
+        $salesTrend = collect([]);
+        for ($i = 5; $i >= 0; $i--) {
+            $monthDate = Carbon::now()->subMonths($i);
+            $yearMonth = $monthDate->format('Y-m');
+            $monthLabel = $monthDate->format('M Y');
+
+            $salesSum = (float) SalesOrder::where('team_id', $team->id)
+                ->whereRaw("DATE_FORMAT(order_date, '%Y-%m') = ?", [$yearMonth])
+                ->sum('total_amount');
+
+            $purchasesSum = (float) PurchaseOrder::where('team_id', $team->id)
+                ->whereRaw("DATE_FORMAT(order_date, '%Y-%m') = ?", [$yearMonth])
+                ->sum('total_amount');
+
+            $salesTrend->push([
+                'month'       => $monthLabel,
+                'short_month' => $monthDate->format('M'),
+                'sales'       => $salesSum,
+                'purchases'   => $purchasesSum,
+            ]);
+        }
+
+        // 8. Inventory Valuation Breakdown by Category (for Donut / Pie Chart)
+        $categoryDistribution = DB::table('product_categories')
+            ->join('products', 'product_categories.id', '=', 'products.category_id')
+            ->join('stock_levels', 'products.id', '=', 'stock_levels.product_id')
+            ->where('product_categories.team_id', $team->id)
+            ->whereNull('products.deleted_at')
+            ->select(
+                'product_categories.id',
+                'product_categories.name',
+                DB::raw('CAST(SUM(stock_levels.quantity * products.cost_price) AS DECIMAL(15,2)) as valuation'),
+                DB::raw('CAST(SUM(stock_levels.quantity) AS UNSIGNED) as total_units')
+            )
+            ->groupBy('product_categories.id', 'product_categories.name')
+            ->orderByDesc('valuation')
+            ->get();
+
+        // 9. Order Fulfillment Status Breakdown
+        $orderStatusDistribution = SalesOrder::where('team_id', $team->id)
+            ->select('status', DB::raw('COUNT(*) as count'), DB::raw('SUM(total_amount) as total'))
+            ->groupBy('status')
+            ->get();
+
         return Inertia::render('Dashboard', [
-            'totalValuation' => $totalValuation,
-            'totalProducts' => $totalProducts,
-            'totalSalesVolume' => $totalSalesVolume,
-            'totalSalesOrders' => $totalSalesOrders,
-            'pendingPurchasesCount' => $pendingPurchasesCount,
-            'openPurchaseOrders' => $openPurchaseOrders,
-            'lowStockCount' => $lowStockCount,
-            'lowStockProducts' => $lowStockProducts,
-            'recentSalesOrders' => $recentSalesOrders,
-            'recentPurchaseOrders' => $recentPurchaseOrders,
-            'recentStockMovements' => $recentStockMovements,
+            'totalValuation'          => $totalValuation,
+            'totalProducts'           => $totalProducts,
+            'totalSalesVolume'        => $totalSalesVolume,
+            'totalSalesOrders'        => $totalSalesOrders,
+            'pendingPurchasesCount'   => $pendingPurchasesCount,
+            'openPurchaseOrders'      => $openPurchaseOrders,
+            'lowStockCount'           => $lowStockCount,
+            'lowStockProducts'        => $lowStockProducts,
+            'recentSalesOrders'       => $recentSalesOrders,
+            'recentPurchaseOrders'    => $recentPurchaseOrders,
+            'recentStockMovements'    => $recentStockMovements,
             'warehouseStockBreakdown' => $warehouseStockBreakdown,
+            'salesTrend'              => $salesTrend,
+            'categoryDistribution'    => $categoryDistribution,
+            'orderStatusDistribution' => $orderStatusDistribution,
         ]);
     }
 }

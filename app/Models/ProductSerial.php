@@ -32,7 +32,7 @@ class ProductSerial extends Model
 
     protected $casts = [
         'sold_at' => 'datetime',
-        'warranty_expires_at' => 'date',
+        'warranty_expires_at' => 'date:Y-m-d',
         'warranty_days' => 'integer',
     ];
 

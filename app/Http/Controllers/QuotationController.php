@@ -172,6 +172,95 @@ class QuotationController extends Controller
         });
     }
 
+    public function edit(Quotation $quotation)
+    {
+        $teamId = Auth::user()->current_team_id;
+        abort_if($quotation->team_id !== $teamId, 403);
+
+        if ($quotation->status === 'converted') {
+            return redirect()->route('quotations.index')->with('error', "Converted quotation {$quotation->quotation_number} cannot be edited.");
+        }
+
+        $quotation->load(['customer', 'items.product']);
+
+        $customers = Customer::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
+        $products = Product::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
+        $warehouses = Warehouse::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
+
+        return Inertia::render('Quotations/Edit', [
+            'page_title' => 'Edit Quotation ' . $quotation->quotation_number,
+            'quotation' => $quotation,
+            'customers' => $customers,
+            'products' => $products,
+            'warehouses' => $warehouses,
+        ]);
+    }
+
+    public function update(Request $request, Quotation $quotation)
+    {
+        $teamId = Auth::user()->current_team_id;
+        abort_if($quotation->team_id !== $teamId, 403);
+
+        if ($quotation->status === 'converted') {
+            return redirect()->route('quotations.index')->with('error', "Converted quotation {$quotation->quotation_number} cannot be edited.");
+        }
+
+        $validated = $request->validate([
+            'customer_id' => 'required|exists:customers,id',
+            'quotation_date' => 'required|date',
+            'valid_until' => 'required|date|after_or_equal:quotation_date',
+            'status' => 'nullable|in:draft,sent,accepted,declined',
+            'discount_amount' => 'nullable|numeric|min:0',
+            'tax_rate' => 'nullable|numeric|min:0',
+            'notes' => 'nullable|string|max:1000',
+            'terms' => 'nullable|string|max:2000',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.unit_price' => 'required|numeric|min:0',
+        ]);
+
+        return DB::transaction(function () use ($validated, $quotation, $teamId) {
+            $subtotal = 0.00;
+            foreach ($validated['items'] as $it) {
+                $subtotal += (float) $it['quantity'] * (float) $it['unit_price'];
+            }
+
+            $discount = (float) ($validated['discount_amount'] ?? 0.00);
+            $taxRate = (float) ($validated['tax_rate'] ?? 0.00);
+            $taxAmount = max(0, ($subtotal - $discount) * ($taxRate / 100));
+            $total = max(0, $subtotal - $discount + $taxAmount);
+
+            $quotation->update([
+                'customer_id' => $validated['customer_id'],
+                'status' => $validated['status'] ?? $quotation->status,
+                'quotation_date' => $validated['quotation_date'],
+                'valid_until' => $validated['valid_until'],
+                'subtotal' => $subtotal,
+                'discount_amount' => $discount,
+                'tax_rate' => $taxRate,
+                'tax_amount' => $taxAmount,
+                'total_amount' => $total,
+                'terms' => $validated['terms'] ?? null,
+                'notes' => $validated['notes'] ?? null,
+            ]);
+
+            $quotation->items()->delete();
+            foreach ($validated['items'] as $it) {
+                QuotationItem::create([
+                    'team_id' => $teamId,
+                    'quotation_id' => $quotation->id,
+                    'product_id' => $it['product_id'],
+                    'quantity' => (float) $it['quantity'],
+                    'unit_price' => (float) $it['unit_price'],
+                    'subtotal' => (float) $it['quantity'] * (float) $it['unit_price'],
+                ]);
+            }
+
+            return redirect()->route('quotations.index')->with('success', "Quotation {$quotation->quotation_number} updated successfully.");
+        });
+    }
+
     public function convert(Request $request, Quotation $quotation, SalesOrderService $salesOrderService)
     {
         $teamId = Auth::user()->current_team_id;

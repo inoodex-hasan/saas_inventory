@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
+import { formatDate } from '@/Utils/date';
 
 const props = defineProps({
     page_title: String,
@@ -149,7 +150,7 @@ function applyFilters() {
                                     class="hover:bg-slate-50/60 transition-colors"
                                 >
                                     <td class="py-3 px-4 text-slate-600 font-sans">
-                                        {{ tx.date }}
+                                        {{ formatDate(tx.date) }}
                                     </td>
                                     <td class="py-3 px-4 font-bold text-indigo-600">
                                         <Link :href="route('journal.show', tx.journal_entry_id)" class="hover:underline">

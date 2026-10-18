@@ -34,8 +34,8 @@ class PurchaseOrder extends Model
     ];
 
     protected $casts = [
-        'order_date' => 'date',
-        'expected_date' => 'date',
+        'order_date' => 'date:Y-m-d',
+        'expected_date' => 'date:Y-m-d',
         'subtotal' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'shipping_cost' => 'decimal:2',
@@ -44,6 +44,13 @@ class PurchaseOrder extends Model
         'paid_amount' => 'decimal:2',
         'due_amount' => 'decimal:2',
     ];
+
+    protected $appends = ['po_number'];
+
+    public function getPoNumberAttribute(): ?string
+    {
+        return $this->order_number;
+    }
 
     public function supplier(): BelongsTo
     {

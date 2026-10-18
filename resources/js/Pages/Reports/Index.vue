@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
+import { formatDate } from '@/Utils/date';
 
 const props = defineProps({
     currencySymbol: String,
@@ -480,7 +481,7 @@ function printReport() {
                         <table class="w-full text-left text-xs text-slate-600">
                             <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-100">
                                 <tr>
-                                    <th class="px-5 py-3.5">Timestamp</th>
+                                    <th class="px-5 py-3.5">Date</th>
                                     <th class="px-5 py-3.5 text-center">Type</th>
                                     <th class="px-5 py-3.5">Product &amp; SKU</th>
                                     <th class="px-5 py-3.5">Warehouse Hub</th>
@@ -493,7 +494,7 @@ function printReport() {
                             <tbody class="divide-y divide-slate-100">
                                 <tr v-for="m in movements?.data || []" :key="m.id" class="hover:bg-slate-50 transition">
                                     <td class="px-5 py-3.5 whitespace-nowrap text-slate-400 font-mono text-[11px]">
-                                        {{ m.created_at ? new Date(m.created_at).toLocaleString() : '—' }}
+                                        {{ formatDate(m.created_at) }}
                                     </td>
                                     <td class="px-5 py-3.5 text-center">
                                         <span

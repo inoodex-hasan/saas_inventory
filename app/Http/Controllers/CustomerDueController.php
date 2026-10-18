@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Models\FinancialAccount;
 use App\Models\SalesOrder;
+use App\Services\FinancialAccountService;
 use App\Services\SalesOrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class CustomerDueController extends Controller
@@ -66,10 +69,13 @@ class CustomerDueController extends Controller
                 ->count(),
         ];
 
+        $financialAccounts = app(FinancialAccountService::class)->getActiveAccountsForTeam($teamId);
+
         return Inertia::render('Dues/Index', [
             'page_title' => 'Customer Due Ledger',
             'customers' => $customers,
             'metrics' => $metrics,
+            'financialAccounts' => $financialAccounts,
             'filters' => [
                 'search' => $search,
                 'filter' => $filter,
@@ -84,7 +90,8 @@ class CustomerDueController extends Controller
         $validated = $request->validate([
             'order_id' => 'required|exists:sales_orders,id',
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'nullable|string',
+            'financial_account_id' => 'required|exists:financial_accounts,id',
+            'payment_reference' => 'nullable|string|max:100',
             'notes' => 'nullable|string|max:500',
         ]);
 
@@ -94,8 +101,20 @@ class CustomerDueController extends Controller
             throw new \InvalidArgumentException("Payment amount exceeds outstanding due amount.");
         }
 
-        $service->recordPayment($order, (float) $validated['amount']);
+        $account = FinancialAccount::where('team_id', $teamId)->findOrFail($validated['financial_account_id']);
 
-        return redirect()->back()->with('success', "Payment of {$validated['amount']} recorded for invoice {$order->order_number}.");
+        DB::transaction(function () use ($service, $order, $account, $validated) {
+            $service->recordPayment($order, (float) $validated['amount']);
+
+            $account->deposit(
+                (float) $validated['amount'],
+                'collection',
+                "Customer due settlement for Invoice #{$order->order_number}" . ($validated['notes'] ? " - {$validated['notes']}" : ''),
+                $validated['payment_reference'] ?? null,
+                $order
+            );
+        });
+
+        return redirect()->back()->with('success', "Payment of ৳{$validated['amount']} recorded into {$account->name} for invoice {$order->order_number}.");
     }
 }

@@ -24,7 +24,7 @@ class DeliveryChallanController extends Controller
         $customerId = $request->input('customer_id');
 
         $query = DeliveryChallan::where('team_id', $teamId)
-            ->with(['salesOrder', 'warehouse', 'customer', 'items.product'])
+            ->with(['salesOrder', 'warehouse', 'customer', 'items.product', 'creator'])
             ->when($search, function ($q, $search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('challan_number', 'like', "%{$search}%")
@@ -142,6 +142,78 @@ class DeliveryChallanController extends Controller
             }
 
             return redirect()->route('challans.index')->with('success', "Delivery Challan {$challan->challan_number} issued successfully.");
+        });
+    }
+
+    public function edit(DeliveryChallan $challan)
+    {
+        $teamId = Auth::user()->current_team_id;
+        abort_if($challan->team_id !== $teamId, 403);
+
+        $challan->load(['salesOrder.customer', 'salesOrder.warehouse', 'customer', 'warehouse', 'items.product']);
+
+        $orders = SalesOrder::where('team_id', $teamId)
+            ->where(function ($q) use ($challan) {
+                $q->whereIn('status', ['confirmed', 'dispatched', 'draft', 'delivered', 'completed'])
+                    ->orWhere('id', $challan->sales_order_id);
+            })
+            ->with(['customer', 'warehouse', 'items.product'])
+            ->latest('id')
+            ->get();
+
+        return Inertia::render('Challans/Edit', [
+            'page_title' => 'Edit Delivery Challan ' . $challan->challan_number,
+            'challan' => $challan,
+            'orders' => $orders,
+        ]);
+    }
+
+    public function update(Request $request, DeliveryChallan $challan)
+    {
+        $teamId = Auth::user()->current_team_id;
+        abort_if($challan->team_id !== $teamId, 403);
+
+        $validated = $request->validate([
+            'dispatch_date' => 'required|date',
+            'status' => 'required|in:draft,dispatched,delivered',
+            'transport_carrier' => 'nullable|string|max:100',
+            'vehicle_no' => 'nullable|string|max:100',
+            'driver_name' => 'nullable|string|max:100',
+            'driver_phone' => 'nullable|string|max:50',
+            'delivery_address' => 'required|string|max:500',
+            'notes' => 'nullable|string|max:1000',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.packaging_description' => 'nullable|string|max:255',
+            'items.*.notes' => 'nullable|string|max:255',
+        ]);
+
+        return DB::transaction(function () use ($validated, $challan, $teamId) {
+            $challan->update([
+                'dispatch_date' => $validated['dispatch_date'],
+                'status' => $validated['status'],
+                'transport_carrier' => $validated['transport_carrier'] ?? 'In-house Fleet',
+                'vehicle_no' => $validated['vehicle_no'] ?? null,
+                'driver_name' => $validated['driver_name'] ?? null,
+                'driver_phone' => $validated['driver_phone'] ?? null,
+                'delivery_address' => $validated['delivery_address'],
+                'notes' => $validated['notes'] ?? null,
+            ]);
+
+            $challan->items()->delete();
+            foreach ($validated['items'] as $it) {
+                DeliveryChallanItem::create([
+                    'team_id' => $teamId,
+                    'delivery_challan_id' => $challan->id,
+                    'product_id' => $it['product_id'],
+                    'quantity' => (float) $it['quantity'],
+                    'packaging_description' => $it['packaging_description'] ?? null,
+                    'notes' => $it['notes'] ?? null,
+                ]);
+            }
+
+            return redirect()->route('challans.index')->with('success', "Delivery Challan {$challan->challan_number} updated successfully.");
         });
     }
 

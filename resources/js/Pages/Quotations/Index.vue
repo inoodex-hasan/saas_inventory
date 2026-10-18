@@ -5,6 +5,8 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import Modal from '@/Components/Modal.vue';
+import ActionDropdown from '@/Components/ActionDropdown.vue';
+import { formatDate } from '@/Utils/date';
 
 const props = defineProps({
     quotations: Object,
@@ -19,6 +21,13 @@ const customerId = ref(props.filters.customer_id || '');
 
 const isConvertModalOpen = ref(false);
 const selectedQuotation = ref(null);
+const isViewModalOpen = ref(false);
+const viewingQuotation = ref(null);
+
+function openViewModal(q) {
+    viewingQuotation.value = q;
+    isViewModalOpen.value = true;
+}
 
 const convertForm = useForm({
     warehouse_id: '',
@@ -182,16 +191,27 @@ function deleteQuotation(q) {
                         <tbody class="divide-y divide-slate-100 text-slate-700">
                             <tr v-for="q in quotations.data" :key="q.id" class="hover:bg-slate-50/70 transition">
                                 <td class="py-3.5 px-4 font-semibold text-slate-900">
-                                    {{ q.quotation_number }}
+                                    <button
+                                        type="button"
+                                        @click="openViewModal(q)"
+                                        class="font-mono font-bold text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-1.5 transition text-left group"
+                                        title="Click to view quotation details"
+                                    >
+                                        <span>{{ q.quotation_number }}</span>
+                                        <svg class="w-3.5 h-3.5 text-indigo-400 group-hover:text-indigo-600 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </button>
                                 </td>
                                 <td class="py-3.5 px-4 font-medium text-slate-800">
                                     {{ q.customer?.name }}
                                 </td>
-                                <td class="py-3.5 px-4 text-xs text-slate-500">
-                                    {{ q.quotation_date }}
+                                <td class="py-3.5 px-4 text-xs text-slate-600 font-medium">
+                                    {{ formatDate(q.quotation_date) }}
                                 </td>
-                                <td class="py-3.5 px-4 text-xs text-slate-500">
-                                    {{ q.valid_until }}
+                                <td class="py-3.5 px-4 text-xs text-slate-600 font-medium">
+                                    {{ formatDate(q.valid_until) }}
                                 </td>
                                 <td class="py-3.5 px-4 font-bold text-slate-900">
                                     <CurrencyDisplay :amount="q.total_amount" />
@@ -199,42 +219,68 @@ function deleteQuotation(q) {
                                 <td class="py-3.5 px-4">
                                     <StatusBadge :status="q.status" />
                                 </td>
-                                <td class="py-3.5 px-4 text-right space-x-1">
-                                    <!-- PDF View -->
-                                    <a
-                                        :href="route('quotations.pdf', q.id)"
-                                        target="_blank"
-                                        title="Download / Print PDF"
-                                        class="inline-flex p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                    </a>
+                                <td class="py-3.5 px-4 text-right">
+                                    <ActionDropdown align="right">
+                                        <div class="p-1">
+                                            <button
+                                                type="button"
+                                                @click="openViewModal(q)"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                                <span>View Details</span>
+                                            </button>
 
-                                    <!-- Convert to SO -->
-                                    <button
-                                        v-if="q.status !== 'converted'"
-                                        @click="openConvertModal(q)"
-                                        title="Convert to Sales Order"
-                                        class="inline-flex p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                                        </svg>
-                                    </button>
+                                            <Link
+                                                v-if="q.status !== 'converted'"
+                                                :href="route('quotations.edit', q.id)"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                                <span>Edit Quotation</span>
+                                            </Link>
 
-                                    <!-- Delete -->
-                                    <button
-                                        v-if="q.status !== 'converted'"
-                                        @click="deleteQuotation(q)"
-                                        title="Delete Quotation"
-                                        class="inline-flex p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
+                                            <a
+                                                :href="route('quotations.pdf', q.id)"
+                                                target="_blank"
+                                                class="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 rounded-lg transition"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                                <span>Print / PDF</span>
+                                            </a>
+
+                                            <button
+                                                v-if="q.status !== 'converted'"
+                                                @click="openConvertModal(q)"
+                                                type="button"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-emerald-600 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                                </svg>
+                                                <span>Convert to SO</span>
+                                            </button>
+
+                                            <button
+                                                v-if="q.status !== 'converted'"
+                                                @click="deleteQuotation(q)"
+                                                type="button"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                                <span>Delete</span>
+                                            </button>
+                                        </div>
+                                    </ActionDropdown>
                                 </td>
                             </tr>
 
@@ -288,6 +334,175 @@ function deleteQuotation(q) {
                         </button>
                     </div>
                 </form>
+            </div>
+        </Modal>
+
+        <!-- View Quotation Details Modal -->
+        <Modal :show="isViewModalOpen" max-width="3xl" @close="isViewModalOpen = false">
+            <div v-if="viewingQuotation" class="p-6 space-y-6">
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div>
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Formal Quotation</span>
+                            <span class="font-mono text-base font-bold text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded-lg border border-slate-200">
+                                {{ viewingQuotation.quotation_number }}
+                            </span>
+                            <StatusBadge :status="viewingQuotation.status" />
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">
+                            Issued: <strong class="text-slate-700">{{ formatDate(viewingQuotation.quotation_date) }}</strong>
+                            &bull; Valid Until: <strong class="text-slate-700">{{ formatDate(viewingQuotation.valid_until) }}</strong>
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <a
+                            :href="route('quotations.pdf', viewingQuotation.id)"
+                            target="_blank"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
+                        >
+                            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>Print PDF</span>
+                        </a>
+                        <button
+                            type="button"
+                            @click="isViewModalOpen = false"
+                            class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition"
+                        >
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recipient & Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Customer Client</span>
+                        <div class="text-sm font-bold text-slate-900">{{ viewingQuotation.customer?.name || 'Walk-in Customer' }}</div>
+                        <div class="text-xs text-slate-600 mt-0.5">Phone: {{ viewingQuotation.customer?.phone || '—' }}</div>
+                        <div v-if="viewingQuotation.customer?.address" class="text-xs text-slate-500 mt-0.5">
+                            {{ viewingQuotation.customer.address }}
+                        </div>
+                    </div>
+
+                    <div class="bg-indigo-50/60 p-4 rounded-xl border border-indigo-100 flex flex-col justify-between">
+                        <div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-500 block mb-1">Total Valuation</span>
+                            <div class="text-2xl font-black text-indigo-700">
+                                <CurrencyDisplay :amount="viewingQuotation.total_amount" />
+                            </div>
+                        </div>
+                        <div class="text-[11px] text-indigo-600 font-medium mt-1">
+                            {{ viewingQuotation.items?.length || 0 }} Catalog line item(s) quoted
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Line Items Table -->
+                <div class="border border-slate-200 rounded-xl overflow-hidden">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px]">
+                            <tr>
+                                <th class="py-2.5 px-4">Item & SKU</th>
+                                <th class="py-2.5 px-3 text-center">Qty</th>
+                                <th class="py-2.5 px-3 text-right">Unit Price</th>
+                                <th class="py-2.5 px-4 text-right">Line Total</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr v-for="it in viewingQuotation.items" :key="it.id" class="hover:bg-slate-50/50">
+                                <td class="py-2.5 px-4">
+                                    <div class="font-bold text-slate-900">{{ it.product?.name || 'Product Item' }}</div>
+                                    <div v-if="it.product?.sku" class="text-[10px] font-mono text-slate-400">SKU: {{ it.product.sku }}</div>
+                                </td>
+                                <td class="py-2.5 px-3 text-center font-mono font-semibold text-slate-700">
+                                    {{ it.quantity }}
+                                </td>
+                                <td class="py-2.5 px-3 text-right font-mono text-slate-600">
+                                    <CurrencyDisplay :amount="it.unit_price" />
+                                </td>
+                                <td class="py-2.5 px-4 text-right font-mono font-bold text-slate-900">
+                                    <CurrencyDisplay :amount="it.subtotal || (it.quantity * it.unit_price)" />
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Financial Breakdown -->
+                <div class="flex justify-end">
+                    <div class="w-72 space-y-1.5 text-xs text-slate-600 border-t border-slate-100 pt-3">
+                        <div class="flex justify-between">
+                            <span>Subtotal:</span>
+                            <span class="font-semibold text-slate-900"><CurrencyDisplay :amount="viewingQuotation.subtotal" /></span>
+                        </div>
+                        <div v-if="Number(viewingQuotation.discount_amount) > 0" class="flex justify-between text-rose-600">
+                            <span>Discount:</span>
+                            <span class="font-semibold">-<CurrencyDisplay :amount="viewingQuotation.discount_amount" /></span>
+                        </div>
+                        <div v-if="Number(viewingQuotation.tax_amount) > 0" class="flex justify-between">
+                            <span>Tax ({{ viewingQuotation.tax_rate }}%):</span>
+                            <span class="font-semibold text-slate-900">+<CurrencyDisplay :amount="viewingQuotation.tax_amount" /></span>
+                        </div>
+                        <div class="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-slate-200">
+                            <span>Grand Total:</span>
+                            <span class="text-indigo-600"><CurrencyDisplay :amount="viewingQuotation.total_amount" /></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes & Terms -->
+                <div v-if="viewingQuotation.notes || viewingQuotation.terms" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs pt-2 border-t border-slate-100">
+                    <div v-if="viewingQuotation.notes" class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <span class="font-bold text-slate-700 block mb-1">Notes / Narration:</span>
+                        <p class="text-slate-600 whitespace-pre-line">{{ viewingQuotation.notes }}</p>
+                    </div>
+                    <div v-if="viewingQuotation.terms" class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <span class="font-bold text-slate-700 block mb-1">Terms & Conditions:</span>
+                        <p class="text-slate-600 font-mono text-[11px] whitespace-pre-line">{{ viewingQuotation.terms }}</p>
+                    </div>
+                </div>
+
+                <!-- Modal Actions -->
+                <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+                    <button
+                        type="button"
+                        @click="isViewModalOpen = false"
+                        class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
+                    >
+                        Close
+                    </button>
+
+                    <div class="flex items-center gap-2">
+                        <Link
+                            v-if="viewingQuotation.status !== 'converted'"
+                            :href="route('quotations.edit', viewingQuotation.id)"
+                            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition"
+                        >
+                            <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            <span>Edit Quotation</span>
+                        </Link>
+
+                        <button
+                            v-if="viewingQuotation.status !== 'converted'"
+                            @click="isViewModalOpen = false; openConvertModal(viewingQuotation)"
+                            type="button"
+                            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-600/30 transition"
+                        >
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                            </svg>
+                            <span>Convert to Sales Order</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </Modal>
     </AppLayout>

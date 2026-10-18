@@ -25,7 +25,7 @@ class ProjectCost extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
-        'cost_date' => 'date',
+        'cost_date' => 'date:Y-m-d',
     ];
 
     public function project(): BelongsTo

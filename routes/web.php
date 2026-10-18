@@ -8,6 +8,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliveryChallanController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\FinancialAccountController;
 use App\Http\Controllers\FinancialReportController;
 use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\PayrollController;
@@ -86,9 +87,12 @@ Route::middleware([
     Route::get('/purchases', [PurchaseOrderController::class, 'index'])->name('purchases.index');
     Route::get('/purchases/create', [PurchaseOrderController::class, 'create'])->name('purchases.create');
     Route::post('/purchases', [PurchaseOrderController::class, 'store'])->name('purchases.store');
+    Route::get('/purchases/{order}/edit', [PurchaseOrderController::class, 'edit'])->name('purchases.edit');
+    Route::put('/purchases/{order}', [PurchaseOrderController::class, 'update'])->name('purchases.update');
     Route::post('/purchases/{order}/mark-ordered', [PurchaseOrderController::class, 'markOrdered'])->name('purchases.mark-ordered');
     Route::post('/purchases/{order}/receive', [PurchaseOrderController::class, 'receive'])->name('purchases.receive');
     Route::post('/purchases/{order}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchases.cancel');
+    Route::post('/purchases/{order}/pay', [PurchaseOrderController::class, 'pay'])->name('purchases.pay');
 
     // Vendor Dues & Payables
     Route::get('/vendor-dues', [VendorDueController::class, 'index'])->name('vendor-dues.index');
@@ -108,6 +112,8 @@ Route::middleware([
     Route::get('/quotations', [QuotationController::class, 'index'])->name('quotations.index');
     Route::get('/quotations/create', [QuotationController::class, 'create'])->name('quotations.create');
     Route::post('/quotations', [QuotationController::class, 'store'])->name('quotations.store');
+    Route::get('/quotations/{quotation}/edit', [QuotationController::class, 'edit'])->name('quotations.edit');
+    Route::put('/quotations/{quotation}', [QuotationController::class, 'update'])->name('quotations.update');
     Route::post('/quotations/{quotation}/convert', [QuotationController::class, 'convert'])->name('quotations.convert');
     Route::delete('/quotations/{quotation}', [QuotationController::class, 'destroy'])->name('quotations.destroy');
 
@@ -115,6 +121,8 @@ Route::middleware([
     Route::get('/challans', [DeliveryChallanController::class, 'index'])->name('challans.index');
     Route::get('/challans/create', [DeliveryChallanController::class, 'create'])->name('challans.create');
     Route::post('/challans', [DeliveryChallanController::class, 'store'])->name('challans.store');
+    Route::get('/challans/{challan}/edit', [DeliveryChallanController::class, 'edit'])->name('challans.edit');
+    Route::put('/challans/{challan}', [DeliveryChallanController::class, 'update'])->name('challans.update');
     Route::post('/challans/{challan}/deliver', [DeliveryChallanController::class, 'markDelivered'])->name('challans.deliver');
     Route::delete('/challans/{challan}', [DeliveryChallanController::class, 'destroy'])->name('challans.destroy');
 
@@ -194,6 +202,7 @@ Route::middleware([
 
     // Tenant Subscription & Billing
     Route::get('/settings/subscription', [TenantSubscriptionController::class, 'index'])->name('subscription.index');
+    Route::get('/settings/subscription-portal', [TenantSubscriptionController::class, 'index'])->name('settings.subscription');
     Route::post('/settings/subscription/pay', [TenantSubscriptionController::class, 'submitPayment'])->name('subscription.pay');
 
     // Tenant Team & Roles Management (Inertia SPA)
@@ -217,6 +226,14 @@ Route::middleware([
     Route::get('/services/{ticket}/invoice', [PdfDocumentController::class, 'serviceInvoice'])->name('services.invoice');
     Route::get('/projects/{project}/pdf', [PdfDocumentController::class, 'projectBill'])->name('projects.pdf');
     Route::get('/payroll/{payroll}/pdf', [PdfDocumentController::class, 'salarySlip'])->name('payroll.pdf');
+
+    // Dynamic Bank & MFS Financial Accounts
+    Route::get('/accounting/bank-accounts', [FinancialAccountController::class, 'index'])->name('bank-accounts.index');
+    Route::post('/accounting/bank-accounts', [FinancialAccountController::class, 'store'])->name('bank-accounts.store');
+    Route::put('/accounting/bank-accounts/{account}', [FinancialAccountController::class, 'update'])->name('bank-accounts.update');
+    Route::post('/accounting/bank-accounts/{account}/toggle-active', [FinancialAccountController::class, 'toggleActive'])->name('bank-accounts.toggle-active');
+    Route::post('/accounting/bank-accounts/{account}/set-default', [FinancialAccountController::class, 'setDefault'])->name('bank-accounts.set-default');
+    Route::delete('/accounting/bank-accounts/{account}', [FinancialAccountController::class, 'destroy'])->name('bank-accounts.destroy');
 
     // Double-Entry Accounting Engine
     Route::get('/accounting/accounts', [ChartOfAccountController::class, 'index'])->name('accounts.index');
@@ -253,6 +270,10 @@ Route::middleware([
     'super_admin',
 ])->group(function () {
     Route::get('/admin', [SuperAdminController::class, 'index'])->name('admin.dashboard');
+    Route::post('/admin/tenants', [SuperAdminController::class, 'storeTenant'])->name('admin.tenants.store');
+    Route::put('/admin/tenants/{team}', [SuperAdminController::class, 'updateTenant'])->name('admin.tenants.update');
+    Route::put('/admin/tenants/{team}/subscription', [SuperAdminController::class, 'updateSubscription'])->name('admin.tenants.subscription.update');
+    Route::delete('/admin/tenants/{team}', [SuperAdminController::class, 'destroyTenant'])->name('admin.tenants.destroy');
     Route::post('/admin/tenants/{team}/toggle-status', [SuperAdminController::class, 'toggleStatus'])->name('admin.tenants.toggle-status');
     Route::post('/admin/tenants/{team}/switch', [SuperAdminController::class, 'switchToTenant'])->name('admin.tenants.switch');
     Route::get('/admin/exit-tenant', function () {

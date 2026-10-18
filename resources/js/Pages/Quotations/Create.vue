@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 
 const props = defineProps({
     page_title: String,
@@ -135,17 +136,15 @@ function submit(statusValue = 'draft') {
 
                         <div v-if="form.customer_mode === 'existing'">
                             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Select Customer *</label>
-                            <select
+                            <SearchableSelect
                                 v-model="form.customer_id"
-                                required
-                                class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="" disabled>-- Select Customer --</option>
-                                <option v-for="c in customers" :key="c.id" :value="c.id">
-                                    {{ c.name }} ({{ c.phone }})
-                                </option>
-                            </select>
-                            <div v-if="form.errors.customer_id" class="text-xs text-rose-500 mt-1">{{ form.errors.customer_id }}</div>
+                                :options="customers"
+                                labelKey="name"
+                                sublabelKey="phone"
+                                placeholder="Search & select customer by name or phone..."
+                                searchPlaceholder="Type customer name or phone..."
+                                :error="form.errors.customer_id"
+                            />
                         </div>
 
                         <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -207,17 +206,15 @@ function submit(statusValue = 'draft') {
                             >
                                 <div class="flex-1 w-full sm:w-auto">
                                     <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-0.5">Product</label>
-                                    <select
+                                    <SearchableSelect
                                         v-model="item.product_id"
-                                        @change="onProductSelected(idx)"
-                                        required
-                                        class="w-full text-sm px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500"
-                                    >
-                                        <option value="" disabled>-- Select Catalog Product --</option>
-                                        <option v-for="p in products" :key="p.id" :value="p.id">
-                                            {{ p.name }} (SKU: {{ p.sku }}) - Standard: ৳{{ p.unit_price }}
-                                        </option>
-                                    </select>
+                                        :options="products"
+                                        labelKey="name"
+                                        sublabelKey="sku"
+                                        placeholder="Search product by name or SKU..."
+                                        searchPlaceholder="Type name or SKU..."
+                                        @change="() => onProductSelected(idx)"
+                                    />
                                 </div>
 
                                 <div class="w-24">
@@ -304,7 +301,7 @@ function submit(statusValue = 'draft') {
                             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Terms & Conditions</label>
                             <textarea
                                 v-model="form.terms"
-                                rows="3"
+                                rows="6"
                                 class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-mono"
                             ></textarea>
                         </div>

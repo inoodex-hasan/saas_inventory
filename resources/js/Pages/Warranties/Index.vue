@@ -1,9 +1,11 @@
 <script setup>
 import { ref } from 'vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import Modal from '@/Components/Modal.vue';
+import ActionDropdown from '@/Components/ActionDropdown.vue';
+import { formatDate } from '@/Utils/date';
 
 const props = defineProps({
     page_title: String,
@@ -187,7 +189,7 @@ function submitDefective() {
                                 </td>
                                 <td class="py-3.5 px-4">
                                     <div v-if="s.warranty_expires_at">
-                                        <div class="font-semibold text-xs text-slate-800">{{ s.warranty_expires_at }}</div>
+                                        <div class="font-semibold text-xs text-slate-800">{{ formatDate(s.warranty_expires_at) }}</div>
                                         <div class="text-[11px] text-slate-400">
                                             {{ new Date(s.warranty_expires_at) > new Date() ? 'Warranty Active' : 'Warranty Expired' }}
                                         </div>
@@ -195,13 +197,40 @@ function submitDefective() {
                                     <span v-else class="text-xs text-slate-400 italic">N/A</span>
                                 </td>
                                 <td class="py-3.5 px-4 text-right">
-                                    <button
-                                        v-if="s.status !== 'defective'"
-                                        @click="openDefectiveModal(s)"
-                                        class="px-2.5 py-1 text-xs font-semibold text-rose-700 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 rounded-lg transition"
-                                    >
-                                        Mark Defective
-                                    </button>
+                                    <div class="flex items-center justify-end">
+                                        <ActionDropdown align="right">
+                                            <button
+                                                v-if="s.status !== 'defective'"
+                                                @click="openDefectiveModal(s)"
+                                                class="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-rose-600 hover:bg-rose-50 font-semibold transition-colors"
+                                            >
+                                                <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                </svg>
+                                                <span>Mark Defective</span>
+                                            </button>
+                                            <Link
+                                                v-if="s.product"
+                                                :href="route('products.index', { search: s.product.sku || s.product.name })"
+                                                class="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                                </svg>
+                                                <span>View Product Item</span>
+                                            </Link>
+                                            <Link
+                                                v-if="s.sales_order"
+                                                :href="route('sales.index', { search: s.sales_order.order_number })"
+                                                class="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                                <span>View Sales Order</span>
+                                            </Link>
+                                        </ActionDropdown>
+                                    </div>
                                 </td>
                             </tr>
 

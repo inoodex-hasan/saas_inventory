@@ -72,6 +72,51 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
                 'warning' => fn () => $request->session()->get('warning'),
             ],
+            'subscription_notice' => function () use ($user) {
+                if (!$user || !$user->currentTeam) {
+                    return null;
+                }
+
+                // Super Admins in platform mode don't need tenant expiration notices for themselves
+                if ($user->isSuperAdmin() && !$user->current_team_id) {
+                    return null;
+                }
+
+                $team = $user->currentTeam;
+                if (!$team) {
+                    return null;
+                }
+
+                $sub = $team->subscription;
+                if (!$sub) {
+                    return null;
+                }
+
+                $isExpired = $sub->isExpired() || in_array($sub->status, ['expired', 'past_due', 'canceled']);
+                $hasExpiryDate = ($sub->status === 'trialing' && $sub->trial_ends_at) || ($sub->status === 'active' && $sub->ends_at);
+
+                if (!$isExpired && !$hasExpiryDate) {
+                    return null;
+                }
+
+                $days = $sub->days_remaining;
+                $isExpiringSoon = $hasExpiryDate && $days <= 7;
+
+                if (!$isExpiringSoon && !$isExpired) {
+                    return null;
+                }
+
+                return [
+                    'days_remaining' => $days,
+                    'is_expired' => $isExpired,
+                    'plan_name' => $sub->plan?->name ?? 'Workspace Plan',
+                    'ends_at' => $sub->status === 'trialing' && $sub->trial_ends_at
+                        ? $sub->trial_ends_at->format('M d, Y')
+                        : ($sub->ends_at ? $sub->ends_at->format('M d, Y') : 'N/A'),
+                    'status' => $sub->status,
+                ];
+            },
+            'subscription_login_alert' => fn () => (bool) $request->session()->get('subscription_login_alert'),
             'ziggy' => fn () => [
                 ...(new \Tighten\Ziggy\Ziggy)->toArray(),
                 'location' => $request->url(),

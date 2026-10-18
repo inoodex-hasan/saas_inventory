@@ -1,22 +1,48 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
+import ActionDropdown from '@/Components/ActionDropdown.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
+import { formatDate } from '@/Utils/date';
 
 const props = defineProps({
     orders: Object,
     suppliers: Array,
     warehouses: Array,
+    financialAccounts: Array,
     metrics: Object,
     filters: Object,
+});
+
+const defaultAccount = (props.financialAccounts || []).find(a => a.is_default) || props.financialAccounts?.[0];
+
+const accountOptions = computed(() => {
+    return (props.financialAccounts || []).map(acc => ({
+        value: acc.id,
+        label: acc.name,
+        sublabel: acc.type === 'cash'
+            ? `Balance: ৳${Number(acc.current_balance).toFixed(2)}`
+            : `${acc.institution_name} (${acc.account_number}) - Bal: ৳${Number(acc.current_balance).toFixed(2)}`,
+        group: acc.type === 'cash' ? 'Cash Registers' : (acc.type === 'bank' ? 'Bank Accounts' : 'MFS Wallets'),
+    }));
 });
 
 const search = ref(props.filters?.search || '');
 const status = ref(props.filters?.status || '');
 const supplierId = ref(props.filters?.supplier_id || '');
+
+// Details Modal State
+const isDetailsModalOpen = ref(false);
+const selectedOrderForDetails = ref(null);
+
+function openDetailsModal(order) {
+    selectedOrderForDetails.value = order;
+    isDetailsModalOpen.value = true;
+}
 
 // Receive Modal State
 const isReceiveModalOpen = ref(false);
@@ -24,6 +50,38 @@ const receivingPo = ref(null);
 const receiveForm = useForm({
     items: [],
 });
+
+// Pay Modal State
+const isPaymentModalOpen = ref(false);
+const payingPo = ref(null);
+const paymentForm = useForm({
+    amount: '',
+    financial_account_id: defaultAccount?.id || '',
+    payment_reference: '',
+    payment_date: new Date().toISOString().slice(0, 10),
+    notes: '',
+});
+
+function openPaymentModal(order) {
+    payingPo.value = order;
+    paymentForm.amount = order.due_amount > 0 ? order.due_amount : '';
+    paymentForm.financial_account_id = defaultAccount?.id || '';
+    paymentForm.payment_reference = '';
+    paymentForm.payment_date = new Date().toISOString().slice(0, 10);
+    paymentForm.notes = '';
+    paymentForm.clearErrors();
+    isPaymentModalOpen.value = true;
+}
+
+function submitPayment() {
+    if (!payingPo.value) return;
+    paymentForm.post(route('purchases.pay', payingPo.value.id), {
+        onSuccess: () => {
+            isPaymentModalOpen.value = false;
+            paymentForm.reset();
+        },
+    });
+}
 
 function applyFilters() {
     router.get(route('purchases.index'), {
@@ -221,8 +279,19 @@ function submitReceive() {
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             <tr v-for="order in orders.data" :key="order.id" class="hover:bg-slate-50/70 transition-colors">
-                                <td class="py-3.5 px-4 font-mono font-bold text-slate-900">
-                                    {{ order.po_number }}
+                                <td class="py-3.5 px-4 font-mono font-bold">
+                                    <button
+                                        type="button"
+                                        @click="openDetailsModal(order)"
+                                        class="text-indigo-600 hover:text-indigo-900 hover:underline font-bold transition cursor-pointer text-left inline-flex items-center gap-1.5"
+                                        title="View Purchase Order Details"
+                                    >
+                                        <span>{{ order.po_number || order.order_number }}</span>
+                                        <svg class="w-3.5 h-3.5 text-indigo-400 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </button>
                                 </td>
 
                                 <td class="py-3.5 px-4">
@@ -234,8 +303,8 @@ function submitReceive() {
                                     {{ order.warehouse?.name }}
                                 </td>
 
-                                <td class="py-3.5 px-4 text-slate-600">
-                                    {{ order.order_date ? new Date(order.order_date).toLocaleDateString() : '—' }}
+                                <td class="py-3.5 px-4 text-xs text-slate-600 font-medium">
+                                    {{ formatDate(order.order_date) }}
                                 </td>
 
                                 <td class="py-3.5 px-4 text-center">
@@ -257,49 +326,98 @@ function submitReceive() {
                                 </td>
 
                                 <td class="py-3.5 px-4 text-right">
-                                    <div class="flex items-center justify-end gap-1.5">
-                                        <!-- Receive Dock Button -->
-                                        <button 
-                                            v-if="['ordered', 'partially_received'].includes(order.status)"
-                                            @click="openReceiveModal(order)"
-                                            class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
-                                        >
-                                            Receive Dock
-                                        </button>
+                                    <ActionDropdown>
+                                        <div class="p-1 space-y-0.5">
+                                            <!-- View Details -->
+                                            <button
+                                                @click="openDetailsModal(order)"
+                                                type="button"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                                <span>View Details</span>
+                                            </button>
 
-                                        <!-- Mark Ordered Button -->
-                                        <button 
-                                            v-if="order.status === 'draft'"
-                                            @click="markOrdered(order)"
-                                            class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-semibold transition-colors"
-                                        >
-                                            Send / Order
-                                        </button>
+                                            <!-- Edit Order -->
+                                            <Link
+                                                v-if="['draft', 'ordered'].includes(order.status)"
+                                                :href="route('purchases.edit', order.id)"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                                <span>Edit Order</span>
+                                            </Link>
 
-                                        <!-- PDF Dropdown / Actions -->
-                                        <a 
-                                            :href="route('purchases.pdf', order.id)" 
-                                            target="_blank"
-                                            title="Print Procurement Sheet"
-                                            class="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors"
-                                        >
-                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                                            </svg>
-                                        </a>
+                                            <!-- Receive Dock Button -->
+                                            <button 
+                                                v-if="['ordered', 'partially_received'].includes(order.status)"
+                                                @click="openReceiveModal(order)"
+                                                type="button"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                <span>Receive Dock</span>
+                                            </button>
 
-                                        <!-- Cancel PO -->
-                                        <button 
-                                            v-if="['draft', 'ordered'].includes(order.status)"
-                                            @click="cancelOrder(order)"
-                                            title="Cancel Order"
-                                            class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                                        >
-                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    </div>
+                                            <!-- Mark Ordered Button -->
+                                            <button 
+                                                v-if="order.status === 'draft'"
+                                                @click="markOrdered(order)"
+                                                type="button"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-indigo-700 hover:bg-indigo-50 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                                </svg>
+                                                <span>Send / Order</span>
+                                            </button>
+
+                                            <!-- Pay Vendor Bill -->
+                                            <button 
+                                                v-if="order.due_amount > 0 && order.status !== 'cancelled'"
+                                                @click="openPaymentModal(order)"
+                                                type="button"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                </svg>
+                                                <span>Record Vendor Pay</span>
+                                            </button>
+
+                                            <!-- Print Procurement Sheet -->
+                                            <a 
+                                                :href="route('purchases.pdf', order.id)" 
+                                                target="_blank"
+                                                class="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                                </svg>
+                                                <span>Print PO Sheet</span>
+                                            </a>
+
+                                            <!-- Cancel PO -->
+                                            <button 
+                                                v-if="['draft', 'ordered'].includes(order.status)"
+                                                @click="cancelOrder(order)"
+                                                type="button"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                                <span>Cancel Order</span>
+                                            </button>
+                                        </div>
+                                    </ActionDropdown>
                                 </td>
                             </tr>
                         </tbody>
@@ -427,6 +545,313 @@ function submitReceive() {
                         </button>
                     </div>
                 </form>
+            </div>
+        </Modal>
+
+        <!-- Record Vendor Payment Modal -->
+        <Modal :show="isPaymentModalOpen" @close="isPaymentModalOpen = false" maxWidth="md">
+            <div class="p-6">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Record Vendor Payment</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                            PO #{{ payingPo?.po_number }} • {{ payingPo?.supplier?.name }}
+                        </p>
+                    </div>
+                    <button
+                        @click="isPaymentModalOpen = false"
+                        class="text-slate-400 hover:text-slate-600 transition"
+                    >
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitPayment" class="space-y-4 mt-4">
+                    <div class="p-3 bg-amber-50 rounded-xl border border-amber-200/60 flex items-center justify-between text-xs">
+                        <span class="text-amber-800 font-medium">Outstanding Bill Due:</span>
+                        <span class="font-mono font-bold text-amber-900 text-sm">
+                            <CurrencyDisplay :amount="payingPo?.due_amount || 0" />
+                        </span>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                            Disbursement Amount <span class="text-rose-500">*</span>
+                        </label>
+                        <input
+                            v-model="paymentForm.amount"
+                            type="number"
+                            step="0.01"
+                            min="0.01"
+                            :max="payingPo?.due_amount"
+                            required
+                            placeholder="0.00"
+                            class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 font-mono font-bold"
+                        />
+                        <div v-if="paymentForm.errors.amount" class="text-xs text-rose-500 mt-1">
+                            {{ paymentForm.errors.amount }}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                            Pay From Account <span class="text-rose-500">*</span>
+                        </label>
+                        <SearchableSelect
+                            v-model="paymentForm.financial_account_id"
+                            :options="accountOptions"
+                            placeholder="Search & select payment account..."
+                            searchPlaceholder="Type account name or bank..."
+                            :error="paymentForm.errors.financial_account_id"
+                        />
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Ref / TrxID #</label>
+                            <input
+                                v-model="paymentForm.payment_reference"
+                                type="text"
+                                placeholder="bKash TrxID / Cheque #"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 font-mono"
+                            />
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Payment Date</label>
+                            <input
+                                v-model="paymentForm.payment_date"
+                                type="date"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Remarks / Note</label>
+                        <input
+                            v-model="paymentForm.notes"
+                            type="text"
+                            placeholder="Optional payment notes..."
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                        />
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                        <button
+                            type="button"
+                            @click="isPaymentModalOpen = false"
+                            class="px-4 py-2 text-sm text-slate-600 hover:text-slate-900"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            :disabled="paymentForm.processing"
+                            class="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm transition"
+                        >
+                            Confirm Payment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </Modal>
+
+        <!-- Purchase Order Details Modal -->
+        <Modal :show="isDetailsModalOpen" max-width="4xl" @close="isDetailsModalOpen = false">
+            <div v-if="selectedOrderForDetails" class="p-6 space-y-6">
+                <!-- Header -->
+                <div class="flex items-start justify-between pb-4 border-b border-slate-100">
+                    <div>
+                        <div class="flex items-center gap-3">
+                            <h3 class="text-lg font-black text-slate-900 tracking-tight font-mono">
+                                {{ selectedOrderForDetails.po_number || selectedOrderForDetails.order_number }}
+                            </h3>
+                            <StatusBadge :status="selectedOrderForDetails.status" />
+                            <StatusBadge :status="selectedOrderForDetails.payment_status" />
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">
+                            Order Date: <span class="font-medium text-slate-700">{{ formatDate(selectedOrderForDetails.order_date) }}</span> &bull; 
+                            Warehouse: <span class="font-semibold text-slate-700">{{ selectedOrderForDetails.warehouse?.name }}</span>
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        @click="isDetailsModalOpen = false"
+                        class="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+                    >
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- 3-Column Info Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Vendor -->
+                    <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/70 space-y-1">
+                        <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Vendor / Supplier</div>
+                        <div class="font-bold text-slate-900 text-sm">
+                            {{ selectedOrderForDetails.supplier?.name || 'Direct Vendor' }}
+                        </div>
+                        <div class="text-xs text-slate-600 font-mono">
+                            {{ selectedOrderForDetails.supplier?.phone || 'No phone listed' }}
+                        </div>
+                        <div class="text-xs text-slate-500 truncate">
+                            {{ selectedOrderForDetails.supplier?.address || 'Address not listed' }}
+                        </div>
+                    </div>
+
+                    <!-- Logistics -->
+                    <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/70 space-y-1">
+                        <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Logistics & Schedule</div>
+                        <div class="text-xs text-slate-700">
+                            <span class="text-slate-400">Warehouse:</span> <strong class="text-slate-900">{{ selectedOrderForDetails.warehouse?.name }}</strong>
+                        </div>
+                        <div class="text-xs text-slate-700">
+                            <span class="text-slate-400">PO Date:</span> {{ formatDate(selectedOrderForDetails.order_date) }}
+                        </div>
+                        <div class="text-xs text-slate-700">
+                            <span class="text-slate-400">Expected Delivery:</span> {{ selectedOrderForDetails.expected_date ? formatDate(selectedOrderForDetails.expected_date) : 'Not specified' }}
+                        </div>
+                    </div>
+
+                    <!-- Financial Highlights -->
+                    <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/70 space-y-1">
+                        <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Payment Snapshot</div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-slate-500">Order Total:</span>
+                            <span class="font-mono font-bold text-slate-900"><CurrencyDisplay :amount="selectedOrderForDetails.total_amount" /></span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-slate-500">Disbursed Paid:</span>
+                            <span class="font-mono font-bold text-emerald-600"><CurrencyDisplay :amount="selectedOrderForDetails.paid_amount" /></span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs border-t border-slate-200 pt-1">
+                            <span class="text-slate-700 font-semibold">Balance Due:</span>
+                            <span class="font-mono font-black" :class="selectedOrderForDetails.due_amount > 0 ? 'text-rose-600' : 'text-emerald-600'">
+                                <CurrencyDisplay :amount="selectedOrderForDetails.due_amount" />
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Line Items Table -->
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                            Itemized Procurement Lines ({{ selectedOrderForDetails.items?.length || 0 }})
+                        </h4>
+                    </div>
+
+                    <div class="border border-slate-200 rounded-xl overflow-hidden">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50/90 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-bold">
+                                <tr>
+                                    <th class="py-2.5 px-3">Product Name</th>
+                                    <th class="py-2.5 px-3">SKU</th>
+                                    <th class="py-2.5 px-3 text-center">Batch / Expiry</th>
+                                    <th class="py-2.5 px-3 text-center">Ordered</th>
+                                    <th class="py-2.5 px-3 text-center">Received</th>
+                                    <th class="py-2.5 px-3 text-right">Unit Cost</th>
+                                    <th class="py-2.5 px-3 text-right">Line Total</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 font-mono">
+                                <tr v-for="it in selectedOrderForDetails.items" :key="it.id" class="hover:bg-slate-50/60 font-sans">
+                                    <td class="py-2.5 px-3 font-semibold text-slate-800">
+                                        {{ it.product?.name || `Product #${it.product_id}` }}
+                                    </td>
+                                    <td class="py-2.5 px-3 font-mono text-slate-500 text-[11px]">
+                                        {{ it.product?.sku || '—' }}
+                                    </td>
+                                    <td class="py-2.5 px-3 text-center font-mono text-[11px] text-slate-600">
+                                        <div v-if="it.batch_number">{{ it.batch_number }}</div>
+                                        <div v-if="it.expiry_date" class="text-[10px] text-slate-400">Exp: {{ formatDate(it.expiry_date) }}</div>
+                                        <span v-if="!it.batch_number && !it.expiry_date" class="text-slate-300">—</span>
+                                    </td>
+                                    <td class="py-2.5 px-3 text-center font-mono font-bold text-slate-800">
+                                        {{ it.quantity }}
+                                    </td>
+                                    <td class="py-2.5 px-3 text-center font-mono">
+                                        <span :class="it.received_quantity >= it.quantity ? 'text-emerald-600 font-bold' : (it.received_quantity > 0 ? 'text-amber-600 font-bold' : 'text-slate-400')">
+                                            {{ it.received_quantity || 0 }}
+                                        </span>
+                                    </td>
+                                    <td class="py-2.5 px-3 text-right font-mono text-slate-700">
+                                        <CurrencyDisplay :amount="it.unit_cost" />
+                                    </td>
+                                    <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
+                                        <CurrencyDisplay :amount="(Number(it.quantity) || 0) * (Number(it.unit_cost) || 0)" />
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Remarks / Notes -->
+                <div v-if="selectedOrderForDetails.notes" class="p-3 bg-amber-50/70 rounded-xl border border-amber-200/60 text-xs">
+                    <span class="font-bold text-amber-900 block mb-0.5">Procurement Notes / Instructions:</span>
+                    <p class="text-amber-800 whitespace-pre-line">{{ selectedOrderForDetails.notes }}</p>
+                </div>
+
+                <!-- Actions Footer -->
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100">
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <a
+                            :href="route('purchases.pdf', selectedOrderForDetails.id)"
+                            target="_blank"
+                            class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-xs"
+                        >
+                            <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                            </svg>
+                            <span>Print PDF</span>
+                        </a>
+
+                        <Link
+                            v-if="['draft', 'ordered'].includes(selectedOrderForDetails.status)"
+                            :href="route('purchases.edit', selectedOrderForDetails.id)"
+                            class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-xl hover:bg-indigo-100 transition shadow-xs"
+                        >
+                            <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            <span>Edit Order</span>
+                        </Link>
+                    </div>
+
+                    <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                        <button
+                            v-if="['ordered', 'partially_received'].includes(selectedOrderForDetails.status)"
+                            type="button"
+                            @click="isDetailsModalOpen = false; openReceiveModal(selectedOrderForDetails)"
+                            class="px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition"
+                        >
+                            Receive Dock
+                        </button>
+
+                        <button
+                            v-if="selectedOrderForDetails.due_amount > 0 && selectedOrderForDetails.status !== 'cancelled'"
+                            type="button"
+                            @click="isDetailsModalOpen = false; openPaymentModal(selectedOrderForDetails)"
+                            class="px-3.5 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition"
+                        >
+                            Record Vendor Pay
+                        </button>
+
+                        <button
+                            type="button"
+                            @click="isDetailsModalOpen = false"
+                            class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
             </div>
         </Modal>
     </AppLayout>

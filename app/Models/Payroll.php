@@ -35,7 +35,7 @@ class Payroll extends Model
         'other_allowances' => 'decimal:2',
         'deductions_total' => 'decimal:2',
         'net_salary' => 'decimal:2',
-        'payment_date' => 'date',
+        'payment_date' => 'date:Y-m-d',
     ];
 
     public function team(): BelongsTo

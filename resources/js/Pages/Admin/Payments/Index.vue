@@ -5,6 +5,8 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import Pagination from '@/Components/Pagination.vue';
+import ActionDropdown from '@/Components/ActionDropdown.vue';
+import { formatDate } from '@/Utils/date';
 
 const props = defineProps({
     page_title: String,
@@ -179,7 +181,7 @@ function paymentStatusClass(status) {
                                 class="hover:bg-slate-50/60 transition-colors"
                             >
                                 <td class="py-3 px-4 font-bold text-slate-900">{{ pmt.payment_number }}</td>
-                                <td class="py-3 px-4 font-sans text-slate-600">{{ new Date(pmt.created_at).toLocaleDateString() }}</td>
+                                <td class="py-3 px-4 font-sans text-slate-600">{{ formatDate(pmt.created_at) }}</td>
                                 <td class="py-3 px-4 font-sans font-bold text-slate-900">
                                     {{ pmt.team?.name }}
                                 </td>
@@ -199,24 +201,44 @@ function paymentStatusClass(status) {
                                         {{ pmt.status }}
                                     </span>
                                 </td>
-                                <td class="py-3 px-4 text-right font-sans space-x-1">
-                                    <template v-if="pmt.status === 'pending'">
-                                        <button
-                                            @click="approvePayment(pmt)"
-                                            class="px-2.5 py-1 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-xs transition-all"
-                                        >
-                                            Approve
-                                        </button>
-                                        <button
-                                            @click="openRejectModal(pmt)"
-                                            class="px-2.5 py-1 text-xs font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg transition-all"
-                                        >
-                                            Reject
-                                        </button>
-                                    </template>
-                                    <span v-else class="text-[11px] text-slate-400">
-                                        {{ pmt.reviewer ? `by ${pmt.reviewer.name}` : 'Processed' }}
-                                    </span>
+                                <td class="py-3 px-4 text-right font-sans">
+                                    <div class="flex items-center justify-end">
+                                        <ActionDropdown align="right">
+                                            <template v-if="pmt.status === 'pending'">
+                                                <button
+                                                    @click="approvePayment(pmt)"
+                                                    class="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-emerald-600 hover:bg-emerald-50 font-semibold transition-colors"
+                                                >
+                                                    <svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                    <span>Approve Payment</span>
+                                                </button>
+                                                <button
+                                                    @click="openRejectModal(pmt)"
+                                                    class="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-rose-600 hover:bg-rose-50 font-semibold transition-colors"
+                                                >
+                                                    <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                    <span>Reject Payment</span>
+                                                </button>
+                                            </template>
+                                            <div v-else class="px-3 py-2 text-xs text-slate-400 italic">
+                                                {{ pmt.reviewer ? `Processed by ${pmt.reviewer.name}` : 'Processed' }}
+                                            </div>
+                                            <button
+                                                v-if="pmt.trx_id"
+                                                @click="navigator.clipboard?.writeText(pmt.trx_id)"
+                                                class="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                </svg>
+                                                <span>Copy TrxID ({{ pmt.trx_id }})</span>
+                                            </button>
+                                        </ActionDropdown>
+                                    </div>
                                 </td>
                             </tr>
                             <tr v-if="!payments.data || payments.data.length === 0">

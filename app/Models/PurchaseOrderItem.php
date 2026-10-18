@@ -26,8 +26,8 @@ class PurchaseOrderItem extends Model
     ];
 
     protected $casts = [
-        'manufacture_date' => 'date',
-        'expiry_date' => 'date',
+        'manufacture_date' => 'date:Y-m-d',
+        'expiry_date' => 'date:Y-m-d',
         'quantity' => 'decimal:4',
         'received_quantity' => 'decimal:4',
         'unit_cost' => 'decimal:2',

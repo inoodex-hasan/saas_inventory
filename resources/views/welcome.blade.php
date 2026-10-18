@@ -611,7 +611,7 @@
                     </div>
 
                     <!-- Module 10 -->
-                    <div class="glass-panel rounded-2xl p-7 relative group md:col-span-2 lg:col-span-3 bg-gradient-to-r from-amber-500/[0.04] via-indigo-500/[0.04] to-violet-500/[0.04]">
+                    <!-- <div class="glass-panel rounded-2xl p-7 relative group md:col-span-2 lg:col-span-3 bg-gradient-to-r from-amber-500/[0.04] via-indigo-500/[0.04] to-violet-500/[0.04]">
                         <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                             <div>
                                 <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-bold uppercase tracking-wider mb-2 border border-amber-500/30">
@@ -628,7 +628,7 @@
                                 </span>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
                 </div>
             </section>
 

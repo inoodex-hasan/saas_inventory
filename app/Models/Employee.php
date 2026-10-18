@@ -32,7 +32,7 @@ class Employee extends Model
     ];
 
     protected $casts = [
-        'joining_date' => 'date',
+        'joining_date' => 'date:Y-m-d',
         'basic_salary' => 'decimal:2',
     ];
 

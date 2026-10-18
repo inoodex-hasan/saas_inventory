@@ -4,12 +4,16 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
+import ActionDropdown from '@/Components/ActionDropdown.vue';
 
 const props = defineProps({
     vendors: Array,
     metrics: Object,
+    financialAccounts: Array,
     filters: Object,
 });
+
+const defaultAccount = (props.financialAccounts || []).find(a => a.is_default) || props.financialAccounts?.[0];
 
 const search = ref(props.filters?.search || '');
 const filter = ref(props.filters?.filter || 'all_with_dues');
@@ -21,7 +25,8 @@ const activeVendor = ref(null);
 const payForm = useForm({
     order_id: '',
     amount: 0,
-    payment_method: 'bank_transfer',
+    financial_account_id: defaultAccount?.id || '',
+    payment_reference: '',
     notes: '',
 });
 
@@ -42,7 +47,8 @@ function openPayModal(vendor) {
 
     payForm.order_id = firstOrder ? firstOrder.id : '';
     payForm.amount = firstOrder ? Number(firstOrder.due_amount) : Number(vendor.outstanding_due);
-    payForm.payment_method = 'bank_transfer';
+    payForm.financial_account_id = defaultAccount?.id || '';
+    payForm.payment_reference = '';
     payForm.notes = '';
     isPayModalOpen.value = true;
 }
@@ -215,16 +221,38 @@ function submitPayment() {
                                 </td>
 
                                 <td class="py-3.5 px-4 text-right">
-                                    <button 
-                                        v-if="v.outstanding_due > 0"
-                                        @click="openPayModal(v)"
-                                        class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-indigo-600/30"
-                                    >
-                                        Pay Due
-                                    </button>
-                                    <span v-else class="text-xs text-emerald-600 font-semibold">
-                                        Settled &check;
-                                    </span>
+                                    <div class="flex items-center justify-end">
+                                        <ActionDropdown align="right">
+                                            <button 
+                                                v-if="v.outstanding_due > 0"
+                                                @click="openPayModal(v)"
+                                                class="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-indigo-600 hover:bg-indigo-50 font-semibold transition-colors"
+                                            >
+                                                <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                </svg>
+                                                <span>Record Due Payment</span>
+                                            </button>
+                                            <Link
+                                                :href="route('vendors.index', { search: v.name })"
+                                                class="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                </svg>
+                                                <span>View Vendor Partner</span>
+                                            </Link>
+                                            <Link
+                                                :href="route('purchases.create')"
+                                                class="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                                </svg>
+                                                <span>New Purchase Order</span>
+                                            </Link>
+                                        </ActionDropdown>
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>
@@ -300,18 +328,59 @@ function submitPayment() {
                         />
                     </div>
 
-                    <!-- Payment Method -->
+                    <!-- Pay From Account -->
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Payment Method *</label>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">
+                            Pay From Account <span class="text-rose-500">*</span>
+                        </label>
                         <select 
-                            v-model="payForm.payment_method" 
+                            v-model="payForm.financial_account_id" 
+                            required
                             class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500"
                         >
-                            <option value="bank_transfer">Bank Transfer</option>
-                            <option value="cash">Cash in Hand</option>
-                            <option value="mobile_banking">Mobile Banking (bKash / Nagad / Rocket)</option>
-                            <option value="cheque">Cheque</option>
+                            <option value="" disabled>-- Select Payment Account --</option>
+                            <optgroup label="Cash Registers">
+                                <option
+                                    v-for="acc in (financialAccounts || []).filter(a => a.type === 'cash')"
+                                    :key="acc.id"
+                                    :value="acc.id"
+                                >
+                                    {{ acc.name }} (Balance: ৳{{ Number(acc.current_balance).toFixed(2) }})
+                                </option>
+                            </optgroup>
+                            <optgroup label="Bank Accounts">
+                                <option
+                                    v-for="acc in (financialAccounts || []).filter(a => a.type === 'bank')"
+                                    :key="acc.id"
+                                    :value="acc.id"
+                                >
+                                    {{ acc.name }} - {{ acc.institution_name }} ({{ acc.account_number }})
+                                </option>
+                            </optgroup>
+                            <optgroup label="MFS Wallets (bKash / Nagad / Rocket)">
+                                <option
+                                    v-for="acc in (financialAccounts || []).filter(a => a.type === 'mfs')"
+                                    :key="acc.id"
+                                    :value="acc.id"
+                                >
+                                    {{ acc.name }} - {{ acc.institution_name }} ({{ acc.account_number }})
+                                </option>
+                            </optgroup>
                         </select>
+                        <div v-if="payForm.errors.financial_account_id" class="text-xs text-rose-500 mt-1">
+                            {{ payForm.errors.financial_account_id }}
+                        </div>
+                    </div>
+
+                    <!-- Payment Reference -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Cheque No / TrxID / Ref</label>
+                        <input 
+                            type="text" 
+                            v-model="payForm.payment_reference" 
+                            placeholder="e.g. bKash TrxID, Cheque #"
+                            class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:font-sans placeholder:text-slate-400 placeholder:text-xs"
+                        />
                     </div>
 
                     <!-- Notes -->

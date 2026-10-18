@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FinancialAccount;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
+use App\Services\FinancialAccountService;
 use App\Services\PurchaseOrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class VendorDueController extends Controller
@@ -62,6 +65,8 @@ class VendorDueController extends Controller
             ->whereHas('purchaseOrders', fn ($q) => $q->where('due_amount', '>', 0)->where('status', '!=', 'cancelled'))
             ->count();
 
+        $financialAccounts = app(FinancialAccountService::class)->getActiveAccountsForTeam($teamId);
+
         return Inertia::render('VendorDues/Index', [
             'vendors' => $suppliers,
             'metrics' => [
@@ -70,6 +75,7 @@ class VendorDueController extends Controller
                 'outstanding_due' => $outstandingDueAll,
                 'vendors_with_due' => $vendorsWithDueCount,
             ],
+            'financialAccounts' => $financialAccounts,
             'filters' => [
                 'search' => $search,
                 'filter' => $filter,
@@ -84,17 +90,33 @@ class VendorDueController extends Controller
         $validated = $request->validate([
             'order_id' => 'required|exists:purchase_orders,id',
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|string',
+            'financial_account_id' => 'required|exists:financial_accounts,id',
+            'payment_reference' => 'nullable|string|max:100',
             'notes' => 'nullable|string|max:500',
         ]);
 
         $order = PurchaseOrder::where('team_id', $teamId)->findOrFail($validated['order_id']);
 
-        $service->recordPayment($order, (float) $validated['amount'], [
-            'payment_method' => $validated['payment_method'],
-            'notes' => $validated['notes'] ?? null,
-        ]);
+        if ((float) $validated['amount'] > (float) $order->due_amount) {
+            throw new \InvalidArgumentException("Payment amount exceeds outstanding PO due amount.");
+        }
 
-        return redirect()->back()->with('success', "Payment recorded successfully against PO {$order->po_number}.");
+        $account = FinancialAccount::where('team_id', $teamId)->findOrFail($validated['financial_account_id']);
+
+        DB::transaction(function () use ($service, $order, $account, $validated) {
+            $service->recordPayment($order, (float) $validated['amount'], [
+                'payment_method' => $account->type,
+                'notes' => $validated['notes'] ?? null,
+            ]);
+
+            $account->withdraw((float) $validated['amount'], [
+                'reference_type' => PurchaseOrder::class,
+                'reference_id' => $order->id,
+                'reference_number' => $validated['payment_reference'] ?? null,
+                'description' => "Vendor bill settlement for PO #{$order->po_number}" . (!empty($validated['notes']) ? " - {$validated['notes']}" : ''),
+            ]);
+        });
+
+        return redirect()->back()->with('success', "Disbursement of ৳{$validated['amount']} recorded from {$account->name} for PO {$order->po_number}.");
     }
 }

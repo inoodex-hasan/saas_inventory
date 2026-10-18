@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Models\FinancialAccount;
 use App\Models\Product;
 use App\Models\SalesOrder;
 use App\Models\Warehouse;
+use App\Services\FinancialAccountService;
 use App\Services\SalesOrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class SalesOrderController extends Controller
@@ -46,10 +49,13 @@ class SalesOrderController extends Controller
             'total_orders' => SalesOrder::where('team_id', $teamId)->count(),
         ];
 
+        $financialAccounts = app(FinancialAccountService::class)->getActiveAccountsForTeam($teamId);
+
         return Inertia::render('Sales/Index', [
             'orders' => $orders,
             'customers' => $customers,
             'warehouses' => $warehouses,
+            'financialAccounts' => $financialAccounts,
             'metrics' => $metrics,
             'filters' => [
                 'search' => $search,
@@ -75,10 +81,13 @@ class SalesOrderController extends Controller
         $defaultWarehouse = Warehouse::where('team_id', $teamId)->where('is_default', true)->first()
             ?? Warehouse::where('team_id', $teamId)->first();
 
+        $financialAccounts = app(FinancialAccountService::class)->getActiveAccountsForTeam($teamId);
+
         return Inertia::render('Sales/Create', [
             'customers' => $customers,
             'warehouses' => $warehouses,
             'products' => $products,
+            'financialAccounts' => $financialAccounts,
             'defaultWarehouseId' => $defaultWarehouse?->id,
             'todayDate' => now()->format('Y-m-d'),
         ]);
@@ -103,6 +112,11 @@ class SalesOrderController extends Controller
             'items.*.warranty_days' => 'nullable|integer|min:0',
         ];
 
+        if ((float) $request->input('paid_amount') > 0) {
+            $rules['financial_account_id'] = 'required|exists:financial_accounts,id';
+            $rules['payment_reference'] = 'nullable|string|max:100';
+        }
+
         if ($request->input('customer_mode') === 'new') {
             $rules['new_customer_name'] = 'required|string|max:255';
             $rules['new_customer_phone'] = 'required|string|max:50';
@@ -117,6 +131,7 @@ class SalesOrderController extends Controller
             'new_customer_phone.required' => 'Customer mobile / phone is required.',
             'new_customer_address.required' => 'Customer physical address is required.',
             'customer_id.required' => 'Please select an existing customer or switch to New Customer.',
+            'financial_account_id.required' => 'Please select the bank or MFS account where the payment was deposited.',
             'items.min' => 'At least one line item is required.',
         ]);
 
@@ -151,7 +166,23 @@ class SalesOrderController extends Controller
             ];
         }, $validated['items']);
 
-        $order = $service->createOrder($orderData, $itemsData);
+        $teamId = Auth::user()->current_team_id;
+
+        $order = DB::transaction(function () use ($service, $orderData, $itemsData, $validated, $teamId) {
+            $order = $service->createOrder($orderData, $itemsData);
+
+            if ((float) $order->paid_amount > 0 && !empty($validated['financial_account_id'])) {
+                $account = FinancialAccount::where('team_id', $teamId)->findOrFail($validated['financial_account_id']);
+                $account->deposit((float) $order->paid_amount, [
+                    'reference_type' => SalesOrder::class,
+                    'reference_id' => $order->id,
+                    'reference_number' => $validated['payment_reference'] ?? null,
+                    'description' => "Initial payment collection for Sales Order #{$order->order_number}",
+                ]);
+            }
+
+            return $order;
+        });
 
         return redirect()->route('sales.index')->with('success', "Sales Order {$order->order_number} generated successfully.");
     }
@@ -203,9 +234,30 @@ class SalesOrderController extends Controller
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
+            'financial_account_id' => 'required|exists:financial_accounts,id',
+            'payment_reference' => 'nullable|string|max:100',
+            'payment_date' => 'nullable|date',
+            'notes' => 'nullable|string|max:500',
+        ], [
+            'financial_account_id.required' => 'Please select the depositing bank or MFS account.',
         ]);
 
-        $service->recordPayment($order, (float) $validated['amount']);
+        if ((float) $validated['amount'] > (float) $order->due_amount) {
+            throw new \InvalidArgumentException("Payment amount exceeds outstanding due amount.");
+        }
+
+        DB::transaction(function () use ($order, $service, $validated, $teamId) {
+            $service->recordPayment($order, (float) $validated['amount']);
+
+            $account = FinancialAccount::where('team_id', $teamId)->findOrFail($validated['financial_account_id']);
+            $account->deposit((float) $validated['amount'], [
+                'date' => $validated['payment_date'] ?? now()->toDateString(),
+                'reference_type' => SalesOrder::class,
+                'reference_id' => $order->id,
+                'reference_number' => $validated['payment_reference'] ?? null,
+                'description' => "Payment collection for Sales Order #{$order->order_number}" . (!empty($validated['notes']) ? " ({$validated['notes']})" : ""),
+            ]);
+        });
 
         return redirect()->back()->with('success', "Payment of {$validated['amount']} recorded for {$order->order_number}.");
     }

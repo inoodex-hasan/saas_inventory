@@ -43,10 +43,10 @@ class ServiceTicket extends Model
     ];
 
     protected $casts = [
-        'received_date' => 'date',
-        'estimated_completion_date' => 'date',
-        'completed_date' => 'date',
-        'delivered_date' => 'date',
+        'received_date' => 'date:Y-m-d',
+        'estimated_completion_date' => 'date:Y-m-d',
+        'completed_date' => 'date:Y-m-d',
+        'delivered_date' => 'date:Y-m-d',
         'service_charge' => 'decimal:2',
         'parts_total' => 'decimal:2',
         'discount_amount' => 'decimal:2',

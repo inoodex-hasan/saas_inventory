@@ -41,7 +41,8 @@ class TenantSubscription extends Model
     public function isActive(): bool
     {
         if ($this->status === 'trialing') {
-            return $this->trial_ends_at ? $this->trial_ends_at->isFuture() : true;
+            $target = $this->trial_ends_at ?: $this->ends_at;
+            return $target ? $target->isFuture() : true;
         }
 
         if ($this->status === 'active') {
@@ -63,8 +64,9 @@ class TenantSubscription extends Model
 
     public function getDaysRemainingAttribute(): int
     {
-        if ($this->status === 'trialing' && $this->trial_ends_at) {
-            return max(0, (int) round(now()->diffInHours($this->trial_ends_at, false) / 24));
+        if ($this->status === 'trialing') {
+            $target = $this->trial_ends_at ?: $this->ends_at;
+            return $target ? max(0, (int) round(now()->diffInHours($target, false) / 24)) : 0;
         }
 
         if ($this->status === 'active' && $this->ends_at) {

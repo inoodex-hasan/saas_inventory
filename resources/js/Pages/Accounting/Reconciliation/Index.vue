@@ -1,10 +1,12 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import Pagination from '@/Components/Pagination.vue';
 import Modal from '@/Components/Modal.vue';
+import ActionDropdown from '@/Components/ActionDropdown.vue';
+import { formatDate } from '@/Utils/date';
 
 const props = defineProps({
     page_title: String,
@@ -179,6 +181,7 @@ const filteredHistory = computed(() => {
                                 <th class="py-3 px-4 text-center">Audit Status</th>
                                 <th class="py-3 px-4">Reconciled By</th>
                                 <th class="py-3 px-4">Notes</th>
+                                <th class="py-3 px-4 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 font-mono">
@@ -188,7 +191,7 @@ const filteredHistory = computed(() => {
                                 class="hover:bg-slate-50/60 transition-colors"
                             >
                                 <td class="py-3 px-4 font-sans text-slate-600 whitespace-nowrap">
-                                    {{ recon.reconciliation_date }}
+                                    {{ formatDate(recon.reconciliation_date) }}
                                 </td>
                                 <td class="py-3 px-4 font-bold text-slate-800 font-sans">
                                     <span class="font-mono text-indigo-600 font-semibold">{{ recon.account?.account_code }}</span> - {{ recon.account?.name }}
@@ -225,9 +228,33 @@ const filteredHistory = computed(() => {
                                 <td class="py-3 px-4 font-sans text-slate-500 max-w-xs truncate">
                                     {{ recon.notes || '—' }}
                                 </td>
+                                <td class="py-3 px-4 text-right font-sans">
+                                    <div class="flex items-center justify-end">
+                                        <ActionDropdown align="right">
+                                            <Link
+                                                :href="route('accounting.ledger')"
+                                                class="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-indigo-600 hover:bg-indigo-50 font-semibold transition-colors"
+                                            >
+                                                <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                                <span>View General Ledger</span>
+                                            </Link>
+                                            <button
+                                                @click="openModal"
+                                                class="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+                                            >
+                                                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                </svg>
+                                                <span>Re-audit Account</span>
+                                            </button>
+                                        </ActionDropdown>
+                                    </div>
+                                </td>
                             </tr>
                             <tr v-if="filteredHistory.length === 0">
-                                <td colspan="8" class="py-12 text-center text-slate-400 font-sans">
+                                <td colspan="9" class="py-12 text-center text-slate-400 font-sans">
                                     No reconciliation records found matching criteria.
                                 </td>
                             </tr>

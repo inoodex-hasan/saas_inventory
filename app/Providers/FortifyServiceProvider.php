@@ -46,6 +46,15 @@ class FortifyServiceProvider extends ServiceProvider
                 }
             };
         });
+
+        $this->app->singleton(\Laravel\Fortify\Contracts\LogoutResponse::class, function () {
+            return new class implements \Laravel\Fortify\Contracts\LogoutResponse {
+                public function toResponse($request)
+                {
+                    return \Inertia\Inertia::location(route('login'));
+                }
+            };
+        });
     }
 
     /**
