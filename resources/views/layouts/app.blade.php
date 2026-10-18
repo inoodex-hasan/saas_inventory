@@ -107,6 +107,15 @@
                             </svg>
                             <span>Platform Clients & Health</span>
                         </a>
+
+                        <div class="pt-2 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-amber-400">Security & Account</div>
+                        <a href="{{ route('profile.show') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all {{ request()->routeIs('profile.*') ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/30' : 'text-amber-400 hover:bg-slate-800/60 hover:text-amber-300' }}">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            <span>Profile Settings</span>
+                        </a>
                     @else
                         <a href="{{ route('dashboard') }}" 
                            class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all {{ request()->routeIs('dashboard') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">

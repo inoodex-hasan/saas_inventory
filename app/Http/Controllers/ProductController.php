@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ProductsExport;
 use App\Models\Brand;
 use App\Models\Product;
 use App\Models\ProductCategory;
@@ -13,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProductController extends Controller
 {
@@ -240,9 +242,22 @@ class ProductController extends Controller
                 ];
             });
 
+        $barcodeValue = $product->barcode ?: $product->sku;
+        $barcodeSvg = null;
+        if ($barcodeValue) {
+            try {
+                $generator = new \Picqer\Barcode\BarcodeGeneratorSVG();
+                $barcodeSvg = $generator->getBarcode($barcodeValue, $generator::TYPE_CODE_128, 2, 45);
+            } catch (\Throwable $e) {
+                $barcodeSvg = null;
+            }
+        }
+
         return response()->json([
             'product' => $product,
             'levels' => $levels,
+            'barcode_svg' => $barcodeSvg,
+            'barcode_value' => $barcodeValue,
         ]);
     }
 
@@ -383,10 +398,18 @@ class ProductController extends Controller
     public function export(Request $request, CatalogImportExportService $service)
     {
         $teamId = Auth::user()->current_team_id;
-        $filename = 'catalog-' . date('Y-m-d-His') . '.csv';
-        $path = $service->exportCsv($teamId);
+        $format = strtolower($request->query('format', 'xlsx'));
 
-        return response()->download($path, $filename)->deleteFileAfterSend(true);
+        if ($format === 'csv') {
+            $filename = 'catalog-' . date('Y-m-d-His') . '.csv';
+            $path = $service->exportCsv($teamId);
+
+            return response()->download($path, $filename)->deleteFileAfterSend(true);
+        }
+
+        $filename = 'products-' . date('Y-m-d-His') . '.xlsx';
+
+        return Excel::download(new ProductsExport($teamId), $filename);
     }
 
     public function import(Request $request, CatalogImportExportService $service)

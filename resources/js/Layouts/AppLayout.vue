@@ -245,6 +245,19 @@ onMounted(() => {
                             </svg>
                             <span>Payment Verifications</span>
                         </Link>
+
+                        <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Security & Account</div>
+
+                        <Link 
+                            :href="route('profile.show')" 
+                            class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
+                            :class="route().current('profile.show') ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                        >
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            <span>Profile Settings</span>
+                        </Link>
                     </template>
 
                     <!-- Tenant / Business Navigation -->

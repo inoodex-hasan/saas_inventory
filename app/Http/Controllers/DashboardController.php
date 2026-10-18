@@ -114,15 +114,16 @@ class DashboardController extends Controller
         $salesTrend = collect([]);
         for ($i = 5; $i >= 0; $i--) {
             $monthDate = Carbon::now()->subMonths($i);
-            $yearMonth = $monthDate->format('Y-m');
+            $startOfMonth = $monthDate->copy()->startOfMonth()->toDateString();
+            $endOfMonth = $monthDate->copy()->endOfMonth()->toDateString();
             $monthLabel = $monthDate->format('M Y');
 
             $salesSum = (float) SalesOrder::where('team_id', $team->id)
-                ->whereRaw("DATE_FORMAT(order_date, '%Y-%m') = ?", [$yearMonth])
+                ->whereBetween('order_date', [$startOfMonth, $endOfMonth])
                 ->sum('total_amount');
 
             $purchasesSum = (float) PurchaseOrder::where('team_id', $team->id)
-                ->whereRaw("DATE_FORMAT(order_date, '%Y-%m') = ?", [$yearMonth])
+                ->whereBetween('order_date', [$startOfMonth, $endOfMonth])
                 ->sum('total_amount');
 
             $salesTrend->push([

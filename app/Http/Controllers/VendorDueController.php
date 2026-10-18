@@ -87,6 +87,23 @@ class VendorDueController extends Controller
     {
         $teamId = Auth::user()->current_team_id;
 
+        if (!$request->filled('financial_account_id')) {
+            $defaultAccount = FinancialAccount::where('team_id', $teamId)->where('is_active', true)->first();
+            if (!$defaultAccount) {
+                $defaultAccount = FinancialAccount::create([
+                    'team_id' => $teamId,
+                    'name' => 'Cash in Hand',
+                    'type' => 'cash',
+                    'account_type' => 'cash',
+                    'opening_balance' => 0.00,
+                    'current_balance' => 0.00,
+                    'is_default' => true,
+                    'is_active' => true,
+                ]);
+            }
+            $request->merge(['financial_account_id' => $defaultAccount->id]);
+        }
+
         $validated = $request->validate([
             'order_id' => 'required|exists:purchase_orders,id',
             'amount' => 'required|numeric|min:0.01',

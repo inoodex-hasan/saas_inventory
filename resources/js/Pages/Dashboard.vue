@@ -5,6 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import { formatDate } from '@/Utils/date';
+import apexchart from 'vue3-apexcharts';
 
 const props = defineProps({
     totalValuation: Number,
@@ -34,7 +35,6 @@ const props = defineProps({
 });
 
 const activeTab = ref('sales');
-const hoveredBar = ref(null);
 const hoveredCategory = ref(null);
 
 // Chart Colors Palette
@@ -47,30 +47,6 @@ const categoryPalette = [
     { bg: '#ec4899', text: 'text-pink-600', fill: 'bg-pink-500', border: 'border-pink-500' },
 ];
 
-// Max Value for Bar Chart Scaling
-const maxTrendValue = computed(() => {
-    if (!props.salesTrend || props.salesTrend.length === 0) return 10000;
-    const max = Math.max(
-        ...props.salesTrend.map(d => Math.max(Number(d.sales) || 0, Number(d.purchases) || 0))
-    );
-    return max > 0 ? Math.ceil(max * 1.25) : 10000;
-});
-
-// Y-Axis Ticks
-const yAxisTicks = computed(() => {
-    const max = maxTrendValue.value;
-    return [
-        Math.round(max),
-        Math.round(max * 0.75),
-        Math.round(max * 0.5),
-        Math.round(max * 0.25),
-        0
-    ];
-});
-
-// Category Donut Slices (Radius = 70, Circumference = 439.82)
-const circumference = 2 * Math.PI * 70;
-
 const totalCategoryValuation = computed(() => {
     if (!props.categoryDistribution || props.categoryDistribution.length === 0) return props.totalValuation || 0;
     return props.categoryDistribution.reduce((acc, cat) => acc + (Number(cat.valuation) || 0), 0);
@@ -80,26 +56,169 @@ const donutSlices = computed(() => {
     const total = totalCategoryValuation.value;
     if (total <= 0) return [];
 
-    let currentOffset = 0;
     return props.categoryDistribution.map((cat, idx) => {
         const val = Number(cat.valuation) || 0;
-        const percentage = (val / total) * 100;
-        const strokeLength = (val / total) * circumference;
-        const slice = {
+        const percentage = total > 0 ? ((val / total) * 100).toFixed(1) : '0';
+        return {
             name: cat.name,
             valuation: val,
             totalUnits: cat.total_units,
-            percentage: percentage.toFixed(1),
+            percentage,
             color: categoryPalette[idx % categoryPalette.length].bg,
             colorClass: categoryPalette[idx % categoryPalette.length].text,
             fillClass: categoryPalette[idx % categoryPalette.length].fill,
-            strokeDasharray: `${strokeLength} ${circumference - strokeLength}`,
-            strokeDashoffset: -currentOffset,
         };
-        currentOffset += strokeLength;
-        return slice;
     });
 });
+
+// ApexCharts - 6-Month Revenue & Procurement Trend
+const trendChartSeries = computed(() => [
+    {
+        name: 'Sales Invoices',
+        data: (props.salesTrend || []).map(d => Number(d.sales) || 0),
+    },
+    {
+        name: 'Purchase POs',
+        data: (props.salesTrend || []).map(d => Number(d.purchases) || 0),
+    },
+]);
+
+const trendChartOptions = computed(() => ({
+    chart: {
+        type: 'area',
+        height: 250,
+        toolbar: { show: false },
+        fontFamily: 'inherit',
+        sparkline: { enabled: false },
+        animations: {
+            enabled: true,
+            easing: 'easeinout',
+            speed: 600,
+        },
+    },
+    colors: ['#4f46e5', '#f59e0b'],
+    fill: {
+        type: 'gradient',
+        gradient: {
+            shadeIntensity: 1,
+            opacityFrom: 0.35,
+            opacityTo: 0.05,
+            stops: [0, 90, 100],
+        },
+    },
+    stroke: {
+        curve: 'smooth',
+        width: 2.5,
+    },
+    dataLabels: {
+        enabled: false,
+    },
+    grid: {
+        borderColor: '#f1f5f9',
+        strokeDashArray: 4,
+        padding: { top: 10, right: 10, bottom: 0, left: 10 },
+    },
+    xaxis: {
+        categories: (props.salesTrend || []).map(d => d.short_month || (d.month ? d.month.substring(0, 3) : '')),
+        labels: {
+            style: {
+                colors: '#64748b',
+                fontSize: '11px',
+                fontWeight: 600,
+            },
+        },
+        axisBorder: { show: false },
+        axisTicks: { show: false },
+    },
+    yaxis: {
+        labels: {
+            style: {
+                colors: '#94a3b8',
+                fontSize: '10px',
+                fontWeight: 600,
+            },
+            formatter: (val) => val >= 1000 ? `৳${(val / 1000).toFixed(0)}k` : `৳${Number(val).toFixed(0)}`,
+        },
+    },
+    tooltip: {
+        theme: 'light',
+        y: {
+            formatter: (val) => `৳${Number(val).toLocaleString()}`,
+        },
+    },
+    legend: {
+        show: false,
+    },
+}));
+
+// ApexCharts - Inventory Holding by Category Donut
+const donutChartSeries = computed(() => {
+    if (!props.categoryDistribution || props.categoryDistribution.length === 0) return [1];
+    return props.categoryDistribution.map(cat => Number(cat.valuation) || 0);
+});
+
+const donutChartLabels = computed(() => {
+    if (!props.categoryDistribution || props.categoryDistribution.length === 0) return ['No Data'];
+    return props.categoryDistribution.map(cat => cat.name);
+});
+
+const donutChartOptions = computed(() => ({
+    chart: {
+        type: 'donut',
+        fontFamily: 'inherit',
+    },
+    labels: donutChartLabels.value,
+    colors: ['#6366f1', '#10b981', '#f59e0b', '#06b6d4', '#8b5cf6', '#ec4899', '#3b82f6'],
+    dataLabels: {
+        enabled: false,
+    },
+    stroke: {
+        width: 2,
+        colors: ['#ffffff'],
+    },
+    plotOptions: {
+        pie: {
+            donut: {
+                size: '72%',
+                labels: {
+                    show: true,
+                    name: {
+                        show: true,
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        color: '#64748b',
+                        offsetY: -4,
+                    },
+                    value: {
+                        show: true,
+                        fontSize: '14px',
+                        fontWeight: 800,
+                        color: '#0f172a',
+                        offsetY: 4,
+                        formatter: (val) => `৳${(Number(val) / 1000).toFixed(1)}k`,
+                    },
+                    total: {
+                        show: true,
+                        label: 'Valuation',
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        color: '#94a3b8',
+                        formatter: () => `৳${(totalCategoryValuation.value / 1000).toFixed(1)}k`,
+                    },
+                },
+            },
+        },
+    },
+    tooltip: {
+        theme: 'light',
+        y: {
+            formatter: (val) => `৳${Number(val).toLocaleString()}`,
+        },
+    },
+    legend: {
+        show: false,
+    },
+}));
 
 // Total orders count across all statuses
 const totalOrdersInStatus = computed(() => {
@@ -272,68 +391,16 @@ const totalOrdersInStatus = computed(() => {
                             </div>
                         </div>
 
-                        <!-- Interactive Bar Graph Container -->
-                        <div class="relative pt-4">
-                            <!-- Background Grid Lines -->
-                            <div class="absolute inset-0 flex flex-col justify-between pointer-events-none pb-8 text-[10px] text-slate-400 font-mono">
-                                <div v-for="(tick, index) in yAxisTicks" :key="index" class="border-b border-slate-100 w-full flex items-center justify-between pb-1">
-                                    <span class="bg-white pr-2 text-slate-400 select-none">৳{{ tick >= 1000 ? (tick / 1000).toFixed(0) + 'k' : tick }}</span>
-                                </div>
-                            </div>
-
-                            <!-- Chart Bars Area -->
-                            <div class="h-64 pl-12 pr-2 pb-8 flex items-end justify-between gap-2 sm:gap-4 relative z-10">
-                                <div 
-                                    v-for="(trend, i) in salesTrend" 
-                                    :key="i"
-                                    class="flex-1 flex flex-col items-center h-full justify-end group cursor-pointer"
-                                    @mouseenter="hoveredBar = trend"
-                                    @mouseleave="hoveredBar = null"
-                                >
-                                    <!-- Tooltip Popup -->
-                                    <div 
-                                        v-if="hoveredBar && hoveredBar.month === trend.month"
-                                        class="absolute -top-6 bg-slate-900 text-white text-[11px] font-semibold py-1.5 px-3 rounded-xl shadow-xl z-30 pointer-events-none whitespace-nowrap border border-slate-700 animate-in fade-in zoom-in-95 duration-150"
-                                    >
-                                        <div class="text-[10px] text-slate-400 font-bold mb-0.5">{{ trend.month }}</div>
-                                        <div class="flex items-center gap-2">
-                                            <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
-                                            <span>Sales: ৳{{ Number(trend.sales).toLocaleString() }}</span>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-                                            <span>Purchases: ৳{{ Number(trend.purchases).toLocaleString() }}</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Dual Bars -->
-                                    <div class="w-full flex items-end justify-center gap-1.5 h-full">
-                                        <!-- Sales Bar -->
-                                        <div 
-                                            class="w-3.5 sm:w-5 bg-gradient-to-t from-indigo-700 to-indigo-500 rounded-t-lg transition-all duration-300 group-hover:brightness-110 group-hover:scale-y-[1.03] origin-bottom shadow-xs relative"
-                                            :style="{ height: `${Math.max((Number(trend.sales) / maxTrendValue) * 100, 3)}%` }"
-                                        >
-                                            <div class="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                                ৳{{ (trend.sales / 1000).toFixed(1) }}k
-                                            </div>
-                                        </div>
-
-                                        <!-- Purchases Bar -->
-                                        <div 
-                                            class="w-3.5 sm:w-5 bg-gradient-to-t from-amber-600 to-amber-400 rounded-t-lg transition-all duration-300 group-hover:brightness-110 group-hover:scale-y-[1.03] origin-bottom shadow-xs relative"
-                                            :style="{ height: `${Math.max((Number(trend.purchases) / maxTrendValue) * 100, 3)}%` }"
-                                        >
-                                            <div class="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                                ৳{{ (trend.purchases / 1000).toFixed(1) }}k
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Month Label -->
-                                    <span class="mt-2 text-[11px] font-bold text-slate-500 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">
-                                        {{ trend.short_month || trend.month.substring(0, 3) }}
-                                    </span>
-                                </div>
+                        <!-- Interactive ApexCharts Area Container -->
+                        <div class="pt-2">
+                            <div class="h-64 w-full">
+                                <apexchart
+                                    type="area"
+                                    height="100%"
+                                    width="100%"
+                                    :options="trendChartOptions"
+                                    :series="trendChartSeries"
+                                />
                             </div>
                         </div>
                     </div>
@@ -370,56 +437,15 @@ const totalOrdersInStatus = computed(() => {
 
                         <!-- Donut Graphic & Legend -->
                         <div class="flex flex-col sm:flex-row items-center gap-6 py-2">
-                            <!-- SVG Donut Chart -->
-                            <div class="relative w-44 h-44 shrink-0 flex items-center justify-center">
-                                <svg class="w-full h-full -rotate-90 transform" viewBox="0 0 200 200">
-                                    <!-- Background Base Ring -->
-                                    <circle
-                                        cx="100"
-                                        cy="100"
-                                        r="70"
-                                        fill="transparent"
-                                        stroke="#f1f5f9"
-                                        stroke-width="24"
-                                    />
-
-                                    <!-- Donut Segments -->
-                                    <circle
-                                        v-for="(slice, sIdx) in donutSlices"
-                                        :key="sIdx"
-                                        cx="100"
-                                        cy="100"
-                                        r="70"
-                                        fill="transparent"
-                                        :stroke="slice.color"
-                                        stroke-width="24"
-                                        :stroke-dasharray="slice.strokeDasharray"
-                                        :stroke-dashoffset="slice.strokeDashoffset"
-                                        class="transition-all duration-500 cursor-pointer hover:opacity-90 hover:stroke-[28px]"
-                                        @mouseenter="hoveredCategory = slice"
-                                        @mouseleave="hoveredCategory = null"
-                                    />
-                                </svg>
-
-                                <!-- Central Donut Hole Info -->
-                                <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-4 pointer-events-none">
-                                    <div v-if="hoveredCategory" class="animate-in fade-in duration-150">
-                                        <span class="text-[10px] font-bold text-slate-400 block truncate max-w-[90px]">
-                                            {{ hoveredCategory.name }}
-                                        </span>
-                                        <span class="text-sm font-black text-slate-900 block font-mono">
-                                            {{ hoveredCategory.percentage }}%
-                                        </span>
-                                    </div>
-                                    <div v-else class="text-center">
-                                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
-                                            Valuation
-                                        </span>
-                                        <span class="text-xs font-black text-slate-900 block font-mono">
-                                            ৳{{ (totalCategoryValuation / 1000).toFixed(1) }}k
-                                        </span>
-                                    </div>
-                                </div>
+                            <!-- ApexCharts Donut Chart -->
+                            <div class="relative w-48 h-48 shrink-0 flex items-center justify-center">
+                                <apexchart
+                                    type="donut"
+                                    height="100%"
+                                    width="100%"
+                                    :options="donutChartOptions"
+                                    :series="donutChartSeries"
+                                />
                             </div>
 
                             <!-- Category Slices Breakdown List -->

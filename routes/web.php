@@ -28,6 +28,7 @@ use App\Http\Controllers\TenantSubscriptionController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\VendorDueController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarrantyController;
 use Illuminate\Support\Facades\Route;
@@ -195,6 +196,9 @@ Route::middleware([
     Route::delete('/payroll/{payroll}', [PayrollController::class, 'destroy'])->name('payroll.destroy');
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+
+    // User & Profile Settings (Inertia SPA)
+    Route::get('/user/profile', [UserProfileController::class, 'show'])->name('profile.show');
 
     // Tenant Company Settings & Branding
     Route::get('/settings/company', [TenantSettingsController::class, 'index'])->name('settings.company');

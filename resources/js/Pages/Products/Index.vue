@@ -26,6 +26,8 @@ const stockFilter = ref(props.filters?.stock || 'all');
 const isInspectModalOpen = ref(false);
 const inspectedProduct = ref(null);
 const inspectedLevels = ref([]);
+const inspectedBarcodeSvg = ref('');
+const inspectedBarcodeValue = ref('');
 const isInspectLoading = ref(false);
 
 const isTaxonomyModalOpen = ref(false);
@@ -83,15 +85,51 @@ async function inspectStock(prod) {
     isInspectModalOpen.value = true;
     isInspectLoading.value = true;
     inspectedLevels.value = [];
+    inspectedBarcodeSvg.value = '';
+    inspectedBarcodeValue.value = '';
 
     try {
         const response = await axios.get(route('products.inspect', prod.id));
         inspectedLevels.value = response.data.levels || [];
+        inspectedBarcodeSvg.value = response.data.barcode_svg || '';
+        inspectedBarcodeValue.value = response.data.barcode_value || '';
     } catch (e) {
         console.error('Failed to inspect product stock distribution', e);
     } finally {
         isInspectLoading.value = false;
     }
+}
+
+function printBarcode() {
+    if (!inspectedBarcodeSvg.value) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <title>Barcode - ${inspectedProduct.value?.name || 'Product'}</title>
+                <style>
+                    body { font-family: sans-serif; text-align: center; padding: 20px; }
+                    .label { display: inline-block; border: 1px dashed #cbd5e1; padding: 16px; border-radius: 8px; max-width: 280px; }
+                    .name { font-size: 13px; font-weight: bold; margin-bottom: 8px; color: #0f172a; word-break: break-word; }
+                    .barcode-box { display: flex; justify-content: center; margin: 6px 0; }
+                    .code { font-family: monospace; font-size: 12px; font-weight: bold; margin-top: 6px; letter-spacing: 2px; color: #334155; }
+                    .price { font-size: 14px; font-weight: 800; color: #4338ca; margin-top: 4px; }
+                    svg { width: 220px; height: 50px; }
+                </style>
+            </head>
+            <body onload="window.print(); window.close();">
+                <div class="label">
+                    <div class="name">${inspectedProduct.value?.name || ''}</div>
+                    <div class="barcode-box">${inspectedBarcodeSvg.value}</div>
+                    <div class="code">${inspectedBarcodeValue.value}</div>
+                    <div class="price">৳ ${Number(inspectedProduct.value?.unit_price || inspectedProduct.value?.selling_price || 0).toFixed(2)}</div>
+                </div>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
 }
 
 function submitCategory() {
@@ -217,8 +255,20 @@ function submitImport() {
                         </button>
 
                         <a 
-                            :href="route('products.export')" 
+                            :href="route('products.export', { format: 'xlsx' })" 
+                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-xs font-semibold transition-all shadow-xs"
+                            title="Download formatted Excel spreadsheet"
+                        >
+                            <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>Export Excel</span>
+                        </a>
+
+                        <a 
+                            :href="route('products.export', { format: 'csv' })" 
                             class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all"
+                            title="Download raw CSV file"
                         >
                             <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -479,7 +529,29 @@ function submitImport() {
                     Loading stock distribution...
                 </div>
 
-                <div v-else-if="inspectedLevels.length > 0" class="overflow-x-auto">
+                <template v-else>
+                    <!-- Barcode Display & Print Sticker -->
+                    <div v-if="inspectedBarcodeSvg" class="mb-4 p-3 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="bg-white p-2 border border-slate-200 rounded-lg shrink-0 max-w-[160px] overflow-hidden" v-html="inspectedBarcodeSvg"></div>
+                            <div class="min-w-0">
+                                <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Product Barcode (Code-128)</span>
+                                <div class="font-mono text-xs font-bold text-slate-800 tracking-wider mt-0.5 truncate">{{ inspectedBarcodeValue }}</div>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            @click="printBarcode"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-xs transition cursor-pointer shrink-0"
+                        >
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                            </svg>
+                            <span>Print Sticker</span>
+                        </button>
+                    </div>
+
+                    <div v-if="inspectedLevels.length > 0" class="overflow-x-auto">
                     <table class="w-full text-left text-xs">
                         <thead>
                             <tr class="border-b border-slate-200 text-slate-400 font-bold uppercase text-[10px]">
@@ -507,6 +579,7 @@ function submitImport() {
                 <div v-else class="text-center py-10 text-slate-400 text-xs">
                     No active stock currently registered for this product across fulfillment hubs.
                 </div>
+                </template>
             </div>
         </Modal>
 

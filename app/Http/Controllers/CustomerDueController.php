@@ -87,6 +87,23 @@ class CustomerDueController extends Controller
     {
         $teamId = Auth::user()->current_team_id;
 
+        if (!$request->filled('financial_account_id')) {
+            $defaultAccount = FinancialAccount::where('team_id', $teamId)->where('is_active', true)->first();
+            if (!$defaultAccount) {
+                $defaultAccount = FinancialAccount::create([
+                    'team_id' => $teamId,
+                    'name' => 'Cash in Hand',
+                    'type' => 'cash',
+                    'account_type' => 'cash',
+                    'opening_balance' => 0.00,
+                    'current_balance' => 0.00,
+                    'is_default' => true,
+                    'is_active' => true,
+                ]);
+            }
+            $request->merge(['financial_account_id' => $defaultAccount->id]);
+        }
+
         $validated = $request->validate([
             'order_id' => 'required|exists:sales_orders,id',
             'amount' => 'required|numeric|min:0.01',
@@ -108,10 +125,12 @@ class CustomerDueController extends Controller
 
             $account->deposit(
                 (float) $validated['amount'],
-                'collection',
-                "Customer due settlement for Invoice #{$order->order_number}" . ($validated['notes'] ? " - {$validated['notes']}" : ''),
-                $validated['payment_reference'] ?? null,
-                $order
+                [
+                    'description' => "Customer due settlement for Invoice #{$order->order_number}" . (!empty($validated['notes']) ? " - {$validated['notes']}" : ''),
+                    'reference_type' => SalesOrder::class,
+                    'reference_id' => $order->id,
+                    'reference_number' => $validated['payment_reference'] ?? null,
+                ]
             );
         });
 

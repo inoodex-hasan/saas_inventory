@@ -107,7 +107,25 @@ class PurchaseOrderController extends Controller
             'items.*.expiry_date' => 'nullable|date',
         ];
 
+        $teamId = Auth::user()->current_team_id;
+
         if ((float) $request->input('paid_amount') > 0) {
+            if (!$request->filled('financial_account_id')) {
+                $defaultAccount = FinancialAccount::where('team_id', $teamId)->where('is_active', true)->first();
+                if (!$defaultAccount) {
+                    $defaultAccount = FinancialAccount::create([
+                        'team_id' => $teamId,
+                        'name' => 'Cash in Hand',
+                        'type' => 'cash',
+                        'account_type' => 'cash',
+                        'opening_balance' => 0.00,
+                        'current_balance' => 0.00,
+                        'is_default' => true,
+                        'is_active' => true,
+                    ]);
+                }
+                $request->merge(['financial_account_id' => $defaultAccount->id]);
+            }
             $rules['financial_account_id'] = 'required|exists:financial_accounts,id';
             $rules['payment_reference'] = 'nullable|string|max:100';
         }
@@ -267,6 +285,23 @@ class PurchaseOrderController extends Controller
     {
         $teamId = Auth::user()->current_team_id;
         abort_if($order->team_id !== $teamId, 403);
+
+        if (!$request->filled('financial_account_id')) {
+            $defaultAccount = FinancialAccount::where('team_id', $teamId)->where('is_active', true)->first();
+            if (!$defaultAccount) {
+                $defaultAccount = FinancialAccount::create([
+                    'team_id' => $teamId,
+                    'name' => 'Cash in Hand',
+                    'type' => 'cash',
+                    'account_type' => 'cash',
+                    'opening_balance' => 0.00,
+                    'current_balance' => 0.00,
+                    'is_default' => true,
+                    'is_active' => true,
+                ]);
+            }
+            $request->merge(['financial_account_id' => $defaultAccount->id]);
+        }
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
