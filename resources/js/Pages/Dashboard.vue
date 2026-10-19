@@ -4,7 +4,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
-import { formatDate } from '@/Utils/date';
+import { formatDate, formatRelative } from '@/Utils/date';
 import apexchart from 'vue3-apexcharts';
 
 const props = defineProps({
@@ -270,7 +270,7 @@ const totalOrdersInStatus = computed(() => {
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
-                        <span>New Purchase PO</span>
+                        <span>New Purchase</span>
                     </Link>
 
                     <Link 
@@ -619,7 +619,7 @@ const totalOrdersInStatus = computed(() => {
                                     <StatusBadge :status="so.status" />
                                 </div>
                                 <div class="text-[11px] text-slate-500 mt-0.5">
-                                    {{ so.customer?.name || 'Walk-in Customer' }} &bull; {{ so.warehouse?.name }}
+                                    {{ so.customer?.name || 'Walk-in Customer' }} &bull; {{ so.warehouse?.name }} &bull; <span class="text-slate-400">{{ formatRelative(so.order_date || so.created_at) }}</span>
                                 </div>
                             </div>
                             <div class="text-right">
@@ -654,7 +654,9 @@ const totalOrdersInStatus = computed(() => {
                                 <div class="font-bold text-slate-900 text-xs">
                                     <CurrencyDisplay :amount="po.total_amount" />
                                 </div>
-                                <span class="text-[10px] text-slate-400 block mt-0.5">{{ formatDate(po.order_date || po.ordered_at, 'Draft') }}</span>
+                                <span class="text-[10px] text-slate-400 block mt-0.5" :title="formatDate(po.order_date || po.ordered_at)">
+                                    {{ formatRelative(po.order_date || po.ordered_at) }}
+                                </span>
                             </div>
                         </div>
                         <div v-if="!recentPurchaseOrders || recentPurchaseOrders.length === 0" class="text-center py-6 text-slate-400 text-xs">
@@ -678,7 +680,7 @@ const totalOrdersInStatus = computed(() => {
                                 </span>
                                 <div>
                                     <div class="font-semibold text-slate-800">{{ m.product?.name }}</div>
-                                    <div class="text-[10px] text-slate-400">{{ m.warehouse?.name }} &bull; {{ m.reason || 'Ledger entry' }}</div>
+                                    <div class="text-[10px] text-slate-400">{{ m.warehouse?.name }} &bull; {{ m.reason || 'Ledger entry' }} &bull; {{ formatRelative(m.created_at) }}</div>
                                 </div>
                             </div>
                             <div class="text-right font-mono">
