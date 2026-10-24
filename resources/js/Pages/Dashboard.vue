@@ -277,7 +277,9 @@ const totalOrdersInStatus = computed(() => {
                         :href="route('purchases.create')" 
                         class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm transition-all hover:scale-[1.02]"
                     >
-                        <Truck class="w-4 h-4" />
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
                         <span>New Purchase</span>
                     </Link>
 
