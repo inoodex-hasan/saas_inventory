@@ -19,6 +19,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\TaDaClaimController;
 use App\Http\Controllers\QuotationController;
+use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\SalesOrderController;
 use App\Http\Controllers\ServiceTicketController;
 use App\Http\Controllers\SuperAdminController;
@@ -31,6 +32,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarrantyController;
+use App\Http\Controllers\SslCommerzPaymentController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -108,6 +110,19 @@ Route::middleware([
     Route::post('/sales/{order}/complete', [SalesOrderController::class, 'complete'])->name('sales.complete');
     Route::post('/sales/{order}/cancel', [SalesOrderController::class, 'cancel'])->name('sales.cancel');
     Route::post('/sales/{order}/pay', [SalesOrderController::class, 'pay'])->name('sales.pay');
+
+    // Recurring Invoices & Customer Subscriptions
+    Route::get('/recurring-invoices', [RecurringInvoiceController::class, 'index'])->name('recurring-invoices.index');
+    Route::get('/recurring-invoices/create', [RecurringInvoiceController::class, 'create'])->name('recurring-invoices.create');
+    Route::post('/recurring-invoices', [RecurringInvoiceController::class, 'store'])->name('recurring-invoices.store');
+    Route::get('/recurring-invoices/{recurringInvoice}', [RecurringInvoiceController::class, 'show'])->name('recurring-invoices.show');
+    Route::get('/recurring-invoices/{recurringInvoice}/edit', [RecurringInvoiceController::class, 'edit'])->name('recurring-invoices.edit');
+    Route::put('/recurring-invoices/{recurringInvoice}', [RecurringInvoiceController::class, 'update'])->name('recurring-invoices.update');
+    Route::post('/recurring-invoices/{recurringInvoice}/generate-now', [RecurringInvoiceController::class, 'generateNow'])->name('recurring-invoices.generate-now');
+    Route::post('/recurring-invoices/{recurringInvoice}/pause', [RecurringInvoiceController::class, 'pause'])->name('recurring-invoices.pause');
+    Route::post('/recurring-invoices/{recurringInvoice}/resume', [RecurringInvoiceController::class, 'resume'])->name('recurring-invoices.resume');
+    Route::post('/recurring-invoices/{recurringInvoice}/cancel', [RecurringInvoiceController::class, 'cancel'])->name('recurring-invoices.cancel');
+    Route::delete('/recurring-invoices/{recurringInvoice}', [RecurringInvoiceController::class, 'destroy'])->name('recurring-invoices.destroy');
 
     // Quotations & Estimates
     Route::get('/quotations', [QuotationController::class, 'index'])->name('quotations.index');
@@ -203,6 +218,11 @@ Route::middleware([
     // Tenant Company Settings & Branding
     Route::get('/settings/company', [TenantSettingsController::class, 'index'])->name('settings.company');
     Route::put('/settings/company', [TenantSettingsController::class, 'update'])->name('settings.company.update');
+    Route::post('/settings/company', [TenantSettingsController::class, 'update'])->name('settings.company.update.post');
+    Route::post('/settings/company/remove-invoice-bg', [TenantSettingsController::class, 'removeInvoiceBg'])->name('settings.company.remove-invoice-bg');
+    Route::post('/settings/company/remove-report-bg', [TenantSettingsController::class, 'removeReportBg'])->name('settings.company.remove-report-bg');
+    Route::get('/settings/company/preview-invoice-bg', [TenantSettingsController::class, 'previewInvoiceBg'])->name('settings.company.preview-invoice-bg');
+    Route::get('/settings/company/preview-report-bg', [TenantSettingsController::class, 'previewReportBg'])->name('settings.company.preview-report-bg');
 
     // Tenant Subscription & Billing
     Route::get('/settings/subscription', [TenantSubscriptionController::class, 'index'])->name('subscription.index');
@@ -280,7 +300,7 @@ Route::middleware([
     Route::delete('/admin/tenants/{team}', [SuperAdminController::class, 'destroyTenant'])->name('admin.tenants.destroy');
     Route::post('/admin/tenants/{team}/toggle-status', [SuperAdminController::class, 'toggleStatus'])->name('admin.tenants.toggle-status');
     Route::post('/admin/tenants/{team}/switch', [SuperAdminController::class, 'switchToTenant'])->name('admin.tenants.switch');
-    Route::get('/admin/exit-tenant', function () {
+    Route::match(['get', 'post'], '/admin/exit-tenant', function () {
         $user = auth()->user();
         if ($user && $user->isSuperAdmin()) {
             $user->forceFill(['current_team_id' => null])->save();
@@ -301,20 +321,9 @@ Route::middleware([
     Route::post('/admin/payments/{payment}/reject', [AdminPaymentController::class, 'reject'])->name('admin.payments.reject');
 });
 
-// SSLCommerz Payment Gateway Callbacks (Sandbox Ready)
-Route::post('/sslcommerz/success', function () {
-    return redirect()->route('subscription.index')->with('success', 'Payment processed successfully via SSLCommerz.');
-})->name('sslcommerz.success');
-
-Route::post('/sslcommerz/fail', function () {
-    return redirect()->route('subscription.index')->withErrors(['error' => 'SSLCommerz payment failed. Please try again or submit TrxID manually.']);
-})->name('sslcommerz.fail');
-
-Route::post('/sslcommerz/cancel', function () {
-    return redirect()->route('subscription.index')->with('warning', 'SSLCommerz payment was cancelled.');
-})->name('sslcommerz.cancel');
-
-Route::post('/sslcommerz/ipn', function () {
-    return response()->json(['status' => 'received']);
-})->name('sslcommerz.ipn');
+// SSLCommerz Payment Gateway Callbacks (Sandbox & Production Verified)
+Route::post('/sslcommerz/success', [SslCommerzPaymentController::class, 'success'])->name('sslcommerz.success');
+Route::post('/sslcommerz/fail', [SslCommerzPaymentController::class, 'fail'])->name('sslcommerz.fail');
+Route::post('/sslcommerz/cancel', [SslCommerzPaymentController::class, 'cancel'])->name('sslcommerz.cancel');
+Route::post('/sslcommerz/ipn', [SslCommerzPaymentController::class, 'ipn'])->name('sslcommerz.ipn');
 

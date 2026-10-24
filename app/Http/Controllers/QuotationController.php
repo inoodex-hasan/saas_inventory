@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class QuotationController extends Controller
@@ -97,7 +98,7 @@ class QuotationController extends Controller
             'notes' => 'nullable|string|max:1000',
             'terms' => 'nullable|string|max:2000',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('team_id', $teamId)],
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0',
         ];
@@ -107,7 +108,7 @@ class QuotationController extends Controller
             $rules['new_customer_phone'] = 'required|string|max:50';
             $rules['new_customer_address'] = 'nullable|string|max:500';
         } else {
-            $rules['customer_id'] = 'required|exists:customers,id';
+            $rules['customer_id'] = ['required', Rule::exists('customers', 'id')->where('team_id', $teamId)];
         }
 
         $validated = $request->validate($rules);
@@ -206,7 +207,7 @@ class QuotationController extends Controller
         }
 
         $validated = $request->validate([
-            'customer_id' => 'required|exists:customers,id',
+            'customer_id' => ['required', Rule::exists('customers', 'id')->where('team_id', $teamId)],
             'quotation_date' => 'required|date',
             'valid_until' => 'required|date|after_or_equal:quotation_date',
             'status' => 'nullable|in:draft,sent,accepted,declined',
@@ -215,7 +216,7 @@ class QuotationController extends Controller
             'notes' => 'nullable|string|max:1000',
             'terms' => 'nullable|string|max:2000',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('team_id', $teamId)],
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0',
         ]);

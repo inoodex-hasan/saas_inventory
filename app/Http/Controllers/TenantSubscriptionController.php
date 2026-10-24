@@ -53,21 +53,18 @@ class TenantSubscriptionController extends Controller
             'billing_cycle' => 'required|in:monthly,yearly',
             'payment_method' => 'required|in:bkash,nagad,rocket,bank_transfer',
             'sender_number' => 'required|string|max:50',
-            'trx_id' => 'required|string|max:100',
+            'trx_id' => [
+                'required',
+                'string',
+                'max:100',
+                \Illuminate\Validation\Rule::unique('subscription_payments', 'trx_id')
+                    ->where(fn ($q) => $q->whereIn('status', ['pending', 'approved'])),
+            ],
             'bank_account_info' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:1000',
+        ], [
+            'trx_id.unique' => 'This Transaction ID (TrxID) has already been submitted and is currently active or being verified.',
         ]);
-
-        // Check if TrxID was already submitted
-        $existing = SubscriptionPayment::where('trx_id', $validated['trx_id'])
-            ->where('status', '!=', 'rejected')
-            ->exists();
-
-        if ($existing) {
-            return back()->withErrors([
-                'trx_id' => 'This Transaction ID (TrxID) has already been submitted and is currently being verified.',
-            ]);
-        }
 
         $payment = $subscriptionService->submitPayment($team, $validated);
 

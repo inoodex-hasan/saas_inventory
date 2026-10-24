@@ -38,6 +38,16 @@ class Warehouse extends Model
         return $this->hasMany(StockMovement::class);
     }
 
+    public function salesOrders(): HasMany
+    {
+        return $this->hasMany(SalesOrder::class);
+    }
+
+    public function purchaseOrders(): HasMany
+    {
+        return $this->hasMany(PurchaseOrder::class);
+    }
+
     public function getShortCodeAttribute(): string
     {
         if (empty($this->code)) {

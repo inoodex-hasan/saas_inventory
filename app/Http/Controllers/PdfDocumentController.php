@@ -22,13 +22,17 @@ class PdfDocumentController extends Controller
             abort(403, 'Unauthorized access to tenant document.');
         }
 
+        $team = $order->team ?? $user->currentTeam;
+        $marginTop = $team->invoice_bg_path ? ($team->invoice_margin_top ?? 48) : 12;
+        $marginBottom = $team->invoice_bg_path ? ($team->invoice_margin_bottom ?? 25) : 12;
+
         $pdf = PDF::loadView('pdf.sales-invoice', [
             'order' => $order,
-            'team' => $order->team ?? $user->currentTeam,
+            'team' => $team,
         ], [], [
             'title' => "Invoice-{$order->order_number}",
-            'margin_top' => 12,
-            'margin_bottom' => 12,
+            'margin_top' => $marginTop,
+            'margin_bottom' => $marginBottom,
             'margin_left' => 12,
             'margin_right' => 12,
         ]);
@@ -441,13 +445,16 @@ class PdfDocumentController extends Controller
 
         $data = $accountingService->getTrialBalance($team->id, $asOfDate);
 
+        $marginTop = $team->report_bg_path ? ($team->report_margin_top ?? 42) : 12;
+        $marginBottom = $team->report_bg_path ? ($team->report_margin_bottom ?? 25) : 12;
+
         $pdf = PDF::loadView('pdf.trial-balance', [
             'report' => $data,
             'team' => $team,
         ], [], [
             'title' => "TrialBalance-{$asOfDate}",
-            'margin_top' => 12,
-            'margin_bottom' => 12,
+            'margin_top' => $marginTop,
+            'margin_bottom' => $marginBottom,
             'margin_left' => 12,
             'margin_right' => 12,
         ]);
@@ -472,13 +479,16 @@ class PdfDocumentController extends Controller
 
         $data = $accountingService->getProfitAndLoss($team->id, $startDate, $endDate);
 
+        $marginTop = $team->report_bg_path ? ($team->report_margin_top ?? 42) : 12;
+        $marginBottom = $team->report_bg_path ? ($team->report_margin_bottom ?? 25) : 12;
+
         $pdf = PDF::loadView('pdf.profit-and-loss', [
             'report' => $data,
             'team' => $team,
         ], [], [
             'title' => "ProfitAndLoss-{$startDate}-to-{$endDate}",
-            'margin_top' => 12,
-            'margin_bottom' => 12,
+            'margin_top' => $marginTop,
+            'margin_bottom' => $marginBottom,
             'margin_left' => 12,
             'margin_right' => 12,
         ]);
@@ -502,13 +512,16 @@ class PdfDocumentController extends Controller
 
         $data = $accountingService->getBalanceSheet($team->id, $asOfDate);
 
+        $marginTop = $team->report_bg_path ? ($team->report_margin_top ?? 42) : 12;
+        $marginBottom = $team->report_bg_path ? ($team->report_margin_bottom ?? 25) : 12;
+
         $pdf = PDF::loadView('pdf.balance-sheet', [
             'report' => $data,
             'team' => $team,
         ], [], [
             'title' => "BalanceSheet-{$asOfDate}",
-            'margin_top' => 12,
-            'margin_bottom' => 12,
+            'margin_top' => $marginTop,
+            'margin_bottom' => $marginBottom,
             'margin_left' => 12,
             'margin_right' => 12,
         ]);

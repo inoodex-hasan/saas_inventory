@@ -9,6 +9,7 @@ use App\Models\Warehouse;
 use App\Services\ReturnService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class ProductReturnController extends Controller
@@ -66,14 +67,14 @@ class ProductReturnController extends Controller
         $teamId = Auth::user()->current_team_id;
 
         $validated = $request->validate([
-            'sales_order_id' => 'required|exists:sales_orders,id',
-            'warehouse_id' => 'nullable|exists:warehouses,id',
+            'sales_order_id' => ['required', Rule::exists('sales_orders', 'id')->where('team_id', $teamId)],
+            'warehouse_id' => ['nullable', Rule::exists('warehouses', 'id')->where('team_id', $teamId)],
             'reason' => 'required|string|max:500',
             'refund_type' => 'required|in:credit_note,cash_refund,bank_refund,replacement',
             'notes' => 'nullable|string|max:1000',
             'items' => 'required|array|min:1',
-            'items.*.sales_order_item_id' => 'required|exists:sales_order_items,id',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.sales_order_item_id' => 'required|integer',
+            'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('team_id', $teamId)],
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.condition' => 'required|in:sellable,damaged,defective',

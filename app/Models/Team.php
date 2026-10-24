@@ -39,6 +39,12 @@ class Team extends JetstreamTeam
         'currency_code',
         'invoice_prefix',
         'po_prefix',
+        'invoice_bg_path',
+        'report_bg_path',
+        'invoice_margin_top',
+        'invoice_margin_bottom',
+        'report_margin_top',
+        'report_margin_bottom',
     ];
 
     /**
@@ -75,9 +81,53 @@ class Team extends JetstreamTeam
     /**
      * Determine if tenant account is active.
      */
-    public function isActive(): bool
+     public function isActive(): bool
+     {
+         return $this->status === 'active' || $this->status === 'trial';
+     }
+
+    /**
+     * Get absolute filesystem path to invoice background image.
+     */
+    public function getInvoiceBgAbsolutePath(): ?string
     {
-        return $this->status === 'active' || $this->status === 'trial';
+        if ($this->invoice_bg_path) {
+            $path = storage_path('app/public/' . $this->invoice_bg_path);
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get absolute filesystem path to report background image.
+     */
+    public function getReportBgAbsolutePath(): ?string
+    {
+        if ($this->report_bg_path) {
+            $path = storage_path('app/public/' . $this->report_bg_path);
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get web URL for invoice background preview.
+     */
+    public function getInvoiceBgUrl(): ?string
+    {
+        return $this->invoice_bg_path ? asset('storage/' . $this->invoice_bg_path) : null;
+    }
+
+    /**
+     * Get web URL for report background preview.
+     */
+    public function getReportBgUrl(): ?string
+    {
+        return $this->report_bg_path ? asset('storage/' . $this->report_bg_path) : null;
     }
 
     /**

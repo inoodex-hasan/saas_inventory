@@ -4,12 +4,22 @@
     <meta charset="UTF-8">
     <title>Trial Balance - {{ $report['as_of_date'] }}</title>
     <style>
+        @page {
+            @if($bgPath = $team->getReportBgAbsolutePath())
+                background: url('{{ $bgPath }}') no-repeat 0 0;
+                background-image-resize: 6;
+            @endif
+            margin-top: {{ $team->report_bg_path ? ($team->report_margin_top ?? 42) : 12 }}mm;
+            margin-bottom: {{ $team->report_bg_path ? ($team->report_margin_bottom ?? 25) : 12 }}mm;
+            margin-left: 12mm;
+            margin-right: 12mm;
+        }
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             color: #1e293b;
             font-size: 9.5pt;
             line-height: 1.4;
-            padding: 10px;
+            padding: 0;
         }
         table {
             width: 100%;
@@ -82,6 +92,8 @@
     </style>
 </head>
 <body>
+    @if(!$team->report_bg_path)
+    <!-- Standard Header (Digital Mode) -->
     <table class="header-table">
         <tr>
             <td style="width: 55%;">
@@ -115,6 +127,32 @@
             </td>
         </tr>
     </table>
+    @else
+    <!-- Pre-Printed Letterhead Mode: Title & Date Bar Only -->
+    <table class="header-table" style="margin-bottom: 8px;">
+        <tr>
+            <td style="width: 50%;">
+                <div style="font-size: 14pt; font-weight: 800; color: #1e293b; text-transform: uppercase;">TRIAL BALANCE</div>
+            </td>
+            <td style="width: 50%;">
+                <table style="margin-top: 0;">
+                    <tr>
+                        <td style="text-align: right; color: #64748b; font-size: 8.5pt;">As of Date:</td>
+                        <td style="text-align: right; font-weight: 700;">{{ \Carbon\Carbon::parse($report['as_of_date'])->format('d M Y') }}</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: right; color: #64748b; font-size: 8.5pt;">Status:</td>
+                        <td style="text-align: right;">
+                            <span class="badge {{ $report['is_balanced'] ? 'badge-balanced' : 'badge-unbalanced' }}">
+                                {{ $report['is_balanced'] ? 'Balanced' : 'Unbalanced' }}
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    @endif
 
     <table class="items-table">
         <thead>

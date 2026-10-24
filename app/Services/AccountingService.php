@@ -257,21 +257,26 @@ class AccountingService
             ->orderBy('account_code')
             ->get();
 
+        $balances = JournalEntryLine::where('journal_entry_lines.team_id', $teamId)
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->when($asOfDate, fn ($q) => $q->where('journal_entries.entry_date', '<=', $asOfDate))
+            ->selectRaw('
+                journal_entry_lines.chart_of_account_id,
+                SUM(journal_entry_lines.debit) as total_debit,
+                SUM(journal_entry_lines.credit) as total_credit
+            ')
+            ->groupBy('journal_entry_lines.chart_of_account_id')
+            ->get()
+            ->keyBy('chart_of_account_id');
+
         $rows = [];
         $grandTotalDebit = 0.00;
         $grandTotalCredit = 0.00;
 
         foreach ($accounts as $acc) {
-            $query = JournalEntryLine::where('journal_entry_lines.team_id', $teamId)
-                ->where('chart_of_account_id', $acc->id)
-                ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id');
-
-            if ($asOfDate) {
-                $query->where('journal_entries.entry_date', '<=', $asOfDate);
-            }
-
-            $totalDebit = (float) $query->sum('journal_entry_lines.debit');
-            $totalCredit = (float) $query->sum('journal_entry_lines.credit');
+            $line = $balances->get($acc->id);
+            $totalDebit = $line ? (float) $line->total_debit : 0.00;
+            $totalCredit = $line ? (float) $line->total_credit : 0.00;
 
             if ($totalDebit == 0 && $totalCredit == 0) {
                 continue;
@@ -331,6 +336,18 @@ class AccountingService
     {
         $this->ensureDefaultAccounts($teamId);
 
+        $periodBalances = JournalEntryLine::where('journal_entry_lines.team_id', $teamId)
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->whereBetween('journal_entries.entry_date', [$startDate, $endDate])
+            ->selectRaw('
+                journal_entry_lines.chart_of_account_id,
+                SUM(journal_entry_lines.debit) as total_debit,
+                SUM(journal_entry_lines.credit) as total_credit
+            ')
+            ->groupBy('journal_entry_lines.chart_of_account_id')
+            ->get()
+            ->keyBy('chart_of_account_id');
+
         // 1. Operating Revenue
         $revenueAccounts = ChartOfAccount::where('team_id', $teamId)
             ->where('type', 'revenue')
@@ -342,13 +359,9 @@ class AccountingService
         $totalRevenue = 0.00;
 
         foreach ($revenueAccounts as $acc) {
-            $query = JournalEntryLine::where('journal_entry_lines.team_id', $teamId)
-                ->where('chart_of_account_id', $acc->id)
-                ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
-                ->whereBetween('journal_entries.entry_date', [$startDate, $endDate]);
-
-            $credits = (float) $query->sum('credit');
-            $debits = (float) $query->sum('debit');
+            $line = $periodBalances->get($acc->id);
+            $credits = $line ? (float) $line->total_credit : 0.00;
+            $debits = $line ? (float) $line->total_debit : 0.00;
             $amount = round($credits - $debits, 2);
 
             if ($amount != 0) {
@@ -373,13 +386,9 @@ class AccountingService
         $totalCogs = 0.00;
 
         foreach ($cogsAccounts as $acc) {
-            $query = JournalEntryLine::where('journal_entry_lines.team_id', $teamId)
-                ->where('chart_of_account_id', $acc->id)
-                ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
-                ->whereBetween('journal_entries.entry_date', [$startDate, $endDate]);
-
-            $debits = (float) $query->sum('debit');
-            $credits = (float) $query->sum('credit');
+            $line = $periodBalances->get($acc->id);
+            $debits = $line ? (float) $line->total_debit : 0.00;
+            $credits = $line ? (float) $line->total_credit : 0.00;
             $amount = round($debits - $credits, 2);
 
             if ($amount != 0) {
@@ -406,13 +415,9 @@ class AccountingService
         $totalOperatingExpenses = 0.00;
 
         foreach ($expenseAccounts as $acc) {
-            $query = JournalEntryLine::where('journal_entry_lines.team_id', $teamId)
-                ->where('chart_of_account_id', $acc->id)
-                ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
-                ->whereBetween('journal_entries.entry_date', [$startDate, $endDate]);
-
-            $debits = (float) $query->sum('debit');
-            $credits = (float) $query->sum('credit');
+            $line = $periodBalances->get($acc->id);
+            $debits = $line ? (float) $line->total_debit : 0.00;
+            $credits = $line ? (float) $line->total_credit : 0.00;
             $amount = round($debits - $credits, 2);
 
             if ($amount != 0) {
@@ -453,6 +458,18 @@ class AccountingService
     {
         $this->ensureDefaultAccounts($teamId);
 
+        $balancesAsOf = JournalEntryLine::where('journal_entry_lines.team_id', $teamId)
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->where('journal_entries.entry_date', '<=', $asOfDate)
+            ->selectRaw('
+                journal_entry_lines.chart_of_account_id,
+                SUM(journal_entry_lines.debit) as total_debit,
+                SUM(journal_entry_lines.credit) as total_credit
+            ')
+            ->groupBy('journal_entry_lines.chart_of_account_id')
+            ->get()
+            ->keyBy('chart_of_account_id');
+
         // 1. Assets (Debits - Credits)
         $assetAccounts = ChartOfAccount::where('team_id', $teamId)
             ->where('type', 'asset')
@@ -464,13 +481,9 @@ class AccountingService
         $totalAssets = 0.00;
 
         foreach ($assetAccounts as $acc) {
-            $query = JournalEntryLine::where('journal_entry_lines.team_id', $teamId)
-                ->where('chart_of_account_id', $acc->id)
-                ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
-                ->where('journal_entries.entry_date', '<=', $asOfDate);
-
-            $debits = (float) $query->sum('debit');
-            $credits = (float) $query->sum('credit');
+            $line = $balancesAsOf->get($acc->id);
+            $debits = $line ? (float) $line->total_debit : 0.00;
+            $credits = $line ? (float) $line->total_credit : 0.00;
             $amount = round($debits - $credits, 2);
 
             if ($amount != 0) {
@@ -495,13 +508,9 @@ class AccountingService
         $totalLiabilities = 0.00;
 
         foreach ($liabilityAccounts as $acc) {
-            $query = JournalEntryLine::where('journal_entry_lines.team_id', $teamId)
-                ->where('chart_of_account_id', $acc->id)
-                ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
-                ->where('journal_entries.entry_date', '<=', $asOfDate);
-
-            $credits = (float) $query->sum('credit');
-            $debits = (float) $query->sum('debit');
+            $line = $balancesAsOf->get($acc->id);
+            $credits = $line ? (float) $line->total_credit : 0.00;
+            $debits = $line ? (float) $line->total_debit : 0.00;
             $amount = round($credits - $debits, 2);
 
             if ($amount != 0) {
@@ -526,13 +535,9 @@ class AccountingService
         $totalEquityBase = 0.00;
 
         foreach ($equityAccounts as $acc) {
-            $query = JournalEntryLine::where('journal_entry_lines.team_id', $teamId)
-                ->where('chart_of_account_id', $acc->id)
-                ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
-                ->where('journal_entries.entry_date', '<=', $asOfDate);
-
-            $credits = (float) $query->sum('credit');
-            $debits = (float) $query->sum('debit');
+            $line = $balancesAsOf->get($acc->id);
+            $credits = $line ? (float) $line->total_credit : 0.00;
+            $debits = $line ? (float) $line->total_debit : 0.00;
             $amount = round($credits - $debits, 2);
 
             if ($amount != 0) {

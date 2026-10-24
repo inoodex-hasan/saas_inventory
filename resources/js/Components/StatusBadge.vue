@@ -37,6 +37,7 @@ const config = computed(() => {
                 label: format(props.status),
             };
         case 'on_hold':
+        case 'paused':
         case 'partially_paid':
         case 'partially_received':
         case 'ordered':

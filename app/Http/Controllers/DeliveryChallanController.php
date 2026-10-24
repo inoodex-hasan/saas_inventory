@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class DeliveryChallanController extends Controller
@@ -92,7 +93,7 @@ class DeliveryChallanController extends Controller
         $teamId = Auth::user()->current_team_id;
 
         $validated = $request->validate([
-            'sales_order_id' => 'required|exists:sales_orders,id',
+            'sales_order_id' => ['required', Rule::exists('sales_orders', 'id')->where('team_id', $teamId)],
             'dispatch_date' => 'required|date',
             'transport_carrier' => 'nullable|string|max:100',
             'vehicle_no' => 'nullable|string|max:100',
@@ -101,12 +102,33 @@ class DeliveryChallanController extends Controller
             'delivery_address' => 'required|string|max:500',
             'notes' => 'nullable|string|max:1000',
             'items' => 'required|array|min:1',
-            'items.*.sales_order_item_id' => 'required|exists:sales_order_items,id',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.sales_order_item_id' => 'required|integer',
+            'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('team_id', $teamId)],
             'items.*.quantity' => 'required|numeric|min:0.01',
         ]);
 
-        $order = SalesOrder::where('team_id', $teamId)->findOrFail($validated['sales_order_id']);
+        $order = SalesOrder::where('team_id', $teamId)->with('items.product')->findOrFail($validated['sales_order_id']);
+
+        foreach ($validated['items'] as $it) {
+            $soItem = $order->items->firstWhere('id', $it['sales_order_item_id']);
+            if (!$soItem) {
+                return back()->withErrors(['items' => 'One or more items do not belong to the selected sales order.']);
+            }
+
+            if ((int) $it['product_id'] !== (int) $soItem->product_id) {
+                return back()->withErrors(['items' => "Selected product does not match sales order line item #{$soItem->id}."]);
+            }
+
+            $alreadyDispatched = (float) DeliveryChallanItem::where('sales_order_item_id', $soItem->id)
+                ->whereHas('deliveryChallan', fn ($q) => $q->where('status', '!=', 'cancelled'))
+                ->sum('quantity');
+
+            $remaining = (float) $soItem->quantity - $alreadyDispatched;
+            if ((float) $it['quantity'] > $remaining) {
+                $productName = $soItem->product?->name ?? 'item';
+                return back()->withErrors(['items' => "Dispatched quantity for {$productName} ({$it['quantity']}) exceeds remaining balance ({$remaining})."]);
+            }
+        }
 
         return DB::transaction(function () use ($validated, $order, $teamId) {
             $prefix = 'DC-' . Carbon::now()->format('Ymd') . '-';
@@ -183,7 +205,7 @@ class DeliveryChallanController extends Controller
             'delivery_address' => 'required|string|max:500',
             'notes' => 'nullable|string|max:1000',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('team_id', $teamId)],
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.packaging_description' => 'nullable|string|max:255',
             'items.*.notes' => 'nullable|string|max:255',

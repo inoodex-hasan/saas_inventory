@@ -173,4 +173,82 @@ class TenantSettingsTest extends TestCase
         $response->assertStatus(200);
         $response->assertHeader('content-type', 'application/pdf');
     }
+
+    public function test_tenant_can_upload_invoice_and_report_backgrounds_and_set_margins(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $invoiceFile = \Illuminate\Http\UploadedFile::fake()->image('invoice_letterhead.png', 1000, 1400);
+        $reportFile = \Illuminate\Http\UploadedFile::fake()->image('report_letterhead.png', 1000, 1400);
+
+        $response = $this->actingAs($this->owner)->post(route('settings.company.update'), [
+            'name' => $this->team->name,
+            'currency_symbol' => '৳',
+            'currency_code' => 'BDT',
+            'invoice_prefix' => 'INV-',
+            'po_prefix' => 'PO-',
+            'invoice_bg' => $invoiceFile,
+            'report_bg' => $reportFile,
+            'invoice_margin_top' => 52,
+            'invoice_margin_bottom' => 30,
+            'report_margin_top' => 45,
+            'report_margin_bottom' => 28,
+        ]);
+
+        $response->assertSessionHasNoErrors();
+
+        $this->team->refresh();
+
+        $this->assertNotNull($this->team->invoice_bg_path);
+        $this->assertNotNull($this->team->report_bg_path);
+        $this->assertEquals(52, $this->team->invoice_margin_top);
+        $this->assertEquals(30, $this->team->invoice_margin_bottom);
+        $this->assertEquals(45, $this->team->report_margin_top);
+        $this->assertEquals(28, $this->team->report_margin_bottom);
+
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($this->team->invoice_bg_path);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($this->team->report_bg_path);
+    }
+
+    public function test_tenant_can_preview_sample_invoice_pdf(): void
+    {
+        $response = $this->actingAs($this->owner)->get(route('settings.company.preview-invoice-bg'));
+
+        $response->assertStatus(200);
+        $response->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_tenant_can_preview_sample_report_pdf(): void
+    {
+        $response = $this->actingAs($this->owner)->get(route('settings.company.preview-report-bg'));
+
+        $response->assertStatus(200);
+        $response->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_tenant_can_remove_invoice_and_report_backgrounds(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $this->team->update([
+            'invoice_bg_path' => 'tenants/test/letterheads/dummy_invoice.png',
+            'report_bg_path' => 'tenants/test/letterheads/dummy_report.png',
+        ]);
+        \Illuminate\Support\Facades\Storage::disk('public')->put('tenants/test/letterheads/dummy_invoice.png', 'fake image content');
+        \Illuminate\Support\Facades\Storage::disk('public')->put('tenants/test/letterheads/dummy_report.png', 'fake report content');
+
+        // Remove Invoice BG
+        $resp1 = $this->actingAs($this->owner)->post(route('settings.company.remove-invoice-bg'));
+        $resp1->assertSessionHasNoErrors();
+        $this->team->refresh();
+        $this->assertNull($this->team->invoice_bg_path);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertMissing('tenants/test/letterheads/dummy_invoice.png');
+
+        // Remove Report BG
+        $resp2 = $this->actingAs($this->owner)->post(route('settings.company.remove-report-bg'));
+        $resp2->assertSessionHasNoErrors();
+        $this->team->refresh();
+        $this->assertNull($this->team->report_bg_path);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertMissing('tenants/test/letterheads/dummy_report.png');
+    }
 }

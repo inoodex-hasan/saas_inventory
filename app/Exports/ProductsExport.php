@@ -24,6 +24,7 @@ class ProductsExport implements FromQuery, WithHeadings, WithMapping, ShouldAuto
         return Product::query()
             ->where('team_id', $this->teamId)
             ->with(['category', 'brand'])
+            ->withSum('stockLevels as total_stock', 'quantity')
             ->orderBy('name');
     }
 

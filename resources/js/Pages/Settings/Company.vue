@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps({
@@ -36,6 +36,11 @@ function onCurrencyDropdownChange(event) {
     }
 }
 
+const invoiceBgInput = ref(null);
+const reportBgInput = ref(null);
+const invoiceBgPreview = ref(null);
+const reportBgPreview = ref(null);
+
 const form = useForm({
     name: props.settings.name || '',
     legal_name: props.settings.legal_name || '',
@@ -52,12 +57,74 @@ const form = useForm({
     currency_code: props.settings.currency_code || 'BDT',
     invoice_prefix: props.settings.invoice_prefix || 'INV-',
     po_prefix: props.settings.po_prefix || 'PO-',
+    invoice_bg: null,
+    report_bg: null,
+    invoice_margin_top: props.settings.invoice_margin_top ?? 48,
+    invoice_margin_bottom: props.settings.invoice_margin_bottom ?? 25,
+    report_margin_top: props.settings.report_margin_top ?? 42,
+    report_margin_bottom: props.settings.report_margin_bottom ?? 25,
+    _method: 'PUT',
 });
 
+function handleInvoiceBgChange(e) {
+    const file = e.target.files[0];
+    if (file) {
+        form.invoice_bg = file;
+        invoiceBgPreview.value = URL.createObjectURL(file);
+    }
+}
+
+function handleReportBgChange(e) {
+    const file = e.target.files[0];
+    if (file) {
+        form.report_bg = file;
+        reportBgPreview.value = URL.createObjectURL(file);
+    }
+}
+
 function submit() {
-    form.put(route('settings.company.update'), {
+    form.post(route('settings.company.update'), {
         preserveScroll: true,
+        forceFormData: true,
+        onSuccess: () => {
+            invoiceBgPreview.value = null;
+            reportBgPreview.value = null;
+            if (invoiceBgInput.value) invoiceBgInput.value.value = '';
+            if (reportBgInput.value) reportBgInput.value.value = '';
+        },
     });
+}
+
+function removeInvoiceBg() {
+    if (confirm('Are you sure you want to remove the custom invoice letterhead? Invoices will revert to standard digital header.')) {
+        router.post(route('settings.company.remove-invoice-bg'), {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                invoiceBgPreview.value = null;
+                if (invoiceBgInput.value) invoiceBgInput.value.value = '';
+            }
+        });
+    }
+}
+
+function removeReportBg() {
+    if (confirm('Are you sure you want to remove the custom report letterhead? Reports will revert to standard digital header.')) {
+        router.post(route('settings.company.remove-report-bg'), {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                reportBgPreview.value = null;
+                if (reportBgInput.value) reportBgInput.value.value = '';
+            }
+        });
+    }
+}
+
+function previewInvoiceBg() {
+    window.open(route('settings.company.preview-invoice-bg'), '_blank');
+}
+
+function previewReportBg() {
+    window.open(route('settings.company.preview-report-bg'), '_blank');
 }
 </script>
 
@@ -69,7 +136,7 @@ function submit() {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Company Settings & Branding</h1>
-                    <p class="text-xs text-slate-500 font-medium">Configure tenant workspace identity, tax compliance, localization, and document sequence prefixes</p>
+                    <p class="text-xs text-slate-500 font-medium">Configure tenant workspace identity, tax compliance, pre-printed letterheads, and print margins</p>
                 </div>
             </div>
         </template>
@@ -81,37 +148,67 @@ function submit() {
                     type="button"
                     @click="activeTab = 'profile'"
                     :class="[
-                        'px-4 py-2.5 text-sm font-semibold transition border-b-2 -mb-px',
+                        'px-4 py-2.5 text-sm font-semibold transition border-b-2 -mb-px flex items-center gap-2',
                         activeTab === 'profile'
                             ? 'border-indigo-600 text-indigo-600'
                             : 'border-transparent text-slate-500 hover:text-slate-800'
                     ]"
                 >
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
                     Organization Identity
                 </button>
                 <button
                     type="button"
                     @click="activeTab = 'address'"
                     :class="[
-                        'px-4 py-2.5 text-sm font-semibold transition border-b-2 -mb-px',
+                        'px-4 py-2.5 text-sm font-semibold transition border-b-2 -mb-px flex items-center gap-2',
                         activeTab === 'address'
                             ? 'border-indigo-600 text-indigo-600'
                             : 'border-transparent text-slate-500 hover:text-slate-800'
                     ]"
                 >
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
                     Physical Address
                 </button>
                 <button
                     type="button"
                     @click="activeTab = 'localization'"
                     :class="[
-                        'px-4 py-2.5 text-sm font-semibold transition border-b-2 -mb-px',
+                        'px-4 py-2.5 text-sm font-semibold transition border-b-2 -mb-px flex items-center gap-2',
                         activeTab === 'localization'
                             ? 'border-indigo-600 text-indigo-600'
                             : 'border-transparent text-slate-500 hover:text-slate-800'
                     ]"
                 >
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                     Currency & Prefixes
+                </button>
+                <button
+                    type="button"
+                    @click="activeTab = 'letterhead'"
+                    :class="[
+                        'px-4 py-2.5 text-sm font-semibold transition border-b-2 -mb-px flex items-center gap-2 relative',
+                        activeTab === 'letterhead'
+                            ? 'border-indigo-600 text-indigo-600'
+                            : 'border-transparent text-slate-500 hover:text-slate-800'
+                    ]"
+                >
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Print Letterheads & Backgrounds
+                    <span 
+                        v-if="settings.invoice_bg_path || settings.report_bg_path" 
+                        class="w-2 h-2 rounded-full bg-emerald-500"
+                        title="Custom Letterheads Active"
+                    ></span>
                 </button>
             </div>
 
@@ -360,13 +457,313 @@ function submit() {
                     </div>
                 </div>
 
-                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                <!-- Tab 4: Pre-Printed Letterheads & Margins -->
+                <div v-show="activeTab === 'letterhead'" class="space-y-6">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900 border-b border-slate-100 pb-2 flex items-center justify-between">
+                            <span>Pre-Printed Letterhead Backgrounds</span>
+                            <span class="text-xs font-normal text-slate-500">A4 Dimensions (210mm × 297mm)</span>
+                        </h2>
+                        <div class="mt-2 p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 text-xs text-blue-900 flex items-start gap-2.5">
+                            <svg class="w-5 h-5 text-blue-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div class="space-y-1">
+                                <p class="font-bold">How Pre-Printed Letterheads Work:</p>
+                                <p class="text-blue-800 leading-relaxed">
+                                    Upload an A4 graphic background that already includes your company logo, header artwork, legal address, and footer. When active, our PDF engine automatically suppresses digital text headers to avoid duplicate branding. Use the <strong>Top Margin</strong> control to align tables cleanly below your artwork.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Two-Column Cards: Invoice Letterhead & Report Letterhead -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        
+                        <!-- 1. Invoice & Sales Letterhead -->
+                        <div class="p-5 rounded-2xl bg-slate-50/80 border border-slate-200/90 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        Invoice & Sales Letterhead
+                                    </h3>
+                                    <p class="text-[11px] text-slate-500">Applied to Sales Invoices, Challans, and Quotes</p>
+                                </div>
+                                <span 
+                                    v-if="settings.invoice_bg_path" 
+                                    class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800"
+                                >
+                                    ● Active
+                                </span>
+                                <span 
+                                    v-else 
+                                    class="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-200 text-slate-600"
+                                >
+                                    Digital Mode
+                                </span>
+                            </div>
+
+                            <!-- Current / Pending Image Preview -->
+                            <div class="relative rounded-xl border border-dashed border-slate-300 bg-white p-3 text-center overflow-hidden">
+                                <div v-if="invoiceBgPreview || settings.invoice_bg_url" class="relative group">
+                                    <img 
+                                        :src="invoiceBgPreview || settings.invoice_bg_url" 
+                                        alt="Invoice Background Preview" 
+                                        class="h-44 w-auto mx-auto object-contain rounded shadow-sm border border-slate-200 bg-white"
+                                    />
+                                    <div class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded">
+                                        <button 
+                                            type="button" 
+                                            @click="previewInvoiceBg"
+                                            class="px-3 py-1.5 rounded-lg bg-white/95 text-slate-800 text-xs font-bold hover:bg-white flex items-center gap-1 shadow"
+                                        >
+                                            <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            </svg>
+                                            Preview PDF
+                                        </button>
+                                        <button 
+                                            v-if="settings.invoice_bg_path"
+                                            type="button" 
+                                            @click="removeInvoiceBg"
+                                            class="px-3 py-1.5 rounded-lg bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 flex items-center gap-1 shadow"
+                                        >
+                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                            Remove
+                                        </button>
+                                    </div>
+                                </div>
+                                <div v-else class="py-6 flex flex-col items-center">
+                                    <svg class="w-10 h-10 text-slate-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <span class="text-xs text-slate-500 font-medium">No invoice background uploaded</span>
+                                    <span class="text-[10px] text-slate-400">Default digital header will be used</span>
+                                </div>
+                            </div>
+
+                            <!-- Upload Button & File Input -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Upload New Invoice Letterhead</label>
+                                <input 
+                                    ref="invoiceBgInput"
+                                    type="file" 
+                                    accept="image/png, image/jpeg, image/jpg"
+                                    @change="handleInvoiceBgChange"
+                                    class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                                />
+                                <span class="text-[10px] text-slate-400 block mt-1">Recommended: A4 portrait (2480 × 3508 px at 300 DPI), Max 5MB (.jpg, .png)</span>
+                            </div>
+
+                            <!-- Margin Offsets -->
+                            <div class="pt-3 border-t border-slate-200/80 space-y-3">
+                                <span class="text-xs font-bold text-slate-800 uppercase tracking-wider block">Printable Area Margins (mm)</span>
+                                
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[11px] font-semibold text-slate-600 mb-1 flex items-center justify-between">
+                                            <span>Top Margin (Header Offset)</span>
+                                            <span class="text-indigo-600 font-mono font-bold">{{ form.invoice_margin_top }}mm</span>
+                                        </label>
+                                        <input 
+                                            v-model.number="form.invoice_margin_top"
+                                            type="range" 
+                                            min="0" 
+                                            max="120" 
+                                            step="1"
+                                            class="w-full accent-indigo-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer"
+                                        />
+                                        <p class="text-[10px] text-slate-400 mt-0.5">Leaves room for your top logo/header</p>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-semibold text-slate-600 mb-1 flex items-center justify-between">
+                                            <span>Bottom Margin (Footer Offset)</span>
+                                            <span class="text-indigo-600 font-mono font-bold">{{ form.invoice_margin_bottom }}mm</span>
+                                        </label>
+                                        <input 
+                                            v-model.number="form.invoice_margin_bottom"
+                                            type="range" 
+                                            min="0" 
+                                            max="80" 
+                                            step="1"
+                                            class="w-full accent-indigo-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer"
+                                        />
+                                        <p class="text-[10px] text-slate-400 mt-0.5">Leaves room for your bottom footer</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Live Action Button -->
+                            <div class="pt-2">
+                                <button
+                                    type="button"
+                                    @click="previewInvoiceBg"
+                                    class="w-full py-2 px-3 rounded-xl border border-indigo-200 bg-white hover:bg-indigo-50/70 text-indigo-700 text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs"
+                                >
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    Preview Sample Invoice PDF
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 2. Financial Report Letterhead -->
+                        <div class="p-5 rounded-2xl bg-slate-50/80 border border-slate-200/90 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                        </svg>
+                                        Financial Report Letterhead
+                                    </h3>
+                                    <p class="text-[11px] text-slate-500">Applied to Trial Balance, P&L, Balance Sheet, and Ledgers</p>
+                                </div>
+                                <span 
+                                    v-if="settings.report_bg_path" 
+                                    class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800"
+                                >
+                                    ● Active
+                                </span>
+                                <span 
+                                    v-else 
+                                    class="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-200 text-slate-600"
+                                >
+                                    Digital Mode
+                                </span>
+                            </div>
+
+                            <!-- Current / Pending Image Preview -->
+                            <div class="relative rounded-xl border border-dashed border-slate-300 bg-white p-3 text-center overflow-hidden">
+                                <div v-if="reportBgPreview || settings.report_bg_url" class="relative group">
+                                    <img 
+                                        :src="reportBgPreview || settings.report_bg_url" 
+                                        alt="Report Background Preview" 
+                                        class="h-44 w-auto mx-auto object-contain rounded shadow-sm border border-slate-200 bg-white"
+                                    />
+                                    <div class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded">
+                                        <button 
+                                            type="button" 
+                                            @click="previewReportBg"
+                                            class="px-3 py-1.5 rounded-lg bg-white/95 text-slate-800 text-xs font-bold hover:bg-white flex items-center gap-1 shadow"
+                                        >
+                                            <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            </svg>
+                                            Preview PDF
+                                        </button>
+                                        <button 
+                                            v-if="settings.report_bg_path"
+                                            type="button" 
+                                            @click="removeReportBg"
+                                            class="px-3 py-1.5 rounded-lg bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 flex items-center gap-1 shadow"
+                                        >
+                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                            Remove
+                                        </button>
+                                    </div>
+                                </div>
+                                <div v-else class="py-6 flex flex-col items-center">
+                                    <svg class="w-10 h-10 text-slate-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <span class="text-xs text-slate-500 font-medium">No report background uploaded</span>
+                                    <span class="text-[10px] text-slate-400">Default digital header will be used</span>
+                                </div>
+                            </div>
+
+                            <!-- Upload Button & File Input -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Upload New Report Letterhead</label>
+                                <input 
+                                    ref="reportBgInput"
+                                    type="file" 
+                                    accept="image/png, image/jpeg, image/jpg"
+                                    @change="handleReportBgChange"
+                                    class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
+                                />
+                                <span class="text-[10px] text-slate-400 block mt-1">Recommended: A4 portrait (2480 × 3508 px at 300 DPI), Max 5MB (.jpg, .png)</span>
+                            </div>
+
+                            <!-- Margin Offsets -->
+                            <div class="pt-3 border-t border-slate-200/80 space-y-3">
+                                <span class="text-xs font-bold text-slate-800 uppercase tracking-wider block">Printable Area Margins (mm)</span>
+                                
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[11px] font-semibold text-slate-600 mb-1 flex items-center justify-between">
+                                            <span>Top Margin (Header Offset)</span>
+                                            <span class="text-emerald-600 font-mono font-bold">{{ form.report_margin_top }}mm</span>
+                                        </label>
+                                        <input 
+                                            v-model.number="form.report_margin_top"
+                                            type="range" 
+                                            min="0" 
+                                            max="120" 
+                                            step="1"
+                                            class="w-full accent-emerald-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer"
+                                        />
+                                        <p class="text-[10px] text-slate-400 mt-0.5">Leaves room for your top logo/header</p>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-semibold text-slate-600 mb-1 flex items-center justify-between">
+                                            <span>Bottom Margin (Footer Offset)</span>
+                                            <span class="text-emerald-600 font-mono font-bold">{{ form.report_margin_bottom }}mm</span>
+                                        </label>
+                                        <input 
+                                            v-model.number="form.report_margin_bottom"
+                                            type="range" 
+                                            min="0" 
+                                            max="80" 
+                                            step="1"
+                                            class="w-full accent-emerald-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer"
+                                        />
+                                        <p class="text-[10px] text-slate-400 mt-0.5">Leaves room for your bottom footer</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Live Action Button -->
+                            <div class="pt-2">
+                                <button
+                                    type="button"
+                                    @click="previewReportBg"
+                                    class="w-full py-2 px-3 rounded-xl border border-emerald-200 bg-white hover:bg-emerald-50/70 text-emerald-700 text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs"
+                                >
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    Preview Sample Report PDF
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Submit Action Footer -->
+                <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+                    <p class="text-xs text-slate-400">
+                        Changes are saved to your current tenant workspace instantly.
+                    </p>
                     <button
                         type="submit"
                         :disabled="form.processing"
                         class="px-6 py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
                     >
-                        Save Company Profile
+                        Save Company Profile & Print Settings
                     </button>
                 </div>
             </form>

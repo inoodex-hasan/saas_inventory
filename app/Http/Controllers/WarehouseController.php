@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\StockLevel;
 use App\Models\Warehouse;
+use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class WarehouseController extends Controller
@@ -49,13 +51,19 @@ class WarehouseController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, SubscriptionService $subscriptionService)
     {
-        $teamId = Auth::user()->current_team_id;
+        $user = Auth::user();
+        $team = $user->currentTeam;
+        $teamId = $user->current_team_id;
+
+        if (!$subscriptionService->canAddWarehouse($team)) {
+            return redirect()->back()->with('error', 'You have reached the maximum warehouse limit for your subscription plan. Please upgrade your plan.');
+        }
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50',
+            'code' => ['required', 'string', 'max:50', Rule::unique('warehouses', 'code')->where('team_id', $teamId)],
             'address' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:255',
@@ -85,7 +93,7 @@ class WarehouseController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50',
+            'code' => ['required', 'string', 'max:50', Rule::unique('warehouses', 'code')->ignore($warehouse->id)->where('team_id', $teamId)],
             'address' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:255',
@@ -120,6 +128,18 @@ class WarehouseController extends Controller
 
         if ($warehouse->is_default && Warehouse::where('team_id', $teamId)->count() > 1) {
             return redirect()->back()->with('error', 'Please set another warehouse as default before deleting this one.');
+        }
+
+        if ($warehouse->stockLevels()->where('quantity', '>', 0)->exists()) {
+            return redirect()->back()->with('error', "Cannot delete warehouse '{$warehouse->name}' because it contains active stock.");
+        }
+
+        if ($warehouse->salesOrders()->exists()) {
+            return redirect()->back()->with('error', "Cannot delete warehouse '{$warehouse->name}' because sales orders are associated with it.");
+        }
+
+        if ($warehouse->purchaseOrders()->exists()) {
+            return redirect()->back()->with('error', "Cannot delete warehouse '{$warehouse->name}' because purchase orders are associated with it.");
         }
 
         $warehouse->delete();

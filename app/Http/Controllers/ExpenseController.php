@@ -8,6 +8,7 @@ use App\Models\ExpenseCategory;
 use App\Services\HrService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class ExpenseController extends Controller
@@ -63,11 +64,13 @@ class ExpenseController extends Controller
 
     public function store(Request $request, HrService $service)
     {
+        $teamId = Auth::user()->current_team_id;
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'amount' => 'required|numeric|min:0.01',
-            'expense_category_id' => 'nullable|exists:expense_categories,id',
-            'employee_id' => 'nullable|exists:employees,id',
+            'expense_category_id' => ['nullable', Rule::exists('expense_categories', 'id')->where('team_id', $teamId)],
+            'employee_id' => ['nullable', Rule::exists('employees', 'id')->where('team_id', $teamId)],
             'expense_date' => 'required|date',
             'payment_method' => 'required|string|max:50',
             'vendor_or_payee' => 'nullable|string|max:255',

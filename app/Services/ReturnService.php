@@ -27,9 +27,30 @@ class ReturnService
         }
 
         return DB::transaction(function () use ($data, $items) {
-            $teamId = Auth::user()?->current_team_id;
+            $teamId = $data['team_id'] ?? Auth::user()?->current_team_id;
 
-            $salesOrder = SalesOrder::where('team_id', $teamId)->findOrFail($data['sales_order_id']);
+            $salesOrder = SalesOrder::where('team_id', $teamId)->with('items')->findOrFail($data['sales_order_id']);
+
+            foreach ($items as $item) {
+                $orderItemId = $item['sales_order_item_id'] ?? null;
+                $orderItem = $orderItemId ? $salesOrder->items->firstWhere('id', $orderItemId) : null;
+                if (!$orderItem) {
+                    throw new InvalidStockOperationException("Sales order item #{$orderItemId} does not belong to the selected sales order.");
+                }
+
+                if ((int) $orderItem->product_id !== (int) $item['product_id']) {
+                    throw new InvalidStockOperationException("Product does not match the sales order item.");
+                }
+
+                $alreadyReturned = (float) ProductReturnItem::where('sales_order_item_id', $orderItem->id)
+                    ->whereHas('productReturn', fn ($q) => $q->whereIn('status', ['pending', 'approved', 'completed']))
+                    ->sum('quantity');
+
+                $returnable = (float) $orderItem->quantity - $alreadyReturned;
+                if ((float) $item['quantity'] > $returnable) {
+                    throw new InvalidStockOperationException("Return quantity ({$item['quantity']}) exceeds remaining returnable quantity ({$returnable}) for item #{$orderItem->id}.");
+                }
+            }
 
             $returnNumber = $data['return_number'] ?? $this->generateReturnNumber($teamId);
 
@@ -97,8 +118,8 @@ class ReturnService
      */
     public function completeReturn(ProductReturn $return, ?int $userId = null, ?int $warehouseId = null): void
     {
-        if (in_array($return->status, ['completed', 'rejected'])) {
-            throw new InvalidStockOperationException("Return is already in '{$return->status}' state.");
+        if ($return->status !== 'approved') {
+            throw new InvalidStockOperationException("Only approved returns can be completed and restocked.");
         }
 
         DB::transaction(function () use ($return, $userId, $warehouseId) {

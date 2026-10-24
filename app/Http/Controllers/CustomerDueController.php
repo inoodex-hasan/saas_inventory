@@ -10,6 +10,8 @@ use App\Services\SalesOrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class CustomerDueController extends Controller
@@ -22,9 +24,6 @@ class CustomerDueController extends Controller
         $filter = $request->input('filter', 'all_with_dues'); // all_with_dues, fully_paid, all
 
         $customers = Customer::where('team_id', $teamId)
-            ->with(['salesOrders' => function ($q) {
-                $q->where('status', '!=', 'cancelled')->latest('id');
-            }])
             ->when($search, function ($q, $search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('name', 'like', "%{$search}%")
@@ -32,13 +31,26 @@ class CustomerDueController extends Controller
                         ->orWhere('email', 'like', "%{$search}%");
                 });
             })
+            ->when($filter === 'all_with_dues', function ($q) {
+                $q->whereHas('salesOrders', fn ($so) => $so->where('due_amount', '>', 0)->where('status', '!=', 'cancelled'));
+            })
+            ->when($filter === 'fully_paid', function ($q) {
+                $q->whereDoesntHave('salesOrders', fn ($so) => $so->where('due_amount', '>', 0)->where('status', '!=', 'cancelled'))
+                  ->whereHas('salesOrders', fn ($so) => $so->where('status', '!=', 'cancelled'));
+            })
+            ->withSum(['salesOrders as total_billed' => fn ($q) => $q->where('status', '!=', 'cancelled')], 'total_amount')
+            ->withSum(['salesOrders as total_paid' => fn ($q) => $q->where('status', '!=', 'cancelled')], 'paid_amount')
+            ->withSum(['salesOrders as total_due' => fn ($q) => $q->where('status', '!=', 'cancelled')], 'due_amount')
+            ->with(['salesOrders' => function ($q) {
+                $q->where('status', '!=', 'cancelled')->where('due_amount', '>', 0)->latest('id');
+            }])
             ->latest('id')
             ->get()
             ->map(function ($c) {
-                $totalBilled = (float) $c->salesOrders->sum('total_amount');
-                $totalPaid = (float) $c->salesOrders->sum('paid_amount');
-                $totalDue = (float) $c->salesOrders->sum('due_amount');
-                $dueOrders = $c->salesOrders->where('due_amount', '>', 0)->values();
+                $totalBilled = (float) ($c->total_billed ?? 0);
+                $totalPaid = (float) ($c->total_paid ?? 0);
+                $totalDue = (float) ($c->total_due ?? 0);
+                $dueOrders = $c->salesOrders->values();
 
                 return [
                     'id' => $c->id,
@@ -53,12 +65,6 @@ class CustomerDueController extends Controller
                     'due_orders' => $dueOrders,
                 ];
             });
-
-        if ($filter === 'all_with_dues') {
-            $customers = $customers->filter(fn ($c) => $c['total_due'] > 0)->values();
-        } elseif ($filter === 'fully_paid') {
-            $customers = $customers->filter(fn ($c) => $c['total_due'] <= 0 && $c['total_billed'] > 0)->values();
-        }
 
         $metrics = [
             'total_receivables' => (float) SalesOrder::where('team_id', $teamId)->where('status', '!=', 'cancelled')->sum('due_amount'),
@@ -88,26 +94,14 @@ class CustomerDueController extends Controller
         $teamId = Auth::user()->current_team_id;
 
         if (!$request->filled('financial_account_id')) {
-            $defaultAccount = FinancialAccount::where('team_id', $teamId)->where('is_active', true)->first();
-            if (!$defaultAccount) {
-                $defaultAccount = FinancialAccount::create([
-                    'team_id' => $teamId,
-                    'name' => 'Cash in Hand',
-                    'type' => 'cash',
-                    'account_type' => 'cash',
-                    'opening_balance' => 0.00,
-                    'current_balance' => 0.00,
-                    'is_default' => true,
-                    'is_active' => true,
-                ]);
-            }
+            $defaultAccount = app(FinancialAccountService::class)->getDefaultAccount($teamId);
             $request->merge(['financial_account_id' => $defaultAccount->id]);
         }
 
         $validated = $request->validate([
-            'order_id' => 'required|exists:sales_orders,id',
+            'order_id' => ['required', Rule::exists('sales_orders', 'id')->where('team_id', $teamId)],
             'amount' => 'required|numeric|min:0.01',
-            'financial_account_id' => 'required|exists:financial_accounts,id',
+            'financial_account_id' => ['required', Rule::exists('financial_accounts', 'id')->where('team_id', $teamId)],
             'payment_reference' => 'nullable|string|max:100',
             'notes' => 'nullable|string|max:500',
         ]);
@@ -115,7 +109,9 @@ class CustomerDueController extends Controller
         $order = SalesOrder::where('team_id', $teamId)->findOrFail($validated['order_id']);
 
         if ((float) $validated['amount'] > (float) $order->due_amount) {
-            throw new \InvalidArgumentException("Payment amount exceeds outstanding due amount.");
+            throw ValidationException::withMessages([
+                'amount' => 'Payment amount cannot exceed the outstanding invoice balance of ' . number_format($order->due_amount, 2),
+            ]);
         }
 
         $account = FinancialAccount::where('team_id', $teamId)->findOrFail($validated['financial_account_id']);

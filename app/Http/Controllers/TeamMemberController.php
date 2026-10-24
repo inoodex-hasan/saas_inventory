@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Team;
 use App\Models\User;
+use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -126,13 +127,17 @@ class TeamMemberController extends Controller
     /**
      * Add a new member to the current team.
      */
-    public function addMember(Request $request)
+    public function addMember(Request $request, SubscriptionService $subscriptionService)
     {
         $user = $request->user();
         $team = $user->currentTeam ?? Team::firstOrFail();
 
         if (!$user->isSuperAdmin() && !$user->ownsTeam($team)) {
             abort(403, 'Only the organization owner or super admin can add team members.');
+        }
+
+        if (!$subscriptionService->canAddUser($team)) {
+            return back()->with('error', 'You have reached the maximum user limit for your subscription plan. Please upgrade your plan.');
         }
 
         $validated = $request->validate([
@@ -155,12 +160,15 @@ class TeamMemberController extends Controller
         // Find or create user
         $memberUser = User::where('email', $email)->first();
 
+        $tempPassword = null;
+
         if (!$memberUser) {
             $name = $validated['name'] ?: explode('@', $email)[0];
+            $tempPassword = Str::random(10);
             $memberUser = User::create([
                 'name' => ucwords(str_replace(['.', '_', '-'], ' ', $name)),
                 'email' => $email,
-                'password' => Hash::make(Str::random(16)),
+                'password' => Hash::make($tempPassword),
                 'current_team_id' => $team->id,
             ]);
         }
@@ -172,7 +180,11 @@ class TeamMemberController extends Controller
             $memberUser->forceFill(['current_team_id' => $team->id])->save();
         }
 
-        return back()->with('success', "Member {$memberUser->name} successfully added to {$team->name}.");
+        $successMsg = $tempPassword
+            ? "New user {$memberUser->name} invited to {$team->name}. Temporary login password: {$tempPassword}"
+            : "Member {$memberUser->name} successfully added to {$team->name}.";
+
+        return back()->with('success', $successMsg);
     }
 
     /**

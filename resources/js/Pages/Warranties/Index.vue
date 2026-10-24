@@ -5,7 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import Modal from '@/Components/Modal.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
-import { formatDate } from '@/Utils/date';
+import { formatDate, formatRelative, daysRemaining } from '@/Utils/date';
 
 const props = defineProps({
     page_title: String,
@@ -190,8 +190,14 @@ function submitDefective() {
                                 <td class="py-3.5 px-4">
                                     <div v-if="s.warranty_expires_at">
                                         <div class="font-semibold text-xs text-slate-800">{{ formatDate(s.warranty_expires_at) }}</div>
-                                        <div class="text-[11px] text-slate-400">
-                                            {{ new Date(s.warranty_expires_at) > new Date() ? 'Warranty Active' : 'Warranty Expired' }}
+                                        <div 
+                                            class="text-[11px] font-medium"
+                                            :class="daysRemaining(s.warranty_expires_at) > 0 ? 'text-emerald-600' : 'text-rose-600'"
+                                        >
+                                            {{ daysRemaining(s.warranty_expires_at) > 0 
+                                                ? `Active (${daysRemaining(s.warranty_expires_at)}d left)` 
+                                                : `Expired (${formatRelative(s.warranty_expires_at)})` 
+                                            }}
                                         </div>
                                     </div>
                                     <span v-else class="text-xs text-slate-400 italic">N/A</span>

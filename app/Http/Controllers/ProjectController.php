@@ -13,6 +13,7 @@ use App\Services\ProjectService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class ProjectController extends Controller
@@ -96,6 +97,8 @@ class ProjectController extends Controller
 
     public function store(Request $request, ProjectService $service)
     {
+        $teamId = Auth::user()->current_team_id;
+
         $rules = [
             'client_mode' => 'required|in:existing,new',
             'name' => 'required|string|max:255',
@@ -111,13 +114,13 @@ class ProjectController extends Controller
             'items.*.item_name' => 'required|string|max:255',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.product_id' => 'nullable|exists:products,id',
-            'items.*.warehouse_id' => 'nullable|exists:warehouses,id',
+            'items.*.product_id' => ['nullable', Rule::exists('products', 'id')->where('team_id', $teamId)],
+            'items.*.warehouse_id' => ['nullable', Rule::exists('warehouses', 'id')->where('team_id', $teamId)],
             'items.*.notes' => 'nullable|string|max:255',
             'costs' => 'nullable|array',
             'costs.*.description' => 'required|string|max:255',
             'costs.*.amount' => 'required|numeric|min:0.01',
-            'costs.*.cost_category_id' => 'nullable|exists:cost_categories,id',
+            'costs.*.cost_category_id' => ['nullable', Rule::exists('cost_categories', 'id')->where('team_id', $teamId)],
             'costs.*.cost_date' => 'nullable|date',
             'costs.*.vendor_name' => 'nullable|string|max:255',
             'costs.*.receipt_reference' => 'nullable|string|max:100',
@@ -132,7 +135,7 @@ class ProjectController extends Controller
             $rules['new_client_address'] = 'nullable|string|max:500';
             $rules['new_client_tax_number'] = 'nullable|string|max:100';
         } else {
-            $rules['client_id'] = 'required|exists:clients,id';
+            $rules['client_id'] = ['required', Rule::exists('clients', 'id')->where('team_id', $teamId)];
         }
 
         $validated = $request->validate($rules);
@@ -218,7 +221,7 @@ class ProjectController extends Controller
         abort_if($project->team_id !== $teamId, 403);
 
         $validated = $request->validate([
-            'client_id' => 'required|exists:clients,id',
+            'client_id' => ['required', Rule::exists('clients', 'id')->where('team_id', $teamId)],
             'name' => 'required|string|max:255',
             'status' => 'required|in:planning,in_progress,on_hold,completed,cancelled',
             'budget' => 'required|numeric|min:0',
@@ -245,8 +248,8 @@ class ProjectController extends Controller
             'item_name' => 'required|string|max:255',
             'quantity' => 'required|numeric|min:0.01',
             'unit_price' => 'required|numeric|min:0',
-            'product_id' => 'nullable|exists:products,id',
-            'warehouse_id' => 'nullable|exists:warehouses,id',
+            'product_id' => ['nullable', Rule::exists('products', 'id')->where('team_id', $teamId)],
+            'warehouse_id' => ['nullable', Rule::exists('warehouses', 'id')->where('team_id', $teamId)],
             'notes' => 'nullable|string|max:255',
         ]);
 
@@ -271,7 +274,7 @@ class ProjectController extends Controller
         abort_if($project->team_id !== $teamId, 403);
 
         $validated = $request->validate([
-            'cost_category_id' => 'nullable|exists:cost_categories,id',
+            'cost_category_id' => ['nullable', Rule::exists('cost_categories', 'id')->where('team_id', $teamId)],
             'description' => 'required|string|max:255',
             'amount' => 'required|numeric|min:0.01',
             'cost_date' => 'nullable|date',

@@ -12,6 +12,7 @@ use App\Services\ServiceTicketService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class ServiceTicketController extends Controller
@@ -97,6 +98,8 @@ class ServiceTicketController extends Controller
 
     public function store(Request $request, ServiceTicketService $service)
     {
+        $teamId = Auth::user()->current_team_id;
+
         $rules = [
             'customer_mode' => 'required|in:existing,new',
             'device_name' => 'required|string|max:255',
@@ -118,8 +121,8 @@ class ServiceTicketController extends Controller
             'parts.*.part_name' => 'required|string|max:255',
             'parts.*.quantity' => 'required|numeric|min:0.01',
             'parts.*.unit_price' => 'required|numeric|min:0',
-            'parts.*.product_id' => 'nullable|exists:products,id',
-            'parts.*.warehouse_id' => 'nullable|exists:warehouses,id',
+            'parts.*.product_id' => ['nullable', Rule::exists('products', 'id')->where('team_id', $teamId)],
+            'parts.*.warehouse_id' => ['nullable', Rule::exists('warehouses', 'id')->where('team_id', $teamId)],
             'parts.*.notes' => 'nullable|string|max:255',
         ];
 
@@ -129,7 +132,7 @@ class ServiceTicketController extends Controller
             $rules['new_customer_email'] = 'nullable|email|max:255';
             $rules['new_customer_address'] = 'nullable|string|max:500';
         } else {
-            $rules['customer_id'] = 'required|exists:customers,id';
+            $rules['customer_id'] = ['required', Rule::exists('customers', 'id')->where('team_id', $teamId)];
         }
 
         $validated = $request->validate($rules);
@@ -225,8 +228,8 @@ class ServiceTicketController extends Controller
             'part_name' => 'required|string|max:255',
             'quantity' => 'required|numeric|min:0.01',
             'unit_price' => 'required|numeric|min:0',
-            'product_id' => 'nullable|exists:products,id',
-            'warehouse_id' => 'nullable|exists:warehouses,id',
+            'product_id' => ['nullable', Rule::exists('products', 'id')->where('team_id', $teamId)],
+            'warehouse_id' => ['nullable', Rule::exists('warehouses', 'id')->where('team_id', $teamId)],
             'notes' => 'nullable|string|max:255',
         ]);
 

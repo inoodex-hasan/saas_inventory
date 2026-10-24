@@ -118,7 +118,9 @@ class ReportController extends Controller
     {
         $query = Product::with(['category', 'stockLevels.warehouse'])
             ->where('team_id', $teamId)
-            ->where('is_active', true);
+            ->where('is_active', true)
+            ->where('reorder_level', '>', 0)
+            ->whereRaw('(SELECT COALESCE(SUM(quantity), 0) FROM stock_levels WHERE stock_levels.product_id = products.id) <= products.reorder_level');
 
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
@@ -129,11 +131,8 @@ class ReportController extends Controller
 
         $products = $query->get();
 
-        return $products->filter(function ($product) {
-            $totalStock = $product->total_stock;
-            return $product->reorder_level > 0 && $totalStock <= $product->reorder_level;
-        })->map(function ($product) {
-            $totalStock = $product->total_stock;
+        return $products->map(function ($product) {
+            $totalStock = (float) $product->stockLevels->sum('quantity');
             $deficit = max(0, $product->reorder_level - $totalStock);
             return [
                 'product' => [

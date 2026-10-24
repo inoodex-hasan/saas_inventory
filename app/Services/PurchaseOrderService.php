@@ -28,7 +28,20 @@ class PurchaseOrderService
         }
 
         return DB::transaction(function () use ($data, $items) {
-            $teamId = Auth::user()?->current_team_id;
+            $teamId = $data['team_id'] ?? Auth::user()?->current_team_id;
+
+            if ($teamId) {
+                $warehouseBelongs = \App\Models\Warehouse::where('team_id', $teamId)->where('id', $data['warehouse_id'])->exists();
+                if (!$warehouseBelongs) {
+                    throw new \InvalidArgumentException("Selected warehouse does not belong to the active organization.");
+                }
+
+                $productIds = array_unique(array_filter(array_column($items, 'product_id')));
+                $validProductCount = \App\Models\Product::where('team_id', $teamId)->whereIn('id', $productIds)->count();
+                if ($validProductCount !== count($productIds)) {
+                    throw new \InvalidArgumentException("One or more products do not belong to the active organization.");
+                }
+            }
 
             // Generate order number if not provided
             $orderNumber = $data['order_number'] ?? $this->generateOrderNumber($teamId);
@@ -55,6 +68,9 @@ class PurchaseOrderService
             }
 
             $supplierId = $data['supplier_id'] ?? null;
+            if ($supplierId && $teamId && !\App\Models\Supplier::where('team_id', $teamId)->where('id', $supplierId)->exists()) {
+                throw new \InvalidArgumentException("Selected supplier does not belong to the active organization.");
+            }
             $newVendorData = $data['new_supplier'] ?? $data['new_vendor'] ?? null;
             if (!$supplierId && !empty($newVendorData)) {
                 $supplier = \App\Models\Supplier::create([
@@ -126,6 +142,26 @@ class PurchaseOrderService
 
         return DB::transaction(function () use ($order, $data, $items) {
             $teamId = $order->team_id;
+
+            if (!empty($data['warehouse_id'])) {
+                $warehouseBelongs = \App\Models\Warehouse::where('team_id', $teamId)->where('id', $data['warehouse_id'])->exists();
+                if (!$warehouseBelongs) {
+                    throw new \InvalidArgumentException("Selected warehouse does not belong to the active organization.");
+                }
+            }
+
+            if (!empty($data['supplier_id'])) {
+                $supplierBelongs = \App\Models\Supplier::where('team_id', $teamId)->where('id', $data['supplier_id'])->exists();
+                if (!$supplierBelongs) {
+                    throw new \InvalidArgumentException("Selected supplier does not belong to the active organization.");
+                }
+            }
+
+            $productIds = array_unique(array_filter(array_column($items, 'product_id')));
+            $validProductCount = \App\Models\Product::where('team_id', $teamId)->whereIn('id', $productIds)->count();
+            if ($validProductCount !== count($productIds)) {
+                throw new \InvalidArgumentException("One or more products do not belong to the active organization.");
+            }
 
             // Compute subtotal from line items
             $subtotal = 0.00;

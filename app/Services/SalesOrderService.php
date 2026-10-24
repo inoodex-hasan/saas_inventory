@@ -30,7 +30,7 @@ class SalesOrderService
         }
 
         return DB::transaction(function () use ($data, $items) {
-            $teamId = Auth::user()?->current_team_id;
+            $teamId = $data['team_id'] ?? Auth::user()?->current_team_id;
 
             // Generate unique SO sequence
             $orderNumber = $data['order_number'] ?? $this->generateOrderNumber($teamId);
@@ -39,13 +39,32 @@ class SalesOrderService
             $preparedItems = [];
 
             $productIds = array_unique(array_filter(array_column($items, 'product_id')));
-            $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+            $productsQuery = Product::whereIn('id', $productIds);
+            if ($teamId) {
+                $productsQuery->where('team_id', $teamId);
+            }
+            $products = $productsQuery->get()->keyBy('id');
+            if (count($products) !== count($productIds)) {
+                throw new \InvalidArgumentException("One or more products do not belong to the active organization.");
+            }
+
+            if (!empty($data['warehouse_id']) && $teamId) {
+                $warehouseBelongs = \App\Models\Warehouse::where('team_id', $teamId)->where('id', $data['warehouse_id'])->exists();
+                if (!$warehouseBelongs) {
+                    throw new \InvalidArgumentException("Selected warehouse does not belong to the active organization.");
+                }
+            }
 
             $variantIds = array_unique(array_filter(array_column($items, 'product_variant_id')));
             $variants = !empty($variantIds) ? ProductVariant::whereIn('id', $variantIds)->get()->keyBy('id') : collect();
 
             $customerId = $data['customer_id'] ?? null;
-            if (!$customerId && !empty($data['new_customer'])) {
+            if ($customerId && $teamId) {
+                $customerBelongs = \App\Models\Customer::where('team_id', $teamId)->where('id', $customerId)->exists();
+                if (!$customerBelongs) {
+                    throw new \InvalidArgumentException("Selected customer does not belong to the active organization.");
+                }
+            } elseif (!$customerId && !empty($data['new_customer'])) {
                 $customer = \App\Models\Customer::create([
                     'team_id' => $teamId,
                     'name' => $data['new_customer']['name'],

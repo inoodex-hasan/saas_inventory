@@ -125,6 +125,10 @@ class SubscriptionService
      */
     public function ensureDefaultPlans(): void
     {
+        if (Plan::count() >= count(self::DEFAULT_PLANS)) {
+            return;
+        }
+
         foreach (self::DEFAULT_PLANS as $preset) {
             Plan::firstOrCreate(
                 ['slug' => $preset['slug']],
@@ -138,12 +142,15 @@ class SubscriptionService
      */
     public function ensureTenantSubscription(Team $team): TenantSubscription
     {
-        $this->ensureDefaultPlans();
+        $sub = $team->relationLoaded('subscription')
+            ? $team->subscription
+            : TenantSubscription::where('team_id', $team->id)->first();
 
-        $sub = TenantSubscription::where('team_id', $team->id)->first();
         if ($sub) {
             return $sub;
         }
+
+        $this->ensureDefaultPlans();
 
         $trialPlan = Plan::where('slug', 'trial')->first() ?? Plan::first();
 
@@ -255,8 +262,12 @@ class SubscriptionService
     /**
      * Super-Admin approval of a submitted TrxID / Subscription Payment.
      */
-    public function approvePayment(SubscriptionPayment $payment, int $adminUserId): TenantSubscription
+    public function approvePayment(SubscriptionPayment $payment, ?int $adminUserId = null): TenantSubscription
     {
+        if ($payment->status === 'approved') {
+            throw new \InvalidArgumentException("Payment {$payment->payment_number} has already been approved.");
+        }
+
         return DB::transaction(function () use ($payment, $adminUserId) {
             $payment->update([
                 'status' => 'approved',

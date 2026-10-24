@@ -108,6 +108,10 @@ class PayrollController extends Controller
         $teamId = Auth::user()->current_team_id;
         abort_if($payroll->team_id !== $teamId, 403);
 
+        if ($payroll->status === 'paid') {
+            return back()->with('error', 'Cannot delete a salary slip that has already been marked as disbursed & paid.');
+        }
+
         $num = $payroll->payroll_number;
         $payroll->delete();
 

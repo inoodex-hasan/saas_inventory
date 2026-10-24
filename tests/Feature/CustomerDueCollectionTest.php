@@ -181,8 +181,11 @@ class CustomerDueCollectionTest extends TestCase
                 'order_id' => $order->id,
                 'amount' => 15000.0,
             ]);
-        } catch (\InvalidArgumentException $e) {
-            $this->assertStringContainsString('exceeds', $e->getMessage());
+        } catch (\Throwable $e) {
+            $this->assertTrue(
+                $e instanceof \Illuminate\Validation\ValidationException || $e instanceof \InvalidArgumentException
+            );
+            $this->assertStringContainsString('exceed', strtolower($e->getMessage()));
         }
 
         $order->refresh();

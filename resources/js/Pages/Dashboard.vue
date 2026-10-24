@@ -4,8 +4,23 @@ import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
-import { formatDate } from '@/Utils/date';
+import { formatDate, formatRelative } from '@/Utils/date';
 import apexchart from 'vue3-apexcharts';
+import { 
+    Plus, 
+    ShoppingCart, 
+    Truck, 
+    PackagePlus, 
+    TrendingUp, 
+    AlertTriangle, 
+    Warehouse as WarehouseIcon, 
+    BarChart3, 
+    PieChart, 
+    History, 
+    AlertCircle, 
+    ArrowRight,
+    Boxes
+} from 'lucide-vue-next';
 
 const props = defineProps({
     totalValuation: Number,
@@ -236,9 +251,6 @@ const totalOrdersInStatus = computed(() => {
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
                         <span>Admin Dashboard</span>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
-                            Live Telemetry
-                        </span>
                     </h1>
                     <p class="text-xs text-slate-500 font-medium">Real-time inventory valuation, trends, analytics & operations</p>
                 </div>
@@ -257,9 +269,7 @@ const totalOrdersInStatus = computed(() => {
                         :href="route('sales.create')" 
                         class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white text-xs font-bold shadow-sm shadow-indigo-600/30 transition-all hover:scale-[1.02]"
                     >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
+                        <Plus class="w-4 h-4" />
                         <span>New Sales Order</span>
                     </Link>
 
@@ -267,19 +277,15 @@ const totalOrdersInStatus = computed(() => {
                         :href="route('purchases.create')" 
                         class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm transition-all hover:scale-[1.02]"
                     >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                        <span>New Purchase PO</span>
+                        <Truck class="w-4 h-4" />
+                        <span>New Purchase</span>
                     </Link>
 
                     <Link 
                         :href="route('products.create')" 
                         class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold shadow-xs transition-all"
                     >
-                        <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                        </svg>
+                        <PackagePlus class="w-4 h-4 text-slate-500" />
                         <span>Add Product</span>
                     </Link>
                 </div>
@@ -292,7 +298,7 @@ const totalOrdersInStatus = computed(() => {
                     <div class="absolute -right-3 -top-3 w-20 h-20 bg-indigo-50/50 rounded-full blur-xl group-hover:bg-indigo-100/60 transition-colors"></div>
                     <div class="flex items-center justify-between mb-3 relative">
                         <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Inventory Value</span>
-                        <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm shadow-xs">
+                        <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm shadow-xs font-mono">
                             ৳
                         </div>
                     </div>
@@ -310,9 +316,7 @@ const totalOrdersInStatus = computed(() => {
                     <div class="flex items-center justify-between mb-3 relative">
                         <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Sales Dispatched</span>
                         <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm shadow-xs">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                            </svg>
+                            <TrendingUp class="w-5 h-5 text-emerald-600" />
                         </div>
                     </div>
                     <div class="text-2xl font-black text-slate-900 tracking-tight relative">
@@ -329,9 +333,7 @@ const totalOrdersInStatus = computed(() => {
                     <div class="flex items-center justify-between mb-3 relative">
                         <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Inbound Purchases</span>
                         <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-sm shadow-xs">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0 0l3-3m-3 3L9 8" />
-                            </svg>
+                            <Truck class="w-5 h-5 text-amber-600" />
                         </div>
                     </div>
                     <div class="text-2xl font-black text-slate-900 tracking-tight relative">
@@ -349,9 +351,7 @@ const totalOrdersInStatus = computed(() => {
                     <div class="flex items-center justify-between mb-3 relative">
                         <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Low Stock Threshold</span>
                         <div class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-sm shadow-xs">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
+                            <AlertTriangle class="w-5 h-5 text-rose-600" />
                         </div>
                     </div>
                     <div class="text-2xl font-black relative" :class="lowStockCount > 0 ? 'text-rose-600' : 'text-slate-900'">
@@ -372,7 +372,7 @@ const totalOrdersInStatus = computed(() => {
                         <div class="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100">
                             <div>
                                 <div class="flex items-center gap-2">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
+                                    <BarChart3 class="w-4 h-4 text-indigo-600" />
                                     <h2 class="text-sm font-bold text-slate-900">Revenue & Procurement Trends</h2>
                                 </div>
                                 <p class="text-xs text-slate-500 mt-0.5">Monthly sales turnover vs. inventory procurement outlay</p>
@@ -425,7 +425,7 @@ const totalOrdersInStatus = computed(() => {
                         <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
                             <div>
                                 <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                    <PieChart class="w-4 h-4 text-emerald-600" />
                                     <span>Inventory Holding by Category</span>
                                 </h2>
                                 <p class="text-xs text-slate-500 mt-0.5">Portfolio distribution and capital allocation</p>
@@ -488,10 +488,8 @@ const totalOrdersInStatus = computed(() => {
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                            <svg class="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
-                            Warehouse & Hub Holding Breakdown
+                            <WarehouseIcon class="w-4 h-4 text-indigo-600" />
+                            <span>Warehouse & Hub Holding Breakdown</span>
                         </h2>
                         <p class="text-xs text-slate-500">Capital valuation and physical inventory across active fulfillment locations</p>
                     </div>
@@ -531,8 +529,8 @@ const totalOrdersInStatus = computed(() => {
                         <div class="flex items-center justify-between mb-4">
                             <div>
                                 <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                                    <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-                                    Low Stock Radar
+                                    <AlertCircle class="w-4 h-4 text-rose-500" />
+                                    <span>Low Stock Radar</span>
                                 </h2>
                                 <p class="text-xs text-slate-500">Products requiring purchase requisition</p>
                             </div>
@@ -584,24 +582,27 @@ const totalOrdersInStatus = computed(() => {
                         <div class="flex items-center gap-2 border-b border-slate-200 pb-2 w-full">
                             <button 
                                 @click="activeTab = 'sales'" 
-                                class="text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
+                                class="text-xs font-bold px-3 py-1.5 rounded-lg transition-all inline-flex items-center gap-1.5"
                                 :class="activeTab === 'sales' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'"
                             >
-                                Recent Sales
+                                <ShoppingCart class="w-3.5 h-3.5" />
+                                <span>Recent Sales</span>
                             </button>
                             <button 
                                 @click="activeTab = 'purchases'" 
-                                class="text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
+                                class="text-xs font-bold px-3 py-1.5 rounded-lg transition-all inline-flex items-center gap-1.5"
                                 :class="activeTab === 'purchases' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'"
                             >
-                                Recent Inbound
+                                <Truck class="w-3.5 h-3.5" />
+                                <span>Recent Inbound</span>
                             </button>
                             <button 
                                 @click="activeTab = 'movements'" 
-                                class="text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
+                                class="text-xs font-bold px-3 py-1.5 rounded-lg transition-all inline-flex items-center gap-1.5"
                                 :class="activeTab === 'movements' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'"
                             >
-                                Stock Ledger
+                                <History class="w-3.5 h-3.5" />
+                                <span>Stock Ledger</span>
                             </button>
                         </div>
                     </div>
@@ -619,7 +620,7 @@ const totalOrdersInStatus = computed(() => {
                                     <StatusBadge :status="so.status" />
                                 </div>
                                 <div class="text-[11px] text-slate-500 mt-0.5">
-                                    {{ so.customer?.name || 'Walk-in Customer' }} &bull; {{ so.warehouse?.name }}
+                                    {{ so.customer?.name || 'Walk-in Customer' }} &bull; {{ so.warehouse?.name }} &bull; <span class="text-slate-400">{{ formatRelative(so.order_date || so.created_at) }}</span>
                                 </div>
                             </div>
                             <div class="text-right">
@@ -654,7 +655,9 @@ const totalOrdersInStatus = computed(() => {
                                 <div class="font-bold text-slate-900 text-xs">
                                     <CurrencyDisplay :amount="po.total_amount" />
                                 </div>
-                                <span class="text-[10px] text-slate-400 block mt-0.5">{{ formatDate(po.order_date || po.ordered_at, 'Draft') }}</span>
+                                <span class="text-[10px] text-slate-400 block mt-0.5" :title="formatDate(po.order_date || po.ordered_at)">
+                                    {{ formatRelative(po.order_date || po.ordered_at) }}
+                                </span>
                             </div>
                         </div>
                         <div v-if="!recentPurchaseOrders || recentPurchaseOrders.length === 0" class="text-center py-6 text-slate-400 text-xs">
@@ -678,7 +681,7 @@ const totalOrdersInStatus = computed(() => {
                                 </span>
                                 <div>
                                     <div class="font-semibold text-slate-800">{{ m.product?.name }}</div>
-                                    <div class="text-[10px] text-slate-400">{{ m.warehouse?.name }} &bull; {{ m.reason || 'Ledger entry' }}</div>
+                                    <div class="text-[10px] text-slate-400">{{ m.warehouse?.name }} &bull; {{ m.reason || 'Ledger entry' }} &bull; {{ formatRelative(m.created_at) }}</div>
                                 </div>
                             </div>
                             <div class="text-right font-mono">

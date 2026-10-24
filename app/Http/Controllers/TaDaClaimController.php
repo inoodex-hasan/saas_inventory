@@ -7,6 +7,7 @@ use App\Models\TaDaClaim;
 use App\Services\HrService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class TaDaClaimController extends Controller
@@ -58,8 +59,10 @@ class TaDaClaimController extends Controller
 
     public function store(Request $request, HrService $service)
     {
+        $teamId = Auth::user()->current_team_id;
+
         $validated = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
+            'employee_id' => ['required', Rule::exists('employees', 'id')->where('team_id', $teamId)],
             'travel_date' => 'required|date',
             'destination' => 'required|string|max:255',
             'purpose' => 'required|string|max:500',
@@ -76,32 +79,52 @@ class TaDaClaimController extends Controller
 
     public function approve(Request $request, TaDaClaim $claim, HrService $service)
     {
-        $teamId = Auth::user()->current_team_id;
-        abort_if($claim->team_id !== $teamId, 403);
+        $user = Auth::user();
+        $team = $user->currentTeam;
+        abort_if($claim->team_id !== $team->id, 403);
 
-        $service->approveTaDaClaim($claim, Auth::id());
+        if (!$user->isSuperAdmin() && !$user->ownsTeam($team) && !$user->hasTeamRole($team, 'admin')) {
+            abort(403, 'Unauthorized. Only team owners and administrators can approve TA/DA claims.');
+        }
+
+        $claim->loadMissing('employee');
+        if ($claim->employee && $claim->employee->user_id && (int) $claim->employee->user_id === (int) $user->id) {
+            abort(403, 'You cannot approve your own TA/DA claim.');
+        }
+
+        $service->approveTaDaClaim($claim, $user->id);
 
         return back()->with('success', "Claim {$claim->claim_number} approved. Ready for reimbursement in payroll.");
     }
 
     public function reject(Request $request, TaDaClaim $claim, HrService $service)
     {
-        $teamId = Auth::user()->current_team_id;
-        abort_if($claim->team_id !== $teamId, 403);
+        $user = Auth::user();
+        $team = $user->currentTeam;
+        abort_if($claim->team_id !== $team->id, 403);
+
+        if (!$user->isSuperAdmin() && !$user->ownsTeam($team) && !$user->hasTeamRole($team, 'admin')) {
+            abort(403, 'Unauthorized. Only team owners and administrators can reject TA/DA claims.');
+        }
 
         $validated = $request->validate([
             'rejection_reason' => 'required|string|max:500',
         ]);
 
-        $service->rejectTaDaClaim($claim, $validated['rejection_reason'], Auth::id());
+        $service->rejectTaDaClaim($claim, $validated['rejection_reason'], $user->id);
 
         return back()->with('success', "Claim {$claim->claim_number} has been rejected.");
     }
 
     public function destroy(TaDaClaim $claim)
     {
-        $teamId = Auth::user()->current_team_id;
-        abort_if($claim->team_id !== $teamId, 403);
+        $user = Auth::user();
+        $team = $user->currentTeam;
+        abort_if($claim->team_id !== $team->id, 403);
+
+        if (!$user->isSuperAdmin() && !$user->ownsTeam($team) && !$user->hasTeamRole($team, 'admin')) {
+            abort(403, 'Unauthorized. Only team owners and administrators can delete TA/DA claims.');
+        }
 
         $num = $claim->claim_number;
         $claim->delete();

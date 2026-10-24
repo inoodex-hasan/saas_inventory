@@ -20,21 +20,21 @@ class UserAndTenantSeeder extends Seeder
         $superAdmin = User::firstOrCreate(
             ['email' => 'hello@inoodex.com'],
             [
-                'name'           => 'Inoodex Platform Admin',
-                'password'       => Hash::make('hello@inoodex.com'),
-                'is_super_admin' => true,
+                'name'     => 'Inoodex Platform Admin',
+                'password' => Hash::make('hello@inoodex.com'),
             ]
         );
+        $superAdmin->forceFill(['is_super_admin' => true])->save();
 
         // 2. Create or update the Demo Client Company Owner (Customer / Tenant Owner)
         $clientOwner = User::firstOrCreate(
             ['email' => 'admin@inoodex.com'],
             [
-                'name'           => 'Demo Company Owner',
-                'password'       => Hash::make('admin12345'),
-                'is_super_admin' => false,
+                'name'     => 'Demo Company Owner',
+                'password' => Hash::make('admin12345'),
             ]
         );
+        $clientOwner->forceFill(['is_super_admin' => false])->save();
 
         // 3. Create or update the Demo Tenant Organization
         $clientTeam = Team::where('user_id', $clientOwner->id)->first();

@@ -54,7 +54,13 @@ class ChartOfAccountController extends Controller
 
     public function store(Request $request)
     {
-        $teamId = Auth::user()->current_team_id;
+        $user = Auth::user();
+        $team = $user->currentTeam;
+        $teamId = $user->current_team_id;
+
+        if (!$user->isSuperAdmin() && !$user->ownsTeam($team) && !$user->hasTeamRole($team, 'admin')) {
+            abort(403, 'Only organization owners or administrators can manage the Chart of Accounts.');
+        }
 
         $validated = $request->validate([
             'account_code' => 'required|string|max:50',
@@ -88,8 +94,14 @@ class ChartOfAccountController extends Controller
 
     public function update(Request $request, ChartOfAccount $account)
     {
-        $teamId = Auth::user()->current_team_id;
+        $user = Auth::user();
+        $team = $user->currentTeam;
+        $teamId = $user->current_team_id;
         abort_if($account->team_id !== $teamId, 403);
+
+        if (!$user->isSuperAdmin() && !$user->ownsTeam($team) && !$user->hasTeamRole($team, 'admin')) {
+            abort(403, 'Only organization owners or administrators can manage the Chart of Accounts.');
+        }
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -105,8 +117,14 @@ class ChartOfAccountController extends Controller
 
     public function destroy(ChartOfAccount $account)
     {
-        $teamId = Auth::user()->current_team_id;
+        $user = Auth::user();
+        $team = $user->currentTeam;
+        $teamId = $user->current_team_id;
         abort_if($account->team_id !== $teamId, 403);
+
+        if (!$user->isSuperAdmin() && !$user->ownsTeam($team) && !$user->hasTeamRole($team, 'admin')) {
+            abort(403, 'Only organization owners or administrators can manage the Chart of Accounts.');
+        }
 
         if ($account->is_system) {
             return back()->withErrors(['error' => 'Core system accounts cannot be deleted to maintain accounting ledger integrity.']);

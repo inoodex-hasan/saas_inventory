@@ -8,6 +8,7 @@ use App\Models\JournalEntry;
 use App\Services\AccountingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class JournalEntryController extends Controller
@@ -75,12 +76,14 @@ class JournalEntryController extends Controller
 
     public function store(Request $request, AccountingService $accountingService)
     {
+        $teamId = Auth::user()->current_team_id;
+
         $validated = $request->validate([
             'entry_date' => 'required|date',
             'narration' => 'required|string|max:1000',
-            'fiscal_year_id' => 'nullable|exists:fiscal_years,id',
+            'fiscal_year_id' => ['nullable', Rule::exists('fiscal_years', 'id')->where('team_id', $teamId)],
             'lines' => 'required|array|min:2',
-            'lines.*.chart_of_account_id' => 'required|exists:chart_of_accounts,id',
+            'lines.*.chart_of_account_id' => ['required', Rule::exists('chart_of_accounts', 'id')->where('team_id', $teamId)],
             'lines.*.debit' => 'nullable|numeric|min:0',
             'lines.*.credit' => 'nullable|numeric|min:0',
             'lines.*.memo' => 'nullable|string|max:255',

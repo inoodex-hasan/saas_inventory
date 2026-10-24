@@ -4,12 +4,22 @@
     <meta charset="UTF-8">
     <title>Profit and Loss Statement</title>
     <style>
+        @page {
+            @if($bgPath = $team->getReportBgAbsolutePath())
+                background: url('{{ $bgPath }}') no-repeat 0 0;
+                background-image-resize: 6;
+            @endif
+            margin-top: {{ $team->report_bg_path ? ($team->report_margin_top ?? 42) : 12 }}mm;
+            margin-bottom: {{ $team->report_bg_path ? ($team->report_margin_bottom ?? 25) : 12 }}mm;
+            margin-left: 12mm;
+            margin-right: 12mm;
+        }
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             color: #1e293b;
             font-size: 9.5pt;
             line-height: 1.4;
-            padding: 10px;
+            padding: 0;
         }
         table {
             width: 100%;
@@ -61,6 +71,8 @@
     </style>
 </head>
 <body>
+    @if(!$team->report_bg_path)
+    <!-- Standard Header (Digital Mode) -->
     <table class="header-table">
         <tr>
             <td style="width: 55%;">
@@ -79,6 +91,21 @@
             </td>
         </tr>
     </table>
+    @else
+    <!-- Pre-Printed Letterhead Mode: Document Title & Period Only -->
+    <table class="header-table" style="margin-bottom: 8px;">
+        <tr>
+            <td style="width: 50%;">
+                <div style="font-size: 14pt; font-weight: 800; color: #059669; text-transform: uppercase;">PROFIT & LOSS STATEMENT</div>
+            </td>
+            <td style="width: 50%;">
+                <div style="text-align: right; font-size: 8.5pt; color: #64748b;">
+                    Period: <strong>{{ \Carbon\Carbon::parse($report['start_date'])->format('d M Y') }}</strong> to <strong>{{ \Carbon\Carbon::parse($report['end_date'])->format('d M Y') }}</strong>
+                </div>
+            </td>
+        </tr>
+    </table>
+    @endif
 
     <table style="margin-top: 15px;">
         {{-- Revenue Section --}}

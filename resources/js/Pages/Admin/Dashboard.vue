@@ -44,7 +44,10 @@ function resetFilter() {
 function toggleStatus(tenant) {
     const action = tenant.status === 'suspended' ? 'reactivate' : 'suspend';
     if (confirm(`Are you sure you want to ${action} tenant workspace '${tenant.name}'?`)) {
-        router.post(route('admin.tenants.toggle-status', tenant.id));
+        router.post(route('admin.tenants.toggle-status', tenant.id), {}, {
+            preserveScroll: true,
+            only: ['tenants', 'flash', 'metrics'],
+        });
     }
 }
 
@@ -160,6 +163,7 @@ function submitUpdateProfile() {
     if (!managingTenant.value) return;
     profileForm.put(route('admin.tenants.update', managingTenant.value.id), {
         preserveScroll: true,
+        only: ['tenants', 'flash'],
         onSuccess: () => {
             isManageModalOpen.value = false;
         },
@@ -170,6 +174,7 @@ function submitUpdateSubscription() {
     if (!managingTenant.value) return;
     subForm.put(route('admin.tenants.subscription.update', managingTenant.value.id), {
         preserveScroll: true,
+        only: ['tenants', 'flash'],
         onSuccess: () => {
             isManageModalOpen.value = false;
         },

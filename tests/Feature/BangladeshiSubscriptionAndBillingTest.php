@@ -356,4 +356,106 @@ class BangladeshiSubscriptionAndBillingTest extends TestCase
                 ->where('payments.data', fn ($data) => collect($data)->every(fn ($p) => $p['team_id'] === $this->team->id))
             );
     }
+
+    public function test_payment_approval_is_idempotent_and_prevents_duplicate_approval(): void
+    {
+        $this->subscriptionService->ensureDefaultPlans();
+        $plan = Plan::where('slug', 'starter')->firstOrFail();
+
+        $payment = $this->subscriptionService->submitPayment($this->team, [
+            'plan_id' => $plan->id,
+            'billing_cycle' => 'monthly',
+            'payment_method' => 'bkash',
+            'sender_number' => '01712345678',
+            'trx_id' => 'IDEMPOTENT123',
+        ]);
+
+        // First approval succeeds
+        $response = $this->actingAs($this->adminUser)->post(route('admin.payments.approve', $payment->id));
+        $response->assertSessionHas('success');
+        $payment->refresh();
+        $this->assertEquals('approved', $payment->status);
+
+        // Second approval is rejected and does not extend further
+        $secondResponse = $this->actingAs($this->adminUser)->post(route('admin.payments.approve', $payment->id));
+        $secondResponse->assertSessionHas('error');
+    }
+
+    public function test_sslcommerz_success_callback_validates_and_approves_payment(): void
+    {
+        $this->subscriptionService->ensureDefaultPlans();
+        $plan = Plan::where('slug', 'professional')->firstOrFail();
+
+        $initiated = $this->subscriptionService->initiateSslCommerzPayment($this->team, $plan, 'monthly');
+        $payment = $initiated['payment'];
+
+        $payload = [
+            'tran_id' => $payment->payment_number,
+            'val_id' => 'VAL-SSL-2026-TEST',
+            'amount' => (string) $payment->amount_bdt,
+            'currency' => 'BDT',
+            'status' => 'VALID',
+        ];
+
+        $response = $this->actingAs($this->user)->post(route('sslcommerz.success'), $payload);
+        $response->assertRedirect(route('subscription.index'));
+        $response->assertSessionHas('success');
+
+        $payment->refresh();
+        $this->assertEquals('approved', $payment->status);
+        $this->assertEquals('VAL-SSL-2026-TEST', $payment->trx_id);
+
+        $sub = TenantSubscription::where('team_id', $this->team->id)->first();
+        $this->assertEquals('active', $sub->status);
+        $this->assertEquals($plan->id, $sub->plan_id);
+    }
+
+    public function test_sslcommerz_fail_and_cancel_callbacks_mark_payment_rejected(): void
+    {
+        $this->subscriptionService->ensureDefaultPlans();
+        $plan = Plan::where('slug', 'starter')->firstOrFail();
+
+        $initiated = $this->subscriptionService->initiateSslCommerzPayment($this->team, $plan, 'monthly');
+        $payment = $initiated['payment'];
+
+        $response = $this->actingAs($this->user)->post(route('sslcommerz.fail'), [
+            'tran_id' => $payment->payment_number,
+        ]);
+        $response->assertRedirect(route('subscription.index'));
+        $response->assertSessionHasErrors('error');
+
+        $payment->refresh();
+        $this->assertEquals('rejected', $payment->status);
+    }
+
+    public function test_sslcommerz_ipn_webhook_approves_payment_idempotently(): void
+    {
+        $this->subscriptionService->ensureDefaultPlans();
+        $plan = Plan::where('slug', 'enterprise')->firstOrFail();
+
+        $initiated = $this->subscriptionService->initiateSslCommerzPayment($this->team, $plan, 'yearly');
+        $payment = $initiated['payment'];
+
+        $response = $this->postJson(route('sslcommerz.ipn'), [
+            'tran_id' => $payment->payment_number,
+            'val_id' => 'IPN-VAL-9988',
+            'amount' => (string) $payment->amount_bdt,
+            'status' => 'VALIDATED',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson(['status' => 'success']);
+
+        $payment->refresh();
+        $this->assertEquals('approved', $payment->status);
+
+        // Idempotent retry
+        $retryResponse = $this->postJson(route('sslcommerz.ipn'), [
+            'tran_id' => $payment->payment_number,
+            'val_id' => 'IPN-VAL-9988',
+            'status' => 'VALIDATED',
+        ]);
+        $retryResponse->assertOk();
+        $retryResponse->assertJson(['status' => 'already_processed']);
+    }
 }

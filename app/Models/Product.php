@@ -95,6 +95,14 @@ class Product extends Model
      */
     public function getTotalStockAttribute(): float
     {
+        if (array_key_exists('total_stock', $this->attributes)) {
+            return (float) $this->attributes['total_stock'];
+        }
+
+        if ($this->relationLoaded('stockLevels')) {
+            return (float) $this->stockLevels->sum('quantity');
+        }
+
         return (float) $this->stockLevels()->sum('quantity');
     }
 

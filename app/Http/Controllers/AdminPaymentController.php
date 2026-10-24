@@ -54,6 +54,10 @@ class AdminPaymentController extends Controller
      */
     public function approve(SubscriptionPayment $payment, SubscriptionService $subscriptionService)
     {
+        if ($payment->status === 'approved') {
+            return back()->with('error', "Payment {$payment->payment_number} has already been approved.");
+        }
+
         $sub = $subscriptionService->approvePayment($payment, Auth::id());
 
         return back()->with('success', "Payment {$payment->payment_number} (TrxID: {$payment->trx_id}) approved! Tenant subscription extended until {$sub->ends_at->format('M d, Y')}.");

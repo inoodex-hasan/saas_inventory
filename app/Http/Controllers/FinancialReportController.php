@@ -7,6 +7,7 @@ use App\Models\ChartOfAccount;
 use App\Services\AccountingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class FinancialReportController extends Controller
@@ -132,7 +133,7 @@ class FinancialReportController extends Controller
         $teamId = Auth::user()->current_team_id;
 
         $validated = $request->validate([
-            'chart_of_account_id' => 'required|exists:chart_of_accounts,id',
+            'chart_of_account_id' => ['required', Rule::exists('chart_of_accounts', 'id')->where('team_id', $teamId)],
             'statement_balance' => 'required|numeric',
             'reconciliation_date' => 'required|date',
             'notes' => 'nullable|string|max:1000',

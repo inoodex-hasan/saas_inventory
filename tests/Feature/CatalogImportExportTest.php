@@ -194,4 +194,23 @@ CSV;
 
         @unlink($tempFile);
     }
+
+    public function test_product_csv_export_endpoint_returns_successful_stream(): void
+    {
+        Product::create([
+            'team_id' => $this->team->id,
+            'sku' => 'TEST-EXPORT-CSV',
+            'name' => 'CSV Exportable Widget',
+            'unit' => 'pcs',
+            'cost_price' => 12.00,
+            'unit_price' => 24.00,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('products.export', ['format' => 'csv']));
+
+        $response->assertOk();
+        $this->assertStringContainsString('text/csv', $response->headers->get('Content-Type'));
+        $this->assertStringContainsString('catalog_export_', $response->headers->get('Content-Disposition'));
+    }
 }

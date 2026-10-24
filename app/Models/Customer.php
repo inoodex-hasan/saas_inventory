@@ -32,6 +32,11 @@ class Customer extends Model
         return $this->hasMany(SalesOrder::class);
     }
 
+    public function recurringInvoices(): HasMany
+    {
+        return $this->hasMany(RecurringInvoice::class);
+    }
+
     public function getShippingAddressAttribute(): ?string
     {
         return $this->address;

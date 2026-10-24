@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -31,16 +32,7 @@ class SuperAdminController extends Controller
         $statusFilter = $request->input('status', '');
         $planFilter = $request->input('plan_id', '');
 
-        // 1. Platform-wide System Metrics (exclude super admin teams)
-        $clientTeams = Team::withoutGlobalScopes()->whereHas('owner', fn ($q) => $q->where('is_super_admin', false));
-        $totalTenants = (clone $clientTeams)->count();
-        $activeTenants = (clone $clientTeams)->where('status', '!=', 'suspended')->count();
-        $suspendedTenants = (clone $clientTeams)->where('status', 'suspended')->count();
-        $totalUsers = User::where('is_super_admin', false)->count();
-        $totalProducts = Product::withoutGlobalScopes()->count();
-        $totalSales = SalesOrder::withoutGlobalScopes()->count();
-
-        // 2. Query Tenants with owners and subscriptions
+        // 1. Query Tenants with owners and subscriptions
         $query = Team::withoutGlobalScopes()
             ->with(['owner', 'subscription.plan'])
             ->withCount(['users', 'teamInvitations'])
@@ -118,20 +110,20 @@ class SuperAdminController extends Controller
             return $team;
         });
 
-        // Available subscription plans for selection and provisioning
-        $allPlans = Plan::where('is_active', true)->orderBy('sort_order')->get();
-
         return Inertia::render('Admin/Dashboard', [
-            'metrics' => [
-                'total_tenants' => $totalTenants,
-                'active_tenants' => $activeTenants,
-                'suspended_tenants' => $suspendedTenants,
-                'total_users' => $totalUsers,
-                'total_products' => $totalProducts,
-                'total_sales' => $totalSales,
-            ],
+            'metrics' => fn () => Cache::remember('superadmin_system_metrics', 30, function () {
+                $clientTeams = Team::withoutGlobalScopes()->whereHas('owner', fn ($q) => $q->where('is_super_admin', false));
+                return [
+                    'total_tenants' => (clone $clientTeams)->count(),
+                    'active_tenants' => (clone $clientTeams)->where('status', '!=', 'suspended')->count(),
+                    'suspended_tenants' => (clone $clientTeams)->where('status', 'suspended')->count(),
+                    'total_users' => User::where('is_super_admin', false)->count(),
+                    'total_products' => Product::withoutGlobalScopes()->count(),
+                    'total_sales' => SalesOrder::withoutGlobalScopes()->count(),
+                ];
+            }),
             'tenants' => $tenants,
-            'plans' => $allPlans,
+            'plans' => fn () => Cache::remember('superadmin_active_plans', 300, fn () => Plan::where('is_active', true)->orderBy('sort_order')->get()),
             'filters' => [
                 'search' => $search,
                 'status' => $statusFilter,
@@ -219,6 +211,8 @@ class SuperAdminController extends Controller
                 'trial_ends_at' => now()->addDays(14),
             ]);
 
+            Cache::forget('superadmin_system_metrics');
+
             return redirect()->back()->with('success', "Tenant organization '{$team->name}' provisioned successfully for {$owner->name}.");
         });
     }
@@ -272,7 +266,7 @@ class SuperAdminController extends Controller
             'custom_ends_at' => 'nullable|date',
         ]);
 
-        $sub = $subscriptionService->ensureTenantSubscription($team);
+        $sub = $team->subscription()->first() ?? $subscriptionService->ensureTenantSubscription($team);
 
         // Determine current expiration date to base extensions on
         $currentExpiry = ($sub->status === 'trialing' && $sub->trial_ends_at)
@@ -305,8 +299,10 @@ class SuperAdminController extends Controller
         // Sync team suspension status
         if ($validated['status'] === 'suspended' && $team->status !== 'suspended') {
             $team->update(['status' => 'suspended']);
+            Cache::forget('superadmin_system_metrics');
         } elseif ($validated['status'] === 'active' && $team->status === 'suspended') {
             $team->update(['status' => 'active']);
+            Cache::forget('superadmin_system_metrics');
         }
 
         $planName = Plan::find($validated['plan_id'])?->name ?? 'Selected';
@@ -328,6 +324,8 @@ class SuperAdminController extends Controller
             $team->delete();
         });
 
+        Cache::forget('superadmin_system_metrics');
+
         return redirect()->back()->with('success', "Tenant organization '{$name}' has been permanently deleted.");
     }
 
@@ -343,6 +341,8 @@ class SuperAdminController extends Controller
             $team->update(['status' => 'suspended']);
             $msg = "Tenant '{$team->name}' has been suspended. User access is now blocked.";
         }
+
+        Cache::forget('superadmin_system_metrics');
 
         return redirect()->back()->with('success', $msg);
     }

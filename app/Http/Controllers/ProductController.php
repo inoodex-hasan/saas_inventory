@@ -10,9 +10,11 @@ use App\Models\StockLevel;
 use App\Models\Warehouse;
 use App\Services\CatalogImportExportService;
 use App\Services\StockService;
+use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -101,16 +103,22 @@ class ProductController extends Controller
         ]);
     }
 
-    public function store(Request $request, StockService $stockService)
+    public function store(Request $request, StockService $stockService, SubscriptionService $subscriptionService)
     {
-        $teamId = Auth::user()->current_team_id;
+        $user = Auth::user();
+        $team = $user->currentTeam;
+        $teamId = $user->current_team_id;
+
+        if (!$subscriptionService->canAddProduct($team)) {
+            return redirect()->back()->with('error', 'You have reached the maximum product limit for your subscription plan. Please upgrade your plan.');
+        }
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'sku' => 'required|string|max:100|unique:products,sku,NULL,id,team_id,' . $teamId,
+            'sku' => ['required', 'string', 'max:100', Rule::unique('products', 'sku')->where('team_id', $teamId)],
             'barcode' => 'nullable|string|max:100',
-            'category_id' => 'nullable|exists:product_categories,id',
-            'brand_id' => 'nullable|exists:brands,id',
+            'category_id' => ['nullable', Rule::exists('product_categories', 'id')->where('team_id', $teamId)],
+            'brand_id' => ['nullable', Rule::exists('brands', 'id')->where('team_id', $teamId)],
             'unit' => 'required|string|max:30',
             'cost_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
@@ -120,7 +128,7 @@ class ProductController extends Controller
             'is_serialized' => 'boolean',
             'is_active' => 'boolean',
             'description' => 'nullable|string|max:1000',
-            'initial_warehouse_id' => 'nullable|exists:warehouses,id',
+            'initial_warehouse_id' => ['nullable', Rule::exists('warehouses', 'id')->where('team_id', $teamId)],
             'initial_stock_quantity' => 'nullable|numeric|min:0',
         ]);
 
@@ -175,10 +183,10 @@ class ProductController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'sku' => 'required|string|max:100|unique:products,sku,' . $product->id . ',id,team_id,' . $teamId,
+            'sku' => ['required', 'string', 'max:100', Rule::unique('products', 'sku')->ignore($product->id)->where('team_id', $teamId)],
             'barcode' => 'nullable|string|max:100',
-            'category_id' => 'nullable|exists:product_categories,id',
-            'brand_id' => 'nullable|exists:brands,id',
+            'category_id' => ['nullable', Rule::exists('product_categories', 'id')->where('team_id', $teamId)],
+            'brand_id' => ['nullable', Rule::exists('brands', 'id')->where('team_id', $teamId)],
             'unit' => 'required|string|max:30',
             'cost_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
@@ -267,7 +275,7 @@ class ProductController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'parent_id' => 'nullable|exists:product_categories,id',
+            'parent_id' => ['nullable', Rule::exists('product_categories', 'id')->where('team_id', $teamId)],
             'description' => 'nullable|string|max:500',
         ]);
 
@@ -303,7 +311,7 @@ class ProductController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'parent_id' => 'nullable|exists:product_categories,id',
+            'parent_id' => ['nullable', Rule::exists('product_categories', 'id')->where('team_id', $teamId)],
             'description' => 'nullable|string|max:500',
         ]);
 
@@ -401,10 +409,7 @@ class ProductController extends Controller
         $format = strtolower($request->query('format', 'xlsx'));
 
         if ($format === 'csv') {
-            $filename = 'catalog-' . date('Y-m-d-His') . '.csv';
-            $path = $service->exportCsv($teamId);
-
-            return response()->download($path, $filename)->deleteFileAfterSend(true);
+            return $service->exportCsv($teamId);
         }
 
         $filename = 'products-' . date('Y-m-d-His') . '.xlsx';
@@ -414,12 +419,13 @@ class ProductController extends Controller
 
     public function import(Request $request, CatalogImportExportService $service)
     {
+        $teamId = Auth::user()->current_team_id;
+
         $request->validate([
             'file' => 'required|file|mimes:csv,txt|max:5120',
-            'warehouse_id' => 'nullable|exists:warehouses,id',
+            'warehouse_id' => ['nullable', Rule::exists('warehouses', 'id')->where('team_id', $teamId)],
         ]);
 
-        $teamId = Auth::user()->current_team_id;
         $file = $request->file('file');
         $warehouseId = $request->input('warehouse_id');
 

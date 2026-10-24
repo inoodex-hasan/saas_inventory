@@ -89,45 +89,60 @@ class DashboardController extends Controller
             ->take(6)
             ->get();
 
-        // 6. Warehouse Breakdown (Total stock count & value per location)
+        // 6. Warehouse Breakdown (Total stock count & value per location via SQL aggregation)
+        $warehouseValuations = DB::table('stock_levels')
+            ->join('products', 'stock_levels.product_id', '=', 'products.id')
+            ->where('stock_levels.team_id', $team->id)
+            ->groupBy('stock_levels.warehouse_id')
+            ->select(
+                'stock_levels.warehouse_id',
+                DB::raw('SUM(stock_levels.quantity) as total_units'),
+                DB::raw('SUM(stock_levels.quantity * products.cost_price) as total_valuation')
+            )
+            ->get()
+            ->keyBy('warehouse_id');
+
         $warehouseStockBreakdown = Warehouse::where('team_id', $team->id)
             ->where('is_active', true)
-            ->with(['stockLevels.product'])
             ->get()
-            ->map(function ($warehouse) {
-                $totalUnits = (float) $warehouse->stockLevels->sum('quantity');
-                $warehouseValuation = (float) $warehouse->stockLevels->reduce(function ($carry, $level) {
-                    return $carry + ($level->quantity * ($level->product?->cost_price ?? 0));
-                }, 0.0);
+            ->map(function ($warehouse) use ($warehouseValuations) {
+                $stat = $warehouseValuations->get($warehouse->id);
 
                 return [
                     'id' => $warehouse->id,
                     'name' => $warehouse->name,
                     'code' => $warehouse->code,
                     'is_default' => $warehouse->is_default,
-                    'total_units' => $totalUnits,
-                    'total_valuation' => $warehouseValuation,
+                    'total_units' => (float) ($stat->total_units ?? 0),
+                    'total_valuation' => (float) ($stat->total_valuation ?? 0),
                 ];
             });
 
         // 7. Monthly Sales vs Procurement Trend (Last 6 Months)
+        $trendStartDate = Carbon::now()->subMonths(5)->startOfMonth()->toDateString();
+        $trendEndDate = Carbon::now()->endOfMonth()->toDateString();
+
+        $monthlySales = SalesOrder::where('team_id', $team->id)
+            ->whereBetween('order_date', [$trendStartDate, $trendEndDate])
+            ->selectRaw('SUBSTR(order_date, 1, 7) as month_key, SUM(total_amount) as total')
+            ->groupBy('month_key')
+            ->pluck('total', 'month_key');
+
+        $monthlyPurchases = PurchaseOrder::where('team_id', $team->id)
+            ->whereBetween('order_date', [$trendStartDate, $trendEndDate])
+            ->selectRaw('SUBSTR(order_date, 1, 7) as month_key, SUM(total_amount) as total')
+            ->groupBy('month_key')
+            ->pluck('total', 'month_key');
+
         $salesTrend = collect([]);
         for ($i = 5; $i >= 0; $i--) {
             $monthDate = Carbon::now()->subMonths($i);
-            $startOfMonth = $monthDate->copy()->startOfMonth()->toDateString();
-            $endOfMonth = $monthDate->copy()->endOfMonth()->toDateString();
-            $monthLabel = $monthDate->format('M Y');
-
-            $salesSum = (float) SalesOrder::where('team_id', $team->id)
-                ->whereBetween('order_date', [$startOfMonth, $endOfMonth])
-                ->sum('total_amount');
-
-            $purchasesSum = (float) PurchaseOrder::where('team_id', $team->id)
-                ->whereBetween('order_date', [$startOfMonth, $endOfMonth])
-                ->sum('total_amount');
+            $monthKey = $monthDate->format('Y-m');
+            $salesSum = (float) ($monthlySales->get($monthKey) ?? 0);
+            $purchasesSum = (float) ($monthlyPurchases->get($monthKey) ?? 0);
 
             $salesTrend->push([
-                'month'       => $monthLabel,
+                'month'       => $monthDate->format('M Y'),
                 'short_month' => $monthDate->format('M'),
                 'sales'       => $salesSum,
                 'purchases'   => $purchasesSum,

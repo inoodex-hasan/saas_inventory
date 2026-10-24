@@ -10,6 +10,8 @@ use App\Services\PurchaseOrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class VendorDueController extends Controller
@@ -21,22 +23,32 @@ class VendorDueController extends Controller
         $filter = $request->input('filter', 'all_with_dues'); // all_with_dues, fully_paid, all
 
         $query = Supplier::where('team_id', $teamId)
-            ->with(['purchaseOrders' => function ($q) {
-                $q->where('status', '!=', 'cancelled')->latest('id');
-            }])
             ->when($search, function ($q, $search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('name', 'like', "%{$search}%")
                         ->orWhere('phone', 'like', "%{$search}%")
                         ->orWhere('contact_name', 'like', "%{$search}%");
                 });
-            });
+            })
+            ->when($filter === 'all_with_dues', function ($q) {
+                $q->whereHas('purchaseOrders', fn ($po) => $po->where('due_amount', '>', 0)->where('status', '!=', 'cancelled'));
+            })
+            ->when($filter === 'fully_paid', function ($q) {
+                $q->whereDoesntHave('purchaseOrders', fn ($po) => $po->where('due_amount', '>', 0)->where('status', '!=', 'cancelled'))
+                  ->whereHas('purchaseOrders', fn ($po) => $po->where('status', '!=', 'cancelled'));
+            })
+            ->withSum(['purchaseOrders as total_procured' => fn ($q) => $q->where('status', '!=', 'cancelled')], 'total_amount')
+            ->withSum(['purchaseOrders as total_paid' => fn ($q) => $q->where('status', '!=', 'cancelled')], 'paid_amount')
+            ->withSum(['purchaseOrders as outstanding_due' => fn ($q) => $q->where('status', '!=', 'cancelled')], 'due_amount')
+            ->with(['purchaseOrders' => function ($q) {
+                $q->where('status', '!=', 'cancelled')->where('due_amount', '>', 0)->latest('id');
+            }]);
 
         $suppliers = $query->latest('id')->get()->map(function ($supplier) {
-            $totalProcured = (float) $supplier->purchaseOrders->sum('total_amount');
-            $totalPaid = (float) $supplier->purchaseOrders->sum('paid_amount');
-            $outstandingDue = (float) $supplier->purchaseOrders->sum('due_amount');
-            $dueOrders = $supplier->purchaseOrders->where('due_amount', '>', 0)->values();
+            $totalProcured = (float) ($supplier->total_procured ?? 0);
+            $totalPaid = (float) ($supplier->total_paid ?? 0);
+            $outstandingDue = (float) ($supplier->outstanding_due ?? 0);
+            $dueOrders = $supplier->purchaseOrders->values();
 
             return [
                 'id' => $supplier->id,
@@ -50,12 +62,6 @@ class VendorDueController extends Controller
                 'due_orders' => $dueOrders,
             ];
         });
-
-        if ($filter === 'all_with_dues') {
-            $suppliers = $suppliers->filter(fn ($s) => $s['outstanding_due'] > 0)->values();
-        } elseif ($filter === 'fully_paid') {
-            $suppliers = $suppliers->filter(fn ($s) => $s['outstanding_due'] <= 0 && $s['total_procured'] > 0)->values();
-        }
 
         // Metrics
         $totalProcuredAll = (float) PurchaseOrder::where('team_id', $teamId)->where('status', '!=', 'cancelled')->sum('total_amount');
@@ -88,26 +94,14 @@ class VendorDueController extends Controller
         $teamId = Auth::user()->current_team_id;
 
         if (!$request->filled('financial_account_id')) {
-            $defaultAccount = FinancialAccount::where('team_id', $teamId)->where('is_active', true)->first();
-            if (!$defaultAccount) {
-                $defaultAccount = FinancialAccount::create([
-                    'team_id' => $teamId,
-                    'name' => 'Cash in Hand',
-                    'type' => 'cash',
-                    'account_type' => 'cash',
-                    'opening_balance' => 0.00,
-                    'current_balance' => 0.00,
-                    'is_default' => true,
-                    'is_active' => true,
-                ]);
-            }
+            $defaultAccount = app(FinancialAccountService::class)->getDefaultAccount($teamId);
             $request->merge(['financial_account_id' => $defaultAccount->id]);
         }
 
         $validated = $request->validate([
-            'order_id' => 'required|exists:purchase_orders,id',
+            'order_id' => ['required', Rule::exists('purchase_orders', 'id')->where('team_id', $teamId)],
             'amount' => 'required|numeric|min:0.01',
-            'financial_account_id' => 'required|exists:financial_accounts,id',
+            'financial_account_id' => ['required', Rule::exists('financial_accounts', 'id')->where('team_id', $teamId)],
             'payment_reference' => 'nullable|string|max:100',
             'notes' => 'nullable|string|max:500',
         ]);
@@ -115,7 +109,9 @@ class VendorDueController extends Controller
         $order = PurchaseOrder::where('team_id', $teamId)->findOrFail($validated['order_id']);
 
         if ((float) $validated['amount'] > (float) $order->due_amount) {
-            throw new \InvalidArgumentException("Payment amount exceeds outstanding PO due amount.");
+            throw ValidationException::withMessages([
+                'amount' => 'Payment amount cannot exceed the outstanding PO balance of ' . number_format($order->due_amount, 2),
+            ]);
         }
 
         $account = FinancialAccount::where('team_id', $teamId)->findOrFail($validated['financial_account_id']);

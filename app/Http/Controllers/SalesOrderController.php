@@ -12,6 +12,7 @@ use App\Services\SalesOrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class SalesOrderController extends Controller
@@ -95,9 +96,11 @@ class SalesOrderController extends Controller
 
     public function store(Request $request, SalesOrderService $service)
     {
+        $teamId = Auth::user()->current_team_id;
+
         $rules = [
             'customer_mode' => 'required|in:existing,new',
-            'warehouse_id' => 'required|exists:warehouses,id',
+            'warehouse_id' => ['required', Rule::exists('warehouses', 'id')->where('team_id', $teamId)],
             'order_date' => 'required|date',
             'notes' => 'nullable|string|max:1000',
             'discount_amount' => 'nullable|numeric|min:0',
@@ -106,13 +109,11 @@ class SalesOrderController extends Controller
             'paid_amount' => 'nullable|numeric|min:0',
             'status' => 'nullable|in:draft,confirmed',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('team_id', $teamId)],
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.warranty_days' => 'nullable|integer|min:0',
         ];
-
-        $teamId = Auth::user()->current_team_id;
 
         if ((float) $request->input('paid_amount') > 0) {
             if (!$request->filled('financial_account_id')) {
@@ -131,7 +132,7 @@ class SalesOrderController extends Controller
                 }
                 $request->merge(['financial_account_id' => $defaultAccount->id]);
             }
-            $rules['financial_account_id'] = 'required|exists:financial_accounts,id';
+            $rules['financial_account_id'] = ['required', Rule::exists('financial_accounts', 'id')->where('team_id', $teamId)];
             $rules['payment_reference'] = 'nullable|string|max:100';
         }
 
@@ -141,7 +142,7 @@ class SalesOrderController extends Controller
             $rules['new_customer_address'] = 'required|string|max:500';
             $rules['new_customer_email'] = 'nullable|email|max:255';
         } else {
-            $rules['customer_id'] = 'required|exists:customers,id';
+            $rules['customer_id'] = ['required', Rule::exists('customers', 'id')->where('team_id', $teamId)];
         }
 
         $validated = $request->validate($rules, [
@@ -269,7 +270,7 @@ class SalesOrderController extends Controller
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
-            'financial_account_id' => 'required|exists:financial_accounts,id',
+            'financial_account_id' => ['required', Rule::exists('financial_accounts', 'id')->where('team_id', $teamId)],
             'payment_reference' => 'nullable|string|max:100',
             'payment_date' => 'nullable|date',
             'notes' => 'nullable|string|max:500',

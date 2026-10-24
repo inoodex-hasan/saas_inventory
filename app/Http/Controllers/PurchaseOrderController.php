@@ -12,6 +12,7 @@ use App\Services\PurchaseOrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class PurchaseOrderController extends Controller
@@ -93,21 +94,19 @@ class PurchaseOrderController extends Controller
 
         $rules = [
             'vendor_mode' => 'required|in:existing,new',
-            'warehouse_id' => 'required|exists:warehouses,id',
+            'warehouse_id' => ['required', Rule::exists('warehouses', 'id')->where('team_id', $teamId)],
             'order_date' => 'required|date',
             'expected_delivery_date' => 'nullable|date|after_or_equal:order_date',
             'notes' => 'nullable|string|max:1000',
             'paid_amount' => 'nullable|numeric|min:0',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('team_id', $teamId)],
             'items.*.quantity_ordered' => 'required|numeric|min:0.01',
             'items.*.unit_cost' => 'required|numeric|min:0',
             'items.*.batch_number' => 'nullable|string|max:100',
             'items.*.manufacture_date' => 'nullable|date',
             'items.*.expiry_date' => 'nullable|date',
         ];
-
-        $teamId = Auth::user()->current_team_id;
 
         if ((float) $request->input('paid_amount') > 0) {
             if (!$request->filled('financial_account_id')) {
@@ -126,7 +125,7 @@ class PurchaseOrderController extends Controller
                 }
                 $request->merge(['financial_account_id' => $defaultAccount->id]);
             }
-            $rules['financial_account_id'] = 'required|exists:financial_accounts,id';
+            $rules['financial_account_id'] = ['required', Rule::exists('financial_accounts', 'id')->where('team_id', $teamId)];
             $rules['payment_reference'] = 'nullable|string|max:100';
         }
 
@@ -138,7 +137,7 @@ class PurchaseOrderController extends Controller
             $rules['new_vendor_email'] = 'nullable|email|max:255';
             $rules['new_vendor_tax_number'] = 'nullable|string|max:100';
         } else {
-            $rules['supplier_id'] = 'required|exists:suppliers,id';
+            $rules['supplier_id'] = ['required', Rule::exists('suppliers', 'id')->where('team_id', $teamId)];
         }
 
         $validated = $request->validate($rules, [
@@ -237,14 +236,14 @@ class PurchaseOrderController extends Controller
         }
 
         $validated = $request->validate([
-            'supplier_id' => 'required|exists:suppliers,id',
-            'warehouse_id' => 'required|exists:warehouses,id',
+            'supplier_id' => ['required', Rule::exists('suppliers', 'id')->where('team_id', $teamId)],
+            'warehouse_id' => ['required', Rule::exists('warehouses', 'id')->where('team_id', $teamId)],
             'order_date' => 'required|date',
             'expected_delivery_date' => 'nullable|date|after_or_equal:order_date',
             'notes' => 'nullable|string|max:1000',
             'items' => 'required|array|min:1',
             'items.*.id' => 'nullable|integer',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('team_id', $teamId)],
             'items.*.quantity_ordered' => 'required|numeric|min:0.01',
             'items.*.unit_cost' => 'required|numeric|min:0',
             'items.*.batch_number' => 'nullable|string|max:100',
@@ -305,7 +304,7 @@ class PurchaseOrderController extends Controller
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
-            'financial_account_id' => 'required|exists:financial_accounts,id',
+            'financial_account_id' => ['required', Rule::exists('financial_accounts', 'id')->where('team_id', $teamId)],
             'payment_reference' => 'nullable|string|max:100',
             'payment_date' => 'nullable|date',
             'notes' => 'nullable|string|max:500',
@@ -348,9 +347,11 @@ class PurchaseOrderController extends Controller
         $teamId = Auth::user()->current_team_id;
         abort_if($order->team_id !== $teamId, 403);
 
+        $validItemIds = $order->items()->pluck('id')->toArray();
+
         $request->validate([
             'items' => 'required|array|min:1',
-            'items.*.item_id' => 'required|exists:purchase_order_items,id',
+            'items.*.item_id' => ['required', Rule::in($validItemIds)],
             'items.*.quantity' => 'required|numeric|min:0',
             'items.*.batch_number' => 'nullable|string|max:100',
             'items.*.bin_location' => 'nullable|string|max:100',
