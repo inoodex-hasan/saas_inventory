@@ -463,8 +463,7 @@ function deleteTicket(ticket) {
                         <input
                             v-model="payForm.notes"
                             type="text"
-                            placeholder="e.g. bKash TrxID, receipt slip #"
-                            class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
                         />
                     </div>
 

@@ -88,15 +88,6 @@ function deletePlan(plan) {
                     <h2 class="text-xl font-bold text-slate-900 tracking-tight">SaaS Subscription Plans Manager</h2>
                     <p class="text-xs text-slate-500 mt-0.5">Control dynamic Bangladeshi Taka (৳) subscription tiers, quotas, and packaging</p>
                 </div>
-                <button
-                    @click="openCreateModal"
-                    class="inline-flex items-center gap-2 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-all hover:scale-[1.02]"
-                >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    <span>New Plan Tier</span>
-                </button>
             </div>
         </template>
 
@@ -254,8 +245,7 @@ function deletePlan(plan) {
                         <input
                             v-model="form.name"
                             type="text"
-                            placeholder="e.g. Professional"
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-amber-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-amber-500 placeholder:text-slate-400 placeholder:text-xs"
                             required
                         />
                         <p v-if="form.errors.name" class="text-rose-500 text-[11px] mt-1">{{ form.errors.name }}</p>
@@ -266,8 +256,7 @@ function deletePlan(plan) {
                         <input
                             v-model="form.slug"
                             type="text"
-                            placeholder="e.g. pro-plus"
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:bg-white focus:border-amber-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:bg-white focus:border-amber-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                     </div>
 

@@ -43,7 +43,7 @@ class SubscriptionService
             ],
         ],
         [
-            'name' => 'Starter (ছোট ব্যবসা)',
+            'name' => 'Starter',
             'slug' => 'starter',
             'description' => 'Ideal for single retail shops, computer hardware vendors & traders.',
             'price_bdt' => 999.00,
@@ -67,7 +67,7 @@ class SubscriptionService
             ],
         ],
         [
-            'name' => 'Professional (মাঝারি ব্যবসা)',
+            'name' => 'Professional',
             'slug' => 'professional',
             'description' => 'Complete enterprise control with multi-hub, workshop, projects & full accounting.',
             'price_bdt' => 2499.00,
@@ -92,7 +92,7 @@ class SubscriptionService
             ],
         ],
         [
-            'name' => 'Enterprise (কর্পোরেট / আনলিমিটেড)',
+            'name' => 'Enterprise',
             'slug' => 'enterprise',
             'description' => 'Unlimited resources, unlimited branches, priority phone support & custom SLAs.',
             'price_bdt' => 4999.00,

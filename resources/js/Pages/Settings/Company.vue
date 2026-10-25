@@ -234,8 +234,7 @@ function previewReportBg() {
                             <input
                                 v-model="form.legal_name"
                                 type="text"
-                                placeholder="e.g. Apex Logistics Corporation Ltd."
-                                class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
                             />
                         </div>
 
@@ -244,8 +243,7 @@ function previewReportBg() {
                             <input
                                 v-model="form.email"
                                 type="email"
-                                placeholder="billing@yourcompany.com"
-                                class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
                             />
                         </div>
 
@@ -254,8 +252,7 @@ function previewReportBg() {
                             <input
                                 v-model="form.phone"
                                 type="text"
-                                placeholder="+880 1711 000000"
-                                class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
                             />
                         </div>
 
@@ -264,8 +261,7 @@ function previewReportBg() {
                             <input
                                 v-model="form.tax_id"
                                 type="text"
-                                placeholder="e.g. BIN-0098234-2026, TIN-982173"
-                                class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
                             />
                         </div>
                     </div>
@@ -281,8 +277,7 @@ function previewReportBg() {
                             <input
                                 v-model="form.address_line1"
                                 type="text"
-                                placeholder="e.g. 770 Innovation Way, Level 4"
-                                class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
                             />
                         </div>
 
@@ -291,8 +286,7 @@ function previewReportBg() {
                             <input
                                 v-model="form.address_line2"
                                 type="text"
-                                placeholder="Suite, unit, building..."
-                                class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
                             />
                         </div>
 
@@ -301,8 +295,7 @@ function previewReportBg() {
                             <input
                                 v-model="form.city"
                                 type="text"
-                                placeholder="Dhaka"
-                                class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
                             />
                         </div>
 
@@ -311,8 +304,7 @@ function previewReportBg() {
                             <input
                                 v-model="form.state"
                                 type="text"
-                                placeholder="Dhaka Division"
-                                class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
                             />
                         </div>
 
@@ -321,8 +313,7 @@ function previewReportBg() {
                             <input
                                 v-model="form.postal_code"
                                 type="text"
-                                placeholder="1212"
-                                class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
                             />
                         </div>
 
@@ -331,8 +322,7 @@ function previewReportBg() {
                             <input
                                 v-model="form.country"
                                 type="text"
-                                placeholder="Bangladesh"
-                                class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
                             />
                         </div>
                     </div>
@@ -399,8 +389,7 @@ function previewReportBg() {
                                 v-model="form.currency_symbol"
                                 type="text"
                                 required
-                                placeholder="৳, $, €, £"
-                                class="w-full text-base font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500"
+class="w-full text-base font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500"
                             />
                             <p class="text-[11px] text-slate-400 mt-1">Displayed on screen totals, POS slips, and invoices.</p>
                         </div>
@@ -411,8 +400,7 @@ function previewReportBg() {
                                 v-model="form.currency_code"
                                 type="text"
                                 required
-                                placeholder="BDT, USD, EUR"
-                                class="w-full text-base font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 uppercase"
+class="w-full text-base font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 uppercase"
                             />
                             <p class="text-[11px] text-slate-400 mt-1">3-letter standard ISO currency code (e.g., BDT, USD, SAR).</p>
                         </div>
@@ -439,8 +427,7 @@ function previewReportBg() {
                                 v-model="form.invoice_prefix"
                                 type="text"
                                 required
-                                placeholder="INV-, SO-"
-                                class="w-full text-sm font-mono px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500"
+class="w-full text-sm font-mono px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500"
                             />
                         </div>
 
@@ -450,8 +437,7 @@ function previewReportBg() {
                                 v-model="form.po_prefix"
                                 type="text"
                                 required
-                                placeholder="PO-, ORD-"
-                                class="w-full text-sm font-mono px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500"
+class="w-full text-sm font-mono px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500"
                             />
                         </div>
                     </div>
@@ -763,7 +749,7 @@ function previewReportBg() {
                         :disabled="form.processing"
                         class="px-6 py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
                     >
-                        Save Company Profile & Print Settings
+                        Save Settings
                     </button>
                 </div>
             </form>

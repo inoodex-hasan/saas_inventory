@@ -863,8 +863,7 @@ function paymentStatusBadge(status) {
                         <input
                             v-model="payForm.sender_number"
                             type="text"
-                            placeholder="e.g. 01712345678"
-                            class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl font-mono focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl font-mono focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             required
                         />
                         <p v-if="payForm.errors.sender_number" class="text-rose-500 text-[11px] mt-1">{{ payForm.errors.sender_number }}</p>
@@ -876,8 +875,7 @@ function paymentStatusBadge(status) {
                         <input
                             v-model="payForm.trx_id"
                             type="text"
-                            placeholder="e.g. BKA87X910Z"
-                            class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl font-mono font-bold uppercase focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl font-mono font-bold uppercase focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             required
                         />
                         <p v-if="payForm.errors.trx_id" class="text-rose-500 text-[11px] mt-1">{{ payForm.errors.trx_id }}</p>
@@ -889,8 +887,7 @@ function paymentStatusBadge(status) {
                         <textarea
                             v-model="payForm.notes"
                             rows="2"
-                            placeholder="e.g. Advance renewal for Q4"
-                            class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         ></textarea>
                     </div>
 

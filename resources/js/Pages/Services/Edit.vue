@@ -198,8 +198,7 @@ function submitForm() {
                         <input
                             v-model="form.remarks"
                             type="text"
-                            placeholder="Internal notes..."
-                            class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
                         />
                     </div>
                 </div>

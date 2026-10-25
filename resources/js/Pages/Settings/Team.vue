@@ -297,8 +297,7 @@ function removeMember(member) {
                             v-model="addForm.email"
                             type="email"
                             required
-                            placeholder="e.g. colleague@company.com"
-                            class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                         <p v-if="addForm.errors.email" class="text-rose-500 text-[11px] mt-1">{{ addForm.errors.email }}</p>
                     </div>
@@ -308,8 +307,7 @@ function removeMember(member) {
                         <input
                             v-model="addForm.name"
                             type="text"
-                            placeholder="e.g. John Doe"
-                            class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                         <p v-if="addForm.errors.name" class="text-rose-500 text-[11px] mt-1">{{ addForm.errors.name }}</p>
                     </div>

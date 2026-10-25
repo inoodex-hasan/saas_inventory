@@ -322,8 +322,7 @@ function typeBadgeClass(type) {
                         <input
                             v-model="createForm.account_code"
                             type="text"
-                            placeholder="e.g. 1050"
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             required
                         />
                         <p v-if="createForm.errors.account_code" class="text-rose-500 text-[11px] mt-1">{{ createForm.errors.account_code }}</p>
@@ -334,8 +333,7 @@ function typeBadgeClass(type) {
                         <input
                             v-model="createForm.name"
                             type="text"
-                            placeholder="e.g. Petty Cash"
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             required
                         />
                         <p v-if="createForm.errors.name" class="text-rose-500 text-[11px] mt-1">{{ createForm.errors.name }}</p>
@@ -362,8 +360,7 @@ function typeBadgeClass(type) {
                             <input
                                 v-model="createForm.subtype"
                                 type="text"
-                                placeholder="e.g. current_asset"
-                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                     </div>
@@ -373,8 +370,7 @@ function typeBadgeClass(type) {
                         <textarea
                             v-model="createForm.description"
                             rows="2"
-                            placeholder="Optional notes or purpose..."
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         ></textarea>
                     </div>
 
@@ -410,8 +406,7 @@ function typeBadgeClass(type) {
                         <input
                             v-model="editForm.name"
                             type="text"
-                            placeholder="e.g. Petty Cash"
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             required
                         />
                         <p v-if="editForm.errors.name" class="text-rose-500 text-[11px] mt-1">{{ editForm.errors.name }}</p>
@@ -422,8 +417,7 @@ function typeBadgeClass(type) {
                         <input
                             v-model="editForm.subtype"
                             type="text"
-                            placeholder="e.g. current_asset"
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                     </div>
 
@@ -432,8 +426,7 @@ function typeBadgeClass(type) {
                         <textarea
                             v-model="editForm.description"
                             rows="2"
-                            placeholder="Optional notes or purpose..."
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         ></textarea>
                     </div>
 

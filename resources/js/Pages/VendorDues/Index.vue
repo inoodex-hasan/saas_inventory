@@ -378,8 +378,7 @@ function submitPayment() {
                         <input 
                             type="text" 
                             v-model="payForm.payment_reference" 
-                            placeholder="e.g. bKash TrxID, Cheque #"
-                            class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:font-sans placeholder:text-slate-400 placeholder:text-xs"
+class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:font-sans placeholder:text-slate-400 placeholder:text-xs"
                         />
                     </div>
 
@@ -389,8 +388,7 @@ function submitPayment() {
                         <input 
                             type="text" 
                             v-model="payForm.notes" 
-                            placeholder="e.g. Bank ref or cheque #"
-                            class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                     </div>
 

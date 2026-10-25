@@ -360,8 +360,7 @@ function completeReturn(ret) {
                             v-model="returnForm.reason"
                             type="text"
                             required
-                            placeholder="e.g. Defective item or wrong model"
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-rose-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-rose-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                     </div>
 
@@ -454,8 +453,7 @@ function completeReturn(ret) {
                             v-model="rejectForm.reason"
                             required
                             rows="3"
-                            placeholder="e.g. Past warranty policy window"
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-rose-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-rose-500 placeholder:text-slate-400 placeholder:text-xs"
                         ></textarea>
                     </div>
 

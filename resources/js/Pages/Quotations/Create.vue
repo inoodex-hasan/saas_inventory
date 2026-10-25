@@ -154,8 +154,7 @@ function submit(statusValue = 'draft') {
                                     v-model="form.new_customer_name"
                                     type="text"
                                     required
-                                    placeholder="e.g. Standard Bank Ltd"
-                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-blue-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-blue-500 placeholder:text-slate-400 placeholder:text-xs"
                                 />
                             </div>
 
@@ -165,8 +164,7 @@ function submit(statusValue = 'draft') {
                                     v-model="form.new_customer_phone"
                                     type="text"
                                     required
-                                    placeholder="e.g. 01911887766"
-                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-blue-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-blue-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
                                 />
                             </div>
 
@@ -175,8 +173,7 @@ function submit(statusValue = 'draft') {
                                 <input
                                     v-model="form.new_customer_address"
                                     type="text"
-                                    placeholder="e.g. Motijheel C/A, Dhaka"
-                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-blue-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-blue-500 placeholder:text-slate-400 placeholder:text-xs"
                                 />
                             </div>
                         </div>

@@ -490,8 +490,7 @@ function submitReceive() {
                                             <input 
                                                 type="text" 
                                                 v-model="it.serial_input"
-                                                placeholder="Enter serial numbers comma separated..."
-                                                class="w-full px-2 py-1 rounded text-[11px] border border-amber-300 bg-amber-50/50"
+class="w-full px-2 py-1 rounded text-[11px] border border-amber-300 bg-amber-50/50"
                                             />
                                         </div>
                                     </td>
@@ -512,16 +511,14 @@ function submitReceive() {
                                         <input 
                                             type="text" 
                                             v-model="it.batch_number"
-                                            placeholder="LOT-XXXX"
-                                            class="w-24 px-2 py-1 rounded-lg border border-slate-200 text-xs font-mono"
+class="w-24 px-2 py-1 rounded-lg border border-slate-200 text-xs font-mono"
                                         />
                                     </td>
                                     <td class="py-3">
                                         <input 
                                             type="text" 
                                             v-model="it.bin_location"
-                                            placeholder="e.g. A-12"
-                                            class="w-20 px-2 py-1 rounded-lg border border-slate-200 text-xs font-mono"
+class="w-20 px-2 py-1 rounded-lg border border-slate-200 text-xs font-mono"
                                         />
                                     </td>
                                 </tr>
@@ -587,8 +584,7 @@ function submitReceive() {
                             min="0.01"
                             :max="payingPo?.due_amount"
                             required
-                            placeholder="0.00"
-                            class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 font-mono font-bold"
+class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 font-mono font-bold"
                         />
                         <div v-if="paymentForm.errors.amount" class="text-xs text-rose-500 mt-1">
                             {{ paymentForm.errors.amount }}
@@ -614,8 +610,7 @@ function submitReceive() {
                             <input
                                 v-model="paymentForm.payment_reference"
                                 type="text"
-                                placeholder="bKash TrxID / Cheque #"
-                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 font-mono"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 font-mono"
                             />
                         </div>
 
@@ -634,8 +629,7 @@ function submitReceive() {
                         <input
                             v-model="paymentForm.notes"
                             type="text"
-                            placeholder="Optional payment notes..."
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
                         />
                     </div>
 

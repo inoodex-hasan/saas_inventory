@@ -547,8 +547,7 @@ function getProviderBadge(acc) {
                             v-model="createForm.name"
                             type="text"
                             required
-                            placeholder="e.g. BRAC Bank Corporate, bKash Merchant Main, or Cash Counter 1"
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500 font-medium"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500 font-medium"
                         />
                         <div v-if="createForm.errors.name" class="text-xs text-rose-500 mt-1">{{ createForm.errors.name }}</div>
                     </div>
@@ -562,8 +561,7 @@ function getProviderBadge(acc) {
                                     v-model="createForm.institution_name"
                                     type="text"
                                     required
-                                    placeholder="e.g. BRAC Bank, City Bank, DBBL"
-                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500"
                                 />
                             </div>
 
@@ -573,8 +571,7 @@ function getProviderBadge(acc) {
                                     v-model="createForm.account_number"
                                     type="text"
                                     required
-                                    placeholder="e.g. 1501204892001"
-                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500 font-mono"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500 font-mono"
                                 />
                             </div>
                         </div>
@@ -585,8 +582,7 @@ function getProviderBadge(acc) {
                                 <input
                                     v-model="createForm.branch"
                                     type="text"
-                                    placeholder="e.g. Gulshan Branch"
-                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500"
                                 />
                             </div>
 
@@ -595,8 +591,7 @@ function getProviderBadge(acc) {
                                 <input
                                     v-model="createForm.routing_number"
                                     type="text"
-                                    placeholder="9-digit routing"
-                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500 font-mono"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500 font-mono"
                                 />
                             </div>
 
@@ -639,8 +634,7 @@ function getProviderBadge(acc) {
                                     v-model="createForm.account_number"
                                     type="text"
                                     required
-                                    placeholder="e.g. 01711XXXXXX"
-                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500 font-mono"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500 font-mono"
                                 />
                             </div>
 
@@ -666,8 +660,7 @@ function getProviderBadge(acc) {
                             type="number"
                             step="0.01"
                             min="0"
-                            placeholder="0.00"
-                            class="w-full text-xs font-mono font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500"
+class="w-full text-xs font-mono font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500"
                         />
                     </div>
 
@@ -690,8 +683,7 @@ function getProviderBadge(acc) {
                         <textarea
                             v-model="createForm.notes"
                             rows="2"
-                            placeholder="Internal accounting remarks, signatory notes, or account purpose..."
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         ></textarea>
                     </div>
 

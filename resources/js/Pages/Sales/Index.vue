@@ -282,7 +282,6 @@ function submitPayment() {
                                                 <span>Print Invoice</span>
                                             </a>
 
-
                                             <!-- Collect Payment -->
                                             <button
                                                 v-if="order.due_amount > 0 && order.status !== 'cancelled'"
@@ -420,8 +419,7 @@ function submitPayment() {
                             <input
                                 v-model="paymentForm.payment_reference"
                                 type="text"
-                                placeholder="bKash TrxID / Cheque #"
-                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 font-mono"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 font-mono"
                             />
                         </div>
 
@@ -440,8 +438,7 @@ function submitPayment() {
                         <input
                             v-model="paymentForm.notes"
                             type="text"
-                            placeholder="Optional payment notes..."
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
                         />
                     </div>
 

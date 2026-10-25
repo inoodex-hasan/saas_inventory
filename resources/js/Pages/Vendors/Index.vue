@@ -317,8 +317,7 @@ function deleteVendor(v) {
                                 type="text" 
                                 v-model="form.name" 
                                 required
-                                placeholder="e.g. Acme Electronics"
-                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <p v-if="form.errors.name" class="text-[11px] text-rose-600 mt-1">{{ form.errors.name }}</p>
                         </div>
@@ -328,8 +327,7 @@ function deleteVendor(v) {
                             <input 
                                 type="text" 
                                 v-model="form.contact_name" 
-                                placeholder="e.g. John Doe"
-                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                     </div>
@@ -341,8 +339,7 @@ function deleteVendor(v) {
                                 type="text" 
                                 v-model="form.phone" 
                                 required
-                                placeholder="e.g. 01711000000"
-                                class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <p v-if="form.errors.phone" class="text-[11px] text-rose-600 mt-1">{{ form.errors.phone }}</p>
                         </div>
@@ -352,8 +349,7 @@ function deleteVendor(v) {
                             <input 
                                 type="email" 
                                 v-model="form.email" 
-                                placeholder="e.g. orders@vendor.com"
-                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                     </div>
@@ -364,8 +360,7 @@ function deleteVendor(v) {
                             v-model="form.address" 
                             rows="2"
                             required
-                            placeholder="e.g. Plot 12, Road 4, Motijheel, Dhaka"
-                            class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         ></textarea>
                         <p v-if="form.errors.address" class="text-[11px] text-rose-600 mt-1">{{ form.errors.address }}</p>
                     </div>
@@ -375,8 +370,7 @@ function deleteVendor(v) {
                         <input 
                             type="text" 
                             v-model="form.tax_number" 
-                            placeholder="e.g. TIN-12345678"
-                            class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                     </div>
 

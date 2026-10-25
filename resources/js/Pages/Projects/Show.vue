@@ -638,8 +638,7 @@ function submitStatus() {
                         <textarea
                             v-model="itemForm.notes"
                             rows="2"
-                            placeholder="Optional serial #, batch, or installation notes..."
-                            class="w-full rounded-xl border border-slate-200 py-2 px-3"
+class="w-full rounded-xl border border-slate-200 py-2 px-3"
                         ></textarea>
                     </div>
 
@@ -691,8 +690,7 @@ function submitStatus() {
                             v-model="costForm.description"
                             type="text"
                             required
-                            placeholder="e.g. Scaffolding rental or site supervisor allowance"
-                            class="w-full rounded-xl border border-slate-200 py-2 px-3"
+class="w-full rounded-xl border border-slate-200 py-2 px-3"
                         />
                     </div>
 
@@ -725,8 +723,7 @@ function submitStatus() {
                             <input
                                 v-model="costForm.vendor_name"
                                 type="text"
-                                placeholder="Subcontractor"
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+class="w-full rounded-xl border border-slate-200 py-2 px-3"
                             />
                         </div>
 
@@ -735,8 +732,7 @@ function submitStatus() {
                             <input
                                 v-model="costForm.receipt_reference"
                                 type="text"
-                                placeholder="Invoice / Voucher #"
-                                class="w-full rounded-xl border border-slate-200 py-2 px-3"
+class="w-full rounded-xl border border-slate-200 py-2 px-3"
                             />
                         </div>
                     </div>
@@ -776,8 +772,7 @@ function submitStatus() {
                             v-model="billForm.title"
                             type="text"
                             required
-                            placeholder="e.g. 50% Completion - Phase 1 Structural Handover"
-                            class="w-full rounded-xl border border-slate-200 py-2 px-3"
+class="w-full rounded-xl border border-slate-200 py-2 px-3"
                         />
                     </div>
 
@@ -809,8 +804,7 @@ function submitStatus() {
                         <textarea
                             v-model="billForm.notes"
                             rows="2"
-                            placeholder="Deliverable verification notes..."
-                            class="w-full rounded-xl border border-slate-200 py-2 px-3"
+class="w-full rounded-xl border border-slate-200 py-2 px-3"
                         ></textarea>
                     </div>
 
@@ -881,8 +875,7 @@ function submitStatus() {
                         <textarea
                             v-model="payForm.notes"
                             rows="2"
-                            placeholder="Deposit receipt, transaction ref..."
-                            class="w-full rounded-xl border border-slate-200 py-2 px-3"
+class="w-full rounded-xl border border-slate-200 py-2 px-3"
                         ></textarea>
                     </div>
 

@@ -321,8 +321,7 @@ const filteredHistory = computed(() => {
                                 v-model.number="form.statement_balance"
                                 type="number"
                                 step="0.01"
-                                placeholder="0.00"
-                                class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl font-mono focus:bg-white focus:border-indigo-500 font-bold placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl font-mono focus:bg-white focus:border-indigo-500 font-bold placeholder:text-slate-400 placeholder:text-xs"
                                 required
                             />
                             <p v-if="form.errors.statement_balance" class="text-rose-500 text-[11px] mt-1">{{ form.errors.statement_balance }}</p>
@@ -334,8 +333,7 @@ const filteredHistory = computed(() => {
                         <textarea
                             v-model="form.notes"
                             rows="2"
-                            placeholder="e.g. Month-end statement verification"
-                            class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         ></textarea>
                     </div>
 

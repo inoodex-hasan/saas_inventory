@@ -116,8 +116,7 @@ function submit() {
                         <textarea
                             v-model="form.narration"
                             rows="2"
-                            placeholder="e.g. Capital injection or adjustment entry"
-                            class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             required
                         ></textarea>
                         <p v-if="form.errors.narration" class="text-rose-500 text-[11px] mt-1">{{ form.errors.narration }}</p>
@@ -177,8 +176,7 @@ function submit() {
                                             type="number"
                                             step="0.01"
                                             min="0"
-                                            placeholder="0.00"
-                                            class="w-full px-2.5 py-1.5 text-xs text-right font-mono bg-slate-50/70 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full px-2.5 py-1.5 text-xs text-right font-mono bg-slate-50/70 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                                         />
                                     </td>
                                     <td class="py-2 px-3">
@@ -188,16 +186,14 @@ function submit() {
                                             type="number"
                                             step="0.01"
                                             min="0"
-                                            placeholder="0.00"
-                                            class="w-full px-2.5 py-1.5 text-xs text-right font-mono bg-slate-50/70 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full px-2.5 py-1.5 text-xs text-right font-mono bg-slate-50/70 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                                         />
                                     </td>
                                     <td class="py-2 px-3">
                                         <input
                                             v-model="line.memo"
                                             type="text"
-                                            placeholder="Optional note"
-                                            class="w-full px-2.5 py-1.5 text-xs bg-slate-50/70 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full px-2.5 py-1.5 text-xs bg-slate-50/70 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                                         />
                                     </td>
                                     <td class="py-2 px-3 text-center">

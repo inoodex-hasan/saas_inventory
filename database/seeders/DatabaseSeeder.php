@@ -20,31 +20,31 @@ class DatabaseSeeder extends Seeder
             UserAndTenantSeeder::class,
 
             // 3. Inventory & Operations Menus
-            WarehouseSeeder::class,
-            VendorSeeder::class,
-            ProductSeeder::class,
-            PurchaseOrderSeeder::class,
+            // WarehouseSeeder::class,
+            // VendorSeeder::class,
+            // ProductSeeder::class,
+            // PurchaseOrderSeeder::class,
 
             // 4. Sales & CRM Menus
-            CustomerSeeder::class,
-            QuotationSeeder::class,
-            SalesOrderSeeder::class,
-            DeliveryChallanSeeder::class,
-            ProductReturnSeeder::class,
-            ProductSerialSeeder::class,
+            // CustomerSeeder::class,
+            // QuotationSeeder::class,
+            // SalesOrderSeeder::class,
+            // DeliveryChallanSeeder::class,
+            // ProductReturnSeeder::class,
+            // ProductSerialSeeder::class,
 
             // 5. Services & Projects Menus
-            ServiceTicketSeeder::class,
-            ProjectSeeder::class,
+            // ServiceTicketSeeder::class,
+            // ProjectSeeder::class,
 
             // 6. HR & Payroll Menus
-            EmployeeSeeder::class,
-            ExpenseSeeder::class,
-            TaDaClaimSeeder::class,
-            PayrollSeeder::class,
+            // EmployeeSeeder::class,
+            // ExpenseSeeder::class,
+            // TaDaClaimSeeder::class,
+            // PayrollSeeder::class,
 
             // 7. Accounting & Finance Menus
-            AccountingSeeder::class,
+            // AccountingSeeder::class,
         ]);
     }
 }

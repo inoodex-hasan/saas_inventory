@@ -284,8 +284,7 @@ function submit() {
                                 v-model="form.total_cycles_limit"
                                 type="number"
                                 min="1"
-                                placeholder="Leave blank for infinite"
-                                class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5"
+class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5"
                             />
                             <p v-if="form.errors.total_cycles_limit" class="text-xs text-rose-500 mt-1">{{ form.errors.total_cycles_limit }}</p>
                         </div>
@@ -421,8 +420,7 @@ function submit() {
                                     <input
                                         v-model="item.description"
                                         type="text"
-                                        placeholder="Optional line description"
-                                        class="w-full text-[11px] rounded-lg border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-1.5 bg-white text-slate-600"
+class="w-full text-[11px] rounded-lg border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-1.5 bg-white text-slate-600"
                                     />
                                 </div>
                             </div>

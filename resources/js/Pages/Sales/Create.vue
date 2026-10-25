@@ -184,8 +184,7 @@ function submit() {
                                     v-model="form.new_customer_name"
                                     type="text"
                                     required
-                                    placeholder="e.g. Jahangir Alam"
-                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400 placeholder:text-xs"
                                 />
                                 <div v-if="form.errors.new_customer_name" class="text-xs text-rose-500 mt-1">{{ form.errors.new_customer_name }}</div>
                             </div>
@@ -196,8 +195,7 @@ function submit() {
                                     v-model="form.new_customer_phone"
                                     type="text"
                                     required
-                                    placeholder="e.g. 01711223399"
-                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
                                 />
                                 <div v-if="form.errors.new_customer_phone" class="text-xs text-rose-500 mt-1">{{ form.errors.new_customer_phone }}</div>
                             </div>
@@ -208,8 +206,7 @@ function submit() {
                                     v-model="form.new_customer_address"
                                     type="text"
                                     required
-                                    placeholder="e.g. Mirpur-10, Dhaka"
-                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400 placeholder:text-xs"
                                 />
                                 <div v-if="form.errors.new_customer_address" class="text-xs text-rose-500 mt-1">{{ form.errors.new_customer_address }}</div>
                             </div>
@@ -281,8 +278,7 @@ function submit() {
                                         v-model.number="item.warranty_days"
                                         type="number"
                                         min="0"
-                                        placeholder="0"
-                                        class="w-full text-sm px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+class="w-full text-sm px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
                                     />
                                 </div>
 
@@ -353,8 +349,7 @@ function submit() {
                             <textarea
                                 v-model="form.notes"
                                 rows="2"
-                                placeholder="e.g. Delivery instructions or notes"
-                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400 placeholder:text-xs"
                             ></textarea>
                         </div>
                     </div>
@@ -456,8 +451,7 @@ function submit() {
                                         <input
                                             v-model="form.payment_reference"
                                             type="text"
-                                            placeholder="e.g. bKash TrxID, Cheque #, or deposit slip"
-                                            class="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400 placeholder:text-xs font-mono"
+class="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400 placeholder:text-xs font-mono"
                                         />
                                     </div>
                                 </div>

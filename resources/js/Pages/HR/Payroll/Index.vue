@@ -362,8 +362,7 @@ function resetFilters() {
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                placeholder="0.00"
-                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3 font-semibold text-emerald-700"
+class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3 font-semibold text-emerald-700"
                             />
                         </div>
 
@@ -374,8 +373,7 @@ function resetFilters() {
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                placeholder="0.00"
-                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3 font-semibold text-rose-600"
+class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3 font-semibold text-rose-600"
                             />
                         </div>
                     </div>
@@ -465,8 +463,7 @@ function resetFilters() {
                             <input
                                 v-model="payForm.payment_reference"
                                 type="text"
-                                placeholder="e.g. TXN-10492 or Cheque #"
-                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
+class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
                     </div>

@@ -451,8 +451,7 @@ function transitionTo(status) {
                             <input
                                 v-model="partForm.part_name"
                                 type="text"
-                                placeholder="e.g. 500W Power Supply"
-                                class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 font-semibold"
+class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 font-semibold"
                                 required
                             />
                         </div>
@@ -499,8 +498,7 @@ function transitionTo(status) {
                         <input
                             v-model="partForm.notes"
                             type="text"
-                            placeholder="Optional notes or batch code..."
-                            class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
                         />
                     </div>
 
@@ -566,8 +564,7 @@ function transitionTo(status) {
                         <input
                             v-model="payForm.notes"
                             type="text"
-                            placeholder="e.g. bKash TrxID, receipt slip #"
-                            class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
                         />
                     </div>
 

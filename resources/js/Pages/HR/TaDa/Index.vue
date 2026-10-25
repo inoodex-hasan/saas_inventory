@@ -356,8 +356,7 @@ function resetFilters() {
                                 v-model="createForm.destination"
                                 type="text"
                                 required
-                                placeholder="e.g. Chattogram Site"
-                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
+class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
                     </div>
@@ -368,8 +367,7 @@ function resetFilters() {
                             v-model="createForm.purpose"
                             rows="2"
                             required
-                            placeholder="e.g. Client visit and site handover audit"
-                            class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
+class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                         ></textarea>
                     </div>
 
@@ -381,8 +379,7 @@ function resetFilters() {
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                placeholder="0.00"
-                                class="w-full text-xs font-bold rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
+class="w-full text-xs font-bold rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
 
@@ -393,8 +390,7 @@ function resetFilters() {
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                placeholder="0.00"
-                                class="w-full text-xs font-bold rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
+class="w-full text-xs font-bold rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
 
@@ -405,8 +401,7 @@ function resetFilters() {
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                placeholder="0.00"
-                                class="w-full text-xs font-bold rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
+class="w-full text-xs font-bold rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
                     </div>
@@ -446,8 +441,7 @@ function resetFilters() {
                             v-model="rejectForm.rejection_reason"
                             rows="3"
                             required
-                            placeholder="State reason (e.g. missing receipts)..."
-                            class="w-full text-xs rounded-xl border border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
+class="w-full text-xs rounded-xl border border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                         ></textarea>
                     </div>
 

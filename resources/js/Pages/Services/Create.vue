@@ -175,8 +175,7 @@ function submitForm() {
                             <input
                                 v-model="form.new_customer_name"
                                 type="text"
-                                placeholder="Customer Name"
-                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                                 required
                             />
                             <div v-if="form.errors.new_customer_name" class="text-xs text-rose-500 mt-1">{{ form.errors.new_customer_name }}</div>
@@ -186,8 +185,7 @@ function submitForm() {
                             <input
                                 v-model="form.new_customer_phone"
                                 type="text"
-                                placeholder="017XXXXXXXX"
-                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                                 required
                             />
                             <div v-if="form.errors.new_customer_phone" class="text-xs text-rose-500 mt-1">{{ form.errors.new_customer_phone }}</div>
@@ -197,8 +195,7 @@ function submitForm() {
                             <input
                                 v-model="form.new_customer_email"
                                 type="email"
-                                placeholder="client@example.com"
-                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                             />
                         </div>
                         <div>
@@ -206,8 +203,7 @@ function submitForm() {
                             <input
                                 v-model="form.new_customer_address"
                                 type="text"
-                                placeholder="House, Road, City"
-                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                             />
                         </div>
                     </div>
@@ -226,8 +222,7 @@ function submitForm() {
                             <input
                                 v-model="form.device_name"
                                 type="text"
-                                placeholder="e.g. iPhone 13 Pro"
-                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-semibold placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-semibold placeholder:text-slate-400 placeholder:text-xs"
                                 required
                             />
                             <div v-if="form.errors.device_name" class="text-xs text-rose-500 mt-1">{{ form.errors.device_name }}</div>
@@ -238,8 +233,7 @@ function submitForm() {
                             <input
                                 v-model="form.device_brand"
                                 type="text"
-                                placeholder="e.g. Apple or Dell"
-                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
 
@@ -248,8 +242,7 @@ function submitForm() {
                             <input
                                 v-model="form.serial_no"
                                 type="text"
-                                placeholder="Device serial or IMEI"
-                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
 
@@ -258,8 +251,7 @@ function submitForm() {
                             <input
                                 v-model="form.accessories_received"
                                 type="text"
-                                placeholder="e.g. Charger or bag"
-                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                     </div>
@@ -278,8 +270,7 @@ function submitForm() {
                             <textarea
                                 v-model="form.problem_description"
                                 rows="3"
-                                placeholder="Describe symptoms or complaints..."
-                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                                 required
                             ></textarea>
                             <div v-if="form.errors.problem_description" class="text-xs text-rose-500 mt-1">{{ form.errors.problem_description }}</div>
@@ -290,8 +281,7 @@ function submitForm() {
                             <textarea
                                 v-model="form.initial_diagnosis"
                                 rows="3"
-                                placeholder="Preliminary checks or visible damages..."
-                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             ></textarea>
                         </div>
                     </div>
@@ -438,8 +428,7 @@ function submitForm() {
                                         <input
                                             v-model="part.part_name"
                                             type="text"
-                                            placeholder="Part name or component..."
-                                            class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 font-medium"
+class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 font-medium"
                                             required
                                         />
                                     </td>
@@ -511,8 +500,7 @@ function submitForm() {
                                     type="number"
                                     step="0.01"
                                     min="0"
-                                    placeholder="500.00"
-                                    class="w-full text-xs font-mono font-bold px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+class="w-full text-xs font-mono font-bold px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                                     required
                                 />
                             </div>
@@ -524,8 +512,7 @@ function submitForm() {
                                     type="number"
                                     step="0.01"
                                     min="0"
-                                    placeholder="0.00"
-                                    class="w-full text-xs font-mono px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+class="w-full text-xs font-mono px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                                 />
                             </div>
 
@@ -546,8 +533,7 @@ function submitForm() {
                                     step="0.01"
                                     min="0"
                                     :max="grandTotal"
-                                    placeholder="0.00"
-                                    class="w-full text-xs font-mono font-bold text-emerald-600 px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+class="w-full text-xs font-mono font-bold text-emerald-600 px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                                 />
                             </div>
 
@@ -556,8 +542,7 @@ function submitForm() {
                                 <input
                                     v-model="form.remarks"
                                     type="text"
-                                    placeholder="Optional workshop notes..."
-                                    class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                                 />
                             </div>
                         </div>

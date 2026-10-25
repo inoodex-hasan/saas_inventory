@@ -617,8 +617,7 @@ function submitImport() {
                         <input 
                             type="text" 
                             v-model="categoryForm.name" 
-                            placeholder="e.g. Laptops or Hardware"
-                            class="flex-1 px-3 py-1.5 rounded-lg text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="flex-1 px-3 py-1.5 rounded-lg text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                         <button 
                             type="submit" 
@@ -657,8 +656,7 @@ function submitImport() {
                         <input 
                             type="text" 
                             v-model="brandForm.name" 
-                            placeholder="e.g. Dell or Asus"
-                            class="flex-1 px-3 py-1.5 rounded-lg text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="flex-1 px-3 py-1.5 rounded-lg text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                         <button 
                             type="submit" 

@@ -274,8 +274,7 @@ function submit() {
                                     <input 
                                         type="text" 
                                         v-model="it.batch_number" 
-                                        placeholder="LOT-XXXX"
-                                        class="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
+class="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
                                     />
                                 </td>
 
@@ -320,8 +319,7 @@ function submit() {
                     <textarea 
                         v-model="form.notes"
                         rows="4"
-                        placeholder="Internal instructions for dock receiving, transport specs, warranty remarks..."
-                        class="w-full p-3 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400"
+class="w-full p-3 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400"
                     ></textarea>
                 </div>
 

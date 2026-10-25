@@ -110,8 +110,7 @@ function submit() {
                         <input
                             v-model="form.transport_carrier"
                             type="text"
-                            placeholder="e.g. In-house fleet or courier"
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                     </div>
 
@@ -120,8 +119,7 @@ function submit() {
                         <input
                             v-model="form.vehicle_no"
                             type="text"
-                            placeholder="e.g. DH-METRO-1144"
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
                         />
                     </div>
 
@@ -131,14 +129,12 @@ function submit() {
                             <input
                                 v-model="form.driver_name"
                                 type="text"
-                                placeholder="Name"
-                                class="w-1/2 text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-1/2 text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <input
                                 v-model="form.driver_phone"
                                 type="text"
-                                placeholder="Phone"
-                                class="w-1/2 text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
+class="w-1/2 text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                     </div>
@@ -149,8 +145,7 @@ function submit() {
                             v-model="form.delivery_address"
                             type="text"
                             required
-                            placeholder="Exact physical shipping address"
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                         <div v-if="form.errors.delivery_address" class="text-xs text-rose-500 mt-1">{{ form.errors.delivery_address }}</div>
                     </div>
@@ -192,8 +187,7 @@ function submit() {
                     <textarea
                         v-model="form.notes"
                         rows="2"
-                        placeholder="e.g. Gate pass instructions or delivery notes"
-                        class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 placeholder:text-slate-400 placeholder:text-xs"
                     ></textarea>
                 </div>
 

@@ -161,8 +161,7 @@ function submit() {
                             <input
                                 v-model="form.profile_name"
                                 type="text"
-                                placeholder="e.g., Monthly Software Retainer & Maintenance Plan"
-                                class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5"
+class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5"
                                 required
                             />
                             <p v-if="form.errors.profile_name" class="text-xs text-rose-500 mt-1">{{ form.errors.profile_name }}</p>
@@ -291,8 +290,7 @@ function submit() {
                                 v-model="form.total_cycles_limit"
                                 type="number"
                                 min="1"
-                                placeholder="Leave blank for infinite"
-                                class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5"
+class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5"
                             />
                             <p v-if="form.errors.total_cycles_limit" class="text-xs text-rose-500 mt-1">{{ form.errors.total_cycles_limit }}</p>
                         </div>
@@ -376,8 +374,7 @@ function submit() {
                                     <input
                                         v-model="item.item_name"
                                         type="text"
-                                        placeholder="e.g. Dedicated Server Hosting"
-                                        class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 bg-white"
+class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 bg-white"
                                         required
                                     />
                                 </div>
@@ -429,8 +426,7 @@ function submit() {
                                     <input
                                         v-model="item.description"
                                         type="text"
-                                        placeholder="Optional line description (will be included in generated customer invoice)"
-                                        class="w-full text-[11px] rounded-lg border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-1.5 bg-white text-slate-600"
+class="w-full text-[11px] rounded-lg border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-1.5 bg-white text-slate-600"
                                     />
                                 </div>
                             </div>
@@ -448,8 +444,7 @@ function submit() {
                         <textarea
                             v-model="form.notes"
                             rows="4"
-                            placeholder="Add payment terms, banking details, or contract references to appear on generated sales invoices..."
-                            class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 p-3"
+class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 p-3"
                         ></textarea>
                     </div>
 

@@ -191,8 +191,7 @@ function submit() {
                                 v-model="form.new_client_name"
                                 type="text"
                                 required
-                                placeholder="e.g. John Doe"
-                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <div v-if="form.errors.new_client_name" class="text-rose-500 text-xs mt-1">{{ form.errors.new_client_name }}</div>
                         </div>
@@ -202,8 +201,7 @@ function submit() {
                             <input
                                 v-model="form.new_client_company"
                                 type="text"
-                                placeholder="e.g. Acme Corp Ltd"
-                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
 
@@ -212,8 +210,7 @@ function submit() {
                             <input
                                 v-model="form.new_client_phone"
                                 type="text"
-                                placeholder="e.g. 01700000000"
-                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
 
@@ -222,8 +219,7 @@ function submit() {
                             <input
                                 v-model="form.new_client_email"
                                 type="email"
-                                placeholder="e.g. client@domain.com"
-                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
 
@@ -232,8 +228,7 @@ function submit() {
                             <input
                                 v-model="form.new_client_tax_number"
                                 type="text"
-                                placeholder="e.g. BIN-12345"
-                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
 
@@ -242,8 +237,7 @@ function submit() {
                             <input
                                 v-model="form.new_client_address"
                                 type="text"
-                                placeholder="e.g. Motijheel C/A, Dhaka"
-                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                     </div>
@@ -263,8 +257,7 @@ function submit() {
                                 v-model="form.name"
                                 type="text"
                                 required
-                                placeholder="e.g. Network & CCTV Installation"
-                                class="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <div v-if="form.errors.name" class="text-rose-500 text-xs mt-1">{{ form.errors.name }}</div>
                         </div>
@@ -288,8 +281,7 @@ function submit() {
                                 v-model.number="form.budget"
                                 type="number"
                                 step="0.01"
-                                placeholder="0.00"
-                                class="w-full text-xs font-mono font-bold px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs font-mono font-bold px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <span class="text-[11px] text-slate-400 mt-1 block">Fixed contract sum (if not billing by items)</span>
                         </div>
@@ -317,8 +309,7 @@ function submit() {
                             <textarea
                                 v-model="form.description"
                                 rows="3"
-                                placeholder="Key deliverables and technical requirements..."
-                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             ></textarea>
                         </div>
                     </div>
@@ -379,8 +370,7 @@ function submit() {
                                             v-model="item.item_name"
                                             type="text"
                                             required
-                                            placeholder="Item name"
-                                            class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 font-medium"
+class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 font-medium"
                                         />
                                     </td>
                                     <td class="py-2.5 px-3">
@@ -491,16 +481,14 @@ function submit() {
                                             v-model="cost.description"
                                             type="text"
                                             required
-                                            placeholder="e.g. Scaffolding rental or labor"
-                                            class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-medium placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-medium placeholder:text-slate-400 placeholder:text-xs"
                                         />
                                     </td>
                                     <td class="py-2.5 px-3">
                                         <input
                                             v-model="cost.vendor_name"
                                             type="text"
-                                            placeholder="Subcontractor"
-                                            class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                                         />
                                     </td>
                                     <td class="py-2.5 px-3">
@@ -510,8 +498,7 @@ function submit() {
                                             step="0.01"
                                             min="0.01"
                                             required
-                                            placeholder="0.00"
-                                            class="w-full text-xs text-right font-mono font-bold px-2 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+class="w-full text-xs text-right font-mono font-bold px-2 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                                         />
                                     </td>
                                     <td class="py-2.5 px-3 text-center">
@@ -553,8 +540,7 @@ function submit() {
                                     type="number"
                                     step="0.01"
                                     min="0"
-                                    placeholder="0.00"
-                                    class="w-full text-xs font-mono px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+class="w-full text-xs font-mono px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                                 />
                             </div>
 
@@ -565,8 +551,7 @@ function submit() {
                                     type="number"
                                     step="0.01"
                                     min="0"
-                                    placeholder="0.00"
-                                    class="w-full text-xs font-mono px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+class="w-full text-xs font-mono px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                                 />
                             </div>
 
@@ -587,8 +572,7 @@ function submit() {
                                     step="0.01"
                                     min="0"
                                     :max="computedBilledTotal"
-                                    placeholder="0.00"
-                                    class="w-full text-xs font-mono font-bold text-emerald-600 px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+class="w-full text-xs font-mono font-bold text-emerald-600 px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                                 />
                             </div>
                         </div>

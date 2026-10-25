@@ -173,8 +173,7 @@ function submit() {
                                 type="text" 
                                 v-model="form.new_vendor_name" 
                                 required
-                                placeholder="e.g. Apex Global Supply"
-                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <p v-if="form.errors.new_vendor_name" class="text-[11px] text-rose-600 mt-1">{{ form.errors.new_vendor_name }}</p>
                         </div>
@@ -185,8 +184,7 @@ function submit() {
                                 type="text" 
                                 v-model="form.new_vendor_phone" 
                                 required
-                                placeholder="e.g. 01700000000"
-                                class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <p v-if="form.errors.new_vendor_phone" class="text-[11px] text-rose-600 mt-1">{{ form.errors.new_vendor_phone }}</p>
                         </div>
@@ -199,8 +197,7 @@ function submit() {
                                 type="text" 
                                 v-model="form.new_vendor_address" 
                                 required
-                                placeholder="e.g. Plot 10, Tejgaon, Dhaka"
-                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <p v-if="form.errors.new_vendor_address" class="text-[11px] text-rose-600 mt-1">{{ form.errors.new_vendor_address }}</p>
                         </div>
@@ -210,8 +207,7 @@ function submit() {
                             <input 
                                 type="text" 
                                 v-model="form.new_vendor_contact" 
-                                placeholder="e.g. John Doe"
-                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                     </div>
@@ -334,8 +330,7 @@ function submit() {
                                     <input 
                                         type="text" 
                                         v-model="it.batch_number" 
-                                        placeholder="LOT-XXXX"
-                                        class="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
+class="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
                                     />
                                 </td>
 
@@ -438,8 +433,7 @@ function submit() {
                             <input
                                 v-model="form.payment_reference"
                                 type="text"
-                                placeholder="e.g. Cheque #, bKash TrxID, Bank voucher"
-                                class="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-1 focus:ring-indigo-500 font-mono placeholder:font-sans placeholder:text-slate-400"
+class="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-1 focus:ring-indigo-500 font-mono placeholder:font-sans placeholder:text-slate-400"
                             />
                         </div>
                     </div>

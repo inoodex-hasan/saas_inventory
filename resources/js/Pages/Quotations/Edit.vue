@@ -286,8 +286,7 @@ function submit() {
                             <textarea
                                 v-model="form.notes"
                                 rows="2"
-                                placeholder="Internal memos or customer remarks..."
-                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             ></textarea>
                         </div>
 

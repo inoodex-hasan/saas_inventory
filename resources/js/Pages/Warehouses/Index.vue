@@ -323,8 +323,7 @@ async function inspectStock(wh) {
                             <input 
                                 type="text" 
                                 v-model="form.name" 
-                                placeholder="e.g. Central Hub Dhaka"
-                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <p v-if="form.errors.name" class="text-[11px] text-rose-600 mt-1">{{ form.errors.name }}</p>
                         </div>
@@ -333,8 +332,7 @@ async function inspectStock(wh) {
                             <input 
                                 type="text" 
                                 v-model="form.code" 
-                                placeholder="e.g. HUB-01"
-                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 uppercase font-mono placeholder:text-slate-400 placeholder:text-xs"
+class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 uppercase font-mono placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <p v-if="form.errors.code" class="text-[11px] text-rose-600 mt-1">{{ form.errors.code }}</p>
                         </div>
@@ -345,8 +343,7 @@ async function inspectStock(wh) {
                         <input 
                             type="text" 
                             v-model="form.address" 
-                            placeholder="e.g. Plot 10, Tejgaon, Dhaka"
-                            class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                         <p v-if="form.errors.address" class="text-[11px] text-rose-600 mt-1">{{ form.errors.address }}</p>
                     </div>
@@ -357,8 +354,7 @@ async function inspectStock(wh) {
                             <input 
                                 type="text" 
                                 v-model="form.phone" 
-                                placeholder="e.g. 01700000000"
-                                class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                         <div>
@@ -366,8 +362,7 @@ async function inspectStock(wh) {
                             <input 
                                 type="email" 
                                 v-model="form.email" 
-                                placeholder="e.g. hub@company.com"
-                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                     </div>

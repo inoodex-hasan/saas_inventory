@@ -303,7 +303,6 @@ function confirmDeleteTenant(tenant) {
                         Clear
                     </button>
 
-                    
                     <button
                         type="button"
                         @click="openCreateModal"
@@ -473,8 +472,7 @@ function confirmDeleteTenant(tenant) {
                             <input
                                 v-model="createForm.name"
                                 type="text"
-                                placeholder="e.g. Apex Logistics"
-                                class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                                 required
                             />
                             <p v-if="createForm.errors.name" class="text-rose-500 text-[11px] mt-1">{{ createForm.errors.name }}</p>
@@ -485,8 +483,7 @@ function confirmDeleteTenant(tenant) {
                             <input
                                 v-model="createForm.legal_name"
                                 type="text"
-                                placeholder="e.g. Apex Logistics Global Ltd."
-                                class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                     </div>
@@ -501,8 +498,7 @@ function confirmDeleteTenant(tenant) {
                                 <input
                                     v-model="createForm.owner_name"
                                     type="text"
-                                    placeholder="e.g. Tanvir Ahmed"
-                                    class="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                                     required
                                 />
                                 <p v-if="createForm.errors.owner_name" class="text-rose-500 text-[11px] mt-1">{{ createForm.errors.owner_name }}</p>
@@ -513,8 +509,7 @@ function confirmDeleteTenant(tenant) {
                                 <input
                                     v-model="createForm.owner_email"
                                     type="email"
-                                    placeholder="e.g. tanvir@apex.com"
-                                    class="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                                     required
                                 />
                                 <p v-if="createForm.errors.owner_email" class="text-rose-500 text-[11px] mt-1">{{ createForm.errors.owner_email }}</p>
@@ -526,8 +521,7 @@ function confirmDeleteTenant(tenant) {
                             <input
                                 v-model="createForm.owner_password"
                                 type="password"
-                                placeholder="Enter strong password"
-                                class="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                                 required
                             />
                             <p v-if="createForm.errors.owner_password" class="text-rose-500 text-[11px] mt-1">{{ createForm.errors.owner_password }}</p>
@@ -580,15 +574,13 @@ function confirmDeleteTenant(tenant) {
                                 <input
                                     v-model="createForm.currency_code"
                                     type="text"
-                                    placeholder="BDT"
-                                    class="w-1/2 text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl uppercase font-mono"
+class="w-1/2 text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl uppercase font-mono"
                                     required
                                 />
                                 <input
                                     v-model="createForm.currency_symbol"
                                     type="text"
-                                    placeholder="৳"
-                                    class="w-1/2 text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl font-mono text-center"
+class="w-1/2 text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl font-mono text-center"
                                     required
                                 />
                             </div>
@@ -599,8 +591,7 @@ function confirmDeleteTenant(tenant) {
                             <input
                                 v-model="createForm.phone"
                                 type="text"
-                                placeholder="e.g. 01712345678"
-                                class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl font-mono placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl font-mono placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                     </div>
@@ -845,8 +836,7 @@ function confirmDeleteTenant(tenant) {
                                 v-model.number="subForm.extension_days"
                                 type="number"
                                 min="0"
-                                placeholder="0"
-                                class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl font-mono focus:bg-white focus:border-indigo-500"
+class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl font-mono focus:bg-white focus:border-indigo-500"
                             />
                         </div>
                     </div>

@@ -412,8 +412,7 @@ function submitPay() {
                             min="0.01"
                             :max="selectedOrder?.due_amount"
                             required
-                            placeholder="0.00"
-                            class="w-full text-sm font-bold font-mono px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500"
+class="w-full text-sm font-bold font-mono px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500"
                         />
                         <div v-if="payForm.errors.amount" class="text-xs text-rose-500 mt-1">
                             {{ payForm.errors.amount }}
@@ -438,8 +437,7 @@ function submitPay() {
                         <input
                             v-model="payForm.payment_reference"
                             type="text"
-                            placeholder="e.g. bKash TrxID, Bank slip, Money Receipt #"
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 font-mono placeholder:font-sans placeholder:text-slate-400"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 font-mono placeholder:font-sans placeholder:text-slate-400"
                         />
                     </div>
 
@@ -448,8 +446,7 @@ function submitPay() {
                         <input
                             v-model="payForm.notes"
                             type="text"
-                            placeholder="e.g. Cleared via Cheque #991"
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400"
                         />
                     </div>
 

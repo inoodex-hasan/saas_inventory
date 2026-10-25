@@ -286,8 +286,7 @@ function submitDefective() {
                             v-model="defectiveForm.reason"
                             required
                             rows="3"
-                            placeholder="e.g. Device fails POST or physical damage"
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-rose-500 placeholder:text-slate-400 placeholder:text-xs"
+class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-rose-500 placeholder:text-slate-400 placeholder:text-xs"
                         ></textarea>
                     </div>
 

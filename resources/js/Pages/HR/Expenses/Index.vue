@@ -277,8 +277,7 @@ function resetFilters() {
                             v-model="form.title"
                             type="text"
                             required
-                            placeholder="e.g. Office Internet Bill"
-                            class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
+class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                         />
                     </div>
 
@@ -290,8 +289,7 @@ function resetFilters() {
                                 type="number"
                                 step="0.01"
                                 min="0.01"
-                                placeholder="0.00"
-                                required
+required
                                 class="w-full text-xs font-bold rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
@@ -339,8 +337,7 @@ function resetFilters() {
                             <input
                                 v-model="form.vendor_or_payee"
                                 type="text"
-                                placeholder="e.g. Desh Telecom"
-                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
+class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
 
@@ -349,8 +346,7 @@ function resetFilters() {
                             <input
                                 v-model="form.receipt_reference"
                                 type="text"
-                                placeholder="e.g. INV-1042"
-                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
+class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
                             />
                         </div>
                     </div>
