@@ -95,7 +95,9 @@ class VendorDueController extends Controller
 
         if (!$request->filled('financial_account_id')) {
             $defaultAccount = app(FinancialAccountService::class)->getDefaultAccount($teamId);
-            $request->merge(['financial_account_id' => $defaultAccount->id]);
+            if ($defaultAccount) {
+                $request->merge(['financial_account_id' => $defaultAccount->id]);
+            }
         }
 
         $validated = $request->validate([

@@ -84,36 +84,17 @@ function isDue(dateStr) {
         <Head title="Recurring Invoices & Subscriptions" />
 
         <template #header>
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 w-full">
-                <div>
-                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
-                        <span class="p-2 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                        </span>
-                        Recurring Invoices & Subscriptions
-                    </h1>
-                    <p class="text-xs text-slate-500 mt-1">
-                        Automate periodic billing cycles, retainer contracts, and subscription receivables for your customers.
-                    </p>
-                </div>
-
-                <div class="flex items-center gap-2">
-                    <Link
-                        :href="route('recurring-invoices.create')"
-                        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold text-xs hover:bg-indigo-700 shadow-sm shadow-indigo-600/30 transition-all"
-                    >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                        New Subscription Profile
-                    </Link>
-                </div>
+            <div>
+                <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">
+                    Recurring Invoices & Subscriptions
+                </h1>
+                <p class="text-xs text-slate-500 mt-1">
+                    Automate periodic billing cycles, retainer contracts, and subscription receivables for your customers.
+                </p>
             </div>
         </template>
 
-        <div class="py-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div class="space-y-6">
             <!-- Metric KPI Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <!-- Active Subscriptions -->
@@ -193,57 +174,59 @@ function isDue(dateStr) {
 
             <!-- Filters & Search Toolbar -->
             <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                    <!-- Search input -->
-                    <div class="lg:col-span-2 relative">
-                        <input
-                            v-model="search"
-                            type="text"
-                            placeholder="Search subscription #, title, customer..."
-                            @keydown.enter="applyFilter"
-                            class="w-full text-xs rounded-xl border-slate-200 pl-9 pr-4 py-2.5 focus:border-indigo-500 focus:ring-indigo-500"
-                        />
-                        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                    </div>
+                <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1">
+                        <!-- Search input -->
+                        <div class="sm:col-span-2 relative">
+                            <input
+                                v-model="search"
+                                type="text"
+                                placeholder="Search subscription #, title, customer..."
+                                @keydown.enter="applyFilter"
+                                class="w-full text-xs rounded-xl border-slate-200 pl-9 pr-4 py-2.5 focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
 
-                    <!-- Status filter -->
-                    <div>
-                        <select
-                            v-model="status"
-                            @change="applyFilter"
-                            class="w-full text-xs rounded-xl border-slate-200 py-2.5 focus:border-indigo-500 focus:ring-indigo-500"
-                        >
-                            <option value="">All Statuses</option>
-                            <option value="active">Active</option>
-                            <option value="paused">Paused</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
-                    </div>
+                        <!-- Status filter -->
+                        <div>
+                            <select
+                                v-model="status"
+                                @change="applyFilter"
+                                class="w-full text-xs rounded-xl border-slate-200 py-2.5 focus:border-indigo-500 focus:ring-indigo-500"
+                            >
+                                <option value="">All Statuses</option>
+                                <option value="active">Active</option>
+                                <option value="paused">Paused</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
 
-                    <!-- Frequency filter -->
-                    <div>
-                        <select
-                            v-model="frequency"
-                            @change="applyFilter"
-                            class="w-full text-xs rounded-xl border-slate-200 py-2.5 focus:border-indigo-500 focus:ring-indigo-500"
-                        >
-                            <option value="">All Frequencies</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
-                            <option value="quarterly">Quarterly</option>
-                            <option value="semi_annual">Semi-Annual</option>
-                            <option value="yearly">Yearly</option>
-                        </select>
+                        <!-- Frequency filter -->
+                        <div>
+                            <select
+                                v-model="frequency"
+                                @change="applyFilter"
+                                class="w-full text-xs rounded-xl border-slate-200 py-2.5 focus:border-indigo-500 focus:ring-indigo-500"
+                            >
+                                <option value="">All Frequencies</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="quarterly">Quarterly</option>
+                                <option value="semi_annual">Semi-Annual</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                        </div>
                     </div>
 
                     <!-- Action buttons -->
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 shrink-0">
                         <button
                             @click="applyFilter"
-                            class="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 text-white font-medium text-xs hover:bg-slate-800 transition-colors"
+                            class="px-4 py-2.5 rounded-xl bg-slate-900 text-white font-medium text-xs hover:bg-slate-800 transition-colors"
                         >
                             Filter
                         </button>
@@ -255,6 +238,15 @@ function isDue(dateStr) {
                         >
                             Reset
                         </button>
+                        <Link
+                            :href="route('recurring-invoices.create')"
+                            class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold text-xs hover:bg-indigo-700 shadow-sm shadow-indigo-600/30 transition-all whitespace-nowrap"
+                        >
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            <span>Create Profile</span>
+                        </Link>
                     </div>
                 </div>
             </div>
@@ -415,11 +407,6 @@ function isDue(dateStr) {
                             <tr v-if="!profiles.data || profiles.data.length === 0">
                                 <td colspan="9" class="py-12 text-center">
                                     <div class="max-w-xs mx-auto text-center space-y-3">
-                                        <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-500 mx-auto flex items-center justify-center">
-                                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                            </svg>
-                                        </div>
                                         <p class="text-sm font-semibold text-slate-800">No recurring subscriptions found</p>
                                         <p class="text-xs text-slate-500">
                                             Create recurring billing profiles for your retainers, subscriptions, and periodic contracts.

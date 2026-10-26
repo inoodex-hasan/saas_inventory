@@ -10,10 +10,9 @@ use Inertia\Inertia;
 
 class ChartOfAccountController extends Controller
 {
-    public function index(Request $request, AccountingService $accountingService)
+    public function index(Request $request)
     {
         $teamId = Auth::user()->current_team_id;
-        $accountingService->ensureDefaultAccounts($teamId);
 
         $search = $request->input('search', '');
         $type = $request->input('type', '');
@@ -138,5 +137,20 @@ class ChartOfAccountController extends Controller
         $account->delete();
 
         return back()->with('success', "Account {$code} deleted.");
+    }
+
+    public function initialize(Request $request, AccountingService $accountingService)
+    {
+        $user = Auth::user();
+        $team = $user->currentTeam;
+        $teamId = $user->current_team_id;
+
+        if (!$user->isSuperAdmin() && !$user->ownsTeam($team) && !$user->hasTeamRole($team, 'admin')) {
+            abort(403, 'Only organization owners or administrators can initialize the Chart of Accounts.');
+        }
+
+        $accountingService->ensureDefaultAccounts($teamId);
+
+        return back()->with('success', 'Standard Chart of Accounts template successfully loaded.');
     }
 }

@@ -147,6 +147,19 @@ function deleteAccount(acc) {
     }
 }
 
+const isInitializing = ref(false);
+
+function initializeDefaultAccounts() {
+    if (confirm('Load standard accounts template (Main Cash Drawer, Bank Operating Account, bKash Merchant)?')) {
+        isInitializing.value = true;
+        router.post(route('bank-accounts.initialize'), {}, {
+            onFinish: () => {
+                isInitializing.value = false;
+            },
+        });
+    }
+}
+
 function getProviderBadge(acc) {
     if (acc.type === 'mfs') {
         const inst = (acc.institution_name || '').toLowerCase();
@@ -174,6 +187,18 @@ function getProviderBadge(acc) {
                 </div>
 
                 <div class="flex items-center gap-2">
+                    <button
+                        v-if="metrics?.active_accounts_count === 0"
+                        type="button"
+                        @click="initializeDefaultAccounts"
+                        :disabled="isInitializing"
+                        class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all disabled:opacity-50"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        <span>{{ isInitializing ? 'Loading...' : 'Load Standard Accounts' }}</span>
+                    </button>
                     <button
                         type="button"
                         @click="openCreateModal"
@@ -467,7 +492,33 @@ function getProviderBadge(acc) {
 
                             <tr v-if="accounts.length === 0">
                                 <td colspan="6" class="text-center py-12 text-slate-400 font-medium">
-                                    No financial accounts match your criteria.
+                                    <div v-if="metrics?.active_accounts_count === 0 && !search && !typeFilter" class="flex flex-col items-center justify-center space-y-3">
+                                        <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                            </svg>
+                                        </div>
+                                        <p class="font-medium text-slate-600">No bank or cash accounts created yet.</p>
+                                        <p class="text-xs text-slate-400 max-w-sm">Create your cash drawer, bank operating accounts, or mobile financial service wallets.</p>
+                                        <div class="flex items-center gap-2 pt-2">
+                                            <button
+                                                @click="openCreateModal"
+                                                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs rounded-xl shadow-xs transition-all"
+                                            >
+                                                Add New Account
+                                            </button>
+                                            <button
+                                                @click="initializeDefaultAccounts"
+                                                :disabled="isInitializing"
+                                                class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-xl transition-all disabled:opacity-50"
+                                            >
+                                                {{ isInitializing ? 'Loading...' : 'Load Standard Accounts' }}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div v-else>
+                                        No financial accounts match your criteria.
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>

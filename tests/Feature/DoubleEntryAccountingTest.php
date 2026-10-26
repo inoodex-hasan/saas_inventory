@@ -34,10 +34,16 @@ class DoubleEntryAccountingTest extends TestCase
         $this->accountingService = app(AccountingService::class);
     }
 
-    public function test_default_chart_of_accounts_provisioned_automatically(): void
+    public function test_default_chart_of_accounts_provisioned_via_explicit_initialize(): void
     {
+        // 1. Visiting accounts.index (GET) does NOT automatically mutate or seed the database
         $response = $this->get(route('accounts.index'));
         $response->assertStatus(200);
+        $this->assertEquals(0, ChartOfAccount::where('team_id', $this->team->id)->count());
+
+        // 2. Explicitly initializing template via POST provisions the standard accounts
+        $initResponse = $this->post(route('accounts.initialize'));
+        $initResponse->assertRedirect();
 
         $accountsCount = ChartOfAccount::where('team_id', $this->team->id)->count();
         $this->assertGreaterThanOrEqual(15, $accountsCount);

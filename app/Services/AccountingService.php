@@ -250,8 +250,6 @@ class AccountingService
      */
     public function getTrialBalance(int $teamId, ?string $asOfDate = null): array
     {
-        $this->ensureDefaultAccounts($teamId);
-
         $accounts = ChartOfAccount::where('team_id', $teamId)
             ->where('is_active', true)
             ->orderBy('account_code')
@@ -334,8 +332,6 @@ class AccountingService
      */
     public function getProfitAndLoss(int $teamId, string $startDate, string $endDate): array
     {
-        $this->ensureDefaultAccounts($teamId);
-
         $periodBalances = JournalEntryLine::where('journal_entry_lines.team_id', $teamId)
             ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
             ->whereBetween('journal_entries.entry_date', [$startDate, $endDate])
@@ -456,8 +452,6 @@ class AccountingService
      */
     public function getBalanceSheet(int $teamId, string $asOfDate): array
     {
-        $this->ensureDefaultAccounts($teamId);
-
         $balancesAsOf = JournalEntryLine::where('journal_entry_lines.team_id', $teamId)
             ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
             ->where('journal_entries.entry_date', '<=', $asOfDate)

@@ -67,7 +67,6 @@ class FinancialReportController extends Controller
     public function generalLedger(Request $request, AccountingService $accountingService)
     {
         $teamId = Auth::user()->current_team_id;
-        $accountingService->ensureDefaultAccounts($teamId);
 
         $accounts = ChartOfAccount::where('team_id', $teamId)->where('is_active', true)->orderBy('account_code')->get();
         $selectedAccountId = $request->input('account_id', $accounts->first()?->id);
@@ -94,10 +93,9 @@ class FinancialReportController extends Controller
     /**
      * Bank Reconciliation Workspace
      */
-    public function reconciliation(Request $request, AccountingService $accountingService)
+    public function reconciliation(Request $request)
     {
         $teamId = Auth::user()->current_team_id;
-        $accountingService->ensureDefaultAccounts($teamId);
 
         $bankAccounts = ChartOfAccount::where('team_id', $teamId)
             ->where('type', 'asset')

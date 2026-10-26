@@ -38,6 +38,7 @@ auth.json
 /public/build/
 /public/hot
 /public/storage
+vite.config.js.timestamp-*.mjs
 
 # Logs & Debugging
 *.log

@@ -13,10 +13,8 @@ class AdminPlanController extends Controller
     /**
      * List all subscription plans.
      */
-    public function index(SubscriptionService $subscriptionService)
+    public function index()
     {
-        $subscriptionService->ensureDefaultPlans();
-
         $plans = Plan::withCount('subscriptions')->orderBy('sort_order')->get();
 
         $metrics = [

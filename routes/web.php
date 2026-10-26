@@ -254,6 +254,7 @@ Route::middleware([
     // Dynamic Bank & MFS Financial Accounts
     Route::get('/accounting/bank-accounts', [FinancialAccountController::class, 'index'])->name('bank-accounts.index');
     Route::post('/accounting/bank-accounts', [FinancialAccountController::class, 'store'])->name('bank-accounts.store');
+    Route::post('/accounting/bank-accounts/initialize', [FinancialAccountController::class, 'initialize'])->name('bank-accounts.initialize');
     Route::put('/accounting/bank-accounts/{account}', [FinancialAccountController::class, 'update'])->name('bank-accounts.update');
     Route::post('/accounting/bank-accounts/{account}/toggle-active', [FinancialAccountController::class, 'toggleActive'])->name('bank-accounts.toggle-active');
     Route::post('/accounting/bank-accounts/{account}/set-default', [FinancialAccountController::class, 'setDefault'])->name('bank-accounts.set-default');
@@ -262,6 +263,7 @@ Route::middleware([
     // Double-Entry Accounting Engine
     Route::get('/accounting/accounts', [ChartOfAccountController::class, 'index'])->name('accounts.index');
     Route::post('/accounting/accounts', [ChartOfAccountController::class, 'store'])->name('accounts.store');
+    Route::post('/accounting/accounts/initialize', [ChartOfAccountController::class, 'initialize'])->name('accounts.initialize');
     Route::put('/accounting/accounts/{account}', [ChartOfAccountController::class, 'update'])->name('accounts.update');
     Route::delete('/accounting/accounts/{account}', [ChartOfAccountController::class, 'destroy'])->name('accounts.destroy');
 

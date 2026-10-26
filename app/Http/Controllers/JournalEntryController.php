@@ -13,10 +13,9 @@ use Inertia\Inertia;
 
 class JournalEntryController extends Controller
 {
-    public function index(Request $request, AccountingService $accountingService)
+    public function index(Request $request)
     {
         $teamId = Auth::user()->current_team_id;
-        $accountingService->ensureDefaultAccounts($teamId);
 
         $search = $request->input('search', '');
         $startDate = $request->input('start_date', '');
@@ -52,10 +51,9 @@ class JournalEntryController extends Controller
         ]);
     }
 
-    public function create(AccountingService $accountingService)
+    public function create()
     {
         $teamId = Auth::user()->current_team_id;
-        $accountingService->ensureDefaultAccounts($teamId);
 
         $accounts = ChartOfAccount::where('team_id', $teamId)
             ->where('is_active', true)

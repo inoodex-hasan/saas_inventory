@@ -134,7 +134,7 @@ function frequencyLabel(freq) {
             </div>
         </template>
 
-        <div class="py-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div class="space-y-6">
             <!-- Metric KPI Overview -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs">

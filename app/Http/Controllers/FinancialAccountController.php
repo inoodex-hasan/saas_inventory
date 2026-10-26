@@ -12,10 +12,9 @@ use Inertia\Inertia;
 
 class FinancialAccountController extends Controller
 {
-    public function index(Request $request, FinancialAccountService $service)
+    public function index(Request $request)
     {
         $teamId = Auth::user()->current_team_id;
-        $service->ensureDefaultAccounts($teamId);
 
         $search = $request->input('search', '');
         $type = $request->input('type', '');
@@ -200,5 +199,20 @@ class FinancialAccountController extends Controller
 
         $account->delete();
         return redirect()->back()->with('success', "Account deleted successfully.");
+    }
+
+    public function initialize(Request $request, FinancialAccountService $service)
+    {
+        $user = Auth::user();
+        $team = $user->currentTeam;
+        $teamId = $user->current_team_id;
+
+        if (!$user->isSuperAdmin() && !$user->ownsTeam($team) && !$user->hasTeamRole($team, 'admin')) {
+            abort(403, 'Only organization owners or administrators can initialize accounts.');
+        }
+
+        $service->ensureDefaultAccounts($teamId);
+
+        return redirect()->back()->with('success', 'Default bank and cash accounts initialized.');
     }
 }

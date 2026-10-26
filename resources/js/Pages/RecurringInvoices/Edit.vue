@@ -139,7 +139,7 @@ function submit() {
             </div>
         </template>
 
-        <div class="py-6 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="space-y-6">
             <form @submit.prevent="submit" class="space-y-6">
                 <!-- General & Customer Information -->
                 <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-5">

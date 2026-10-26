@@ -71,8 +71,6 @@ class FinancialAccountService
      */
     public function getActiveAccountsForTeam(int $teamId)
     {
-        $this->ensureDefaultAccounts($teamId);
-
         return FinancialAccount::where('team_id', $teamId)
             ->where('is_active', true)
             ->orderByDesc('is_default')
@@ -82,9 +80,9 @@ class FinancialAccountService
     }
 
     /**
-     * Resolve the default financial account for a team, auto-seeding if needed.
+     * Resolve the default financial account for a team.
      */
-    public function getDefaultAccount(int $teamId): FinancialAccount
+    public function getDefaultAccount(int $teamId): ?FinancialAccount
     {
         $account = FinancialAccount::where('team_id', $teamId)
             ->where('is_active', true)
@@ -92,11 +90,6 @@ class FinancialAccountService
             ->first();
 
         if (!$account) {
-            $account = FinancialAccount::where('team_id', $teamId)->where('is_active', true)->first();
-        }
-
-        if (!$account) {
-            $this->ensureDefaultAccounts($teamId);
             $account = FinancialAccount::where('team_id', $teamId)->where('is_active', true)->first();
         }
 

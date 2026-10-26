@@ -93,6 +93,19 @@ function deleteAccount(account) {
     }
 }
 
+const isInitializing = ref(false);
+
+function initializeTemplate() {
+    if (confirm('Load the standard chart of accounts template (Assets, Liabilities, Equity, Revenue, Expense)?')) {
+        isInitializing.value = true;
+        router.post(route('accounts.initialize'), {}, {
+            onFinish: () => {
+                isInitializing.value = false;
+            },
+        });
+    }
+}
+
 function typeBadgeClass(type) {
     switch (type) {
         case 'asset': return 'bg-sky-50 text-sky-700 ring-1 ring-sky-600/20';
@@ -185,6 +198,17 @@ function typeBadgeClass(type) {
                         class="px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 transition-all"
                     >
                         Clear
+                    </button>
+                    <button
+                        v-if="metrics.total_accounts === 0"
+                        @click="initializeTemplate"
+                        :disabled="isInitializing"
+                        class="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-all shrink-0 disabled:opacity-50"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        <span>{{ isInitializing ? 'Loading...' : 'Load Standard Template' }}</span>
                     </button>
                     <button
                         @click="openCreateModal"
@@ -296,7 +320,33 @@ function typeBadgeClass(type) {
                             </tr>
                             <tr v-if="!accounts.data || accounts.data.length === 0">
                                 <td colspan="8" class="py-12 text-center text-slate-400">
-                                    No accounts match the specified criteria.
+                                    <div v-if="metrics.total_accounts === 0" class="flex flex-col items-center justify-center space-y-3">
+                                        <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                        </div>
+                                        <p class="font-medium text-slate-600">No chart of accounts established yet.</p>
+                                        <p class="text-xs text-slate-400 max-w-sm">Load the standard accounting template with one click, or create custom accounts manually.</p>
+                                        <div class="flex items-center gap-2 pt-2">
+                                            <button
+                                                @click="initializeTemplate"
+                                                :disabled="isInitializing"
+                                                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs rounded-xl shadow-xs transition-all disabled:opacity-50"
+                                            >
+                                                {{ isInitializing ? 'Loading...' : 'Load Standard COA Template' }}
+                                            </button>
+                                            <button
+                                                @click="openCreateModal"
+                                                class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-xl transition-all"
+                                            >
+                                                Create Custom Account
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div v-else>
+                                        No accounts match the specified criteria.
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>
