@@ -15,6 +15,7 @@ class Expense extends Model
         'team_id',
         'expense_category_id',
         'employee_id',
+        'financial_account_id',
         'expense_number',
         'title',
         'amount',
@@ -44,6 +45,11 @@ class Expense extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function financialAccount(): BelongsTo
+    {
+        return $this->belongsTo(FinancialAccount::class, 'financial_account_id');
     }
 
     public function creator(): BelongsTo

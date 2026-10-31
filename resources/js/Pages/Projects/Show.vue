@@ -1,9 +1,10 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import Modal from '@/Components/Modal.vue';
 import { formatDate } from '@/Utils/date';
 
@@ -13,7 +14,24 @@ const props = defineProps({
     products: Array,
     warehouses: Array,
     costCategories: Array,
+    financialAccounts: Array,
     analytics: Object,
+});
+
+const defaultAccount = computed(() => {
+    return (props.financialAccounts || []).find(a => a.is_default) || props.financialAccounts?.[0];
+});
+
+const accountOptions = computed(() => {
+    return (props.financialAccounts || []).map(acc => ({
+        id: acc.id,
+        value: acc.id,
+        label: acc.name,
+        sublabel: acc.type === 'cash'
+            ? `Balance: ৳${Number(acc.current_balance).toFixed(2)}`
+            : `${acc.institution_name || ''} (${acc.account_number || ''}) • Bal: ৳${Number(acc.current_balance).toFixed(2)}`,
+        group: acc.type === 'cash' ? 'Cash Registers' : (acc.type === 'bank' ? 'Bank Accounts' : 'MFS Wallets'),
+    }));
 });
 
 // Modals state
@@ -103,7 +121,8 @@ function submitAddBill() {
 // 4. Record Payment Form
 const payForm = useForm({
     amount: props.project.due_amount,
-    payment_method: 'cash',
+    financial_account_id: defaultAccount.value?.id || '',
+    payment_method: '',
     notes: '',
 });
 
@@ -562,7 +581,7 @@ function submitStatus() {
         </div>
 
         <!-- 1. Modal: Issue Inventory Item -->
-        <Modal :show="isAddItemModalOpen" @close="isAddItemModalOpen = false" max-width="md">
+        <Modal :show="isAddItemModalOpen" @close="isAddItemModalOpen = false" max-width="xl">
             <div class="p-6">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <h3 class="text-base font-bold text-slate-900">Issue Material to Project</h3>
@@ -663,7 +682,7 @@ class="w-full rounded-xl border border-slate-200 py-2 px-3"
         </Modal>
 
         <!-- 2. Modal: Log Direct Cost -->
-        <Modal :show="isAddCostModalOpen" @close="isAddCostModalOpen = false" max-width="md">
+        <Modal :show="isAddCostModalOpen" @close="isAddCostModalOpen = false" max-width="xl">
             <div class="p-6">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <h3 class="text-base font-bold text-slate-900">Log Direct Project Expense</h3>
@@ -758,7 +777,7 @@ class="w-full rounded-xl border border-slate-200 py-2 px-3"
         </Modal>
 
         <!-- 3. Modal: Add Milestone Claim -->
-        <Modal :show="isAddBillModalOpen" @close="isAddBillModalOpen = false" max-width="md">
+        <Modal :show="isAddBillModalOpen" @close="isAddBillModalOpen = false" max-width="lg">
             <div class="p-6">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <h3 class="text-base font-bold text-slate-900">Create Milestone Billing Claim</h3>
@@ -829,7 +848,7 @@ class="w-full rounded-xl border border-slate-200 py-2 px-3"
         </Modal>
 
         <!-- 4. Modal: Collect Payment -->
-        <Modal :show="isPayModalOpen" @close="isPayModalOpen = false" max-width="md">
+        <Modal :show="isPayModalOpen" @close="isPayModalOpen = false" max-width="lg">
             <div class="p-6">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <h3 class="text-base font-bold text-slate-900">Record Client Payment</h3>
@@ -858,16 +877,13 @@ class="w-full rounded-xl border border-slate-200 py-2 px-3"
                     </div>
 
                     <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Payment Method</label>
-                        <select
-                            v-model="payForm.payment_method"
-                            class="w-full rounded-xl border border-slate-200 py-2.5 px-3"
-                        >
-                            <option value="cash">Cash</option>
-                            <option value="bank_transfer">Bank Transfer</option>
-                            <option value="cheque">Cheque</option>
-                            <option value="online">Online / Card</option>
-                        </select>
+                        <label class="block font-semibold text-slate-700 mb-1">Deposit Into Account *</label>
+                        <SearchableSelect
+                            v-model="payForm.financial_account_id"
+                            :options="accountOptions"
+                            size="compact"
+                            :error="payForm.errors.financial_account_id"
+                        />
                     </div>
 
                     <div>

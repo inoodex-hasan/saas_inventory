@@ -307,9 +307,12 @@ class AccountingService
                 'id' => $acc->id,
                 'account_code' => $acc->account_code,
                 'name' => $acc->name,
+                'account_name' => $acc->name,
                 'type' => $acc->type,
                 'debit' => round($debitBalance, 2),
                 'credit' => round($creditBalance, 2),
+                'debit_balance' => round($debitBalance, 2),
+                'credit_balance' => round($creditBalance, 2),
             ];
         }
 
@@ -365,7 +368,9 @@ class AccountingService
                 $revenueRows[] = [
                     'account_code' => $acc->account_code,
                     'name' => $acc->name,
+                    'account_name' => $acc->name,
                     'amount' => $amount,
+                    'balance' => $amount,
                 ];
             }
         }
@@ -392,7 +397,9 @@ class AccountingService
                 $cogsRows[] = [
                     'account_code' => $acc->account_code,
                     'name' => $acc->name,
+                    'account_name' => $acc->name,
                     'amount' => $amount,
+                    'balance' => $amount,
                 ];
             }
         }
@@ -421,7 +428,9 @@ class AccountingService
                 $expenseRows[] = [
                     'account_code' => $acc->account_code,
                     'name' => $acc->name,
+                    'account_name' => $acc->name,
                     'amount' => $amount,
+                    'balance' => $amount,
                 ];
             }
         }
@@ -485,8 +494,10 @@ class AccountingService
                 $assetRows[] = [
                     'account_code' => $acc->account_code,
                     'name' => $acc->name,
+                    'account_name' => $acc->name,
                     'subtype' => $acc->subtype,
                     'amount' => $amount,
+                    'balance' => $amount,
                 ];
             }
         }
@@ -512,8 +523,10 @@ class AccountingService
                 $liabilityRows[] = [
                     'account_code' => $acc->account_code,
                     'name' => $acc->name,
+                    'account_name' => $acc->name,
                     'subtype' => $acc->subtype,
                     'amount' => $amount,
+                    'balance' => $amount,
                 ];
             }
         }
@@ -539,7 +552,9 @@ class AccountingService
                 $equityRows[] = [
                     'account_code' => $acc->account_code,
                     'name' => $acc->name,
+                    'account_name' => $acc->name,
                     'amount' => $amount,
+                    'balance' => $amount,
                 ];
             }
         }

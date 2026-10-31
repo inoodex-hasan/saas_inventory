@@ -19,11 +19,11 @@ const startDate = ref(props.filters?.start_date || '');
 const endDate = ref(props.filters?.end_date || '');
 
 function applyFilters() {
-    router.get(route('journal.index'), {
-        search: search.value,
-        start_date: startDate.value,
-        end_date: endDate.value,
-    }, {
+    const params = {};
+    if (search.value) params.search = search.value;
+    if (startDate.value) params.start_date = startDate.value;
+    if (endDate.value) params.end_date = endDate.value;
+    router.get(route('journal.index'), params, {
         preserveState: true,
         replace: true,
     });
@@ -33,7 +33,7 @@ function resetFilters() {
     search.value = '';
     startDate.value = '';
     endDate.value = '';
-    applyFilters();
+    router.get(route('journal.index'), {}, { preserveState: false, replace: true });
 }
 </script>
 
@@ -87,7 +87,6 @@ function resetFilters() {
                             v-model="search"
                             @keyup.enter="applyFilters"
                             type="text"
-                            placeholder="Search by entry # or narration..."
                             class="w-full pl-10 pr-4 py-2 text-xs bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                         />
                     </div>
@@ -138,13 +137,13 @@ function resetFilters() {
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                                <th class="py-3 px-4">Entry Number</th>
-                                <th class="py-3 px-4">Date</th>
-                                <th class="py-3 px-4">Narration / Description</th>
-                                <th class="py-3 px-4">Account Lines Preview</th>
-                                <th class="py-3 px-4 text-right">Debit / Credit Balance</th>
-                                <th class="py-3 px-4 text-center">Posted By</th>
-                                <th class="py-3 px-4 text-right">Actions</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Entry Number</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Date</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Narration / Description</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Account Lines Preview</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Debit / Credit Balance</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Posted By</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -153,18 +152,18 @@ function resetFilters() {
                                 :key="entry.id"
                                 class="hover:bg-slate-50/60 transition-colors"
                             >
-                                <td class="py-3 px-4 font-mono font-bold text-indigo-600">
+                                <td class="py-3 px-4 font-mono font-bold text-indigo-600 whitespace-nowrap">
                                     <Link :href="route('journal.show', entry.id)" class="hover:underline">
                                         {{ entry.entry_number }}
                                     </Link>
                                 </td>
-                                <td class="py-3 px-4 font-mono text-slate-600">
+                                <td class="py-3 px-4 font-mono text-slate-600 whitespace-nowrap">
                                     {{ formatDate(entry.entry_date) }}
                                 </td>
-                                <td class="py-3 px-4 font-medium text-slate-800 max-w-xs truncate">
-                                    {{ entry.narration }}
+                                <td class="py-3 px-4 font-medium text-slate-800 max-w-[220px] lg:max-w-[300px] truncate" :title="entry.narration">
+                                    {{ entry.narration ? (entry.narration.length > 55 ? entry.narration.slice(0, 55) + '...' : entry.narration) : '—' }}
                                 </td>
-                                <td class="py-3 px-4 text-[11px] text-slate-500">
+                                <td class="py-3 px-4 text-[11px] text-slate-500 whitespace-nowrap">
                                     <div v-for="line in entry.lines.slice(0, 2)" :key="line.id" class="truncate font-mono">
                                         <span class="text-slate-700 font-semibold">{{ line.account?.account_code }}</span>:
                                         {{ line.debit > 0 ? `Dr ${line.debit}` : `Cr ${line.credit}` }}
@@ -173,13 +172,13 @@ function resetFilters() {
                                         +{{ entry.lines.length - 2 }} more lines...
                                     </div>
                                 </td>
-                                <td class="py-3 px-4 text-right font-mono font-bold text-slate-900">
+                                <td class="py-3 px-4 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
                                     <CurrencyDisplay :amount="entry.total_debit" />
                                 </td>
-                                <td class="py-3 px-4 text-center text-slate-500 text-[11px]">
+                                <td class="py-3 px-4 text-center text-slate-500 text-[11px] whitespace-nowrap">
                                     {{ entry.creator?.name || 'System' }}
                                 </td>
-                                <td class="py-3 px-4 text-right">
+                                <td class="py-3 px-4 text-right whitespace-nowrap">
                                     <div class="flex items-center justify-end">
                                         <ActionDropdown align="right">
                                             <Link

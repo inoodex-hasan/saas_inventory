@@ -17,20 +17,20 @@ class JournalEntryController extends Controller
     {
         $teamId = Auth::user()->current_team_id;
 
-        $search = $request->input('search', '');
-        $startDate = $request->input('start_date', '');
-        $endDate = $request->input('end_date', '');
+        $search = $request->input('search');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
 
         $query = JournalEntry::where('team_id', $teamId)
             ->with(['lines.account', 'creator'])
-            ->when($search, function ($q, $search) {
+            ->when($request->filled('search'), function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('entry_number', 'like', "%{$search}%")
                         ->orWhere('narration', 'like', "%{$search}%");
                 });
             })
-            ->when($startDate !== '', fn ($q) => $q->whereDate('entry_date', '>=', $startDate))
-            ->when($endDate !== '', fn ($q) => $q->whereDate('entry_date', '<=', $endDate));
+            ->when($request->filled('start_date'), fn ($q) => $q->whereDate('entry_date', '>=', $startDate))
+            ->when($request->filled('end_date'), fn ($q) => $q->whereDate('entry_date', '<=', $endDate));
 
         $entries = $query->latest('entry_date')->latest('id')->paginate(15)->withQueryString();
 

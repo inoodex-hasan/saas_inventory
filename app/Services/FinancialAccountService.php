@@ -93,6 +93,14 @@ class FinancialAccountService
             $account = FinancialAccount::where('team_id', $teamId)->where('is_active', true)->first();
         }
 
+        if (!$account) {
+            $this->ensureDefaultAccounts($teamId);
+            $account = FinancialAccount::where('team_id', $teamId)
+                ->where('is_active', true)
+                ->where('is_default', true)
+                ->first() ?: FinancialAccount::where('team_id', $teamId)->where('is_active', true)->first();
+        }
+
         return $account;
     }
 }

@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Employee;
 use App\Models\Expense;
 use App\Models\Payroll;
-use App\Models\TaDaClaim;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -86,90 +85,41 @@ class HrService
             $nextNum = $last ? str_pad((int) substr($last->expense_number, -4) + 1, 4, '0', STR_PAD_LEFT) : '0001';
             $expenseNumber = $prefix . $nextNum;
 
-            return Expense::create([
+            $accountId = $data['financial_account_id'] ?? null;
+            $account = null;
+            if ($accountId) {
+                $account = \App\Models\FinancialAccount::where('team_id', $teamId)->find($accountId);
+            }
+            $paymentMethod = $account ? $account->name : ($data['payment_method'] ?? 'Cash');
+
+            $expense = Expense::create([
                 'team_id' => $teamId,
                 'expense_category_id' => $data['expense_category_id'] ?? null,
                 'employee_id' => $data['employee_id'] ?? null,
+                'financial_account_id' => $account?->id,
                 'expense_number' => $expenseNumber,
                 'title' => $data['title'],
                 'amount' => max(0.01, (float) $data['amount']),
                 'expense_date' => $data['expense_date'] ?? now()->toDateString(),
-                'payment_method' => $data['payment_method'] ?? 'cash',
+                'payment_method' => $paymentMethod,
                 'vendor_or_payee' => $data['vendor_or_payee'] ?? null,
                 'receipt_reference' => $data['receipt_reference'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'created_by' => Auth::id(),
             ]);
+
+            if ($account) {
+                $account->withdraw($expense->amount, [
+                    'reference_type' => Expense::class,
+                    'reference_id' => $expense->id,
+                    'reference_number' => $expenseNumber,
+                    'description' => "Expense voucher #{$expenseNumber}: {$expense->title}",
+                    'date' => $expense->expense_date,
+                ]);
+            }
+
+            return $expense;
         });
-    }
-
-    /**
-     * Submit an employee Travel & Daily Allowance (TA/DA) claim.
-     */
-    public function submitTaDaClaim(array $data): TaDaClaim
-    {
-        return DB::transaction(function () use ($data) {
-            $teamId = Auth::user()?->current_team_id;
-
-            $prefix = 'TADA-' . Carbon::now()->format('Ymd') . '-';
-            $last = TaDaClaim::where('team_id', $teamId)
-                ->where('claim_number', 'LIKE', $prefix . '%')
-                ->latest('id')
-                ->first();
-            $nextNum = $last ? str_pad((int) substr($last->claim_number, -4) + 1, 4, '0', STR_PAD_LEFT) : '0001';
-            $claimNumber = $prefix . $nextNum;
-
-            $travel = max(0, (float) ($data['travel_allowance'] ?? 0));
-            $daily = max(0, (float) ($data['daily_allowance'] ?? 0));
-            $other = max(0, (float) ($data['other_expenses'] ?? 0));
-            $total = round($travel + $daily + $other, 2);
-
-            return TaDaClaim::create([
-                'team_id' => $teamId,
-                'employee_id' => $data['employee_id'],
-                'claim_number' => $claimNumber,
-                'travel_date' => $data['travel_date'],
-                'destination' => $data['destination'],
-                'purpose' => $data['purpose'],
-                'travel_allowance' => $travel,
-                'daily_allowance' => $daily,
-                'other_expenses' => $other,
-                'total_amount' => $total,
-                'status' => 'pending',
-                'notes' => $data['notes'] ?? null,
-                'created_by' => Auth::id(),
-            ]);
-        });
-    }
-
-    /**
-     * Approve TA/DA claim.
-     */
-    public function approveTaDaClaim(TaDaClaim $claim, int $approverId): TaDaClaim
-    {
-        $claim->update([
-            'status' => 'approved',
-            'approved_by' => $approverId,
-            'approved_at' => now(),
-            'rejection_reason' => null,
-        ]);
-
-        return $claim;
-    }
-
-    /**
-     * Reject TA/DA claim with reason.
-     */
-    public function rejectTaDaClaim(TaDaClaim $claim, string $reason, int $approverId): TaDaClaim
-    {
-        $claim->update([
-            'status' => 'rejected',
-            'approved_by' => $approverId,
-            'approved_at' => now(),
-            'rejection_reason' => $reason,
-        ]);
-
-        return $claim;
     }
 
     /**
@@ -179,10 +129,9 @@ class HrService
         Employee $employee,
         string $monthYear,
         float $otherAllowances = 0,
-        float $deductions = 0,
-        bool $includeApprovedTada = true
+        float $deductions = 0
     ): Payroll {
-        return DB::transaction(function () use ($employee, $monthYear, $otherAllowances, $deductions, $includeApprovedTada) {
+        return DB::transaction(function () use ($employee, $monthYear, $otherAllowances, $deductions) {
             $teamId = $employee->team_id;
 
             $exists = Payroll::where('team_id', $teamId)
@@ -194,21 +143,10 @@ class HrService
                 throw new \InvalidArgumentException("Payroll for {$monthYear} has already been generated for this employee.");
             }
 
-            $tadaAllowance = 0.00;
-            if ($includeApprovedTada) {
-                // Find approved TA/DA claims for this employee not yet reimbursed
-                $claims = TaDaClaim::where('team_id', $teamId)
-                    ->where('employee_id', $employee->id)
-                    ->where('status', 'approved')
-                    ->get();
-
-                $tadaAllowance = (float) $claims->sum('total_amount');
-            }
-
             $basic = (float) $employee->basic_salary;
             $allowances = max(0, $otherAllowances);
             $deductionsTotal = max(0, $deductions);
-            $netSalary = max(0, round($basic + $tadaAllowance + $allowances - $deductionsTotal, 2));
+            $netSalary = max(0, round($basic + $allowances - $deductionsTotal, 2));
 
             $prefix = 'PAY-' . str_replace('-', '', $monthYear) . '-';
             $last = Payroll::where('team_id', $teamId)
@@ -224,21 +162,13 @@ class HrService
                 'payroll_number' => $payrollNumber,
                 'month_year' => $monthYear,
                 'basic_salary' => $basic,
-                'tada_allowance' => $tadaAllowance,
+                'tada_allowance' => 0.00,
                 'other_allowances' => $allowances,
                 'deductions_total' => $deductionsTotal,
                 'net_salary' => $netSalary,
                 'status' => 'draft',
                 'created_by' => Auth::id(),
             ]);
-
-            // Mark included claims as reimbursed
-            if ($includeApprovedTada && $tadaAllowance > 0) {
-                TaDaClaim::where('team_id', $teamId)
-                    ->where('employee_id', $employee->id)
-                    ->where('status', 'approved')
-                    ->update(['status' => 'reimbursed']);
-            }
 
             return $payroll;
         });
@@ -249,16 +179,35 @@ class HrService
      */
     public function markPayrollPaid(
         Payroll $payroll,
-        string $paymentMethod = 'bank_transfer',
+        string $paymentMethod = 'Bank Transfer',
         ?string $reference = null,
-        ?string $paymentDate = null
+        ?string $paymentDate = null,
+        ?int $financialAccountId = null
     ): Payroll {
+        $account = null;
+        if ($financialAccountId) {
+            $account = \App\Models\FinancialAccount::where('team_id', $payroll->team_id)->find($financialAccountId);
+        }
+
+        $methodName = $account ? $account->name : $paymentMethod;
+
         $payroll->update([
             'status' => 'paid',
             'payment_date' => $paymentDate ?? now()->toDateString(),
-            'payment_method' => $paymentMethod,
+            'payment_method' => $methodName,
+            'financial_account_id' => $account?->id,
             'payment_reference' => $reference,
         ]);
+
+        if ($account) {
+            $account->withdraw($payroll->net_salary, [
+                'reference_type' => Payroll::class,
+                'reference_id' => $payroll->id,
+                'reference_number' => $payroll->payroll_number,
+                'description' => "Salary disbursement #{$payroll->payroll_number} for {$payroll->employee->name}",
+                'date' => $paymentDate ?? now()->toDateString(),
+            ]);
+        }
 
         return $payroll;
     }

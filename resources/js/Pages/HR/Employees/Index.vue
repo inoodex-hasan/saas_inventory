@@ -92,18 +92,18 @@ function deleteEmployee(emp) {
 }
 
 function applyFilters() {
-    router.get(route('employees.index'), {
-        search: search.value,
-        status: status.value,
-        department: department.value,
-    }, { preserveState: true, replace: true });
+    const params = {};
+    if (search.value) params.search = search.value;
+    if (status.value) params.status = status.value;
+    if (department.value) params.department = department.value;
+    router.get(route('employees.index'), params, { preserveState: true, replace: true });
 }
 
 function resetFilters() {
     search.value = '';
     status.value = '';
     department.value = '';
-    applyFilters();
+    router.get(route('employees.index'), {}, { preserveState: false, replace: true });
 }
 </script>
 
@@ -153,7 +153,6 @@ function resetFilters() {
                             v-model="search"
                             @keyup.enter="applyFilters"
                             type="text"
-                            placeholder="Search name, code, designation, phone..."
                             class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
                         />
                         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -216,41 +215,41 @@ function resetFilters() {
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
                             <tr class="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-bold text-[10px]">
-                                <th class="py-3 px-4">Staff Member</th>
-                                <th class="py-3 px-4">Role & Dept</th>
-                                <th class="py-3 px-4">Contact</th>
-                                <th class="py-3 px-4">Joining Date</th>
-                                <th class="py-3 px-4 text-right">Basic Salary</th>
-                                <th class="py-3 px-4 text-center">Status</th>
-                                <th class="py-3 px-4 text-right">Actions</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Staff Member</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Role & Dept</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Contact</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Joining Date</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Basic Salary</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Status</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             <tr v-for="emp in employees.data" :key="emp.id" class="hover:bg-slate-50/80 transition-colors">
-                                <td class="py-3.5 px-4">
-                                    <div class="font-bold text-slate-900">{{ emp.name }}</div>
+                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                    <div class="font-bold text-slate-900 max-w-[170px] lg:max-w-[220px] truncate" :title="emp.name">{{ emp.name }}</div>
                                     <div class="font-mono text-[11px] text-indigo-600 font-semibold">
                                         #{{ emp.employee_code }}
                                     </div>
                                 </td>
-                                <td class="py-3.5 px-4">
-                                    <div class="font-semibold text-slate-800">{{ emp.designation }}</div>
-                                    <div v-if="emp.department" class="text-[11px] text-slate-400">{{ emp.department }}</div>
+                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                    <div class="font-semibold text-slate-800 max-w-[160px] lg:max-w-[200px] truncate" :title="emp.designation">{{ emp.designation }}</div>
+                                    <div v-if="emp.department" class="text-[11px] text-slate-400 max-w-[160px] truncate" :title="emp.department">{{ emp.department }}</div>
                                 </td>
-                                <td class="py-3.5 px-4 text-slate-600">
+                                <td class="py-3.5 px-4 text-slate-600 whitespace-nowrap">
                                     <div>{{ emp.phone || '-' }}</div>
                                     <div v-if="emp.email" class="text-[11px] text-slate-400">{{ emp.email }}</div>
                                 </td>
-                                <td class="py-3.5 px-4 text-xs text-slate-600 font-medium">
+                                <td class="py-3.5 px-4 text-xs text-slate-600 font-medium whitespace-nowrap">
                                     {{ formatDate(emp.joining_date) }}
                                 </td>
-                                <td class="py-3.5 px-4 text-right font-bold text-slate-900">
+                                <td class="py-3.5 px-4 text-right font-bold text-slate-900 whitespace-nowrap">
                                     <CurrencyDisplay :amount="emp.basic_salary" />
                                 </td>
-                                <td class="py-3.5 px-4 text-center">
+                                <td class="py-3.5 px-4 text-center whitespace-nowrap">
                                     <StatusBadge :status="emp.status" />
                                 </td>
-                                <td class="py-3.5 px-4 text-right">
+                                <td class="py-3.5 px-4 text-right whitespace-nowrap">
                                     <ActionDropdown>
                                         <div class="p-1 space-y-0.5">
                                             <button
@@ -291,24 +290,27 @@ function resetFilters() {
         </div>
 
         <!-- Create / Edit Employee Modal -->
-        <Modal :show="isModalOpen" @close="isModalOpen = false" max-width="lg">
-            <div class="p-6">
+        <Modal :show="isModalOpen" @close="isModalOpen = false" max-width="2xl">
+            <div class="p-6 sm:p-7">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <h3 class="text-base font-bold text-slate-900">
-                        {{ isEditing ? 'Edit Staff Profile' : 'Add New Employee' }}
-                    </h3>
-                    <button @click="isModalOpen = false" class="text-slate-400 hover:text-slate-600">&times;</button>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">
+                            {{ isEditing ? 'Edit Staff Profile' : 'Add New Employee' }}
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Manage employee employment details, salary tier and disbursement accounts</p>
+                    </div>
+                    <button @click="isModalOpen = false" class="text-slate-400 hover:text-slate-600 text-lg leading-none">&times;</button>
                 </div>
 
-                <form @submit.prevent="submitForm" class="mt-4 space-y-4 text-xs">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <form @submit.prevent="submitForm" class="mt-5 space-y-4 text-xs">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Full Name *</label>
                             <input
                                 v-model="form.name"
                                 type="text"
                                 required
-class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2.5 px-3"
                             />
                         </div>
 
@@ -318,7 +320,7 @@ class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500
                                 v-model="form.designation"
                                 type="text"
                                 required
-class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2.5 px-3"
                             />
                         </div>
 
@@ -327,7 +329,7 @@ class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500
                             <input
                                 v-model="form.department"
                                 type="text"
-class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2.5 px-3"
                             />
                         </div>
 
@@ -338,8 +340,8 @@ class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500
                                 type="number"
                                 step="0.01"
                                 min="0"
-required
-                                class="w-full text-xs font-bold rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
+                                required
+                                class="w-full text-xs font-bold rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2.5 px-3"
                             />
                         </div>
 
@@ -348,7 +350,7 @@ required
                             <input
                                 v-model="form.phone"
                                 type="text"
-class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2.5 px-3"
                             />
                         </div>
 
@@ -357,7 +359,7 @@ class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500
                             <input
                                 v-model="form.email"
                                 type="email"
-class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2.5 px-3"
                             />
                         </div>
 
@@ -366,7 +368,7 @@ class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500
                             <input
                                 v-model="form.joining_date"
                                 type="date"
-                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2 px-3"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2.5 px-3"
                             />
                         </div>
 
@@ -374,7 +376,7 @@ class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500
                             <label class="block font-semibold text-slate-700 mb-1">Status</label>
                             <select
                                 v-model="form.status"
-                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2 px-3"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2.5 px-3"
                             >
                                 <option value="active">Active</option>
                                 <option value="on_leave">On Leave</option>
@@ -387,7 +389,7 @@ class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500
                             <input
                                 v-model="form.bank_name"
                                 type="text"
-class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2.5 px-3"
                             />
                         </div>
 
@@ -396,32 +398,32 @@ class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500
                             <input
                                 v-model="form.bank_account_no"
                                 type="text"
-class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2.5 px-3"
                             />
                         </div>
 
-                        <div class="md:col-span-2">
-                            <label class="block font-semibold text-slate-700 mb-1">Mobile Banking (bKash / Nagad)</label>
+                        <div class="sm:col-span-2">
+                            <label class="block font-semibold text-slate-700 mb-1">Mobile Banking (bKash / Nagad / Rocket)</label>
                             <input
                                 v-model="form.mobile_banking_no"
                                 type="text"
-class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2.5 px-3"
                             />
                         </div>
                     </div>
 
-                    <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
                         <button
                             type="button"
                             @click="isModalOpen = false"
-                            class="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl font-semibold hover:bg-slate-50 transition"
+                            class="px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl font-semibold hover:bg-slate-50 transition"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             :disabled="form.processing"
-                            class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-sm transition disabled:opacity-50"
+                            class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-sm transition disabled:opacity-50"
                         >
                             {{ isEditing ? 'Save Profile' : 'Register Employee' }}
                         </button>

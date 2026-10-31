@@ -8,6 +8,8 @@ use App\Models\ServiceTicket;
 use App\Models\ServiceTicketItem;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Models\FinancialAccount;
+use App\Services\FinancialAccountService;
 use App\Services\ServiceTicketService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -17,30 +19,31 @@ use Inertia\Inertia;
 
 class ServiceTicketController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, FinancialAccountService $accountService)
     {
         $teamId = Auth::user()->current_team_id;
 
-        $search = $request->input('search', '');
-        $status = $request->input('status', '');
-        $priority = $request->input('priority', '');
-        $technicianId = $request->input('technician_id', '');
-        $paymentStatus = $request->input('payment_status', '');
+        $search = $request->input('search');
+        $status = $request->input('status');
+        $priority = $request->input('priority');
+        $technicianId = $request->input('technician_id');
+        $paymentStatus = $request->input('payment_status');
 
         $query = ServiceTicket::where('team_id', $teamId)
             ->with(['customer', 'technician'])
-            ->when($search, function ($q, $search) {
+            ->when($request->filled('search'), function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('ticket_number', 'like', "%{$search}%")
                         ->orWhere('device_name', 'like', "%{$search}%")
                         ->orWhere('serial_no', 'like', "%{$search}%")
+                        ->orWhere('technician_name', 'like', "%{$search}%")
                         ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%"));
                 });
             })
-            ->when($status !== '', fn ($q) => $q->where('status', $status))
-            ->when($priority !== '', fn ($q) => $q->where('priority', $priority))
-            ->when($technicianId !== '', fn ($q) => $q->where('technician_id', $technicianId))
-            ->when($paymentStatus !== '', fn ($q) => $q->where('payment_status', $paymentStatus));
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $status))
+            ->when($request->filled('priority'), fn ($q) => $q->where('priority', $priority))
+            ->when($request->filled('technician_id'), fn ($q) => $q->where('technician_id', $technicianId))
+            ->when($request->filled('payment_status'), fn ($q) => $q->where('payment_status', $paymentStatus));
 
         $tickets = $query->latest('id')->paginate(15)->withQueryString();
 
@@ -54,12 +57,15 @@ class ServiceTicketController extends Controller
         ];
 
         $teamUsers = Auth::user()->currentTeam ? Auth::user()->currentTeam->allUsers() : collect([Auth::user()]);
+        $accountService->ensureDefaultAccounts($teamId);
+        $financialAccounts = $accountService->getActiveAccountsForTeam($teamId);
 
         return Inertia::render('Services/Index', [
             'page_title' => 'Workshop & Repair Service Jobs',
             'tickets' => $tickets,
             'metrics' => $metrics,
             'technicians' => $teamUsers->map(fn ($u) => ['id' => $u->id, 'name' => $u->name]),
+            'financialAccounts' => $financialAccounts,
             'filters' => [
                 'search' => $search,
                 'status' => $status,
@@ -109,6 +115,7 @@ class ServiceTicketController extends Controller
             'problem_description' => 'nullable|string|max:2000',
             'initial_diagnosis' => 'nullable|string|max:2000',
             'technician_id' => 'nullable|exists:users,id',
+            'technician_name' => 'nullable|string|max:100',
             'priority' => 'required|in:low,normal,high,urgent',
             'service_charge' => 'nullable|numeric|min:0',
             'discount_amount' => 'nullable|numeric|min:0',
@@ -142,7 +149,7 @@ class ServiceTicketController extends Controller
         return redirect()->route('services.show', $ticket->id)->with('success', "Service job ticket {$ticket->ticket_number} created successfully.");
     }
 
-    public function show(ServiceTicket $ticket)
+    public function show(ServiceTicket $ticket, FinancialAccountService $accountService)
     {
         $teamId = Auth::user()->current_team_id;
         abort_if($ticket->team_id !== $teamId, 403);
@@ -153,12 +160,16 @@ class ServiceTicketController extends Controller
         $warehouses = Warehouse::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
         $teamUsers = Auth::user()->currentTeam ? Auth::user()->currentTeam->allUsers() : collect([Auth::user()]);
 
+        $accountService->ensureDefaultAccounts($teamId);
+        $financialAccounts = $accountService->getActiveAccountsForTeam($teamId);
+
         return Inertia::render('Services/Show', [
             'page_title' => "Service Ticket #{$ticket->ticket_number}",
             'ticket' => $ticket,
             'products' => $products,
             'warehouses' => $warehouses,
             'technicians' => $teamUsers->map(fn ($u) => ['id' => $u->id, 'name' => $u->name]),
+            'financialAccounts' => $financialAccounts,
         ]);
     }
 
@@ -190,6 +201,7 @@ class ServiceTicketController extends Controller
             'problem_description' => 'nullable|string|max:2000',
             'initial_diagnosis' => 'nullable|string|max:2000',
             'technician_id' => 'nullable|exists:users,id',
+            'technician_name' => 'nullable|string|max:100',
             'priority' => 'required|in:low,normal,high,urgent',
             'service_charge' => 'nullable|numeric|min:0',
             'discount_amount' => 'nullable|numeric|min:0',
@@ -206,6 +218,7 @@ class ServiceTicketController extends Controller
             'problem_description' => $validated['problem_description'] ?? null,
             'initial_diagnosis' => $validated['initial_diagnosis'] ?? null,
             'technician_id' => $validated['technician_id'] ?? null,
+            'technician_name' => $validated['technician_name'] ?? null,
             'priority' => $validated['priority'],
             'service_charge' => max(0, (float) ($validated['service_charge'] ?? 0)),
             'discount_amount' => max(0, (float) ($validated['discount_amount'] ?? 0)),
@@ -269,11 +282,18 @@ class ServiceTicketController extends Controller
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'nullable|string|max:50',
+            'financial_account_id' => ['nullable', Rule::exists('financial_accounts', 'id')->where('team_id', $teamId)],
+            'payment_method' => 'nullable|string|max:100',
             'notes' => 'nullable|string|max:255',
         ]);
 
-        $service->recordPayment($ticket, (float) $validated['amount'], $validated['payment_method'] ?? null, $validated['notes'] ?? null);
+        $service->recordPayment(
+            $ticket,
+            (float) $validated['amount'],
+            $validated['payment_method'] ?? null,
+            $validated['notes'] ?? null,
+            $validated['financial_account_id'] ?? null
+        );
 
         return redirect()->back()->with('success', "Payment of {$validated['amount']} recorded for ticket #{$ticket->ticket_number}.");
     }

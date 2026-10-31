@@ -4,9 +4,13 @@ namespace Database\Seeders;
 
 use App\Models\Client;
 use App\Models\CostCategory;
+use App\Models\Product;
 use App\Models\Project;
+use App\Models\ProjectBill;
 use App\Models\ProjectCost;
+use App\Models\ProjectItem;
 use App\Models\Team;
+use App\Models\Warehouse;
 use Illuminate\Database\Seeder;
 
 class ProjectSeeder extends Seeder
@@ -190,6 +194,82 @@ class ProjectSeeder extends Seeder
                     ]
                 );
             }
+        }
+
+        // 4. Project Items (satisfies project_items >= 2)
+        $firstProject = Project::where('team_id', $team->id)->first();
+        $sampleProduct = Product::where('team_id', $team->id)->first();
+        $sampleWarehouse = Warehouse::where('team_id', $team->id)->first();
+
+        if ($firstProject) {
+            ProjectItem::updateOrCreate(
+                [
+                    'team_id'    => $team->id,
+                    'project_id' => $firstProject->id,
+                    'item_name'  => 'Cat6A High-Density Patch Panels & Cabling Spool',
+                ],
+                [
+                    'product_id'   => $sampleProduct?->id,
+                    'warehouse_id' => $sampleWarehouse?->id,
+                    'quantity'     => 10,
+                    'unit_cost'    => 150.00,
+                    'unit_price'   => 250.00,
+                    'subtotal'     => 2500.00,
+                    'notes'        => 'Issued from central warehouse inventory.',
+                ]
+            );
+
+            ProjectItem::updateOrCreate(
+                [
+                    'team_id'    => $team->id,
+                    'project_id' => $firstProject->id,
+                    'item_name'  => 'Cisco Catalyst 24-Port Switch Integration',
+                ],
+                [
+                    'product_id'   => $sampleProduct?->id,
+                    'warehouse_id' => $sampleWarehouse?->id,
+                    'quantity'     => 2,
+                    'unit_cost'    => 420.00,
+                    'unit_price'   => 650.00,
+                    'subtotal'     => 1300.00,
+                    'notes'        => 'Network rack switch unit installed on site.',
+                ]
+            );
+
+            // 5. Project Bills (satisfies project_bills >= 2)
+            ProjectBill::updateOrCreate(
+                [
+                    'team_id'     => $team->id,
+                    'bill_number' => 'PB-2026-001',
+                ],
+                [
+                    'project_id'     => $firstProject->id,
+                    'title'          => 'Initial Mobilization & Equipment Deposit',
+                    'amount'         => 12000.00,
+                    'due_date'       => now()->subDays(20)->toDateString(),
+                    'paid_date'      => now()->subDays(18)->toDateString(),
+                    'status'         => 'paid',
+                    'payment_method' => 'bank_transfer',
+                    'notes'          => 'Client remittance received and verified.',
+                ]
+            );
+
+            ProjectBill::updateOrCreate(
+                [
+                    'team_id'     => $team->id,
+                    'bill_number' => 'PB-2026-002',
+                ],
+                [
+                    'project_id'     => $firstProject->id,
+                    'title'          => 'Final Acceptance & Handover Invoice',
+                    'amount'         => 12500.00,
+                    'due_date'       => now()->addDays(15)->toDateString(),
+                    'paid_date'      => null,
+                    'status'         => 'pending',
+                    'payment_method' => 'bank_transfer',
+                    'notes'          => 'Milestone invoice pending sign-off.',
+                ]
+            );
         }
     }
 }

@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use App\Models\CostCategory;
+use App\Models\FinancialAccount;
 use App\Models\Product;
 use App\Models\Project;
 use App\Models\ProjectCost;
 use App\Models\ProjectItem;
 use App\Models\Warehouse;
+use App\Services\FinancialAccountService;
 use App\Services\ProjectService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -18,27 +20,27 @@ use Inertia\Inertia;
 
 class ProjectController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, FinancialAccountService $accountService)
     {
         $teamId = Auth::user()->current_team_id;
 
-        $search = $request->input('search', '');
-        $status = $request->input('status', '');
-        $paymentStatus = $request->input('payment_status', '');
-        $clientId = $request->input('client_id', '');
+        $search = $request->input('search');
+        $status = $request->input('status');
+        $paymentStatus = $request->input('payment_status');
+        $clientId = $request->input('client_id');
 
         $query = Project::where('team_id', $teamId)
             ->with(['client', 'creator'])
-            ->when($search, function ($q, $search) {
+            ->when($request->filled('search'), function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('project_code', 'like', "%{$search}%")
                         ->orWhere('name', 'like', "%{$search}%")
                         ->orWhereHas('client', fn ($c) => $c->where('name', 'like', "%{$search}%")->orWhere('company_name', 'like', "%{$search}%"));
                 });
             })
-            ->when($status !== '', fn ($q) => $q->where('status', $status))
-            ->when($paymentStatus !== '', fn ($q) => $q->where('payment_status', $paymentStatus))
-            ->when($clientId !== '', fn ($q) => $q->where('client_id', $clientId));
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $status))
+            ->when($request->filled('payment_status'), fn ($q) => $q->where('payment_status', $paymentStatus))
+            ->when($request->filled('client_id'), fn ($q) => $q->where('client_id', $clientId));
 
         $projects = $query->latest('id')->paginate(15)->withQueryString();
 
@@ -56,11 +58,15 @@ class ProjectController extends Controller
 
         $clients = Client::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get(['id', 'name', 'company_name']);
 
+        $accountService->ensureDefaultAccounts($teamId);
+        $financialAccounts = $accountService->getActiveAccountsForTeam($teamId);
+
         return Inertia::render('Projects/Index', [
             'page_title' => 'Project Costing & Client Billing',
             'projects' => $projects,
             'metrics' => $metrics,
             'clients' => $clients,
+            'financialAccounts' => $financialAccounts,
             'filters' => [
                 'search' => $search,
                 'status' => $status,
@@ -70,7 +76,7 @@ class ProjectController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(FinancialAccountService $accountService)
     {
         $teamId = Auth::user()->current_team_id;
 
@@ -84,13 +90,18 @@ class ProjectController extends Controller
         $nextNum = $last ? str_pad((int) substr($last->project_code, -4) + 1, 4, '0', STR_PAD_LEFT) : '0001';
         $nextProjectCode = $prefix . $nextNum;
 
+        $accountService->ensureDefaultAccounts($teamId);
+        $financialAccounts = $accountService->getActiveAccountsForTeam($teamId);
+
         return Inertia::render('Projects/Create', [
             'page_title' => 'Create New Project',
             'nextProjectCode' => $nextProjectCode,
             'clients' => $clients,
             'costCategories' => $costCategories,
+            'financialAccounts' => $financialAccounts,
             'products' => $products,
             'warehouses' => $warehouses,
+            'financialAccounts' => $financialAccounts,
             'todayDate' => now()->toDateString(),
         ]);
     }
@@ -107,6 +118,7 @@ class ProjectController extends Controller
             'discount_amount' => 'nullable|numeric|min:0',
             'tax_amount' => 'nullable|numeric|min:0',
             'paid_amount' => 'nullable|numeric|min:0',
+            'financial_account_id' => ['nullable', Rule::exists('financial_accounts', 'id')->where('team_id', $teamId)],
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'description' => 'nullable|string|max:2000',
@@ -146,11 +158,21 @@ class ProjectController extends Controller
             $request->input('costs', [])
         );
 
+        if ($project->paid_amount > 0 && !empty($validated['financial_account_id'])) {
+            $account = FinancialAccount::where('team_id', $teamId)->find($validated['financial_account_id']);
+            $account?->deposit($project->paid_amount, [
+                'reference_type' => Project::class,
+                'reference_id' => $project->id,
+                'reference_number' => $project->project_code,
+                'description' => "Advance contract payment received for project #{$project->project_code}",
+            ]);
+        }
+
         return redirect()->route('projects.show', $project->id)
             ->with('success', "Project #{$project->project_code} created successfully.");
     }
 
-    public function show(Project $project)
+    public function show(Project $project, FinancialAccountService $accountService)
     {
         $teamId = Auth::user()->current_team_id;
         abort_if($project->team_id !== $teamId, 403, 'Unauthorized access to project.');
@@ -167,6 +189,9 @@ class ProjectController extends Controller
         $products = Product::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
         $warehouses = Warehouse::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
         $costCategories = CostCategory::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
+
+        $accountService->ensureDefaultAccounts($teamId);
+        $financialAccounts = $accountService->getActiveAccountsForTeam($teamId);
 
         // Calculate material costs based on unit_cost stored or product cost
         $materialCost = $project->items->sum(function ($item) {
@@ -189,6 +214,7 @@ class ProjectController extends Controller
             'products' => $products,
             'warehouses' => $warehouses,
             'costCategories' => $costCategories,
+            'financialAccounts' => $financialAccounts,
             'analytics' => [
                 'material_cost' => round($materialCost, 2),
                 'direct_costs' => round($directCosts, 2),
@@ -322,7 +348,8 @@ class ProjectController extends Controller
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'nullable|string|max:50',
+            'financial_account_id' => ['nullable', Rule::exists('financial_accounts', 'id')->where('team_id', $teamId)],
+            'payment_method' => 'nullable|string|max:100',
             'notes' => 'nullable|string|max:500',
         ]);
 
@@ -330,8 +357,9 @@ class ProjectController extends Controller
             $service->recordPayment(
                 $project,
                 (float) $validated['amount'],
-                $validated['payment_method'] ?? 'cash',
-                $validated['notes'] ?? null
+                $validated['payment_method'] ?? null,
+                $validated['notes'] ?? null,
+                $validated['financial_account_id'] ?? null
             );
         } catch (\InvalidArgumentException $e) {
             return back()->withErrors(['amount' => $e->getMessage()]);

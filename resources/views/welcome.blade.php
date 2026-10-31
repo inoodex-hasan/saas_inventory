@@ -146,7 +146,7 @@
                     <div>
                         <div class="flex items-center gap-2">
                             <span class="font-heading font-extrabold text-lg text-white tracking-tight leading-tight">Inoodex</span>
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">ERP v2.4</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">ERP</span>
                         </div>
                         <span class="text-[10px] font-semibold tracking-wider text-slate-400 uppercase block">Cloud Inventory Platform</span>
                     </div>

@@ -22,11 +22,13 @@ class Product extends Model
         'name',
         'sku',
         'barcode',
+        'image',
         'description',
         'unit',
         'cost_price',
         'unit_price',
         'selling_price',
+        'sale_price',
         'reorder_level',
         'reorder_quantity',
         'warranty_days',
@@ -48,7 +50,20 @@ class Product extends Model
 
     protected $appends = [
         'selling_price',
+        'sale_price',
+        'image_url',
     ];
+
+    public function getImageUrlAttribute(): ?string
+    {
+        if (empty($this->image)) {
+            return null;
+        }
+        if (str_starts_with($this->image, 'http://') || str_starts_with($this->image, 'https://')) {
+            return $this->image;
+        }
+        return '/storage/' . ltrim($this->image, '/');
+    }
 
     public function getSellingPriceAttribute(): float
     {
@@ -56,6 +71,16 @@ class Product extends Model
     }
 
     public function setSellingPriceAttribute($value): void
+    {
+        $this->attributes['unit_price'] = $value;
+    }
+
+    public function getSalePriceAttribute(): float
+    {
+        return (float) ($this->attributes['unit_price'] ?? 0.00);
+    }
+
+    public function setSalePriceAttribute($value): void
     {
         $this->attributes['unit_price'] = $value;
     }

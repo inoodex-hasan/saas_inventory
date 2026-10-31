@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ChartOfAccount;
 use App\Models\Customer;
 use App\Models\FinancialAccount;
+use App\Models\FiscalYear;
 use App\Models\SalesOrder;
+use App\Models\Warehouse;
+use App\Services\AccountingService;
 use App\Services\FinancialAccountService;
 use App\Services\SalesOrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -24,7 +29,7 @@ class CustomerDueController extends Controller
         $filter = $request->input('filter', 'all_with_dues'); // all_with_dues, fully_paid, all
 
         $customers = Customer::where('team_id', $teamId)
-            ->when($search, function ($q, $search) {
+            ->when($request->filled('search'), function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('name', 'like', "%{$search}%")
                         ->orWhere('phone', 'like', "%{$search}%")
@@ -133,5 +138,124 @@ class CustomerDueController extends Controller
         });
 
         return redirect()->back()->with('success', "Payment of ৳{$validated['amount']} recorded into {$account->name} for invoice {$order->order_number}.");
+    }
+
+    public function storeCustomer(Request $request)
+    {
+        $teamId = Auth::user()->current_team_id;
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:50',
+            'email' => 'nullable|email|max:255',
+            'company_name' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:500',
+            'opening_balance' => 'nullable|numeric|min:0',
+        ], [
+            'name.required' => 'Customer name is required.',
+            'phone.required' => 'Customer contact number is required.',
+        ]);
+
+        $openingBalance = round((float) ($request->input('opening_balance', 0)), 2);
+        $validated['opening_balance'] = $openingBalance;
+        $validated['team_id'] = $teamId;
+        $validated['is_active'] = true;
+
+        $customer = DB::transaction(function () use ($validated, $openingBalance, $teamId) {
+            $customer = Customer::create($validated);
+
+            if ($openingBalance > 0) {
+                $warehouse = Warehouse::where('team_id', $teamId)->where('is_default', true)->first()
+                    ?? Warehouse::where('team_id', $teamId)->first();
+
+                if (!$warehouse) {
+                    $warehouse = Warehouse::create([
+                        'team_id' => $teamId,
+                        'name' => 'Main Warehouse',
+                        'code' => 'WH-01',
+                        'is_default' => true,
+                        'is_active' => true,
+                    ]);
+                }
+
+                $orderNumber = 'INV-OPEN-' . str_pad((string) $customer->id, 4, '0', STR_PAD_LEFT);
+                while (SalesOrder::where('team_id', $teamId)->where('order_number', $orderNumber)->exists()) {
+                    $orderNumber .= '-' . rand(10, 99);
+                }
+
+                $salesOrder = SalesOrder::create([
+                    'team_id' => $teamId,
+                    'customer_id' => $customer->id,
+                    'warehouse_id' => $warehouse->id,
+                    'order_number' => $orderNumber,
+                    'status' => 'completed',
+                    'payment_status' => 'unpaid',
+                    'order_date' => now()->toDateString(),
+                    'subtotal' => $openingBalance,
+                    'tax_amount' => 0.00,
+                    'shipping_cost' => 0.00,
+                    'discount_amount' => 0.00,
+                    'total_amount' => $openingBalance,
+                    'paid_amount' => 0.00,
+                    'due_amount' => $openingBalance,
+                    'notes' => 'Opening receivable due balance recorded on customer registration.',
+                    'created_by' => Auth::id(),
+                ]);
+
+                $this->recordCustomerOpeningJournalEntry($teamId, $customer, $salesOrder, $openingBalance);
+            }
+
+            return $customer;
+        });
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'customer' => $customer,
+            ]);
+        }
+
+        $successMsg = "Customer '{$customer->name}' created successfully" . ($openingBalance > 0 ? " with opening due of ৳" . number_format($openingBalance, 2) : "") . ".";
+
+        return redirect()->back()->with('success', $successMsg);
+    }
+
+    protected function recordCustomerOpeningJournalEntry(int $teamId, Customer $customer, SalesOrder $so, float $amount): void
+    {
+        try {
+            /** @var AccountingService $accountingService */
+            $accountingService = app(AccountingService::class);
+            $accountingService->ensureDefaultAccounts($teamId);
+
+            $arAccount = ChartOfAccount::where('team_id', $teamId)->where('account_code', '1030')->first();
+            $equityAccount = ChartOfAccount::where('team_id', $teamId)->whereIn('account_code', ['3020', '3010'])->orderBy('account_code', 'desc')->first();
+
+            if ($arAccount && $equityAccount) {
+                $fiscalYear = FiscalYear::where('team_id', $teamId)->where('is_closed', false)->first();
+
+                $accountingService->recordJournalEntry([
+                    'fiscal_year_id' => $fiscalYear?->id,
+                    'entry_date' => now()->toDateString(),
+                    'reference_type' => SalesOrder::class,
+                    'reference_id' => $so->id,
+                    'narration' => "Opening receivable due balance for Customer: {$customer->name} (#{$so->order_number})",
+                ], [
+                    [
+                        'chart_of_account_id' => $arAccount->id,
+                        'debit' => $amount,
+                        'credit' => 0,
+                        'memo' => "Accounts Receivable - Opening Due for {$customer->name}",
+                    ],
+                    [
+                        'chart_of_account_id' => $equityAccount->id,
+                        'debit' => 0,
+                        'credit' => $amount,
+                        'memo' => "Opening Balance Equity - Customer Receivable for {$customer->name}",
+                    ],
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Could not record journal entry for customer opening balance: " . $e->getMessage());
+        }
     }
 }

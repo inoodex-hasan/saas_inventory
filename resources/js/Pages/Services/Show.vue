@@ -1,9 +1,10 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
@@ -12,6 +13,23 @@ const props = defineProps({
     products: Array,
     warehouses: Array,
     technicians: Array,
+    financialAccounts: Array,
+});
+
+const defaultAccount = computed(() => {
+    return (props.financialAccounts || []).find(a => a.is_default) || props.financialAccounts?.[0];
+});
+
+const accountOptions = computed(() => {
+    return (props.financialAccounts || []).map(acc => ({
+        id: acc.id,
+        value: acc.id,
+        label: acc.name,
+        sublabel: acc.type === 'cash'
+            ? `Balance: ৳${Number(acc.current_balance).toFixed(2)}`
+            : `${acc.institution_name || ''} (${acc.account_number || ''}) • Bal: ৳${Number(acc.current_balance).toFixed(2)}`,
+        group: acc.type === 'cash' ? 'Cash Registers' : (acc.type === 'bank' ? 'Bank Accounts' : 'MFS Wallets'),
+    }));
 });
 
 // Add Part Modal
@@ -53,13 +71,15 @@ function removePart(item) {
 const isPayModalOpen = ref(false);
 const payForm = useForm({
     amount: props.ticket.due_amount,
-    payment_method: 'cash',
+    financial_account_id: defaultAccount.value?.id || '',
+    payment_method: '',
     notes: '',
 });
 
 function openPayModal() {
     payForm.amount = props.ticket.due_amount;
-    payForm.payment_method = 'cash';
+    payForm.financial_account_id = defaultAccount.value?.id || '';
+    payForm.payment_method = '';
     payForm.notes = '';
     isPayModalOpen.value = true;
 }
@@ -385,7 +405,7 @@ function transitionTo(status) {
                         
                         <div class="flex justify-between">
                             <span class="text-slate-400">Assigned Technician:</span>
-                            <span class="font-bold text-slate-800">{{ ticket.technician?.name || 'Unassigned' }}</span>
+                            <span class="font-bold text-slate-800">{{ ticket.technician_name || ticket.technician?.name || 'Unassigned' }}</span>
                         </div>
 
                         <div class="flex justify-between">
@@ -423,7 +443,7 @@ function transitionTo(status) {
         </div>
 
         <!-- Add Spare Part Modal -->
-        <Modal :show="isAddPartModalOpen" @close="isAddPartModalOpen = false" max-width="lg">
+        <Modal :show="isAddPartModalOpen" @close="isAddPartModalOpen = false" max-width="xl">
             <div class="p-6">
                 <h3 class="text-base font-bold text-slate-800 mb-1">
                     Consume Spare Part — #{{ ticket.ticket_number }}
@@ -523,7 +543,7 @@ class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:
         </Modal>
 
         <!-- Collect Payment Modal -->
-        <Modal :show="isPayModalOpen" @close="isPayModalOpen = false" max-width="md">
+        <Modal :show="isPayModalOpen" @close="isPayModalOpen = false" max-width="lg">
             <div class="p-6">
                 <h3 class="text-base font-bold text-slate-800 mb-1">
                     Collect Payment — #{{ ticket.ticket_number }}
@@ -547,16 +567,13 @@ class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Payment Method</label>
-                        <select
-                            v-model="payForm.payment_method"
-                            class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
-                        >
-                            <option value="cash">Cash Counter</option>
-                            <option value="mobile_banking">Mobile Banking (bKash / Nagad / Rocket)</option>
-                            <option value="bank_transfer">Bank Transfer</option>
-                            <option value="card">Card POS</option>
-                        </select>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Deposit Into Account *</label>
+                        <SearchableSelect
+                            v-model="payForm.financial_account_id"
+                            :options="accountOptions"
+                            size="compact"
+                            :error="payForm.errors.financial_account_id"
+                        />
                     </div>
 
                     <div>

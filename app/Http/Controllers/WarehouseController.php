@@ -19,7 +19,7 @@ class WarehouseController extends Controller
 
         $warehouses = Warehouse::query()
             ->where('team_id', $teamId)
-            ->when($search, function ($query, $search) {
+            ->when($request->filled('search'), function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
                       ->orWhere('code', 'like', "%{$search}%")

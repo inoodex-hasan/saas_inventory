@@ -39,11 +39,11 @@ class ProductVariant extends Model
 
     public function stockLevels(): HasMany
     {
-        return $this->hasMany(StockLevel::class);
+        return $this->hasMany(StockLevel::class, 'product_variant_id');
     }
 
     public function stockMovements(): HasMany
     {
-        return $this->hasMany(StockMovement::class);
+        return $this->hasMany(StockMovement::class, 'product_variant_id');
     }
 }

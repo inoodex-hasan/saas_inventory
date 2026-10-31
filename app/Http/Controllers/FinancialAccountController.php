@@ -16,14 +16,14 @@ class FinancialAccountController extends Controller
     {
         $teamId = Auth::user()->current_team_id;
 
-        $search = $request->input('search', '');
-        $type = $request->input('type', '');
+        $search = $request->input('search');
+        $type = $request->input('type');
 
         $query = FinancialAccount::where('team_id', $teamId)
             ->with(['transactions' => function ($q) {
                 $q->latest('id')->take(10);
             }])
-            ->when($search, function ($q, $search) {
+            ->when($request->filled('search'), function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('name', 'like', "%{$search}%")
                         ->orWhere('institution_name', 'like', "%{$search}%")
@@ -31,7 +31,7 @@ class FinancialAccountController extends Controller
                         ->orWhere('branch', 'like', "%{$search}%");
                 });
             })
-            ->when($type !== '', fn ($q) => $q->where('type', $type));
+            ->when($request->filled('type'), fn ($q) => $q->where('type', $type));
 
         $accounts = $query->orderByDesc('is_default')
             ->orderBy('type')
@@ -199,20 +199,5 @@ class FinancialAccountController extends Controller
 
         $account->delete();
         return redirect()->back()->with('success', "Account deleted successfully.");
-    }
-
-    public function initialize(Request $request, FinancialAccountService $service)
-    {
-        $user = Auth::user();
-        $team = $user->currentTeam;
-        $teamId = $user->current_team_id;
-
-        if (!$user->isSuperAdmin() && !$user->ownsTeam($team) && !$user->hasTeamRole($team, 'admin')) {
-            abort(403, 'Only organization owners or administrators can initialize accounts.');
-        }
-
-        $service->ensureDefaultAccounts($teamId);
-
-        return redirect()->back()->with('success', 'Default bank and cash accounts initialized.');
     }
 }

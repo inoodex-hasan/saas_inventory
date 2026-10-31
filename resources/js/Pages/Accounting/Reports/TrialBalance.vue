@@ -112,20 +112,20 @@ function downloadPdf() {
                                     {{ item.account_code }}
                                 </td>
                                 <td class="py-3 px-4 font-sans font-medium text-slate-800">
-                                    {{ item.account_name }}
+                                    {{ item.account_name || item.name }}
                                 </td>
                                 <td class="py-3 px-4 font-sans capitalize text-slate-500">
                                     {{ item.type }}
                                 </td>
                                 <td class="py-3 px-4 text-right font-bold text-slate-900">
-                                    <span v-if="parseFloat(item.debit_balance) > 0">
-                                        <CurrencyDisplay :amount="item.debit_balance" />
+                                    <span v-if="parseFloat(item.debit_balance ?? item.debit) > 0">
+                                        <CurrencyDisplay :amount="item.debit_balance ?? item.debit" />
                                     </span>
                                     <span v-else class="text-slate-300 font-sans">—</span>
                                 </td>
                                 <td class="py-3 px-4 text-right font-bold text-slate-900">
-                                    <span v-if="parseFloat(item.credit_balance) > 0">
-                                        <CurrencyDisplay :amount="item.credit_balance" />
+                                    <span v-if="parseFloat(item.credit_balance ?? item.credit) > 0">
+                                        <CurrencyDisplay :amount="item.credit_balance ?? item.credit" />
                                     </span>
                                     <span v-else class="text-slate-300 font-sans">—</span>
                                 </td>

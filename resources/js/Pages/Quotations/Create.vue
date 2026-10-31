@@ -61,6 +61,25 @@ function onProductSelected(index) {
     }
 }
 
+function getProductStock(productId) {
+    const p = props.products.find(prod => prod.id === parseInt(productId));
+    if (!p) return { available: 0, total: 0 };
+    return {
+        available: p.total_stock ?? 0,
+        total: p.total_stock ?? 0,
+    };
+}
+
+const productSelectOptions = computed(() => {
+    return props.products.map(p => {
+        const stockQty = p.total_stock ?? 0;
+        return {
+            ...p,
+            sku_stock: `${p.sku || 'No SKU'} • Stock: ${stockQty}`,
+        };
+    });
+});
+
 const subtotal = computed(() => {
     return form.items.reduce((sum, item) => {
         return sum + ((parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0));
@@ -141,8 +160,6 @@ function submit(statusValue = 'draft') {
                                 :options="customers"
                                 labelKey="name"
                                 sublabelKey="phone"
-                                placeholder="Search & select customer by name or phone..."
-                                searchPlaceholder="Type customer name or phone..."
                                 :error="form.errors.customer_id"
                             />
                         </div>
@@ -154,7 +171,7 @@ function submit(statusValue = 'draft') {
                                     v-model="form.new_customer_name"
                                     type="text"
                                     required
-class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-blue-500 placeholder:text-slate-400 placeholder:text-xs"
+                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-blue-500"
                                 />
                             </div>
 
@@ -164,7 +181,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                                     v-model="form.new_customer_phone"
                                     type="text"
                                     required
-class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-blue-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
+                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-blue-500 font-mono"
                                 />
                             </div>
 
@@ -173,7 +190,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                                 <input
                                     v-model="form.new_customer_address"
                                     type="text"
-class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-blue-500 placeholder:text-slate-400 placeholder:text-xs"
+                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-blue-500"
                                 />
                             </div>
                         </div>
@@ -199,62 +216,81 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                             <div
                                 v-for="(item, idx) in form.items"
                                 :key="idx"
-                                class="p-4 rounded-xl bg-slate-50/70 border border-slate-200/70 flex flex-col sm:flex-row gap-3 items-start sm:items-center"
+                                class="p-4 rounded-xl bg-slate-50/70 border border-slate-200/70 space-y-3"
                             >
-                                <div class="flex-1 w-full sm:w-auto">
-                                    <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-0.5">Product</label>
-                                    <SearchableSelect
-                                        v-model="item.product_id"
-                                        :options="products"
-                                        labelKey="name"
-                                        sublabelKey="sku"
-                                        placeholder="Search product by name or SKU..."
-                                        searchPlaceholder="Type name or SKU..."
-                                        @change="() => onProductSelected(idx)"
-                                    />
+                                <!-- Line 1: Product Selection, Live Stock Badge, & Remove Button -->
+                                <div class="flex items-start gap-3 justify-between">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <label class="block text-[11px] font-semibold text-slate-500 uppercase">Product / SKU *</label>
+                                            <div v-if="item.product_id" class="flex items-center gap-1.5 text-[11px]">
+                                                <span class="text-slate-400">Stock:</span>
+                                                <span
+                                                    class="font-mono font-bold px-1.5 py-0.5 rounded text-[10px]"
+                                                    :class="getProductStock(item.product_id).available > 0
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                                                        : 'bg-rose-50 text-rose-700 border border-rose-200/60'"
+                                                >
+                                                    {{ getProductStock(item.product_id).available }} in stock
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <SearchableSelect
+                                            v-model="item.product_id"
+                                            :options="productSelectOptions"
+                                            labelKey="name"
+                                            sublabelKey="sku_stock"
+                                            size="compact"
+                                            @change="() => onProductSelected(idx)"
+                                        />
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        @click="removeItem(idx)"
+                                        :disabled="form.items.length <= 1"
+                                        class="mt-5 p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition shrink-0 disabled:opacity-30 disabled:hover:text-slate-400"
+                                        title="Remove item"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
                                 </div>
 
-                                <div class="w-24">
-                                    <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-0.5">Quantity</label>
-                                    <input
-                                        v-model.number="item.quantity"
-                                        type="number"
-                                        min="0.01"
-                                        step="any"
-                                        required
-                                        class="w-full text-sm px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500"
-                                    />
-                                </div>
+                                <!-- Line 2: Qty, Unit Price, and Line Total -->
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 items-center pt-2 border-t border-slate-200/60">
+                                    <div>
+                                        <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Quantity *</label>
+                                        <input
+                                            v-model.number="item.quantity"
+                                            type="number"
+                                            min="0.01"
+                                            step="any"
+                                            required
+                                            class="w-full h-[34px] text-xs px-2.5 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-blue-500 font-mono font-bold"
+                                        />
+                                    </div>
 
-                                <div class="w-32">
-                                    <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-0.5">Offered Unit Price</label>
-                                    <input
-                                        v-model.number="item.unit_price"
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        required
-                                        class="w-full text-sm px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500"
-                                    />
-                                </div>
+                                    <div>
+                                        <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Offered Unit Price *</label>
+                                        <input
+                                            v-model.number="item.unit_price"
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            required
+                                            class="w-full h-[34px] text-xs px-2.5 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-blue-500 font-mono"
+                                        />
+                                    </div>
 
-                                <div class="w-28 text-right self-end sm:self-center">
-                                    <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-0.5">Line Total</label>
-                                    <span class="text-sm font-bold text-slate-900 block py-2">
-                                        <CurrencyDisplay :amount="(item.quantity || 0) * (item.unit_price || 0)" />
-                                    </span>
+                                    <div class="text-right">
+                                        <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Total</label>
+                                        <span class="text-xs font-bold text-slate-900 block py-1.5 font-mono">
+                                            <CurrencyDisplay :amount="(item.quantity || 0) * (item.unit_price || 0)" />
+                                        </span>
+                                    </div>
                                 </div>
-
-                                <button
-                                    type="button"
-                                    @click="removeItem(idx)"
-                                    :disabled="form.items.length <= 1"
-                                    class="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition self-end sm:self-center disabled:opacity-30"
-                                >
-                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -347,7 +383,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                                 type="button"
                                 @click="submit('draft')"
                                 :disabled="form.processing"
-                                class="py-2.5 px-3 rounded-xl font-semibold text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 transition"
+                                class="py-2.5 px-3 rounded-xl font-semibold text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 transition text-center"
                             >
                                 Save as Draft
                             </button>
@@ -355,9 +391,10 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                                 type="button"
                                 @click="submit('sent')"
                                 :disabled="form.processing"
-                                class="py-2.5 px-3 rounded-xl font-semibold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition"
+                                class="py-2.5 px-3 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition text-center"
                             >
-                                Issue & Send
+                                <span v-if="form.processing">Saving...</span>
+                                <span v-else>Save Quotation</span>
                             </button>
                         </div>
                     </div>

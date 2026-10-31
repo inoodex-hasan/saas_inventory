@@ -19,10 +19,12 @@ class Supplier extends Model
         'phone',
         'tax_number',
         'address',
+        'opening_balance',
         'is_active',
     ];
 
     protected $casts = [
+        'opening_balance' => 'decimal:2',
         'is_active' => 'boolean',
     ];
 

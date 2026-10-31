@@ -19,7 +19,6 @@ class SalesOrder extends Model
         'team_id',
         'customer_id',
         'warehouse_id',
-        'recurring_invoice_id',
         'order_number',
         'status',
         'payment_status',
@@ -56,10 +55,6 @@ class SalesOrder extends Model
         return $this->belongsTo(Warehouse::class);
     }
 
-    public function recurringInvoice(): BelongsTo
-    {
-        return $this->belongsTo(RecurringInvoice::class);
-    }
 
     public function items(): HasMany
     {

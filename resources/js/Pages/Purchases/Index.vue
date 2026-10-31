@@ -83,12 +83,69 @@ function submitPayment() {
     });
 }
 
+// Close Order Modal State
+const isCloseModalOpen = ref(false);
+const closingPo = ref(null);
+const closeForm = useForm({
+    refund_mode: 'account', // 'account' | 'credit'
+    financial_account_id: defaultAccount?.id || '',
+    reference_number: '',
+    notes: '',
+});
+
+function openCloseModal(order) {
+    closingPo.value = order;
+    closeForm.refund_mode = 'account';
+    closeForm.financial_account_id = defaultAccount?.id || '';
+    closeForm.reference_number = '';
+    closeForm.notes = '';
+    closeForm.clearErrors();
+    isCloseModalOpen.value = true;
+}
+
+const closeCalculation = computed(() => {
+    if (!closingPo.value) return { receivedValue: 0, unreceivedCount: 0, overpaid: 0, newDue: 0 };
+    const items = closingPo.value.items || [];
+    let receivedValue = 0;
+    let unreceivedCount = 0;
+    items.forEach(it => {
+        const rcv = Number(it.received_quantity) || 0;
+        const ord = Number(it.quantity) || 0;
+        const cost = Number(it.unit_cost) || 0;
+        receivedValue += (rcv * cost);
+        if (ord > rcv) {
+            unreceivedCount += (ord - rcv);
+        }
+    });
+
+    const paid = Number(closingPo.value.paid_amount) || 0;
+    const overpaid = Math.max(0, paid - receivedValue);
+    const newDue = Math.max(0, receivedValue - paid);
+
+    return {
+        receivedValue,
+        unreceivedCount,
+        overpaid,
+        newDue,
+    };
+});
+
+function submitCloseOrder() {
+    if (!closingPo.value) return;
+    closeForm.post(route('purchases.close', closingPo.value.id), {
+        onSuccess: () => {
+            isCloseModalOpen.value = false;
+            closingPo.value = null;
+        },
+    });
+}
+
 function applyFilters() {
-    router.get(route('purchases.index'), {
-        search: search.value,
-        status: status.value,
-        supplier_id: supplierId.value,
-    }, {
+    const params = {};
+    if (search.value) params.search = search.value;
+    if (status.value) params.status = status.value;
+    if (supplierId.value) params.supplier_id = supplierId.value;
+    router.get(route('purchases.index'), params, {
         preserveState: true,
         replace: true,
     });
@@ -98,7 +155,7 @@ function resetFilters() {
     search.value = '';
     status.value = '';
     supplierId.value = '';
-    applyFilters();
+    router.get(route('purchases.index'), {}, { preserveState: false, replace: true });
 }
 
 function markOrdered(order) {
@@ -132,7 +189,6 @@ function openReceiveModal(order) {
             remaining_quantity: remaining,
             quantity: remaining > 0 ? remaining : 0,
             batch_number: item.batch_number || '',
-            bin_location: '',
             serial_input: '',
         };
     });
@@ -148,7 +204,6 @@ function submitReceive() {
             item_id: it.item_id,
             quantity: Number(it.quantity) || 0,
             batch_number: it.batch_number,
-            bin_location: it.bin_location,
             serials: serials,
         };
     });
@@ -171,7 +226,7 @@ function submitReceive() {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Procurement & Purchase Orders</h1>
-                    <p class="text-xs text-slate-500 font-medium">Inbound shipment tracking, supplier procurement sheets & dock receiving</p>
+                    <p class="text-xs text-slate-500 font-medium">Inbound shipment tracking, supplier procurement sheets & stock receiving</p>
                 </div>
             </div>
         </template>
@@ -209,8 +264,7 @@ function submitReceive() {
                             type="text" 
                             v-model="search" 
                             @keyup.enter="applyFilters"
-                            placeholder="Search PO #, vendor, phone..."
-                            class="w-full pl-9 pr-4 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 placeholder:text-slate-400"
+                            class="w-full pl-9 pr-4 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                         />
                         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -267,19 +321,19 @@ function submitReceive() {
                     <table class="w-full text-left text-xs">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-bold">
-                                <th class="py-3 px-4">PO Number</th>
-                                <th class="py-3 px-4">Vendor</th>
-                                <th class="py-3 px-4">Destination Hub</th>
-                                <th class="py-3 px-4">Order Date</th>
-                                <th class="py-3 px-4 text-center">Status</th>
-                                <th class="py-3 px-4 text-right">Order Total</th>
-                                <th class="py-3 px-4 text-right">Payable Due</th>
-                                <th class="py-3 px-4 text-right">Actions</th>
+                                <th class="py-3 px-4 whitespace-nowrap">PO Number</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Vendor</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Destination Hub</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Order Date</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Status</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Order Total</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Payable Due</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             <tr v-for="order in orders.data" :key="order.id" class="hover:bg-slate-50/70 transition-colors">
-                                <td class="py-3.5 px-4 font-mono font-bold">
+                                <td class="py-3.5 px-4 font-mono font-bold whitespace-nowrap">
                                     <button
                                         type="button"
                                         @click="openDetailsModal(order)"
@@ -294,28 +348,28 @@ function submitReceive() {
                                     </button>
                                 </td>
 
-                                <td class="py-3.5 px-4">
-                                    <div class="font-bold text-slate-800">{{ order.supplier?.name || 'Direct Vendor' }}</div>
+                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                    <div class="font-bold text-slate-800 max-w-[180px] lg:max-w-[220px] truncate" :title="order.supplier?.name || 'Direct Vendor'">{{ order.supplier?.name || 'Direct Vendor' }}</div>
                                     <div class="text-[10px] text-slate-400 font-mono">{{ order.supplier?.phone }}</div>
                                 </td>
 
-                                <td class="py-3.5 px-4 text-slate-700 font-medium">
-                                    {{ order.warehouse?.name }}
+                                <td class="py-3.5 px-4 text-slate-700 font-medium whitespace-nowrap">
+                                    <span class="max-w-[150px] truncate block" :title="order.warehouse?.name">{{ order.warehouse?.name }}</span>
                                 </td>
 
-                                <td class="py-3.5 px-4 text-xs text-slate-600 font-medium">
+                                <td class="py-3.5 px-4 text-xs text-slate-600 font-medium whitespace-nowrap">
                                     {{ formatDate(order.order_date) }}
                                 </td>
 
-                                <td class="py-3.5 px-4 text-center">
+                                <td class="py-3.5 px-4 text-center whitespace-nowrap">
                                     <StatusBadge :status="order.status" />
                                 </td>
 
-                                <td class="py-3.5 px-4 text-right font-mono font-bold text-slate-900">
+                                <td class="py-3.5 px-4 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
                                     <CurrencyDisplay :amount="order.total_amount" />
                                 </td>
 
-                                <td class="py-3.5 px-4 text-right">
+                                <td class="py-3.5 px-4 text-right whitespace-nowrap">
                                     <div 
                                         class="font-mono font-bold"
                                         :class="order.due_amount > 0 ? 'text-rose-600' : 'text-emerald-600'"
@@ -325,7 +379,7 @@ function submitReceive() {
                                     <StatusBadge :status="order.payment_status" class="scale-90 origin-right mt-0.5" />
                                 </td>
 
-                                <td class="py-3.5 px-4 text-right">
+                                <td class="py-3.5 px-4 text-right whitespace-nowrap">
                                     <ActionDropdown>
                                         <div class="p-1 space-y-0.5">
                                             <!-- View Details -->
@@ -353,7 +407,7 @@ function submitReceive() {
                                                 <span>Edit Order</span>
                                             </Link>
 
-                                            <!-- Receive Dock Button -->
+                                            <!-- Receive Items Button -->
                                             <button 
                                                 v-if="['ordered', 'partially_received'].includes(order.status)"
                                                 @click="openReceiveModal(order)"
@@ -363,7 +417,20 @@ function submitReceive() {
                                                 <svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                                 </svg>
-                                                <span>Receive Dock</span>
+                                                <span>Receive Items</span>
+                                            </button>
+
+                                            <!-- Close Order (Complete) Button -->
+                                            <button 
+                                                v-if="order.status === 'partially_received'"
+                                                @click="openCloseModal(order)"
+                                                type="button"
+                                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-lg transition text-left"
+                                            >
+                                                <svg class="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span>Close Order</span>
                                             </button>
 
                                             <!-- Mark Ordered Button -->
@@ -401,7 +468,7 @@ function submitReceive() {
                                                 <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                                                 </svg>
-                                                <span>Print PO Sheet</span>
+                                                <span>Print PO</span>
                                             </a>
 
                                             <!-- Cancel PO -->
@@ -453,7 +520,7 @@ function submitReceive() {
                 <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
                     <div>
                         <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
-                            <span>Loading Dock Goods Receiving</span>
+                            <span>Receive Purchased Items</span>
                             <span class="text-xs font-mono text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
                                 {{ receivingPo?.po_number }}
                             </span>
@@ -478,7 +545,6 @@ function submitReceive() {
                                     <th class="py-2.5 text-center">Remaining</th>
                                     <th class="py-2.5 text-center">Receive Units *</th>
                                     <th class="py-2.5">Batch / Lot #</th>
-                                    <th class="py-2.5">Bin Location</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
@@ -514,40 +580,48 @@ class="w-full px-2 py-1 rounded text-[11px] border border-amber-300 bg-amber-50/
 class="w-24 px-2 py-1 rounded-lg border border-slate-200 text-xs font-mono"
                                         />
                                     </td>
-                                    <td class="py-3">
-                                        <input 
-                                            type="text" 
-                                            v-model="it.bin_location"
-class="w-20 px-2 py-1 rounded-lg border border-slate-200 text-xs font-mono"
-                                        />
-                                    </td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
 
-                    <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
-                        <button 
-                            type="button" 
-                            @click="isReceiveModalOpen = false" 
-                            class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
-                        >
-                            Cancel
-                        </button>
-                        <button 
-                            type="submit" 
-                            class="px-5 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-sm"
-                        >
-                            Confirm Stock-In
-                        </button>
+                    <div class="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+                        <div>
+                            <button 
+                                v-if="receivingPo?.status === 'partially_received'"
+                                type="button" 
+                                @click="isReceiveModalOpen = false; openCloseModal(receivingPo)" 
+                                class="px-3.5 py-2 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition flex items-center gap-1.5"
+                            >
+                                <svg class="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>Stop Receiving & Close Order</span>
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button 
+                                type="button" 
+                                @click="isReceiveModalOpen = false" 
+                                class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                type="submit" 
+                                class="px-5 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-sm"
+                            >
+                                Confirm Stock-In
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
         </Modal>
 
         <!-- Record Vendor Payment Modal -->
-        <Modal :show="isPaymentModalOpen" @close="isPaymentModalOpen = false" maxWidth="md">
-            <div class="p-6">
+        <Modal :show="isPaymentModalOpen" @close="isPaymentModalOpen = false" maxWidth="xl">
+            <div class="p-6 sm:p-7">
                 <div class="flex items-center justify-between pb-4 border-b border-slate-100">
                     <div>
                         <h3 class="text-base font-bold text-slate-900">Record Vendor Payment</h3>
@@ -565,52 +639,53 @@ class="w-20 px-2 py-1 rounded-lg border border-slate-200 text-xs font-mono"
                     </button>
                 </div>
 
-                <form @submit.prevent="submitPayment" class="space-y-4 mt-4">
-                    <div class="p-3 bg-amber-50 rounded-xl border border-amber-200/60 flex items-center justify-between text-xs">
+                <form @submit.prevent="submitPayment" class="space-y-4 mt-5 text-xs">
+                    <div class="p-3.5 bg-amber-50 rounded-xl border border-amber-200/60 flex items-center justify-between text-xs">
                         <span class="text-amber-800 font-medium">Outstanding Bill Due:</span>
                         <span class="font-mono font-bold text-amber-900 text-sm">
                             <CurrencyDisplay :amount="payingPo?.due_amount || 0" />
                         </span>
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">
-                            Disbursement Amount <span class="text-rose-500">*</span>
-                        </label>
-                        <input
-                            v-model="paymentForm.amount"
-                            type="number"
-                            step="0.01"
-                            min="0.01"
-                            :max="payingPo?.due_amount"
-                            required
-class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 font-mono font-bold"
-                        />
-                        <div v-if="paymentForm.errors.amount" class="text-xs text-rose-500 mt-1">
-                            {{ paymentForm.errors.amount }}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                                Disbursement Amount <span class="text-rose-500">*</span>
+                            </label>
+                            <input
+                                v-model="paymentForm.amount"
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                :max="payingPo?.due_amount"
+                                required
+                                class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 font-mono font-bold"
+                            />
+                            <div v-if="paymentForm.errors.amount" class="text-xs text-rose-500 mt-1">
+                                {{ paymentForm.errors.amount }}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                                Pay From Account <span class="text-rose-500">*</span>
+                            </label>
+                            <SearchableSelect
+                                v-model="paymentForm.financial_account_id"
+                                :options="accountOptions"
+                                size="compact"
+                                :error="paymentForm.errors.financial_account_id"
+                            />
                         </div>
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">
-                            Pay From Account <span class="text-rose-500">*</span>
-                        </label>
-                        <SearchableSelect
-                            v-model="paymentForm.financial_account_id"
-                            :options="accountOptions"
-                            placeholder="Search & select payment account..."
-                            searchPlaceholder="Type account name or bank..."
-                            :error="paymentForm.errors.financial_account_id"
-                        />
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Ref / TrxID #</label>
                             <input
                                 v-model="paymentForm.payment_reference"
                                 type="text"
-class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 font-mono"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 font-mono"
                             />
                         </div>
 
@@ -629,7 +704,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                         <input
                             v-model="paymentForm.notes"
                             type="text"
-class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
                         />
                     </div>
 
@@ -637,16 +712,16 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                         <button
                             type="button"
                             @click="isPaymentModalOpen = false"
-                            class="px-4 py-2 text-sm text-slate-600 hover:text-slate-900"
+                            class="px-4 py-2.5 text-xs font-semibold border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             :disabled="paymentForm.processing"
-                            class="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm transition"
+                            class="px-6 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm transition"
                         >
-                            Confirm Payment
+                            Record Disbursement
                         </button>
                     </div>
                 </form>
@@ -825,7 +900,16 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                             @click="isDetailsModalOpen = false; openReceiveModal(selectedOrderForDetails)"
                             class="px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition"
                         >
-                            Receive Dock
+                            Receive Items
+                        </button>
+
+                        <button
+                            v-if="selectedOrderForDetails.status === 'partially_received'"
+                            type="button"
+                            @click="isDetailsModalOpen = false; openCloseModal(selectedOrderForDetails)"
+                            class="px-3.5 py-2 text-xs font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-xl transition"
+                        >
+                            Close Order
                         </button>
 
                         <button
@@ -846,6 +930,163 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                         </button>
                     </div>
                 </div>
+            </div>
+        </Modal>
+
+        <!-- Close Purchase Order Modal -->
+        <Modal :show="isCloseModalOpen" @close="isCloseModalOpen = false" maxWidth="xl">
+            <div class="p-6">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                            <span>Close Purchase Order</span>
+                            <span class="text-xs font-mono text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                                {{ closingPo?.po_number }}
+                            </span>
+                        </h2>
+                        <p class="text-xs text-slate-500">
+                            Finalize order, cancel remaining unreceived items, and balance accounting
+                        </p>
+                    </div>
+                    <button @click="isCloseModalOpen = false" class="text-slate-400 hover:text-slate-600">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitCloseOrder" class="space-y-4">
+                    <!-- Breakdown Summary Grid -->
+                    <div class="grid grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 text-xs">
+                        <div>
+                            <span class="text-slate-500 block text-[10px] uppercase font-bold">Original Order</span>
+                            <div class="font-mono font-bold text-slate-900 text-sm mt-0.5">
+                                <CurrencyDisplay :amount="closingPo?.total_amount || 0" />
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block text-[10px] uppercase font-bold">Goods Received</span>
+                            <div class="font-mono font-bold text-emerald-700 text-sm mt-0.5">
+                                <CurrencyDisplay :amount="closeCalculation.receivedValue" />
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block text-[10px] uppercase font-bold">Amount Paid</span>
+                            <div class="font-mono font-bold text-indigo-700 text-sm mt-0.5">
+                                <CurrencyDisplay :amount="closingPo?.paid_amount || 0" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notice if unreceived items being cancelled -->
+                    <div class="p-3 bg-amber-50/70 border border-amber-200/70 rounded-xl text-xs text-amber-900 flex items-start gap-2.5">
+                        <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <div>
+                            <span class="font-bold">Unreceived stock will be cancelled:</span>
+                            <p class="text-[11px] text-amber-800 mt-0.5">
+                                Remaining units will be removed from incoming orders. The final purchase bill will be set to the value of received goods (<CurrencyDisplay :amount="closeCalculation.receivedValue" />).
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- CASE A: Overpayment Handling -->
+                    <div v-if="closeCalculation.overpaid > 0" class="border border-emerald-200 bg-emerald-50/50 rounded-xl p-4 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-emerald-900 uppercase tracking-wide">Advance Overpayment Detected</span>
+                            <span class="font-mono font-extrabold text-sm text-emerald-700">
+                                <CurrencyDisplay :amount="closeCalculation.overpaid" />
+                            </span>
+                        </div>
+                        <p class="text-xs text-emerald-800">
+                            You paid in full for items that will not be received. How would you like to handle the <strong><CurrencyDisplay :amount="closeCalculation.overpaid" /></strong> refund?
+                        </p>
+
+                        <div class="space-y-2 pt-1">
+                            <label
+                                class="flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition"
+                                :class="closeForm.refund_mode === 'account' ? 'bg-white border-emerald-500 ring-1 ring-emerald-500' : 'bg-white/60 border-slate-200'"
+                            >
+                                <input type="radio" v-model="closeForm.refund_mode" value="account" class="mt-0.5 text-emerald-600 focus:ring-emerald-500" />
+                                <div class="text-xs">
+                                    <div class="font-bold text-slate-800">Deposit Refund to Bank / Cash Account</div>
+                                    <div class="text-slate-500 text-[11px]">Supplier refunded the money. Deposit directly back into your company account.</div>
+                                </div>
+                            </label>
+
+                            <label
+                                class="flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition"
+                                :class="closeForm.refund_mode === 'credit' ? 'bg-white border-emerald-500 ring-1 ring-emerald-500' : 'bg-white/60 border-slate-200'"
+                            >
+                                <input type="radio" v-model="closeForm.refund_mode" value="credit" class="mt-0.5 text-emerald-600 focus:ring-emerald-500" />
+                                <div class="text-xs">
+                                    <div class="font-bold text-slate-800">Keep as Supplier Credit / Advance Balance</div>
+                                    <div class="text-slate-500 text-[11px]">Supplier keeps the advance to deduct from your future purchase orders.</div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Account Selection when refunding to account -->
+                        <div v-if="closeForm.refund_mode === 'account'" class="space-y-3 pt-2">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Deposit Into Account *</label>
+                                <SearchableSelect
+                                    v-model="closeForm.financial_account_id"
+                                    :options="accountOptions"
+                                    :error="closeForm.errors.financial_account_id"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Refund Reference / Cheque / TrxID (Optional)</label>
+                                <input
+                                    v-model="closeForm.reference_number"
+                                    type="text"
+                                    class="w-full text-xs px-3.5 py-2 bg-white border border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CASE B: Underpayment Notice -->
+                    <div v-else-if="closeCalculation.newDue > 0" class="p-3.5 bg-blue-50/70 border border-blue-200/70 rounded-xl text-xs text-blue-900">
+                        <div class="flex items-center justify-between font-bold">
+                            <span>Adjusted Remaining Payable:</span>
+                            <span class="font-mono text-sm"><CurrencyDisplay :amount="closeCalculation.newDue" /></span>
+                        </div>
+                        <p class="text-[11px] text-blue-700 mt-1">
+                            The bill has been lowered to <CurrencyDisplay :amount="closeCalculation.receivedValue" />. You only owe the supplier for received goods.
+                        </p>
+                    </div>
+
+                    <!-- Close Notes -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Close Reason / Notes (Optional)</label>
+                        <textarea
+                            v-model="closeForm.notes"
+                            rows="2"
+                            class="w-full text-xs px-3.5 py-2 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none"
+                        ></textarea>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                        <button
+                            type="button"
+                            @click="isCloseModalOpen = false"
+                            class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            :disabled="closeForm.processing"
+                            class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50"
+                        >
+                            <span v-if="closeForm.processing">Closing...</span>
+                            <span v-else>Confirm & Close Order</span>
+                        </button>
+                    </div>
+                </form>
             </div>
         </Modal>
     </AppLayout>

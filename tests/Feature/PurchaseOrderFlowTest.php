@@ -174,4 +174,63 @@ class PurchaseOrderFlowTest extends TestCase
         // Attempt to cancel after receiving
         $this->poService->cancelOrder($po);
     }
+
+    public function test_can_short_close_partially_received_order_with_bank_refund(): void
+    {
+        $account = \App\Models\FinancialAccount::create([
+            'team_id' => $this->user->current_team_id,
+            'name' => 'Bank Account',
+            'type' => 'bank',
+            'account_type' => 'bank',
+            'opening_balance' => 1000,
+            'current_balance' => 1000,
+            'is_default' => true,
+            'is_active' => true,
+        ]);
+
+        $po = $this->poService->createOrder(
+            data: [
+                'supplier_id' => $this->supplier->id,
+                'warehouse_id' => $this->warehouse->id,
+                'status' => 'ordered',
+                'paid_amount' => 500.00,
+            ],
+            items: [
+                ['product_id' => $this->productA->id, 'quantity' => 5, 'unit_cost' => 100.00],
+            ]
+        );
+
+        $item = $po->items->first();
+
+        // Receive 4 units out of 5
+        $this->poService->receiveItems($po, [
+            ['item_id' => $item->id, 'quantity' => 4]
+        ]);
+
+        $this->assertEquals('partially_received', $po->fresh()->status);
+
+        // Short-close order via controller endpoint with bank refund
+        $response = $this->post(route('purchases.close', $po->id), [
+            'refund_mode' => 'account',
+            'financial_account_id' => $account->id,
+            'reference_number' => 'REF-REFUND-001',
+            'notes' => 'Supplier was out of stock for 5th unit',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $po->refresh();
+        $item->refresh();
+
+        $this->assertEquals('received', $po->status);
+        $this->assertEquals(400.00, (float) $po->total_amount);
+        $this->assertEquals(400.00, (float) $po->paid_amount);
+        $this->assertEquals(0.00, (float) $po->due_amount);
+        $this->assertEquals('paid', $po->payment_status);
+        $this->assertEquals(4, $item->quantity);
+
+        // Bank balance should have received 100 refund (1000 + 100 = 1100)
+        $this->assertEquals(1100.00, (float) $account->fresh()->current_balance);
+    }
 }

@@ -1,9 +1,10 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import Modal from '@/Components/Modal.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
 import { formatDate } from '@/Utils/date';
@@ -13,7 +14,24 @@ const props = defineProps({
     projects: Object,
     metrics: Object,
     clients: Array,
+    financialAccounts: Array,
     filters: Object,
+});
+
+const defaultAccount = computed(() => {
+    return (props.financialAccounts || []).find(a => a.is_default) || props.financialAccounts?.[0];
+});
+
+const accountOptions = computed(() => {
+    return (props.financialAccounts || []).map(acc => ({
+        id: acc.id,
+        value: acc.id,
+        label: acc.name,
+        sublabel: acc.type === 'cash'
+            ? `Balance: ৳${Number(acc.current_balance).toFixed(2)}`
+            : `${acc.institution_name || ''} (${acc.account_number || ''}) • Bal: ৳${Number(acc.current_balance).toFixed(2)}`,
+        group: acc.type === 'cash' ? 'Cash Registers' : (acc.type === 'bank' ? 'Bank Accounts' : 'MFS Wallets'),
+    }));
 });
 
 const search = ref(props.filters.search || '');
@@ -26,14 +44,16 @@ const isPayModalOpen = ref(false);
 const activeProjectForPay = ref(null);
 const payForm = useForm({
     amount: '',
-    payment_method: 'cash',
+    financial_account_id: defaultAccount.value?.id || '',
+    payment_method: '',
     notes: '',
 });
 
 function openPayModal(project) {
     activeProjectForPay.value = project;
     payForm.amount = project.due_amount;
-    payForm.payment_method = 'cash';
+    payForm.financial_account_id = defaultAccount.value?.id || '';
+    payForm.payment_method = '';
     payForm.notes = '';
     isPayModalOpen.value = true;
 }
@@ -70,12 +90,12 @@ function submitStatusChange() {
 }
 
 function applyFilters() {
-    router.get(route('projects.index'), {
-        search: search.value,
-        status: status.value,
-        payment_status: paymentStatus.value,
-        client_id: clientId.value,
-    }, { preserveState: true, replace: true });
+    const params = {};
+    if (search.value) params.search = search.value;
+    if (status.value) params.status = status.value;
+    if (paymentStatus.value) params.payment_status = paymentStatus.value;
+    if (clientId.value) params.client_id = clientId.value;
+    router.get(route('projects.index'), params, { preserveState: true, replace: true });
 }
 
 function resetFilters() {
@@ -83,7 +103,7 @@ function resetFilters() {
     status.value = '';
     paymentStatus.value = '';
     clientId.value = '';
-    applyFilters();
+    router.get(route('projects.index'), {}, { preserveState: false, replace: true });
 }
 
 function deleteProject(project) {
@@ -165,7 +185,6 @@ function deleteProject(project) {
                             v-model="search"
                             @keyup.enter="applyFilters"
                             type="text"
-                            placeholder="Search project code, name, client..."
                             class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                         />
                         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -243,15 +262,15 @@ function deleteProject(project) {
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
                             <tr class="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-bold text-[10px]">
-                                <th class="py-3 px-4">Project</th>
-                                <th class="py-3 px-4">Client</th>
-                                <th class="py-3 px-4">Timeline</th>
-                                <th class="py-3 px-4 text-right">Budget / Billed</th>
-                                <th class="py-3 px-4 text-right">Costs</th>
-                                <th class="py-3 px-4 text-right">Paid / Due</th>
-                                <th class="py-3 px-4 text-center">Lifecycle</th>
-                                <th class="py-3 px-4 text-center">Billing</th>
-                                <th class="py-3 px-4 text-right">Actions</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Project</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Client</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Timeline</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Budget / Billed</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Costs</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Paid / Due</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Lifecycle</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Billing</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -260,9 +279,9 @@ function deleteProject(project) {
                                 :key="project.id"
                                 class="hover:bg-slate-50/80 transition-colors"
                             >
-                                <td class="py-3.5 px-4">
+                                <td class="py-3.5 px-4 whitespace-nowrap">
                                     <Link :href="route('projects.show', project.id)" class="group">
-                                        <div class="font-bold text-slate-900 group-hover:text-indigo-600 transition">
+                                        <div class="font-bold text-slate-900 group-hover:text-indigo-600 transition max-w-[200px] lg:max-w-[260px] truncate" :title="project.name">
                                             {{ project.name }}
                                         </div>
                                         <div class="font-mono text-[11px] text-indigo-600 font-semibold">
@@ -270,22 +289,22 @@ function deleteProject(project) {
                                         </div>
                                     </Link>
                                 </td>
-                                <td class="py-3.5 px-4">
-                                    <div class="font-semibold text-slate-800">
+                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                    <div class="font-semibold text-slate-800 max-w-[160px] lg:max-w-[200px] truncate" :title="project.client?.name || 'Walk-in / Direct'">
                                         {{ project.client?.name || 'Walk-in / Direct' }}
                                     </div>
-                                    <div v-if="project.client?.company_name" class="text-[11px] text-slate-400">
+                                    <div v-if="project.client?.company_name" class="text-[11px] text-slate-400 max-w-[160px] lg:max-w-[200px] truncate" :title="project.client.company_name">
                                         {{ project.client.company_name }}
                                     </div>
                                 </td>
-                                <td class="py-3.5 px-4 text-slate-600">
+                                <td class="py-3.5 px-4 text-slate-600 whitespace-nowrap">
                                     <div v-if="project.start_date" class="text-xs font-medium text-slate-600">
                                         <span>{{ formatDate(project.start_date) }}</span>
                                         <span v-if="project.end_date"> - {{ formatDate(project.end_date) }}</span>
                                     </div>
                                     <span v-else class="text-slate-400 italic text-xs">Not scheduled</span>
                                 </td>
-                                <td class="py-3.5 px-4 text-right">
+                                <td class="py-3.5 px-4 text-right whitespace-nowrap">
                                     <div class="font-bold text-slate-900">
                                         <CurrencyDisplay :amount="project.billed_total" />
                                     </div>
@@ -293,10 +312,10 @@ function deleteProject(project) {
                                         Budget: <CurrencyDisplay :amount="project.budget" />
                                     </div>
                                 </td>
-                                <td class="py-3.5 px-4 text-right font-semibold text-amber-700">
+                                <td class="py-3.5 px-4 text-right font-semibold text-amber-700 whitespace-nowrap">
                                     <CurrencyDisplay :amount="project.costs_total" />
                                 </td>
-                                <td class="py-3.5 px-4 text-right">
+                                <td class="py-3.5 px-4 text-right whitespace-nowrap">
                                     <div class="font-bold text-emerald-600">
                                         <CurrencyDisplay :amount="project.paid_amount" />
                                     </div>
@@ -304,13 +323,13 @@ function deleteProject(project) {
                                         Due: <CurrencyDisplay :amount="project.due_amount" />
                                     </div>
                                 </td>
-                                <td class="py-3.5 px-4 text-center">
+                                <td class="py-3.5 px-4 text-center whitespace-nowrap">
                                     <StatusBadge :status="project.status" />
                                 </td>
-                                <td class="py-3.5 px-4 text-center">
+                                <td class="py-3.5 px-4 text-center whitespace-nowrap">
                                     <StatusBadge :status="project.payment_status" />
                                 </td>
-                                <td class="py-3.5 px-4 text-right">
+                                <td class="py-3.5 px-4 text-right whitespace-nowrap">
                                     <ActionDropdown>
                                         <div class="p-1 space-y-0.5">
                                             <Link
@@ -416,7 +435,7 @@ function deleteProject(project) {
         </div>
 
         <!-- Quick Payment Modal -->
-        <Modal :show="isPayModalOpen" @close="isPayModalOpen = false" max-width="md">
+        <Modal :show="isPayModalOpen" @close="isPayModalOpen = false" max-width="lg">
             <div class="p-6">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <h3 class="text-base font-bold text-slate-900">
@@ -447,16 +466,13 @@ function deleteProject(project) {
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Payment Method</label>
-                        <select
-                            v-model="payForm.payment_method"
-                            class="w-full text-xs rounded-xl border border-slate-200 py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                        >
-                            <option value="cash">Cash</option>
-                            <option value="bank_transfer">Bank Transfer</option>
-                            <option value="cheque">Cheque</option>
-                            <option value="online">Online / Card</option>
-                        </select>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Deposit Into Account *</label>
+                        <SearchableSelect
+                            v-model="payForm.financial_account_id"
+                            :options="accountOptions"
+                            size="compact"
+                            :error="payForm.errors.financial_account_id"
+                        />
                     </div>
 
                     <div>

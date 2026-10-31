@@ -105,6 +105,7 @@ class ServiceTicketService
                 'problem_description' => $data['problem_description'] ?? null,
                 'initial_diagnosis' => $data['initial_diagnosis'] ?? null,
                 'technician_id' => $data['technician_id'] ?? null,
+                'technician_name' => $data['technician_name'] ?? null,
                 'status' => $data['status'] ?? 'received',
                 'priority' => $data['priority'] ?? 'normal',
                 'service_charge' => $serviceCharge,
@@ -241,7 +242,7 @@ class ServiceTicketService
     /**
      * Record a customer payment against the ticket.
      */
-    public function recordPayment(ServiceTicket $ticket, float $amount, ?string $paymentMethod = null, ?string $notes = null): void
+    public function recordPayment(ServiceTicket $ticket, float $amount, ?string $paymentMethod = null, ?string $notes = null, ?int $financialAccountId = null): void
     {
         if ($amount <= 0) {
             throw new \InvalidArgumentException("Payment amount must be greater than zero.");
@@ -251,9 +252,20 @@ class ServiceTicketService
             throw new \InvalidArgumentException("Payment amount exceeds outstanding due amount.");
         }
 
-        DB::transaction(function () use ($ticket, $amount) {
+        DB::transaction(function () use ($ticket, $amount, $paymentMethod, $notes, $financialAccountId) {
+            $account = null;
+            if ($financialAccountId) {
+                $account = \App\Models\FinancialAccount::where('team_id', $ticket->team_id)->find($financialAccountId);
+            }
+
+            $methodName = $account ? $account->name : ($paymentMethod ?? 'Cash');
+
             $ticket->paid_amount += $amount;
             $ticket->due_amount = max(0, round((float) $ticket->total_amount - (float) $ticket->paid_amount, 2));
+            $ticket->payment_method = $methodName;
+            if ($account) {
+                $ticket->financial_account_id = $account->id;
+            }
 
             if ($ticket->due_amount <= 0 && $ticket->total_amount > 0) {
                 $ticket->payment_status = 'paid';
@@ -262,6 +274,15 @@ class ServiceTicketService
             }
 
             $ticket->save();
+
+            if ($account) {
+                $account->deposit($amount, [
+                    'reference_type' => ServiceTicket::class,
+                    'reference_id' => $ticket->id,
+                    'reference_number' => $ticket->ticket_number,
+                    'description' => "Service ticket payment received #{$ticket->ticket_number}" . ($notes ? " ({$notes})" : ""),
+                ]);
+            }
         });
     }
 

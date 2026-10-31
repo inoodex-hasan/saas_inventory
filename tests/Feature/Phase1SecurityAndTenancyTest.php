@@ -8,7 +8,6 @@ use App\Models\Plan;
 use App\Models\Product;
 use App\Models\StockLevel;
 use App\Models\Supplier;
-use App\Models\TaDaClaim;
 use App\Models\Team;
 use App\Models\TenantSubscription;
 use App\Models\User;
@@ -273,41 +272,5 @@ class Phase1SecurityAndTenancyTest extends TestCase
 
         $response->assertSessionHas('error');
         $this->assertEquals(1, Product::where('team_id', $team->id)->count());
-    }
-
-    public function test_claimant_cannot_approve_their_own_tada_claim(): void
-    {
-        $user = User::factory()->withPersonalTeam()->create();
-        $team = $user->currentTeam;
-
-        $employee = Employee::create([
-            'team_id' => $team->id,
-            'user_id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'employee_code' => 'EMP-001',
-            'designation' => 'Executive',
-            'basic_salary' => 25000,
-            'status' => 'active',
-        ]);
-
-        $claim = TaDaClaim::create([
-            'team_id' => $team->id,
-            'employee_id' => $employee->id,
-            'claim_number' => 'TD-2026-0001',
-            'travel_date' => now()->toDateString(),
-            'destination' => 'Chittagong Port',
-            'purpose' => 'Client Delivery Inspection',
-            'travel_allowance' => 1500,
-            'daily_allowance' => 500,
-            'other_expenses' => 0,
-            'total_amount' => 2000,
-            'status' => 'pending',
-            'created_by' => $user->id,
-        ]);
-
-        $response = $this->actingAs($user)->post(route('tada.approve', $claim));
-        $response->assertStatus(403);
-        $this->assertEquals('pending', $claim->fresh()->status);
     }
 }

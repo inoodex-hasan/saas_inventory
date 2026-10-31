@@ -301,7 +301,7 @@ class ProjectService
     /**
      * Record a payment against the project.
      */
-    public function recordPayment(Project $project, float $amount, ?string $paymentMethod = null, ?string $notes = null): void
+    public function recordPayment(Project $project, float $amount, ?string $paymentMethod = null, ?string $notes = null, ?int $financialAccountId = null): void
     {
         if ($amount <= 0) {
             throw new \InvalidArgumentException("Payment amount must be greater than zero.");
@@ -311,7 +311,14 @@ class ProjectService
             throw new \InvalidArgumentException("Payment amount exceeds outstanding due amount.");
         }
 
-        DB::transaction(function () use ($project, $amount) {
+        DB::transaction(function () use ($project, $amount, $paymentMethod, $notes, $financialAccountId) {
+            $account = null;
+            if ($financialAccountId) {
+                $account = \App\Models\FinancialAccount::where('team_id', $project->team_id)->find($financialAccountId);
+            }
+
+            $methodName = $account ? $account->name : ($paymentMethod ?? 'Cash');
+
             $project->paid_amount += $amount;
             $project->due_amount = max(0, round((float) $project->billed_total - (float) $project->paid_amount, 2));
 
@@ -322,6 +329,15 @@ class ProjectService
             }
 
             $project->save();
+
+            if ($account) {
+                $account->deposit($amount, [
+                    'reference_type' => Project::class,
+                    'reference_id' => $project->id,
+                    'reference_number' => $project->project_code,
+                    'description' => "Project payment received #{$project->project_code} - Client: " . ($project->client?->name ?? 'Direct') . ($notes ? " ({$notes})" : ""),
+                ]);
+            }
         });
     }
 

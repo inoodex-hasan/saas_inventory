@@ -23,7 +23,7 @@ class VendorDueController extends Controller
         $filter = $request->input('filter', 'all_with_dues'); // all_with_dues, fully_paid, all
 
         $query = Supplier::where('team_id', $teamId)
-            ->when($search, function ($q, $search) {
+            ->when($request->filled('search'), function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('name', 'like', "%{$search}%")
                         ->orWhere('phone', 'like', "%{$search}%")

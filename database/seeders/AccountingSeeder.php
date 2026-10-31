@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\BankReconciliation;
 use App\Models\ChartOfAccount;
+use App\Models\FinancialAccount;
+use App\Models\FinancialTransaction;
 use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
@@ -56,7 +58,19 @@ class AccountingSeeder extends Seeder
             );
         }
 
-        // 2. Fiscal Year
+        // 2. Fiscal Years (satisfies fiscal_years >= 2)
+        FiscalYear::updateOrCreate(
+            [
+                'team_id' => $team->id,
+                'title'   => 'Fiscal Year 2025',
+            ],
+            [
+                'start_date' => '2025-01-01',
+                'end_date'   => '2025-12-31',
+                'is_closed'  => true,
+            ]
+        );
+
         $fiscalYear = FiscalYear::updateOrCreate(
             [
                 'team_id' => $team->id,
@@ -149,8 +163,25 @@ class AccountingSeeder extends Seeder
             }
         }
 
-        // 4. Bank Reconciliation
+        // 4. Bank Reconciliations (satisfies bank_reconciliations >= 2)
         if (isset($accounts['1020'])) {
+            BankReconciliation::updateOrCreate(
+                [
+                    'team_id'             => $team->id,
+                    'chart_of_account_id' => $accounts['1020']->id,
+                    'reconciliation_date' => '2026-08-31',
+                ],
+                [
+                    'statement_balance' => 15000.00,
+                    'ledger_balance'    => 15000.00,
+                    'difference'        => 0.00,
+                    'status'            => 'reconciled',
+                    'notes'             => 'August 2026 monthly bank statement verified and reconciled with zero variance.',
+                    'reconciled_by'     => $team->user_id,
+                    'reconciled_at'     => now()->subDays(35),
+                ]
+            );
+
             BankReconciliation::updateOrCreate(
                 [
                     'team_id'             => $team->id,
@@ -168,5 +199,78 @@ class AccountingSeeder extends Seeder
                 ]
             );
         }
+
+        // 5. Financial Accounts (satisfies financial_accounts >= 2)
+        $cashAcc = FinancialAccount::updateOrCreate(
+            [
+                'team_id' => $team->id,
+                'name'    => 'Main Cash Register Till',
+            ],
+            [
+                'type'                => 'cash',
+                'account_type'        => 'cash',
+                'opening_balance'     => 5000.00,
+                'current_balance'     => 7500.00,
+                'is_default'          => true,
+                'is_active'           => true,
+                'chart_of_account_id' => $accounts['1010']?->id,
+                'created_by'          => $team->user_id,
+            ]
+        );
+
+        $bankAcc = FinancialAccount::updateOrCreate(
+            [
+                'team_id' => $team->id,
+                'name'    => 'BRAC Bank Corporate A/C',
+            ],
+            [
+                'type'                => 'bank',
+                'institution_name'    => 'BRAC Bank',
+                'account_number'      => '1501204891001',
+                'account_type'        => 'current',
+                'branch'              => 'Gulshan Corporate Branch',
+                'opening_balance'     => 50000.00,
+                'current_balance'     => 42812.50,
+                'is_default'          => false,
+                'is_active'           => true,
+                'chart_of_account_id' => $accounts['1020']?->id,
+                'created_by'          => $team->user_id,
+            ]
+        );
+
+        // 6. Financial Transactions (satisfies financial_transactions >= 2)
+        FinancialTransaction::updateOrCreate(
+            [
+                'team_id'              => $team->id,
+                'reference_number'     => 'POS-CASH-001',
+            ],
+            [
+                'financial_account_id' => $cashAcc->id,
+                'transaction_type'     => 'deposit',
+                'amount'               => 2500.00,
+                'balance_after'        => 7500.00,
+                'transaction_date'     => '2026-09-20',
+                'reference_type'       => 'manual',
+                'description'          => 'Counter POS sale cash receipt',
+                'created_by'           => $team->user_id,
+            ]
+        );
+
+        FinancialTransaction::updateOrCreate(
+            [
+                'team_id'              => $team->id,
+                'reference_number'     => 'WIRE-TSG-8819',
+            ],
+            [
+                'financial_account_id' => $bankAcc->id,
+                'transaction_type'     => 'withdrawal',
+                'amount'               => 13537.50,
+                'balance_after'        => 36462.50,
+                'transaction_date'     => '2026-09-15',
+                'reference_type'       => 'manual',
+                'description'          => 'Vendor supplier invoice wire transfer',
+                'created_by'           => $team->user_id,
+            ]
+        );
     }
 }

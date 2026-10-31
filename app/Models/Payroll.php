@@ -24,6 +24,7 @@ class Payroll extends Model
         'status',
         'payment_date',
         'payment_method',
+        'financial_account_id',
         'payment_reference',
         'notes',
         'created_by',
@@ -46,6 +47,11 @@ class Payroll extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function financialAccount(): BelongsTo
+    {
+        return $this->belongsTo(FinancialAccount::class, 'financial_account_id');
     }
 
     public function creator(): BelongsTo

@@ -32,15 +32,15 @@ class ProductController extends Controller
         $query = Product::where('team_id', $teamId)
             ->with(['category', 'brand'])
             ->withSum('stockLevels as total_stock', 'quantity')
-            ->when($search, function ($q, $search) {
+            ->when($request->filled('search'), function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('name', 'like', "%{$search}%")
                         ->orWhere('sku', 'like', "%{$search}%")
                         ->orWhere('barcode', 'like', "%{$search}%");
                 });
             })
-            ->when($categoryId, fn ($q, $cat) => $q->where('category_id', $cat))
-            ->when($brandId, fn ($q, $brand) => $q->where('brand_id', $brand));
+            ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $categoryId))
+            ->when($request->filled('brand_id'), fn ($q) => $q->where('brand_id', $brandId));
 
         if ($stockFilter === 'low_stock') {
             $query->whereRaw('(SELECT COALESCE(SUM(quantity), 0) FROM stock_levels WHERE stock_levels.product_id = products.id) <= products.reorder_level');
@@ -127,6 +127,7 @@ class ProductController extends Controller
             'warranty_days' => 'nullable|integer|min:0',
             'is_serialized' => 'boolean',
             'is_active' => 'boolean',
+            'image' => 'nullable|image|max:3072',
             'description' => 'nullable|string|max:1000',
             'initial_warehouse_id' => ['nullable', Rule::exists('warehouses', 'id')->where('team_id', $teamId)],
             'initial_stock_quantity' => 'nullable|numeric|min:0',
@@ -141,6 +142,10 @@ class ProductController extends Controller
         $initialWarehouseId = $validated['initial_warehouse_id'] ?? null;
         $initialStockQty = (float) ($validated['initial_stock_quantity'] ?? 0);
         unset($validated['initial_warehouse_id'], $validated['initial_stock_quantity']);
+
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image')->store("products/{$teamId}", 'public');
+        }
 
         $product = Product::create($validated);
 
@@ -195,6 +200,8 @@ class ProductController extends Controller
             'warranty_days' => 'nullable|integer|min:0',
             'is_serialized' => 'boolean',
             'is_active' => 'boolean',
+            'image' => 'nullable|image|max:3072',
+            'remove_image' => 'nullable|boolean',
             'description' => 'nullable|string|max:1000',
         ]);
 
@@ -203,6 +210,21 @@ class ProductController extends Controller
         $validated['is_serialized'] = $validated['is_serialized'] ?? false;
         $validated['is_active'] = $validated['is_active'] ?? true;
 
+        if ($request->boolean('remove_image')) {
+            if ($product->image) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($product->image);
+            }
+            $validated['image'] = null;
+        } elseif ($request->hasFile('image')) {
+            if ($product->image) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($product->image);
+            }
+            $validated['image'] = $request->file('image')->store("products/{$teamId}", 'public');
+        } else {
+            unset($validated['image']);
+        }
+
+        unset($validated['remove_image']);
         $product->update($validated);
 
         return redirect()->route('products.index')->with('success', "Product '{$product->name}' updated successfully.");
@@ -231,7 +253,7 @@ class ProductController extends Controller
         $teamId = Auth::user()->current_team_id;
         abort_if($product->team_id !== $teamId, 403);
 
-        $levels = StockLevel::with('warehouse')
+        $levels = StockLevel::with(['warehouse', 'variant'])
             ->where('product_id', $product->id)
             ->where('team_id', $teamId)
             ->get()
@@ -239,10 +261,14 @@ class ProductController extends Controller
                 $onHand = (float) $level->quantity;
                 $reserved = (float) $level->reserved_quantity;
                 $available = max(0, $onHand - $reserved);
-                $cost = (float) $product->cost_price;
+                $cost = (float) ($level->variant?->cost_price ?: $product->cost_price);
+                $warehouseName = $level->warehouse?->name ?? 'Unknown';
+                if ($level->variant) {
+                    $warehouseName .= " — " . $level->variant->name;
+                }
 
                 return [
-                    'warehouse_name' => $level->warehouse?->name ?? 'Unknown',
+                    'warehouse_name' => $warehouseName,
                     'quantity_on_hand' => $onHand,
                     'quantity_reserved' => $reserved,
                     'quantity_available' => $available,

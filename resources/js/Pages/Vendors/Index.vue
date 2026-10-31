@@ -25,6 +25,7 @@ const form = useForm({
     email: '',
     address: '',
     tax_number: '',
+    opening_balance: 0,
     is_active: true,
 });
 
@@ -42,6 +43,7 @@ function openCreateModal() {
     editingVendor.value = null;
     form.reset();
     form.clearErrors();
+    form.opening_balance = 0;
     form.is_active = true;
     isModalOpen.value = true;
 }
@@ -189,41 +191,41 @@ function deleteVendor(v) {
                     <table class="w-full text-left text-xs">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-bold">
-                                <th class="py-3 px-4">Vendor & Company</th>
-                                <th class="py-3 px-4">Contact Person</th>
-                                <th class="py-3 px-4">Phone & Mobile</th>
-                                <th class="py-3 px-4">Email</th>
-                                <th class="py-3 px-4">Address</th>
-                                <th class="py-3 px-4 text-center">Status</th>
-                                <th class="py-3 px-4 text-right">Actions</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Vendor & Company</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Contact Person</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Phone & Mobile</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Email</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Address</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Status</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             <tr v-for="v in vendors.data" :key="v.id" class="hover:bg-slate-50/70 transition-colors">
-                                <td class="py-3.5 px-4">
-                                    <div class="font-bold text-slate-900 text-sm">{{ v.name }}</div>
+                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                    <div class="font-bold text-slate-900 text-sm max-w-[180px] lg:max-w-[220px] truncate" :title="v.name">{{ v.name }}</div>
                                     <div v-if="v.tax_number" class="text-[10px] text-slate-400 font-mono mt-0.5">
                                         Tax/Trade: {{ v.tax_number }}
                                     </div>
                                 </td>
 
-                                <td class="py-3.5 px-4 font-medium text-slate-700">
+                                <td class="py-3.5 px-4 font-medium text-slate-700 whitespace-nowrap">
                                     {{ v.contact_name || 'N/A' }}
                                 </td>
 
-                                <td class="py-3.5 px-4 font-mono font-bold text-slate-800">
+                                <td class="py-3.5 px-4 font-mono font-bold text-slate-800 whitespace-nowrap">
                                     {{ v.phone }}
                                 </td>
 
-                                <td class="py-3.5 px-4 text-slate-600">
+                                <td class="py-3.5 px-4 text-slate-600 whitespace-nowrap">
                                     {{ v.email || '—' }}
                                 </td>
 
-                                <td class="py-3.5 px-4 text-slate-500 max-w-xs truncate">
-                                    {{ v.address }}
+                                <td class="py-3.5 px-4 text-slate-500 max-w-[200px] lg:max-w-[280px] truncate" :title="v.address">
+                                    {{ v.address ? (v.address.length > 50 ? v.address.slice(0, 50) + '...' : v.address) : '—' }}
                                 </td>
 
-                                <td class="py-3.5 px-4 text-center">
+                                <td class="py-3.5 px-4 text-center whitespace-nowrap">
                                     <select 
                                         :value="v.is_active ? '1' : '0'"
                                         @change="(e) => setVendorStatus(v, e.target.value)"
@@ -237,7 +239,7 @@ function deleteVendor(v) {
                                     </select>
                                 </td>
 
-                                <td class="py-3.5 px-4 text-right">
+                                <td class="py-3.5 px-4 text-right whitespace-nowrap">
                                     <ActionDropdown>
                                         <div class="p-1 space-y-0.5">
                                             <button 
@@ -370,8 +372,26 @@ class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-
                         <input 
                             type="text" 
                             v-model="form.tax_number" 
-class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+                            class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                         />
+                    </div>
+
+                    <div v-if="!editingVendor" class="bg-amber-50/70 p-3.5 rounded-xl border border-amber-200/80">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-bold text-amber-900">Opening Payable Due Balance (৳)</label>
+                            <span class="text-[10px] text-amber-700 font-medium">Optional initial debt</span>
+                        </div>
+                        <input 
+                            type="number" 
+                            step="0.01" 
+                            min="0"
+                            v-model.number="form.opening_balance" 
+                            class="w-full px-3 py-2 rounded-xl text-xs font-mono font-bold text-slate-800 bg-white border border-amber-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                        />
+                        <p class="text-[11px] text-amber-800/80 mt-1.5 leading-relaxed">
+                            If you owe this vendor an outstanding balance from prior purchases before using this system, enter it here. An initial opening payable invoice will be recorded in the vendor due ledger.
+                        </p>
+                        <p v-if="form.errors.opening_balance" class="text-[11px] text-rose-600 mt-1">{{ form.errors.opening_balance }}</p>
                     </div>
 
                     <div class="pt-2">

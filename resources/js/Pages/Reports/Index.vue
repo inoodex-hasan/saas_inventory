@@ -39,13 +39,12 @@ function handleSearchDebounced() {
 }
 
 function applyFilter() {
-    router.get(route('reports.index'), {
-        tab: currentTab.value,
-        movement_type: movementType.value,
-        movement_warehouse_id: movementWarehouseId.value,
-        movement_search: movementSearch.value,
-        low_stock_search: lowStockSearch.value,
-    }, {
+    const params = { tab: currentTab.value };
+    if (movementType.value) params.movement_type = movementType.value;
+    if (movementWarehouseId.value) params.movement_warehouse_id = movementWarehouseId.value;
+    if (movementSearch.value) params.movement_search = movementSearch.value;
+    if (lowStockSearch.value) params.low_stock_search = lowStockSearch.value;
+    router.get(route('reports.index'), params, {
         preserveState: true,
         replace: true,
         preserveScroll: true,
@@ -56,7 +55,7 @@ function resetMovementsFilter() {
     movementType.value = '';
     movementWarehouseId.value = '';
     movementSearch.value = '';
-    applyFilter();
+    router.get(route('reports.index'), { tab: currentTab.value }, { preserveState: false, replace: true, preserveScroll: true });
 }
 
 function printReport() {
@@ -314,7 +313,6 @@ function printReport() {
                             v-model="lowStockSearch"
                             @input="handleSearchDebounced"
                             class="w-full bg-white border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-900 placeholder-slate-400 transition"
-                            placeholder="Search low stock SKU or title..."
                         >
                     </div>
 
@@ -430,7 +428,6 @@ function printReport() {
                                 v-model="movementSearch"
                                 @input="handleSearchDebounced"
                                 class="w-full bg-white border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-900 placeholder-slate-400 transition"
-                                placeholder="Search reason or SKU..."
                             >
                         </div>
 
@@ -481,14 +478,14 @@ function printReport() {
                         <table class="w-full text-left text-xs text-slate-600">
                             <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-100">
                                 <tr>
-                                    <th class="px-5 py-3.5">Date</th>
-                                    <th class="px-5 py-3.5 text-center">Type</th>
-                                    <th class="px-5 py-3.5">Product &amp; SKU</th>
-                                    <th class="px-5 py-3.5">Warehouse Hub</th>
-                                    <th class="px-5 py-3.5 text-center">Quantity</th>
-                                    <th class="px-5 py-3.5 text-right">Unit Cost</th>
-                                    <th class="px-5 py-3.5">Reference / Reason</th>
-                                    <th class="px-5 py-3.5">Operator</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Date</th>
+                                    <th class="px-5 py-3.5 text-center whitespace-nowrap">Type</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Product &amp; SKU</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Warehouse Hub</th>
+                                    <th class="px-5 py-3.5 text-center whitespace-nowrap">Quantity</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Unit Cost</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Reference / Reason</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Operator</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
@@ -496,7 +493,7 @@ function printReport() {
                                     <td class="px-5 py-3.5 whitespace-nowrap text-slate-400 font-mono text-[11px]">
                                         {{ formatDate(m.created_at) }}
                                     </td>
-                                    <td class="px-5 py-3.5 text-center">
+                                    <td class="px-5 py-3.5 text-center whitespace-nowrap">
                                         <span
                                             v-if="m.type === 'in'"
                                             class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200"
@@ -522,24 +519,24 @@ function printReport() {
                                             Adjustment
                                         </span>
                                     </td>
-                                    <td class="px-5 py-3.5">
-                                        <div class="font-bold text-slate-900 text-sm">{{ m.product?.name || 'Product' }}</div>
+                                    <td class="px-5 py-3.5 whitespace-nowrap">
+                                        <div class="font-bold text-slate-900 text-sm max-w-[180px] lg:max-w-[240px] truncate" :title="m.product?.name || 'Product'">{{ m.product?.name || 'Product' }}</div>
                                         <div class="text-[10px] font-mono text-indigo-500">SKU: {{ m.product?.sku || '—' }}</div>
                                     </td>
-                                    <td class="px-5 py-3.5 text-slate-600 font-medium">
+                                    <td class="px-5 py-3.5 text-slate-600 font-medium whitespace-nowrap">
                                         {{ m.warehouse?.name || '—' }} ({{ m.warehouse?.code || 'WH' }})
                                     </td>
                                     <td
                                         :class="m.type === 'in' ? 'text-emerald-600' : (m.type === 'out' ? 'text-rose-600' : 'text-slate-700')"
-                                        class="px-5 py-3.5 text-center font-extrabold text-sm"
+                                        class="px-5 py-3.5 text-center font-extrabold text-sm whitespace-nowrap"
                                     >
                                         {{ m.type === 'in' ? '+' : (m.type === 'out' ? '-' : '') }}{{ Number(m.quantity).toLocaleString() }}
                                     </td>
-                                    <td class="px-5 py-3.5 text-right font-mono text-slate-400">
+                                    <td class="px-5 py-3.5 text-right font-mono text-slate-400 whitespace-nowrap">
                                         <CurrencyDisplay v-if="m.unit_cost" :amount="m.unit_cost" />
                                         <span v-else>—</span>
                                     </td>
-                                    <td class="px-5 py-3.5 max-w-xs truncate">
+                                    <td class="px-5 py-3.5 max-w-[200px] lg:max-w-[260px] truncate" :title="m.reason || 'Standard stock transaction'">
                                         <div class="text-slate-800 font-medium truncate">{{ m.reason || 'Standard stock transaction' }}</div>
                                         <div v-if="m.reference_type" class="text-[10px] text-slate-400 font-mono">
                                             {{ m.reference_type.split('\\').pop() }} #{{ m.reference_id }}

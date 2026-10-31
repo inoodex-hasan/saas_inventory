@@ -17,10 +17,10 @@ const search = ref(props.filters?.search || '');
 const typeFilter = ref(props.filters?.type || '');
 
 function applyFilters() {
-    router.get(route('accounts.index'), {
-        search: search.value,
-        type: typeFilter.value,
-    }, {
+    const params = {};
+    if (search.value) params.search = search.value;
+    if (typeFilter.value) params.type = typeFilter.value;
+    router.get(route('accounts.index'), params, {
         preserveState: true,
         replace: true,
     });
@@ -29,7 +29,7 @@ function applyFilters() {
 function resetFilters() {
     search.value = '';
     typeFilter.value = '';
-    applyFilters();
+    router.get(route('accounts.index'), {}, { preserveState: false, replace: true });
 }
 
 // Modal States
@@ -167,7 +167,6 @@ function typeBadgeClass(type) {
                             v-model="search"
                             @keyup.enter="applyFilters"
                             type="text"
-                            placeholder="Search by account code, name, or subtype..."
                             class="w-full pl-10 pr-4 py-2 text-xs bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 transition-all"
                         />
                     </div>
@@ -228,14 +227,14 @@ function typeBadgeClass(type) {
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                                <th class="py-3 px-4">Code</th>
-                                <th class="py-3 px-4">Account Name</th>
-                                <th class="py-3 px-4">Classification</th>
-                                <th class="py-3 px-4">Subtype</th>
-                                <th class="py-3 px-4 text-center">Normal Balance</th>
-                                <th class="py-3 px-4 text-center">Activity</th>
-                                <th class="py-3 px-4 text-center">Status</th>
-                                <th class="py-3 px-4 text-right">Actions</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Code</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Account Name</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Classification</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Subtype</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Normal Balance</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Activity</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Status</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -244,32 +243,34 @@ function typeBadgeClass(type) {
                                 :key="account.id"
                                 class="hover:bg-slate-50/60 transition-colors"
                             >
-                                <td class="py-3 px-4 font-mono font-bold text-slate-900">
+                                <td class="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
                                     {{ account.account_code }}
                                 </td>
-                                <td class="py-3 px-4">
-                                    <div class="font-semibold text-slate-800">{{ account.name }}</div>
-                                    <div v-if="account.description" class="text-[11px] text-slate-400 mt-0.5 line-clamp-1">{{ account.description }}</div>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    <div class="font-semibold text-slate-800 max-w-[180px] lg:max-w-[240px] truncate" :title="account.name">{{ account.name }}</div>
+                                    <div v-if="account.description" class="text-[11px] text-slate-400 mt-0.5 truncate max-w-[200px] lg:max-w-[260px]" :title="account.description">
+                                        {{ account.description.length > 50 ? account.description.slice(0, 50) + '...' : account.description }}
+                                    </div>
                                 </td>
-                                <td class="py-3 px-4">
+                                <td class="py-3 px-4 whitespace-nowrap">
                                     <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider', typeBadgeClass(account.type)]">
                                         {{ account.type }}
                                     </span>
                                 </td>
-                                <td class="py-3 px-4 font-mono text-slate-500 text-[11px]">
+                                <td class="py-3 px-4 font-mono text-slate-500 text-[11px] whitespace-nowrap">
                                     {{ account.subtype || '—' }}
                                 </td>
-                                <td class="py-3 px-4 text-center">
+                                <td class="py-3 px-4 text-center whitespace-nowrap">
                                     <span class="font-semibold uppercase text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-700">
                                         {{ account.normal_balance }}
                                     </span>
                                 </td>
-                                <td class="py-3 px-4 text-center">
+                                <td class="py-3 px-4 text-center whitespace-nowrap">
                                     <span class="text-slate-600 font-mono text-xs">
                                         {{ account.journal_lines_count }} entries
                                     </span>
                                 </td>
-                                <td class="py-3 px-4 text-center">
+                                <td class="py-3 px-4 text-center whitespace-nowrap">
                                     <span
                                         v-if="account.is_active"
                                         class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700"
@@ -283,7 +284,7 @@ function typeBadgeClass(type) {
                                         Inactive
                                     </span>
                                 </td>
-                                <td class="py-3 px-4 text-right">
+                                <td class="py-3 px-4 text-right whitespace-nowrap">
                                     <div class="flex items-center justify-end">
                                         <ActionDropdown align="right">
                                             <button

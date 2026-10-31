@@ -4,6 +4,7 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import Modal from '@/Components/Modal.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
 
@@ -12,7 +13,24 @@ const props = defineProps({
     payrolls: Object,
     metrics: Object,
     employees: Array,
+    financialAccounts: Array,
     filters: Object,
+});
+
+const defaultAccount = computed(() => {
+    return (props.financialAccounts || []).find(a => a.is_default) || props.financialAccounts?.[0];
+});
+
+const accountOptions = computed(() => {
+    return (props.financialAccounts || []).map(acc => ({
+        id: acc.id,
+        value: acc.id,
+        label: acc.name,
+        sublabel: acc.type === 'cash'
+            ? `Balance: ৳${Number(acc.current_balance).toFixed(2)}`
+            : `${acc.institution_name || ''} (${acc.account_number || ''}) • Bal: ৳${Number(acc.current_balance).toFixed(2)}`,
+        group: acc.type === 'cash' ? 'Cash Registers' : (acc.type === 'bank' ? 'Bank Accounts' : 'MFS Wallets'),
+    }));
 });
 
 const search = ref(props.filters.search || '');
@@ -26,7 +44,6 @@ const generateForm = useForm({
     month_year: monthYear.value,
     other_allowances: 0,
     deductions_total: 0,
-    include_approved_tada: true,
 });
 
 const selectedEmployee = computed(() => {
@@ -43,7 +60,6 @@ const previewNetSalary = computed(() => {
 function openGenerateModal() {
     generateForm.reset();
     generateForm.month_year = monthYear.value;
-    generateForm.include_approved_tada = true;
     if (props.employees.length > 0) {
         generateForm.employee_id = props.employees[0].id;
     }
@@ -62,14 +78,16 @@ function submitGenerate() {
 const isPayModalOpen = ref(false);
 const activePayrollForPay = ref(null);
 const payForm = useForm({
-    payment_method: 'bank_transfer',
+    financial_account_id: defaultAccount.value?.id || '',
+    payment_method: '',
     payment_reference: '',
     payment_date: new Date().toISOString().slice(0, 10),
 });
 
 function openPayModal(p) {
     activePayrollForPay.value = p;
-    payForm.payment_method = 'bank_transfer';
+    payForm.financial_account_id = defaultAccount.value?.id || '';
+    payForm.payment_method = '';
     payForm.payment_reference = '';
     payForm.payment_date = new Date().toISOString().slice(0, 10);
     isPayModalOpen.value = true;
@@ -91,18 +109,18 @@ function deletePayroll(p) {
 }
 
 function applyFilters() {
-    router.get(route('payroll.index'), {
-        search: search.value,
-        status: status.value,
-        month_year: monthYear.value,
-    }, { preserveState: true, replace: true });
+    const params = {};
+    if (search.value) params.search = search.value;
+    if (status.value) params.status = status.value;
+    if (monthYear.value) params.month_year = monthYear.value;
+    router.get(route('payroll.index'), params, { preserveState: true, replace: true });
 }
 
 function resetFilters() {
     search.value = '';
     status.value = '';
     monthYear.value = new Date().toISOString().slice(0, 7);
-    applyFilters();
+    router.get(route('payroll.index'), {}, { preserveState: false, replace: true });
 }
 </script>
 
@@ -154,7 +172,6 @@ function resetFilters() {
                             v-model="search"
                             @keyup.enter="applyFilters"
                             type="text"
-                            placeholder="Search payroll #, staff name, employee code..."
                             class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
                         />
                         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -214,51 +231,47 @@ function resetFilters() {
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
                             <tr class="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-bold text-[10px]">
-                                <th class="py-3 px-4">Payroll #</th>
-                                <th class="py-3 px-4">Staff Member</th>
-                                <th class="py-3 px-4">Cycle</th>
-                                <th class="py-3 px-4 text-right">Basic Salary</th>
-                                <th class="py-3 px-4 text-right">TA/DA Reimbursement</th>
-                                <th class="py-3 px-4 text-right">Allowances</th>
-                                <th class="py-3 px-4 text-right">Deductions</th>
-                                <th class="py-3 px-4 text-right">Net Salary</th>
-                                <th class="py-3 px-4 text-center">Status</th>
-                                <th class="py-3 px-4 text-right">Actions</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Payroll #</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Staff Member</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Cycle</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Basic Salary</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Allowances</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Deductions</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Net Salary</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Status</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             <tr v-for="p in payrolls.data" :key="p.id" class="hover:bg-slate-50/80 transition-colors">
-                                <td class="py-3.5 px-4 font-mono font-bold text-indigo-600">
+                                <td class="py-3.5 px-4 font-mono font-bold text-indigo-600 whitespace-nowrap">
                                     {{ p.payroll_number }}
                                 </td>
-                                <td class="py-3.5 px-4">
-                                    <div class="font-bold text-slate-900">{{ p.employee?.name }}</div>
-                                    <div class="text-[11px] text-slate-400">
+                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                    <div class="font-bold text-slate-900 max-w-[160px] lg:max-w-[200px] truncate" :title="p.employee?.name">{{ p.employee?.name }}</div>
+                                    <div class="text-[11px] text-slate-400 max-w-[180px] truncate" :title="`${p.employee?.employee_code || ''} - ${p.employee?.designation || ''}`">
                                         {{ p.employee?.employee_code }} - {{ p.employee?.designation }}
                                     </div>
                                 </td>
-                                <td class="py-3.5 px-4 font-semibold text-slate-700">
+                                <td class="py-3.5 px-4 font-semibold text-slate-700 whitespace-nowrap">
                                     {{ p.month_year }}
                                 </td>
-                                <td class="py-3.5 px-4 text-right font-medium text-slate-800">
+                                <td class="py-3.5 px-4 text-right font-medium text-slate-800 whitespace-nowrap">
                                     <CurrencyDisplay :amount="p.basic_salary" />
                                 </td>
-                                <td class="py-3.5 px-4 text-right font-medium text-emerald-700">
-                                    <CurrencyDisplay :amount="p.tada_allowance" />
-                                </td>
-                                <td class="py-3.5 px-4 text-right font-medium text-emerald-700">
+                                <td class="py-3.5 px-4 text-right font-medium text-emerald-700 whitespace-nowrap">
                                     <CurrencyDisplay :amount="p.other_allowances" />
                                 </td>
-                                <td class="py-3.5 px-4 text-right font-medium text-rose-600">
+                                <td class="py-3.5 px-4 text-right font-medium text-rose-600 whitespace-nowrap">
                                     <CurrencyDisplay :amount="p.deductions_total" />
                                 </td>
-                                <td class="py-3.5 px-4 text-right font-extrabold text-slate-900 text-sm">
+                                <td class="py-3.5 px-4 text-right font-extrabold text-slate-900 text-sm whitespace-nowrap">
                                     <CurrencyDisplay :amount="p.net_salary" />
                                 </td>
-                                <td class="py-3.5 px-4 text-center">
+                                <td class="py-3.5 px-4 text-center whitespace-nowrap">
                                     <StatusBadge :status="p.status" />
                                 </td>
-                                <td class="py-3.5 px-4 text-right">
+                                <td class="py-3.5 px-4 text-right whitespace-nowrap">
                                     <ActionDropdown>
                                         <div class="p-1 space-y-0.5">
                                             <a
@@ -300,7 +313,7 @@ function resetFilters() {
                             </tr>
 
                             <tr v-if="payrolls.data.length === 0">
-                                <td colspan="10" class="py-10 text-center text-slate-400">
+                                <td colspan="9" class="py-10 text-center text-slate-400">
                                     No payroll records for this month. Click "+ Generate Payroll Slip" to calculate salaries.
                                 </td>
                             </tr>
@@ -311,20 +324,23 @@ function resetFilters() {
         </div>
 
         <!-- Generate Payroll Modal -->
-        <Modal :show="isGenerateModalOpen" @close="isGenerateModalOpen = false" max-width="md">
-            <div class="p-6">
+        <Modal :show="isGenerateModalOpen" @close="isGenerateModalOpen = false" max-width="2xl">
+            <div class="p-6 sm:p-7">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <h3 class="text-base font-bold text-slate-900">Generate Staff Monthly Salary Slip</h3>
-                    <button @click="isGenerateModalOpen = false" class="text-slate-400 hover:text-slate-600">&times;</button>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Generate Staff Monthly Salary Slip</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Calculate monthly base salary, bonuses and deductions</p>
+                    </div>
+                    <button @click="isGenerateModalOpen = false" class="text-slate-400 hover:text-slate-600 text-lg leading-none">&times;</button>
                 </div>
 
-                <form @submit.prevent="submitGenerate" class="mt-4 space-y-4 text-xs">
+                <form @submit.prevent="submitGenerate" class="mt-5 space-y-4 text-xs">
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1">Staff Member *</label>
                         <select
                             v-model="generateForm.employee_id"
                             required
-                            class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2 px-3"
+                            class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2.5 px-3"
                         >
                             <option v-for="e in employees" :key="e.id" :value="e.id">
                                 {{ e.name }} ({{ e.employee_code }}) - Basic: {{ e.basic_salary }}
@@ -333,14 +349,14 @@ function resetFilters() {
                         <div v-if="generateForm.errors.employee_id" class="text-rose-500 text-[11px] mt-1">{{ generateForm.errors.employee_id }}</div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Salary Month / Year *</label>
                             <input
                                 v-model="generateForm.month_year"
                                 type="month"
                                 required
-                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2 px-3"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2.5 px-3"
                             />
                         </div>
 
@@ -349,12 +365,12 @@ function resetFilters() {
                             <input
                                 :value="selectedEmployee?.basic_salary || 0"
                                 disabled
-                                class="w-full text-xs rounded-xl border border-slate-200 py-2 px-3 bg-slate-50 font-bold text-slate-700"
+                                class="w-full text-xs rounded-xl border border-slate-200 py-2.5 px-3 bg-slate-50 font-bold text-slate-700"
                             />
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Other Allowances / Bonus</label>
                             <input
@@ -362,7 +378,7 @@ function resetFilters() {
                                 type="number"
                                 step="0.01"
                                 min="0"
-class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3 font-semibold text-emerald-700"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2.5 px-3 font-semibold text-emerald-700"
                             />
                         </div>
 
@@ -373,42 +389,30 @@ class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500
                                 type="number"
                                 step="0.01"
                                 min="0"
-class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3 font-semibold text-rose-600"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2.5 px-3 font-semibold text-rose-600"
                             />
                         </div>
                     </div>
 
-                    <div class="bg-indigo-50/60 p-3 rounded-xl border border-indigo-100 flex items-center justify-between">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input
-                                v-model="generateForm.include_approved_tada"
-                                type="checkbox"
-                                class="rounded text-indigo-600 focus:ring-indigo-500"
-                            />
-                            <span class="font-semibold text-indigo-900">Include Approved TA/DA Claims</span>
-                        </label>
-                        <span class="text-[10px] text-indigo-600 italic">Auto-marks claims as reimbursed</span>
-                    </div>
-
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
                         <span class="font-bold text-slate-600">Estimated Net Salary:</span>
                         <span class="font-extrabold text-indigo-700 text-sm">
                             <CurrencyDisplay :amount="previewNetSalary" />
                         </span>
                     </div>
 
-                    <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
                         <button
                             type="button"
                             @click="isGenerateModalOpen = false"
-                            class="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl font-semibold hover:bg-slate-50 transition"
+                            class="px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl font-semibold hover:bg-slate-50 transition"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             :disabled="generateForm.processing"
-                            class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-sm transition disabled:opacity-50"
+                            class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-sm transition disabled:opacity-50"
                         >
                             Generate Slip
                         </button>
@@ -418,15 +422,18 @@ class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500
         </Modal>
 
         <!-- Mark as Disbursed Modal -->
-        <Modal :show="isPayModalOpen" @close="isPayModalOpen = false" max-width="md">
-            <div class="p-6">
+        <Modal :show="isPayModalOpen" @close="isPayModalOpen = false" max-width="xl">
+            <div class="p-6 sm:p-7">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <h3 class="text-base font-bold text-slate-900">Disburse Salary - #{{ activePayrollForPay?.payroll_number }}</h3>
-                    <button @click="isPayModalOpen = false" class="text-slate-400 hover:text-slate-600">&times;</button>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Disburse Salary - #{{ activePayrollForPay?.payroll_number }}</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Settle net salary payment and debit selected account</p>
+                    </div>
+                    <button @click="isPayModalOpen = false" class="text-slate-400 hover:text-slate-600 text-lg leading-none">&times;</button>
                 </div>
 
-                <form @submit.prevent="submitPay" class="mt-4 space-y-4 text-xs">
-                    <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-100 flex justify-between items-center">
+                <form @submit.prevent="submitPay" class="mt-5 space-y-4 text-xs">
+                    <div class="bg-emerald-50 p-3.5 rounded-xl border border-emerald-100 flex justify-between items-center">
                         <span class="text-emerald-800 font-semibold">Net Payable:</span>
                         <span class="text-emerald-900 font-extrabold text-base">
                             <CurrencyDisplay :amount="activePayrollForPay?.net_salary || 0" />
@@ -434,27 +441,23 @@ class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500
                     </div>
 
                     <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Disbursement Method *</label>
-                        <select
-                            v-model="payForm.payment_method"
-                            class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2 px-3"
-                        >
-                            <option value="bank_transfer">Bank Transfer / BEFTN / NPSB</option>
-                            <option value="cash">Cash in Envelope</option>
-                            <option value="cheque">Company Cheque</option>
-                            <option value="bkash">bKash Corporate</option>
-                            <option value="nagad">Nagad Corporate</option>
-                        </select>
+                        <label class="block font-semibold text-slate-700 mb-1">Disbursement Account / Method *</label>
+                        <SearchableSelect
+                            v-model="payForm.financial_account_id"
+                            :options="accountOptions"
+                            size="compact"
+                            :error="payForm.errors.financial_account_id"
+                        />
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Disbursement Date</label>
                             <input
                                 v-model="payForm.payment_date"
                                 type="date"
                                 required
-                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2 px-3"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2.5 px-3"
                             />
                         </div>
 
@@ -463,23 +466,23 @@ class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500
                             <input
                                 v-model="payForm.payment_reference"
                                 type="text"
-class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs py-2 px-3"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 py-2.5 px-3"
                             />
                         </div>
                     </div>
 
-                    <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
                         <button
                             type="button"
                             @click="isPayModalOpen = false"
-                            class="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl font-semibold hover:bg-slate-50 transition"
+                            class="px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl font-semibold hover:bg-slate-50 transition"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             :disabled="payForm.processing"
-                            class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-sm transition disabled:opacity-50"
+                            class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-sm transition disabled:opacity-50"
                         >
                             Confirm Disbursement
                         </button>

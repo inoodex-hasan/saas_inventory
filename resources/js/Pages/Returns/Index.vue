@@ -1,11 +1,12 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import Modal from '@/Components/Modal.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 
 const props = defineProps({
     returns: Object,
@@ -36,19 +37,31 @@ const rejectForm = useForm({
 });
 
 function applyFilter() {
-    router.get(route('returns.index'), {
-        search: search.value,
-        status: status.value,
-    }, { preserveState: true, replace: true });
+    const params = {};
+    if (search.value) params.search = search.value;
+    if (status.value) params.status = status.value;
+    router.get(route('returns.index'), params, { preserveState: true, replace: true });
 }
 
 function resetFilter() {
     search.value = '';
     status.value = '';
-    applyFilter();
+    router.get(route('returns.index'), {}, { preserveState: false, replace: true });
 }
 
+const orderOptions = computed(() => {
+    return (props.eligibleOrders || []).map(o => ({
+        id: o.id,
+        label: `${o.order_number} — ${o.customer?.name || 'Walk-in'}`,
+        sublabel: `Status: ${(o.status || '').toUpperCase()} • Warehouse: ${o.warehouse?.name || 'N/A'} • Total: ৳${Number(o.total_amount || 0).toLocaleString()}`,
+    }));
+});
+
 function onOrderSelected() {
+    if (!returnForm.sales_order_id) {
+        returnForm.items = [];
+        return;
+    }
     const order = props.eligibleOrders.find(o => o.id === parseInt(returnForm.sales_order_id));
     if (order) {
         returnForm.warehouse_id = order.warehouse_id || '';
@@ -63,8 +76,14 @@ function onOrderSelected() {
             action_taken: 'restock',
             serial_number: '',
         }));
+    } else {
+        returnForm.items = [];
     }
 }
+
+watch(() => returnForm.sales_order_id, () => {
+    onOrderSelected();
+});
 
 function openCreateModal() {
     returnForm.reset();
@@ -73,6 +92,10 @@ function openCreateModal() {
 }
 
 function submitReturn() {
+    if (!returnForm.sales_order_id) {
+        alert('Please select a sales order.');
+        return;
+    }
     const selectedItems = returnForm.items.filter(it => it.selected);
     if (selectedItems.length === 0) {
         alert('Please select at least one line item to return.');
@@ -172,7 +195,6 @@ function completeReturn(ret) {
                         v-model="search"
                         @keyup.enter="applyFilter"
                         type="text"
-                        placeholder="Search return #, order #, customer..."
                         class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 placeholder:text-slate-400 placeholder:text-xs transition"
                     />
                     <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -218,36 +240,36 @@ function completeReturn(ret) {
                     <table class="w-full text-left text-sm">
                         <thead class="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                             <tr>
-                                <th class="py-3.5 px-4">Return #</th>
-                                <th class="py-3.5 px-4">Original Sales Order</th>
-                                <th class="py-3.5 px-4">Customer</th>
-                                <th class="py-3.5 px-4">Refund Amount</th>
-                                <th class="py-3.5 px-4">Refund Method</th>
-                                <th class="py-3.5 px-4">Status</th>
-                                <th class="py-3.5 px-4 text-right">Actions</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Return #</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Original Sales Order</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Customer</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Refund Amount</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Refund Method</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Status</th>
+                                <th class="py-3.5 px-4 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-slate-700">
                             <tr v-for="ret in returns.data" :key="ret.id" class="hover:bg-slate-50/70 transition">
-                                <td class="py-3.5 px-4 font-semibold text-slate-900">
+                                <td class="py-3.5 px-4 font-semibold text-slate-900 whitespace-nowrap">
                                     {{ ret.return_number }}
                                 </td>
-                                <td class="py-3.5 px-4 font-medium text-slate-800">
+                                <td class="py-3.5 px-4 font-medium text-slate-800 whitespace-nowrap">
                                     {{ ret.sales_order?.order_number }}
                                 </td>
-                                <td class="py-3.5 px-4 font-medium text-slate-900">
-                                    {{ ret.customer?.name }}
+                                <td class="py-3.5 px-4 font-medium text-slate-900 whitespace-nowrap">
+                                    <div class="max-w-[180px] lg:max-w-[240px] truncate" :title="ret.customer?.name">{{ ret.customer?.name }}</div>
                                 </td>
-                                <td class="py-3.5 px-4 font-bold text-slate-900">
+                                <td class="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">
                                     <CurrencyDisplay :amount="ret.refund_amount" />
                                 </td>
-                                <td class="py-3.5 px-4 text-xs capitalize text-slate-600">
+                                <td class="py-3.5 px-4 text-xs capitalize text-slate-600 whitespace-nowrap">
                                     {{ (ret.refund_type || '').replace('_', ' ') }}
                                 </td>
-                                <td class="py-3.5 px-4">
+                                <td class="py-3.5 px-4 whitespace-nowrap">
                                     <StatusBadge :status="ret.status" />
                                 </td>
-                                <td class="py-3.5 px-4 text-right">
+                                <td class="py-3.5 px-4 text-right whitespace-nowrap">
                                     <ActionDropdown>
                                         <div class="p-1 space-y-0.5">
                                             <!-- Credit Note PDF -->
@@ -326,17 +348,11 @@ function completeReturn(ret) {
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Select Sales Order *</label>
-                            <select
+                            <SearchableSelect
                                 v-model="returnForm.sales_order_id"
-                                @change="onOrderSelected"
-                                required
-                                class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-rose-500"
-                            >
-                                <option value="" disabled>-- Select Dispatched Order --</option>
-                                <option v-for="o in eligibleOrders" :key="o.id" :value="o.id">
-                                    {{ o.order_number }} - {{ o.customer?.name }}
-                                </option>
-                            </select>
+                                :options="orderOptions"
+                                :error="returnForm.errors.sales_order_id"
+                            />
                         </div>
 
                         <div>

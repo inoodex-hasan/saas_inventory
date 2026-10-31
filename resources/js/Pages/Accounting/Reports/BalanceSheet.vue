@@ -127,14 +127,14 @@ function downloadPdf() {
                     <table class="w-full text-left border-collapse text-xs">
                         <tbody class="divide-y divide-slate-100 font-mono">
                             <tr
-                                v-for="item in report.asset_accounts"
+                                v-for="item in (report.asset_accounts || report.asset_rows)"
                                 :key="item.account_code"
                                 class="hover:bg-slate-50/60"
                             >
                                 <td class="py-2.5 px-3 w-3/12 font-bold text-slate-800">{{ item.account_code }}</td>
-                                <td class="py-2.5 px-3 w-5/12 font-sans font-medium text-slate-700">{{ item.account_name }}</td>
+                                <td class="py-2.5 px-3 w-5/12 font-sans font-medium text-slate-700">{{ item.account_name || item.name }}</td>
                                 <td class="py-2.5 px-3 w-4/12 text-right font-bold text-slate-900">
-                                    <CurrencyDisplay :amount="item.balance" />
+                                    <CurrencyDisplay :amount="item.balance ?? item.amount" />
                                 </td>
                             </tr>
                             <tr v-if="!report.asset_accounts || report.asset_accounts.length === 0">
@@ -168,17 +168,17 @@ function downloadPdf() {
                         <table class="w-full text-left border-collapse text-xs">
                             <tbody class="divide-y divide-slate-100 font-mono">
                                 <tr
-                                    v-for="item in report.liability_accounts"
+                                    v-for="item in (report.liability_accounts || report.liability_rows)"
                                     :key="item.account_code"
                                     class="hover:bg-slate-50/60"
                                 >
                                     <td class="py-2 px-3 w-3/12 font-bold text-slate-800">{{ item.account_code }}</td>
-                                    <td class="py-2 px-3 w-5/12 font-sans font-medium text-slate-700">{{ item.account_name }}</td>
+                                    <td class="py-2 px-3 w-5/12 font-sans font-medium text-slate-700">{{ item.account_name || item.name }}</td>
                                     <td class="py-2 px-3 w-4/12 text-right font-bold text-slate-900">
-                                        <CurrencyDisplay :amount="item.balance" />
+                                        <CurrencyDisplay :amount="item.balance ?? item.amount" />
                                     </td>
                                 </tr>
-                                <tr v-if="!report.liability_accounts || report.liability_accounts.length === 0">
+                                <tr v-if="(!report.liability_accounts || report.liability_accounts.length === 0) && (!report.liability_rows || report.liability_rows.length === 0)">
                                     <td colspan="3" class="py-3 text-center text-slate-400 font-sans">
                                         No liability balances.
                                     </td>
@@ -207,14 +207,14 @@ function downloadPdf() {
                         <table class="w-full text-left border-collapse text-xs">
                             <tbody class="divide-y divide-slate-100 font-mono">
                                 <tr
-                                    v-for="item in report.equity_accounts"
+                                    v-for="item in (report.equity_accounts || report.equity_rows)"
                                     :key="item.account_code"
                                     class="hover:bg-slate-50/60"
                                 >
                                     <td class="py-2 px-3 w-3/12 font-bold text-slate-800">{{ item.account_code }}</td>
-                                    <td class="py-2 px-3 w-5/12 font-sans font-medium text-slate-700">{{ item.account_name }}</td>
+                                    <td class="py-2 px-3 w-5/12 font-sans font-medium text-slate-700">{{ item.account_name || item.name }}</td>
                                     <td class="py-2 px-3 w-4/12 text-right font-bold text-slate-900">
-                                        <CurrencyDisplay :amount="item.balance" />
+                                        <CurrencyDisplay :amount="item.balance ?? item.amount" />
                                     </td>
                                 </tr>
                                 <!-- Dynamic Current Period Net Income -->

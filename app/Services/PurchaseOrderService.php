@@ -352,6 +352,96 @@ class PurchaseOrderService
     }
 
     /**
+     * Short-close a partially received purchase order, cancelling remaining unreceived units
+     * and optionally refunding or crediting any advance overpayment.
+     *
+     * @param array{refund_mode?: string, financial_account_id?: int, reference_number?: string, notes?: string} $options
+     */
+    public function closeOrder(PurchaseOrder $order, array $options = []): PurchaseOrder
+    {
+        if (!in_array($order->status, ['ordered', 'partially_received'])) {
+            throw new InvalidStockOperationException("Cannot close an order with status '{$order->status}'.");
+        }
+
+        $totalReceivedQty = (float) $order->items()->sum('received_quantity');
+        if ($totalReceivedQty <= 0) {
+            throw new InvalidStockOperationException("No items have been received for this order yet. If you want to cancel the entire order, please use Cancel Order instead.");
+        }
+
+        return DB::transaction(function () use ($order, $options) {
+            $teamId = $order->team_id;
+
+            // 1. Adjust items: trim ordered quantity to matched received quantity
+            foreach ($order->items as $item) {
+                if ($item->received_quantity < $item->quantity) {
+                    if ($item->received_quantity <= 0) {
+                        $item->delete();
+                    } else {
+                        $item->quantity = $item->received_quantity;
+                        $item->subtotal = $item->received_quantity * $item->unit_cost;
+                        $item->save();
+                    }
+                }
+            }
+
+            // 2. Recalculate financial amounts
+            $order->refresh();
+            $newSubtotal = (float) $order->items()->sum('subtotal');
+            $tax = (float) ($order->tax_amount ?? 0);
+            $shipping = (float) ($order->shipping_cost ?? 0);
+            $discount = (float) ($order->discount_amount ?? 0);
+            $newTotal = max(0, $newSubtotal + $tax + $shipping - $discount);
+
+            $currentPaid = (float) $order->paid_amount;
+            $overpaid = max(0, $currentPaid - $newTotal);
+
+            // 3. Handle overpayment if paid_amount > newTotal
+            if ($overpaid > 0) {
+                $refundMode = $options['refund_mode'] ?? 'account';
+
+                if ($refundMode === 'account' && !empty($options['financial_account_id'])) {
+                    $account = \App\Models\FinancialAccount::where('team_id', $teamId)->findOrFail($options['financial_account_id']);
+                    $refNumber = $options['reference_number'] ?? $order->po_number ?? $order->order_number;
+                    $account->deposit($overpaid, [
+                        'reference_type' => PurchaseOrder::class,
+                        'reference_id' => $order->id,
+                        'reference_number' => $refNumber,
+                        'description' => "Supplier refund for cancelled items on PO #{$order->order_number}",
+                    ]);
+
+                    $order->paid_amount = $newTotal;
+                    $order->due_amount = 0;
+                    $order->payment_status = 'paid';
+                } else {
+                    // Credit mode: Supplier keeps advance for future purchases
+                    $order->paid_amount = $newTotal;
+                    $order->due_amount = 0;
+                    $order->payment_status = 'paid';
+                    $creditNote = "Order short-closed. Supplier holds credit balance of ৳ " . number_format($overpaid, 2) . " for cancelled items.";
+                    $order->notes = trim(($order->notes ? $order->notes . "\n" : '') . $creditNote);
+                }
+            } else {
+                $order->due_amount = max(0, $newTotal - $currentPaid);
+                $order->payment_status = ($currentPaid >= $newTotal && $newTotal > 0)
+                    ? 'paid'
+                    : ($currentPaid > 0 ? 'partially_paid' : 'unpaid');
+            }
+
+            $order->subtotal = $newSubtotal;
+            $order->total_amount = $newTotal;
+            $order->status = 'received'; // Mark order completed!
+
+            if (!empty($options['notes'])) {
+                $order->notes = trim(($order->notes ? $order->notes . "\n" : '') . "Close notes: " . $options['notes']);
+            }
+
+            $order->save();
+
+            return $order->fresh(['items.product', 'supplier', 'warehouse']);
+        });
+    }
+
+    /**
      * Record payment made to vendor/supplier against purchase order.
      */
     public function recordPayment(PurchaseOrder $order, float $amount): void

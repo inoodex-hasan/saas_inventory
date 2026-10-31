@@ -51,11 +51,6 @@ class Employee extends Model
         return $this->hasMany(Expense::class);
     }
 
-    public function tadaClaims(): HasMany
-    {
-        return $this->hasMany(TaDaClaim::class);
-    }
-
     public function payrolls(): HasMany
     {
         return $this->hasMany(Payroll::class);

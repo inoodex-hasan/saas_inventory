@@ -20,13 +20,13 @@ class DeliveryChallanController extends Controller
     {
         $teamId = Auth::user()->current_team_id;
 
-        $search = $request->input('search', '');
-        $status = $request->input('status', '');
+        $search = $request->input('search');
+        $status = $request->input('status');
         $customerId = $request->input('customer_id');
 
         $query = DeliveryChallan::where('team_id', $teamId)
             ->with(['salesOrder', 'warehouse', 'customer', 'items.product', 'creator'])
-            ->when($search, function ($q, $search) {
+            ->when($request->filled('search'), function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('challan_number', 'like', "%{$search}%")
                         ->orWhere('driver_name', 'like', "%{$search}%")
@@ -35,8 +35,8 @@ class DeliveryChallanController extends Controller
                         ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$search}%"));
                 });
             })
-            ->when($status !== '', fn ($q) => $q->where('status', $status))
-            ->when($customerId, fn ($q, $id) => $q->where('customer_id', $id));
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $status))
+            ->when($request->filled('customer_id'), fn ($q) => $q->where('customer_id', $customerId));
 
         $challans = $query->latest('id')->paginate(15)->withQueryString();
 

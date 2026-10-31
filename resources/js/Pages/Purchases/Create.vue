@@ -158,8 +158,6 @@ function submit() {
                         :options="suppliers"
                         labelKey="name"
                         sublabelKey="phone"
-                        placeholder="Search & select vendor by name or phone..."
-                        searchPlaceholder="Type vendor name or phone..."
                         :error="form.errors.supplier_id"
                     />
                 </div>
@@ -276,84 +274,85 @@ class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-
                     </button>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
+                <div class="overflow-x-auto min-h-[280px]">
+                    <table class="w-full min-w-[820px] text-left text-xs table-fixed">
                         <thead>
                             <tr class="border-b border-slate-200 text-slate-400 uppercase text-[10px] font-bold">
-                                <th class="py-2.5 w-1/3">Product *</th>
-                                <th class="py-2.5 text-center w-24">Quantity *</th>
-                                <th class="py-2.5 text-right w-28">Unit Cost *</th>
-                                <th class="py-2.5 w-32">Batch / Lot #</th>
-                                <th class="py-2.5 w-28">Expiry Date</th>
-                                <th class="py-2.5 text-right w-28">Subtotal</th>
-                                <th class="py-2.5 w-10"></th>
+                                <th class="py-2.5 pr-2 w-auto min-w-[240px]">Product *</th>
+                                <th class="py-2.5 px-1 text-center w-24">Quantity *</th>
+                                <th class="py-2.5 px-1 text-right w-28">Unit Cost *</th>
+                                <th class="py-2.5 px-1 w-28">Batch / Lot #</th>
+                                <th class="py-2.5 px-1 w-32">Expiry Date</th>
+                                <th class="py-2.5 pl-2 text-right w-28">Subtotal</th>
+                                <th class="py-2.5 text-center w-10"></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <tr v-for="(it, idx) in form.items" :key="idx">
-                                <td class="py-2.5 pr-2">
+                            <tr v-for="(it, idx) in form.items" :key="idx" class="align-middle">
+                                <td class="py-2.5 pr-2 align-middle min-w-0">
                                     <SearchableSelect 
                                         v-model="it.product_id" 
                                         :options="products"
                                         labelKey="name"
                                         sublabelKey="sku"
-                                        placeholder="Search product..."
-                                        searchPlaceholder="Type name or SKU..."
                                         size="compact"
                                         @change="() => onProductSelected(it)"
                                     />
                                 </td>
 
-                                <td class="py-2.5 px-1 text-center">
+                                <td class="py-2.5 px-1 text-center align-middle">
                                     <input 
                                         type="number" 
                                         step="0.01" 
                                         min="0.01"
                                         v-model="it.quantity_ordered" 
                                         required
-                                        class="w-full px-2 py-1.5 text-center rounded-lg border border-slate-200 text-xs font-mono font-bold"
+                                        class="w-full h-[34px] px-2 text-center rounded-lg border border-slate-200 text-xs font-mono font-bold focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                                     />
                                 </td>
 
-                                <td class="py-2.5 px-1 text-right">
+                                <td class="py-2.5 px-1 text-right align-middle">
                                     <input 
                                         type="number" 
                                         step="0.01" 
                                         min="0"
                                         v-model="it.unit_cost" 
                                         required
-                                        class="w-full px-2 py-1.5 text-right rounded-lg border border-slate-200 text-xs font-mono font-bold text-slate-800"
+                                        class="w-full h-[34px] px-2 text-right rounded-lg border border-slate-200 text-xs font-mono font-bold text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                                     />
                                 </td>
 
-                                <td class="py-2.5 px-1">
+                                <td class="py-2.5 px-1 align-middle">
                                     <input 
                                         type="text" 
                                         v-model="it.batch_number" 
-class="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
+                                        class="w-full h-[34px] px-2 rounded-lg border border-slate-200 text-xs font-mono focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                                     />
                                 </td>
 
-                                <td class="py-2.5 px-1">
+                                <td class="py-2.5 px-1 align-middle">
                                     <input 
                                         type="date" 
                                         v-model="it.expiry_date" 
-                                        class="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
+                                        class="w-full h-[34px] px-2 rounded-lg border border-slate-200 text-xs font-mono focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                                     />
                                 </td>
 
-                                <td class="py-2.5 pl-2 text-right font-mono font-bold text-slate-900">
+                                <td class="py-2.5 pl-2 text-right font-mono font-bold text-slate-900 align-middle whitespace-nowrap text-xs">
                                     <CurrencyDisplay :amount="(it.quantity_ordered || 0) * (it.unit_cost || 0)" />
                                 </td>
 
-                                <td class="py-2.5 text-center">
+                                <td class="py-2.5 text-center align-middle">
                                     <button 
                                         type="button" 
                                         v-if="form.items.length > 1"
                                         @click="removeItemRow(idx)"
-                                        class="text-slate-400 hover:text-rose-600 p-1"
+                                        class="text-slate-400 hover:text-rose-600 p-1 rounded-md hover:bg-slate-100 transition inline-flex items-center justify-center"
+                                        title="Remove Line"
                                     >
-                                        &times;
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
                                     </button>
                                 </td>
                             </tr>
@@ -364,43 +363,58 @@ class="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
 
             <!-- 4. Financial Summary & Advance Payment -->
             <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 items-end">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch">
                     <!-- Grand Total Card -->
-                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/90 flex flex-col justify-between">
                         <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Procurement Value</span>
-                        <div class="text-xl font-black text-slate-900 mt-1">
+                        <div class="text-xl font-black text-slate-900 mt-2">
                             <CurrencyDisplay :amount="grandTotal" />
                         </div>
                     </div>
 
-                    <!-- Advance Paid -->
-                    <div>
-                        <div class="flex items-center justify-between mb-1">
-                            <label class="text-xs font-semibold text-slate-700">Advance Paid Now</label>
+                    <!-- Advance Paid Card -->
+                    <div class="p-4 rounded-xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Advance Paid Now</span>
                             <button 
                                 type="button" 
                                 @click="setFullPayment"
-                                class="text-[10px] font-bold text-indigo-600 hover:text-indigo-800"
+                                class="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-2 py-0.5 rounded-full transition-all"
                             >
-                                Pay Full (100%)
+                                <svg class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span>Pay Full (100%)</span>
                             </button>
                         </div>
-                        <input 
-                            type="number" 
-                            step="0.01" 
-                            min="0"
-                            :max="grandTotal"
-                            v-model="form.paid_amount" 
-                            class="w-full px-3 py-2 rounded-xl text-xs font-mono font-bold text-emerald-600 border border-slate-200 focus:border-indigo-500"
-                        />
+                        <div class="relative mt-2 flex items-baseline">
+                            <span class="text-slate-400 font-bold text-lg mr-1.5 select-none font-mono">৳</span>
+                            <input 
+                                type="number" 
+                                step="any" 
+                                min="0"
+                                :max="grandTotal"
+                                v-model.number="form.paid_amount" 
+                                class="w-full text-xl font-black text-emerald-600 bg-transparent border-0 p-0 focus:ring-0 font-mono"
+                            />
+                        </div>
                     </div>
 
-                    <!-- Due Payable -->
-                    <div class="p-4 rounded-xl border" :class="duePayable > 0 ? 'bg-rose-50 border-rose-200' : 'bg-emerald-50 border-emerald-200'">
-                        <span class="text-[10px] font-bold uppercase tracking-wider" :class="duePayable > 0 ? 'text-rose-500' : 'text-emerald-500'">
+                    <!-- Due Payable Card -->
+                    <div 
+                        class="p-4 rounded-xl border transition-colors flex flex-col justify-between" 
+                        :class="duePayable > 0 ? 'bg-rose-50/70 border-rose-200' : 'bg-emerald-50/70 border-emerald-200'"
+                    >
+                        <span 
+                            class="text-[10px] font-bold uppercase tracking-wider" 
+                            :class="duePayable > 0 ? 'text-rose-600' : 'text-emerald-600'"
+                        >
                             Remaining Payable Due
                         </span>
-                        <div class="text-xl font-black mt-1" :class="duePayable > 0 ? 'text-rose-700' : 'text-emerald-700'">
+                        <div 
+                            class="text-xl font-black mt-2" 
+                            :class="duePayable > 0 ? 'text-rose-700' : 'text-emerald-700'"
+                        >
                             <CurrencyDisplay :amount="duePayable" />
                         </div>
                     </div>
@@ -420,8 +434,6 @@ class="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
                             <SearchableSelect
                                 v-model="form.financial_account_id"
                                 :options="accountOptions"
-                                placeholder="Search & select payment account..."
-                                searchPlaceholder="Type account name or bank..."
                                 :error="form.errors.financial_account_id"
                             />
                         </div>

@@ -162,16 +162,16 @@ function paymentStatusClass(status) {
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                                <th class="py-3 px-4">Receipt #</th>
-                                <th class="py-3 px-4">Date</th>
-                                <th class="py-3 px-4">Tenant Workspace</th>
-                                <th class="py-3 px-4">Plan & Cycle</th>
-                                <th class="py-3 px-4">Amount</th>
-                                <th class="py-3 px-4">Method</th>
-                                <th class="py-3 px-4">Sender Mobile</th>
-                                <th class="py-3 px-4">Transaction ID (TrxID)</th>
-                                <th class="py-3 px-4 text-center">Status</th>
-                                <th class="py-3 px-4 text-right">Actions</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Receipt #</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Date</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Tenant Workspace</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Plan & Cycle</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Amount</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Method</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Sender Mobile</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Transaction ID (TrxID)</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Status</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 font-mono">
@@ -180,28 +180,30 @@ function paymentStatusClass(status) {
                                 :key="pmt.id"
                                 class="hover:bg-slate-50/60 transition-colors"
                             >
-                                <td class="py-3 px-4 font-bold text-slate-900">{{ pmt.payment_number }}</td>
-                                <td class="py-3 px-4 font-sans text-slate-600">{{ formatDate(pmt.created_at) }}</td>
-                                <td class="py-3 px-4 font-sans font-bold text-slate-900">
-                                    {{ pmt.team?.name }}
+                                <td class="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">{{ pmt.payment_number }}</td>
+                                <td class="py-3 px-4 font-sans text-slate-600 whitespace-nowrap">{{ formatDate(pmt.created_at) }}</td>
+                                <td class="py-3 px-4 font-sans font-bold text-slate-900 whitespace-nowrap">
+                                    <span class="max-w-[170px] lg:max-w-[220px] truncate block" :title="pmt.team?.name">{{ pmt.team?.name }}</span>
                                 </td>
-                                <td class="py-3 px-4 font-sans text-slate-700">
+                                <td class="py-3 px-4 font-sans text-slate-700 whitespace-nowrap">
                                     {{ pmt.plan?.name }} ({{ pmt.billing_cycle }})
                                 </td>
-                                <td class="py-3 px-4 font-bold text-slate-900">
+                                <td class="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">
                                     <CurrencyDisplay :amount="pmt.amount_bdt" />
                                 </td>
-                                <td class="py-3 px-4 uppercase text-slate-600 font-sans font-bold">{{ pmt.payment_method }}</td>
-                                <td class="py-3 px-4 font-semibold text-slate-800">{{ pmt.sender_number || '—' }}</td>
-                                <td class="py-3 px-4 font-bold text-amber-700 bg-amber-50/40 rounded px-2">
-                                    {{ pmt.trx_id || '—' }}
+                                <td class="py-3 px-4 uppercase text-slate-600 font-sans font-bold whitespace-nowrap">{{ pmt.payment_method }}</td>
+                                <td class="py-3 px-4 font-semibold text-slate-800 whitespace-nowrap">{{ pmt.sender_number || '—' }}</td>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    <span class="font-bold text-amber-700 bg-amber-50/40 rounded px-2 max-w-[140px] truncate block" :title="pmt.trx_id">
+                                        {{ pmt.trx_id || '—' }}
+                                    </span>
                                 </td>
-                                <td class="py-3 px-4 text-center font-sans">
+                                <td class="py-3 px-4 text-center font-sans whitespace-nowrap">
                                     <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase', paymentStatusClass(pmt.status)]">
                                         {{ pmt.status }}
                                     </span>
                                 </td>
-                                <td class="py-3 px-4 text-right font-sans">
+                                <td class="py-3 px-4 text-right font-sans whitespace-nowrap">
                                     <div class="flex items-center justify-end">
                                         <ActionDropdown align="right">
                                             <template v-if="pmt.status === 'pending'">

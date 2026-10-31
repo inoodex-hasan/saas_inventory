@@ -21,22 +21,22 @@ class SalesOrderController extends Controller
     {
         $teamId = Auth::user()->current_team_id;
 
-        $search = $request->input('search', '');
-        $status = $request->input('status', '');
-        $paymentStatus = $request->input('payment_status', '');
+        $search = $request->input('search');
+        $status = $request->input('status');
+        $paymentStatus = $request->input('payment_status');
         $customerId = $request->input('customer_id');
 
         $query = SalesOrder::where('team_id', $teamId)
             ->with(['customer', 'warehouse', 'items.product'])
-            ->when($search, function ($q, $search) {
+            ->when($request->filled('search'), function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('order_number', 'like', "%{$search}%")
                         ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%"));
                 });
             })
-            ->when($status !== '', fn ($q) => $q->where('status', $status))
-            ->when($paymentStatus !== '', fn ($q) => $q->where('payment_status', $paymentStatus))
-            ->when($customerId, fn ($q, $id) => $q->where('customer_id', $id));
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $status))
+            ->when($request->filled('payment_status'), fn ($q) => $q->where('payment_status', $paymentStatus))
+            ->when($request->filled('customer_id'), fn ($q) => $q->where('customer_id', $customerId));
 
         $orders = $query->latest('id')->paginate(15)->withQueryString();
 
@@ -77,7 +77,27 @@ class SalesOrderController extends Controller
             ->where('is_active', true)
             ->with(['stockLevels' => fn ($q) => $q->where('team_id', $teamId)])
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'sku' => $p->sku,
+                    'barcode' => $p->barcode,
+                    'unit' => $p->unit,
+                    'cost_price' => (float) $p->cost_price,
+                    'unit_price' => (float) ($p->unit_price ?? $p->selling_price),
+                    'warranty_days' => (int) ($p->warranty_days ?? 0),
+                    'is_serialized' => (bool) $p->is_serialized,
+                    'total_stock' => (float) $p->stockLevels->sum('quantity'),
+                    'stock_levels' => $p->stockLevels->map(fn ($sl) => [
+                        'warehouse_id' => $sl->warehouse_id,
+                        'quantity' => (float) $sl->quantity,
+                        'reserved_quantity' => (float) $sl->reserved_quantity,
+                        'available' => max(0, (float) $sl->quantity - (float) $sl->reserved_quantity),
+                    ])->values()->all(),
+                ];
+            });
 
         $defaultWarehouse = Warehouse::where('team_id', $teamId)->where('is_default', true)->first()
             ?? Warehouse::where('team_id', $teamId)->first();
@@ -104,6 +124,7 @@ class SalesOrderController extends Controller
             'order_date' => 'required|date',
             'notes' => 'nullable|string|max:1000',
             'discount_amount' => 'nullable|numeric|min:0',
+            'tax_rate' => 'nullable|numeric|min:0',
             'tax_amount' => 'nullable|numeric|min:0',
             'shipping_cost' => 'nullable|numeric|min:0',
             'paid_amount' => 'nullable|numeric|min:0',

@@ -173,15 +173,15 @@ const filteredHistory = computed(() => {
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200/80 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                <th class="py-3 px-4">Statement Date</th>
-                                <th class="py-3 px-4">Account</th>
-                                <th class="py-3 px-4 text-right">Statement Balance</th>
-                                <th class="py-3 px-4 text-right">Ledger Balance</th>
-                                <th class="py-3 px-4 text-right">Difference</th>
-                                <th class="py-3 px-4 text-center">Audit Status</th>
-                                <th class="py-3 px-4">Reconciled By</th>
-                                <th class="py-3 px-4">Notes</th>
-                                <th class="py-3 px-4 text-right">Actions</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Statement Date</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Account</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Statement Balance</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Ledger Balance</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Difference</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Audit Status</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Reconciled By</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Notes</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 font-mono">
@@ -193,22 +193,24 @@ const filteredHistory = computed(() => {
                                 <td class="py-3 px-4 font-sans text-slate-600 whitespace-nowrap">
                                     {{ formatDate(recon.reconciliation_date) }}
                                 </td>
-                                <td class="py-3 px-4 font-bold text-slate-800 font-sans">
-                                    <span class="font-mono text-indigo-600 font-semibold">{{ recon.account?.account_code }}</span> - {{ recon.account?.name }}
+                                <td class="py-3 px-4 font-bold text-slate-800 font-sans whitespace-nowrap">
+                                    <span class="max-w-[180px] lg:max-w-[240px] truncate block" :title="recon.account ? `${recon.account.account_code} - ${recon.account.name}` : ''">
+                                        <span class="font-mono text-indigo-600 font-semibold">{{ recon.account?.account_code }}</span> - {{ recon.account?.name }}
+                                    </span>
                                 </td>
-                                <td class="py-3 px-4 text-right font-bold text-slate-900">
+                                <td class="py-3 px-4 text-right font-bold text-slate-900 whitespace-nowrap">
                                     <CurrencyDisplay :amount="recon.statement_balance" />
                                 </td>
-                                <td class="py-3 px-4 text-right font-bold text-slate-700">
+                                <td class="py-3 px-4 text-right font-bold text-slate-700 whitespace-nowrap">
                                     <CurrencyDisplay :amount="recon.ledger_balance" />
                                 </td>
                                 <td
-                                    class="py-3 px-4 text-right font-bold"
+                                    class="py-3 px-4 text-right font-bold whitespace-nowrap"
                                     :class="Math.abs(recon.difference) < 0.001 ? 'text-emerald-600' : 'text-rose-600'"
                                 >
                                     <CurrencyDisplay :amount="recon.difference" />
                                 </td>
-                                <td class="py-3 px-4 text-center font-sans">
+                                <td class="py-3 px-4 text-center font-sans whitespace-nowrap">
                                     <span
                                         v-if="recon.status === 'reconciled' || Math.abs(recon.difference) < 0.001"
                                         class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
@@ -225,10 +227,10 @@ const filteredHistory = computed(() => {
                                 <td class="py-3 px-4 font-sans text-slate-600 whitespace-nowrap">
                                     {{ recon.reconciled_by?.name || 'System' }}
                                 </td>
-                                <td class="py-3 px-4 font-sans text-slate-500 max-w-xs truncate">
-                                    {{ recon.notes || '—' }}
+                                <td class="py-3 px-4 font-sans text-slate-500 max-w-[200px] lg:max-w-[280px] truncate" :title="recon.notes">
+                                    {{ recon.notes ? (recon.notes.length > 50 ? recon.notes.slice(0, 50) + '...' : recon.notes) : '—' }}
                                 </td>
-                                <td class="py-3 px-4 text-right font-sans">
+                                <td class="py-3 px-4 text-right font-sans whitespace-nowrap">
                                     <div class="flex items-center justify-end">
                                         <ActionDropdown align="right">
                                             <Link

@@ -1,9 +1,10 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import Modal from '@/Components/Modal.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
 import { formatDate } from '@/Utils/date';
@@ -13,7 +14,24 @@ const props = defineProps({
     tickets: Object,
     metrics: Object,
     technicians: Array,
+    financialAccounts: Array,
     filters: Object,
+});
+
+const defaultAccount = computed(() => {
+    return (props.financialAccounts || []).find(a => a.is_default) || props.financialAccounts?.[0];
+});
+
+const accountOptions = computed(() => {
+    return (props.financialAccounts || []).map(acc => ({
+        id: acc.id,
+        value: acc.id,
+        label: acc.name,
+        sublabel: acc.type === 'cash'
+            ? `Balance: ৳${Number(acc.current_balance).toFixed(2)}`
+            : `${acc.institution_name || ''} (${acc.account_number || ''}) • Bal: ৳${Number(acc.current_balance).toFixed(2)}`,
+        group: acc.type === 'cash' ? 'Cash Registers' : (acc.type === 'bank' ? 'Bank Accounts' : 'MFS Wallets'),
+    }));
 });
 
 const search = ref(props.filters.search || '');
@@ -27,14 +45,16 @@ const isPayModalOpen = ref(false);
 const activeTicketForPay = ref(null);
 const payForm = useForm({
     amount: '',
-    payment_method: 'cash',
+    financial_account_id: defaultAccount.value?.id || '',
+    payment_method: '',
     notes: '',
 });
 
 function openPayModal(ticket) {
     activeTicketForPay.value = ticket;
     payForm.amount = ticket.due_amount;
-    payForm.payment_method = 'cash';
+    payForm.financial_account_id = defaultAccount.value?.id || '';
+    payForm.payment_method = '';
     payForm.notes = '';
     isPayModalOpen.value = true;
 }
@@ -71,13 +91,13 @@ function submitStatusChange() {
 }
 
 function applyFilters() {
-    router.get(route('services.index'), {
-        search: search.value,
-        status: status.value,
-        priority: priority.value,
-        technician_id: technicianId.value,
-        payment_status: paymentStatus.value,
-    }, { preserveState: true, replace: true });
+    const params = {};
+    if (search.value) params.search = search.value;
+    if (status.value) params.status = status.value;
+    if (priority.value) params.priority = priority.value;
+    if (technicianId.value) params.technician_id = technicianId.value;
+    if (paymentStatus.value) params.payment_status = paymentStatus.value;
+    router.get(route('services.index'), params, { preserveState: true, replace: true });
 }
 
 function resetFilters() {
@@ -86,7 +106,7 @@ function resetFilters() {
     priority.value = '';
     technicianId.value = '';
     paymentStatus.value = '';
-    applyFilters();
+    router.get(route('services.index'), {}, { preserveState: false, replace: true });
 }
 
 function deleteTicket(ticket) {
@@ -159,7 +179,6 @@ function deleteTicket(ticket) {
                             v-model="search"
                             @keyup.enter="applyFilters"
                             type="text"
-                            placeholder="Search ticket #, customer, phone..."
                             class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 pl-3 pr-4"
                         />
                     </div>
@@ -229,14 +248,14 @@ function deleteTicket(ticket) {
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-100 text-slate-500 font-semibold uppercase text-[10px] tracking-wider">
-                                <th class="py-3 px-4">Ticket / Date</th>
-                                <th class="py-3 px-4">Customer</th>
-                                <th class="py-3 px-4">Device & Serial</th>
-                                <th class="py-3 px-4">Status</th>
-                                <th class="py-3 px-4">Priority</th>
-                                <th class="py-3 px-4">Assigned Tech</th>
-                                <th class="py-3 px-4 text-right">Bill & Due</th>
-                                <th class="py-3 px-4 text-center">Actions</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Ticket / Date</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Customer</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Device & Serial</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Status</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Priority</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Assigned Tech</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Bill & Due</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -245,7 +264,7 @@ function deleteTicket(ticket) {
                                 :key="ticket.id"
                                 class="hover:bg-slate-50/60 transition-colors"
                             >
-                                <td class="py-3 px-4">
+                                <td class="py-3 px-4 whitespace-nowrap">
                                     <Link
                                         :href="route('services.show', ticket.id)"
                                         class="font-mono font-bold text-indigo-600 hover:text-indigo-800 hover:underline"
@@ -256,17 +275,17 @@ function deleteTicket(ticket) {
                                         {{ formatDate(ticket.received_date) }}
                                     </div>
                                 </td>
-                                <td class="py-3 px-4">
-                                    <div class="font-bold text-slate-800">{{ ticket.customer?.name || 'Walk-in Customer' }}</div>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    <div class="font-bold text-slate-800 max-w-[160px] lg:max-w-[200px] truncate" :title="ticket.customer?.name || 'Walk-in Customer'">{{ ticket.customer?.name || 'Walk-in Customer' }}</div>
                                     <div class="text-[11px] text-slate-400">{{ ticket.customer?.phone }}</div>
                                 </td>
-                                <td class="py-3 px-4">
-                                    <div class="font-semibold text-slate-800">{{ ticket.device_name }}</div>
-                                    <div class="text-[11px] text-slate-400 font-mono">
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    <div class="font-semibold text-slate-800 max-w-[160px] lg:max-w-[220px] truncate" :title="ticket.device_name">{{ ticket.device_name }}</div>
+                                    <div class="text-[11px] text-slate-400 font-mono max-w-[160px] lg:max-w-[220px] truncate" :title="ticket.serial_no || ticket.device_brand || 'No S/N recorded'">
                                         {{ ticket.serial_no || ticket.device_brand || 'No S/N recorded' }}
                                     </div>
                                 </td>
-                                <td class="py-3 px-4">
+                                <td class="py-3 px-4 text-center whitespace-nowrap">
                                     <button
                                         @click="openStatusModal(ticket)"
                                         class="cursor-pointer hover:opacity-80 transition-opacity"
@@ -275,7 +294,7 @@ function deleteTicket(ticket) {
                                         <StatusBadge :status="ticket.status" />
                                     </button>
                                 </td>
-                                <td class="py-3 px-4">
+                                <td class="py-3 px-4 text-center whitespace-nowrap">
                                     <span
                                         class="inline-block px-2 py-0.5 text-[10px] font-bold uppercase rounded-md"
                                         :class="{
@@ -288,13 +307,13 @@ function deleteTicket(ticket) {
                                         {{ ticket.priority }}
                                     </span>
                                 </td>
-                                <td class="py-3 px-4">
-                                    <span v-if="ticket.technician" class="text-slate-700 font-medium">
-                                        {{ ticket.technician.name }}
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    <span v-if="ticket.technician_name || ticket.technician" class="text-slate-700 font-medium max-w-[140px] truncate block" :title="ticket.technician_name || ticket.technician?.name">
+                                        {{ ticket.technician_name || ticket.technician.name }}
                                     </span>
                                     <span v-else class="text-slate-400 italic">Unassigned</span>
                                 </td>
-                                <td class="py-3 px-4 text-right">
+                                <td class="py-3 px-4 text-right whitespace-nowrap">
                                     <div class="font-bold text-slate-800">
                                         <CurrencyDisplay :amount="ticket.total_amount" />
                                     </div>
@@ -312,7 +331,7 @@ function deleteTicket(ticket) {
                                         Settled
                                     </div>
                                 </td>
-                                <td class="py-3 px-4 text-right">
+                                <td class="py-3 px-4 text-right whitespace-nowrap">
                                     <ActionDropdown>
                                         <div class="p-1 space-y-0.5">
                                             <Link
@@ -406,7 +425,7 @@ function deleteTicket(ticket) {
         </div>
 
         <!-- Collect Payment Modal -->
-        <Modal :show="isPayModalOpen" @close="isPayModalOpen = false" max-width="md">
+        <Modal :show="isPayModalOpen" @close="isPayModalOpen = false" max-width="lg">
             <div class="p-6">
                 <h3 class="text-base font-bold text-slate-800 mb-1">
                     Collect Payment — #{{ activeTicketForPay?.ticket_number }}
@@ -446,16 +465,13 @@ function deleteTicket(ticket) {
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Payment Method</label>
-                        <select
-                            v-model="payForm.payment_method"
-                            class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
-                        >
-                            <option value="cash">Cash Counter</option>
-                            <option value="mobile_banking">Mobile Banking (bKash / Nagad / Rocket)</option>
-                            <option value="bank_transfer">Bank Transfer</option>
-                            <option value="card">Card POS</option>
-                        </select>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Deposit Into Account *</label>
+                        <SearchableSelect
+                            v-model="payForm.financial_account_id"
+                            :options="accountOptions"
+                            size="compact"
+                            :error="payForm.errors.financial_account_id"
+                        />
                     </div>
 
                     <div>

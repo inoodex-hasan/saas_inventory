@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminPaymentController;
 use App\Http\Controllers\AdminPlanController;
+use App\Http\Controllers\BrandController;
 use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\CustomerDueController;
 use App\Http\Controllers\DashboardController;
@@ -10,16 +11,17 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FinancialAccountController;
 use App\Http\Controllers\FinancialReportController;
+use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\PdfDocumentController;
+use App\Http\Controllers\PosController;
+use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductReturnController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\PurchaseOrderController;
-use App\Http\Controllers\TaDaClaimController;
 use App\Http\Controllers\QuotationController;
-use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\SalesOrderController;
 use App\Http\Controllers\ServiceTicketController;
 use App\Http\Controllers\SuperAdminController;
@@ -64,21 +66,45 @@ Route::middleware([
     Route::delete('/warehouses/{warehouse}', [WarehouseController::class, 'destroy'])->name('warehouses.destroy');
     Route::post('/warehouses/{warehouse}/set-default', [WarehouseController::class, 'setDefault'])->name('warehouses.set-default');
     Route::get('/warehouses/{warehouse}/inspect', [WarehouseController::class, 'inspect'])->name('warehouses.inspect');
+
+    // Dedicated Real-Time Inventory & Stock Balances
+    Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
+    Route::post('/inventory/adjust', [InventoryController::class, 'adjust'])->name('inventory.adjust');
+    Route::post('/inventory/transfer', [InventoryController::class, 'transfer'])->name('inventory.transfer');
+
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
     Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
     Route::post('/products', [ProductController::class, 'store'])->name('products.store');
-    Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
-    Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
-    Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
-    Route::get('/products/{product}/inspect', [ProductController::class, 'inspectStock'])->name('products.inspect');
     Route::get('/products/export', [ProductController::class, 'export'])->name('products.export');
     Route::post('/products/import', [ProductController::class, 'import'])->name('products.import');
-    Route::post('/products/categories', [ProductController::class, 'storeCategory'])->name('products.categories.store');
-    Route::put('/products/categories/{category}', [ProductController::class, 'updateCategory'])->name('products.categories.update');
-    Route::delete('/products/categories/{category}', [ProductController::class, 'destroyCategory'])->name('products.categories.destroy');
-    Route::post('/products/brands', [ProductController::class, 'storeBrand'])->name('products.brands.store');
-    Route::put('/products/brands/{brand}', [ProductController::class, 'updateBrand'])->name('products.brands.update');
-    Route::delete('/products/brands/{brand}', [ProductController::class, 'destroyBrand'])->name('products.brands.destroy');
+
+    // Category aliases for backward-compatibility with quick-add modals and tests
+    Route::post('/products/categories', [ProductCategoryController::class, 'store'])->name('products.categories.store');
+    Route::put('/products/categories/{category}', [ProductCategoryController::class, 'update'])->name('products.categories.update');
+    Route::delete('/products/categories/{category}', [ProductCategoryController::class, 'destroy'])->name('products.categories.destroy');
+
+    // Brand aliases for backward-compatibility with quick-add modals and tests
+    Route::post('/products/brands', [BrandController::class, 'store'])->name('products.brands.store');
+    Route::put('/products/brands/{brand}', [BrandController::class, 'update'])->name('products.brands.update');
+    Route::delete('/products/brands/{brand}', [BrandController::class, 'destroy'])->name('products.brands.destroy');
+
+    Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
+    Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
+    Route::post('/products/{product}', [ProductController::class, 'update'])->name('products.update.post');
+    Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+    Route::get('/products/{product}/inspect', [ProductController::class, 'inspectStock'])->name('products.inspect');
+
+    // Categories Management & Dedicated Page
+    Route::get('/categories', [ProductCategoryController::class, 'index'])->name('categories.index');
+    Route::post('/categories', [ProductCategoryController::class, 'store'])->name('categories.store');
+    Route::put('/categories/{category}', [ProductCategoryController::class, 'update'])->name('categories.update');
+    Route::delete('/categories/{category}', [ProductCategoryController::class, 'destroy'])->name('categories.destroy');
+
+    // Brands Management & Dedicated Page
+    Route::get('/brands', [BrandController::class, 'index'])->name('brands.index');
+    Route::post('/brands', [BrandController::class, 'store'])->name('brands.store');
+    Route::put('/brands/{brand}', [BrandController::class, 'update'])->name('brands.update');
+    Route::delete('/brands/{brand}', [BrandController::class, 'destroy'])->name('brands.destroy');
     // Vendors & Procurement Partners
     Route::get('/vendors', [VendorController::class, 'index'])->name('vendors.index');
     Route::post('/vendors', [VendorController::class, 'store'])->name('vendors.store');
@@ -95,6 +121,7 @@ Route::middleware([
     Route::post('/purchases/{order}/mark-ordered', [PurchaseOrderController::class, 'markOrdered'])->name('purchases.mark-ordered');
     Route::post('/purchases/{order}/receive', [PurchaseOrderController::class, 'receive'])->name('purchases.receive');
     Route::post('/purchases/{order}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchases.cancel');
+    Route::post('/purchases/{order}/close', [PurchaseOrderController::class, 'close'])->name('purchases.close');
     Route::post('/purchases/{order}/pay', [PurchaseOrderController::class, 'pay'])->name('purchases.pay');
 
     // Vendor Dues & Payables
@@ -111,18 +138,13 @@ Route::middleware([
     Route::post('/sales/{order}/cancel', [SalesOrderController::class, 'cancel'])->name('sales.cancel');
     Route::post('/sales/{order}/pay', [SalesOrderController::class, 'pay'])->name('sales.pay');
 
-    // Recurring Invoices & Customer Subscriptions
-    Route::get('/recurring-invoices', [RecurringInvoiceController::class, 'index'])->name('recurring-invoices.index');
-    Route::get('/recurring-invoices/create', [RecurringInvoiceController::class, 'create'])->name('recurring-invoices.create');
-    Route::post('/recurring-invoices', [RecurringInvoiceController::class, 'store'])->name('recurring-invoices.store');
-    Route::get('/recurring-invoices/{recurringInvoice}', [RecurringInvoiceController::class, 'show'])->name('recurring-invoices.show');
-    Route::get('/recurring-invoices/{recurringInvoice}/edit', [RecurringInvoiceController::class, 'edit'])->name('recurring-invoices.edit');
-    Route::put('/recurring-invoices/{recurringInvoice}', [RecurringInvoiceController::class, 'update'])->name('recurring-invoices.update');
-    Route::post('/recurring-invoices/{recurringInvoice}/generate-now', [RecurringInvoiceController::class, 'generateNow'])->name('recurring-invoices.generate-now');
-    Route::post('/recurring-invoices/{recurringInvoice}/pause', [RecurringInvoiceController::class, 'pause'])->name('recurring-invoices.pause');
-    Route::post('/recurring-invoices/{recurringInvoice}/resume', [RecurringInvoiceController::class, 'resume'])->name('recurring-invoices.resume');
-    Route::post('/recurring-invoices/{recurringInvoice}/cancel', [RecurringInvoiceController::class, 'cancel'])->name('recurring-invoices.cancel');
-    Route::delete('/recurring-invoices/{recurringInvoice}', [RecurringInvoiceController::class, 'destroy'])->name('recurring-invoices.destroy');
+    // Point of Sale (POS) Terminal
+    Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
+    Route::post('/pos/store', [PosController::class, 'store'])->name('pos.store');
+    Route::post('/pos/customer/store', [PosController::class, 'storeCustomer'])->name('pos.customer.store');
+    Route::get('/pos/invoice/{order?}', [PosController::class, 'invoice'])->name('pos.invoice');
+
+
 
     // Quotations & Estimates
     Route::get('/quotations', [QuotationController::class, 'index'])->name('quotations.index');
@@ -145,6 +167,7 @@ Route::middleware([
     // Customer Dues & Receivables Ledger
     Route::get('/dues', [CustomerDueController::class, 'index'])->name('dues.index');
     Route::post('/dues/pay', [CustomerDueController::class, 'pay'])->name('dues.pay');
+    Route::post('/dues/customer', [CustomerDueController::class, 'storeCustomer'])->name('dues.customer.store');
 
     // Customer Returns & RMA Workflows
     Route::get('/returns', [ProductReturnController::class, 'index'])->name('returns.index');
@@ -196,13 +219,8 @@ Route::middleware([
     Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
     Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
     Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
-
-    // Field Travel & Daily Allowance (TA/DA)
-    Route::get('/tada', [TaDaClaimController::class, 'index'])->name('tada.index');
-    Route::post('/tada', [TaDaClaimController::class, 'store'])->name('tada.store');
-    Route::post('/tada/{claim}/approve', [TaDaClaimController::class, 'approve'])->name('tada.approve');
-    Route::post('/tada/{claim}/reject', [TaDaClaimController::class, 'reject'])->name('tada.reject');
-    Route::delete('/tada/{claim}', [TaDaClaimController::class, 'destroy'])->name('tada.destroy');
+    Route::post('/expense-categories', [ExpenseController::class, 'storeCategory'])->name('expense-categories.store');
+    Route::delete('/expense-categories/{expenseCategory}', [ExpenseController::class, 'destroyCategory'])->name('expense-categories.destroy');
 
     // Monthly Payroll & Salary Slips
     Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
@@ -254,7 +272,6 @@ Route::middleware([
     // Dynamic Bank & MFS Financial Accounts
     Route::get('/accounting/bank-accounts', [FinancialAccountController::class, 'index'])->name('bank-accounts.index');
     Route::post('/accounting/bank-accounts', [FinancialAccountController::class, 'store'])->name('bank-accounts.store');
-    Route::post('/accounting/bank-accounts/initialize', [FinancialAccountController::class, 'initialize'])->name('bank-accounts.initialize');
     Route::put('/accounting/bank-accounts/{account}', [FinancialAccountController::class, 'update'])->name('bank-accounts.update');
     Route::post('/accounting/bank-accounts/{account}/toggle-active', [FinancialAccountController::class, 'toggleActive'])->name('bank-accounts.toggle-active');
     Route::post('/accounting/bank-accounts/{account}/set-default', [FinancialAccountController::class, 'setDefault'])->name('bank-accounts.set-default');
@@ -278,9 +295,9 @@ Route::middleware([
     Route::get('/accounting/reports/balance-sheet', [FinancialReportController::class, 'balanceSheet'])->name('reports.balance-sheet');
     Route::get('/accounting/reports/general-ledger', [FinancialReportController::class, 'generalLedger'])->name('reports.general-ledger');
 
-    // Bank Reconciliation
-    Route::get('/accounting/reconciliation', [FinancialReportController::class, 'reconciliation'])->name('reconciliation.index');
-    Route::post('/accounting/reconciliation', [FinancialReportController::class, 'storeReconciliation'])->name('reconciliation.store');
+    // Bank Reconciliation (Disabled/Hidden for now)
+    // Route::get('/accounting/reconciliation', [FinancialReportController::class, 'reconciliation'])->name('reconciliation.index');
+    // Route::post('/accounting/reconciliation', [FinancialReportController::class, 'storeReconciliation'])->name('reconciliation.store');
 
     // Financial Reports PDF Downloads
     Route::get('/accounting/reports/trial-balance/pdf', [PdfDocumentController::class, 'trialBalancePdf'])->name('pdf.trial-balance');

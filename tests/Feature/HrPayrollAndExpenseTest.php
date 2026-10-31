@@ -6,7 +6,6 @@ use App\Models\Employee;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\Payroll;
-use App\Models\TaDaClaim;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -145,97 +144,14 @@ class HrPayrollAndExpenseTest extends TestCase
         );
     }
 
-    public function test_user_can_submit_ta_da_claim(): void
+    public function test_user_can_generate_payroll_with_allowances_and_deductions(): void
     {
-        $response = $this->post(route('tada.store'), [
-            'employee_id' => $this->employee->id,
-            'travel_date' => now()->toDateString(),
-            'destination' => 'Sylhet Client Datacenter',
-            'purpose' => 'Router switch migration',
-            'travel_allowance' => 2500,
-            'daily_allowance' => 1200,
-            'other_expenses' => 300,
-        ]);
-
-        $response->assertSessionHas('success');
-
-        $claim = TaDaClaim::where('employee_id', $this->employee->id)->first();
-        $this->assertNotNull($claim);
-        $this->assertEquals(4000, (float) $claim->total_amount);
-        $this->assertEquals('pending', $claim->status);
-    }
-
-    public function test_manager_can_approve_and_reject_ta_da_claim(): void
-    {
-        $claim = TaDaClaim::create([
-            'team_id' => $this->team->id,
-            'employee_id' => $this->employee->id,
-            'claim_number' => 'TADA-20261014-0001',
-            'travel_date' => now()->toDateString(),
-            'destination' => 'Bogura Hub',
-            'purpose' => 'Hardware repair',
-            'travel_allowance' => 1500,
-            'daily_allowance' => 800,
-            'other_expenses' => 0,
-            'total_amount' => 2300,
-            'status' => 'pending',
-        ]);
-
-        // Approve
-        $appResp = $this->post(route('tada.approve', $claim->id));
-        $appResp->assertSessionHas('success');
-
-        $claim->refresh();
-        $this->assertEquals('approved', $claim->status);
-        $this->assertEquals($this->user->id, $claim->approved_by);
-
-        // Reject another
-        $claim2 = TaDaClaim::create([
-            'team_id' => $this->team->id,
-            'employee_id' => $this->employee->id,
-            'claim_number' => 'TADA-20261014-0002',
-            'travel_date' => now()->toDateString(),
-            'destination' => 'Khulna Hub',
-            'purpose' => 'Visit',
-            'travel_allowance' => 1000,
-            'daily_allowance' => 500,
-            'total_amount' => 1500,
-            'status' => 'pending',
-        ]);
-
-        $rejResp = $this->post(route('tada.reject', $claim2->id), [
-            'rejection_reason' => 'Missing travel tickets',
-        ]);
-        $rejResp->assertSessionHas('success');
-
-        $claim2->refresh();
-        $this->assertEquals('rejected', $claim2->status);
-        $this->assertEquals('Missing travel tickets', $claim2->rejection_reason);
-    }
-
-    public function test_user_can_generate_payroll_with_approved_tada_allowance_consolidation(): void
-    {
-        // Create an approved TA/DA claim
-        TaDaClaim::create([
-            'team_id' => $this->team->id,
-            'employee_id' => $this->employee->id,
-            'claim_number' => 'TADA-20261014-0005',
-            'travel_date' => now()->toDateString(),
-            'destination' => 'Gazipur Factory',
-            'purpose' => 'Fiber line inspection',
-            'travel_allowance' => 2000,
-            'daily_allowance' => 1000,
-            'total_amount' => 3000,
-            'status' => 'approved',
-        ]);
-
-        // Generate payroll: Basic 45,000 + Approved TA/DA 3,000 + Bonus 2,000 - Advance 1,000 = 49,000
+        // Generate payroll: Basic 45,000 + Bonus 2,000 - Advance 1,000 = 46,000
         $response = $this->post(route('payroll.generate'), [
             'employee_id' => $this->employee->id,
             'month_year' => '2026-10',
             'other_allowances' => 2000,
             'deductions_total' => 1000,
-            'include_approved_tada' => true,
         ]);
 
         $response->assertSessionHas('success');
@@ -246,15 +162,10 @@ class HrPayrollAndExpenseTest extends TestCase
 
         $this->assertNotNull($payroll);
         $this->assertEquals(45000, (float) $payroll->basic_salary);
-        $this->assertEquals(3000, (float) $payroll->tada_allowance);
         $this->assertEquals(2000, (float) $payroll->other_allowances);
         $this->assertEquals(1000, (float) $payroll->deductions_total);
-        $this->assertEquals(49000, (float) $payroll->net_salary);
+        $this->assertEquals(46000, (float) $payroll->net_salary);
         $this->assertEquals('draft', $payroll->status);
-
-        // Assert TA/DA claim was marked as reimbursed
-        $claim = TaDaClaim::where('claim_number', 'TADA-20261014-0005')->first();
-        $this->assertEquals('reimbursed', $claim->status);
     }
 
     public function test_cannot_generate_duplicate_payroll_for_same_month_and_employee(): void

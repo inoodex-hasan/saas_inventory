@@ -26,7 +26,7 @@ class ChartOfAccountController extends Controller
                         ->orWhere('subtype', 'like', "%{$search}%");
                 });
             })
-            ->when($type !== '', fn ($q) => $q->where('type', $type))
+            ->when($request->filled('type'), fn ($q) => $q->where('type', $request->input('type')))
             ->orderBy('account_code');
 
         $accounts = $query->paginate(25)->withQueryString();

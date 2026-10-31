@@ -18,10 +18,10 @@ const search = ref(props.filters?.search || '');
 const typeFilter = ref(props.filters?.type || '');
 
 function applyFilters() {
-    router.get(route('bank-accounts.index'), {
-        search: search.value,
-        type: typeFilter.value,
-    }, {
+    const params = {};
+    if (search.value) params.search = search.value;
+    if (typeFilter.value) params.type = typeFilter.value;
+    router.get(route('bank-accounts.index'), params, {
         preserveState: true,
         replace: true,
     });
@@ -35,7 +35,7 @@ function setTypeFilter(t) {
 function resetFilters() {
     search.value = '';
     typeFilter.value = '';
-    applyFilters();
+    router.get(route('bank-accounts.index'), {}, { preserveState: false, replace: true });
 }
 
 // Modal States
@@ -147,19 +147,6 @@ function deleteAccount(acc) {
     }
 }
 
-const isInitializing = ref(false);
-
-function initializeDefaultAccounts() {
-    if (confirm('Load standard accounts template (Main Cash Drawer, Bank Operating Account, bKash Merchant)?')) {
-        isInitializing.value = true;
-        router.post(route('bank-accounts.initialize'), {}, {
-            onFinish: () => {
-                isInitializing.value = false;
-            },
-        });
-    }
-}
-
 function getProviderBadge(acc) {
     if (acc.type === 'mfs') {
         const inst = (acc.institution_name || '').toLowerCase();
@@ -180,36 +167,9 @@ function getProviderBadge(acc) {
         <Head title="Bank & MFS Accounts" />
 
         <template #header>
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
-                <div>
-                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Bank & MFS Financial Accounts</h1>
-                    <p class="text-xs text-slate-500 font-medium">Manage corporate bank accounts, mobile financial services (bKash/Nagad), and cash registers</p>
-                </div>
-
-                <div class="flex items-center gap-2">
-                    <button
-                        v-if="metrics?.active_accounts_count === 0"
-                        type="button"
-                        @click="initializeDefaultAccounts"
-                        :disabled="isInitializing"
-                        class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all disabled:opacity-50"
-                    >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                        </svg>
-                        <span>{{ isInitializing ? 'Loading...' : 'Load Standard Accounts' }}</span>
-                    </button>
-                    <button
-                        type="button"
-                        @click="openCreateModal"
-                        class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs shadow-indigo-600/30 transition-all"
-                    >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                        <span>Add New Account</span>
-                    </button>
-                </div>
+            <div>
+                <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Bank & MFS Financial Accounts</h1>
+                <p class="text-xs text-slate-500 font-medium">Manage corporate bank accounts, mobile financial services (bKash/Nagad), and cash registers</p>
             </div>
         </template>
 
@@ -328,7 +288,6 @@ function getProviderBadge(acc) {
                             v-model="search"
                             @keyup.enter="applyFilters"
                             type="text"
-                            placeholder="Search accounts, A/C #, branch..."
                             class="w-full pl-9 pr-4 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
                         />
                         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -343,6 +302,17 @@ function getProviderBadge(acc) {
                     >
                         Clear
                     </button>
+
+                    <button
+                        type="button"
+                        @click="openCreateModal"
+                        class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs shadow-indigo-600/30 transition-all whitespace-nowrap"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span>Add Account</span>
+                    </button>
                 </div>
             </div>
 
@@ -352,19 +322,19 @@ function getProviderBadge(acc) {
                     <table class="w-full text-left text-sm">
                         <thead class="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                             <tr>
-                                <th class="py-3.5 px-4">Account Name & Channel</th>
-                                <th class="py-3.5 px-4">Account / Wallet #</th>
-                                <th class="py-3.5 px-4">Institution / Branch</th>
-                                <th class="py-3.5 px-4 text-right">Current Live Balance</th>
-                                <th class="py-3.5 px-4 text-center">Status</th>
-                                <th class="py-3.5 px-4 text-right">Actions</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Account Name & Channel</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Account / Wallet #</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Institution / Branch</th>
+                                <th class="py-3.5 px-4 text-right whitespace-nowrap">Current Live Balance</th>
+                                <th class="py-3.5 px-4 text-center whitespace-nowrap">Status</th>
+                                <th class="py-3.5 px-4 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-slate-700">
                             <tr v-for="acc in accounts" :key="acc.id" class="hover:bg-slate-50/70 transition">
-                                <td class="py-3.5 px-4">
+                                <td class="py-3.5 px-4 whitespace-nowrap">
                                     <div class="flex items-center gap-2.5">
-                                        <div class="font-bold text-slate-900 text-sm">
+                                        <div class="font-bold text-slate-900 text-sm max-w-[180px] lg:max-w-[220px] truncate" :title="acc.name">
                                             {{ acc.name }}
                                         </div>
                                         <span
@@ -390,19 +360,19 @@ function getProviderBadge(acc) {
                                     </div>
                                 </td>
 
-                                <td class="py-3.5 px-4 font-mono text-xs font-semibold text-slate-800">
+                                <td class="py-3.5 px-4 font-mono text-xs font-semibold text-slate-800 whitespace-nowrap">
                                     {{ acc.account_number || '—' }}
                                     <div v-if="acc.routing_number" class="text-[10px] text-slate-400 font-normal">
                                         Routing: {{ acc.routing_number }}
                                     </div>
                                 </td>
 
-                                <td class="py-3.5 px-4 text-xs">
-                                    <div class="font-medium text-slate-800">{{ acc.institution_name || '—' }}</div>
+                                <td class="py-3.5 px-4 text-xs whitespace-nowrap">
+                                    <div class="font-medium text-slate-800 max-w-[160px] lg:max-w-[200px] truncate" :title="acc.institution_name || '—'">{{ acc.institution_name || '—' }}</div>
                                     <div v-if="acc.branch" class="text-slate-400">{{ acc.branch }}</div>
                                 </td>
 
-                                <td class="py-3.5 px-4 text-right">
+                                <td class="py-3.5 px-4 text-right whitespace-nowrap">
                                     <div class="text-base font-black text-slate-900 font-mono">
                                         <CurrencyDisplay :amount="acc.current_balance" />
                                     </div>
@@ -411,7 +381,7 @@ function getProviderBadge(acc) {
                                     </div>
                                 </td>
 
-                                <td class="py-3.5 px-4 text-center">
+                                <td class="py-3.5 px-4 text-center whitespace-nowrap">
                                     <span
                                         :class="[
                                             'px-2.5 py-0.5 text-[11px] font-bold rounded-full capitalize border',
@@ -422,7 +392,7 @@ function getProviderBadge(acc) {
                                     </span>
                                 </td>
 
-                                <td class="py-3.5 px-4 text-right">
+                                <td class="py-3.5 px-4 text-right whitespace-nowrap">
                                     <ActionDropdown align="right">
                                         <div class="p-1 space-y-0.5">
                                             <!-- History -->
@@ -500,19 +470,12 @@ function getProviderBadge(acc) {
                                         </div>
                                         <p class="font-medium text-slate-600">No bank or cash accounts created yet.</p>
                                         <p class="text-xs text-slate-400 max-w-sm">Create your cash drawer, bank operating accounts, or mobile financial service wallets.</p>
-                                        <div class="flex items-center gap-2 pt-2">
+                                        <div class="pt-2">
                                             <button
                                                 @click="openCreateModal"
                                                 class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs rounded-xl shadow-xs transition-all"
                                             >
                                                 Add New Account
-                                            </button>
-                                            <button
-                                                @click="initializeDefaultAccounts"
-                                                :disabled="isInitializing"
-                                                class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-xl transition-all disabled:opacity-50"
-                                            >
-                                                {{ isInitializing ? 'Loading...' : 'Load Standard Accounts' }}
                                             </button>
                                         </div>
                                     </div>

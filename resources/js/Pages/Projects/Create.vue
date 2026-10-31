@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 
 const props = defineProps({
     page_title: String,
@@ -11,7 +12,40 @@ const props = defineProps({
     costCategories: Array,
     products: Array,
     warehouses: Array,
+    financialAccounts: Array,
     todayDate: String,
+});
+
+const defaultAccount = computed(() => {
+    return (props.financialAccounts || []).find(a => a.is_default) || props.financialAccounts?.[0];
+});
+
+const accountOptions = computed(() => {
+    return (props.financialAccounts || []).map(acc => ({
+        id: acc.id,
+        value: acc.id,
+        label: acc.name,
+        sublabel: acc.type === 'cash'
+            ? `Balance: ৳${Number(acc.current_balance).toFixed(2)}`
+            : `${acc.institution_name || ''} (${acc.account_number || ''}) • Bal: ৳${Number(acc.current_balance).toFixed(2)}`,
+        group: acc.type === 'cash' ? 'Cash Registers' : (acc.type === 'bank' ? 'Bank Accounts' : 'MFS Wallets'),
+    }));
+});
+
+const clientOptions = computed(() => {
+    return (props.clients || []).map(c => ({
+        id: c.id,
+        label: `${c.name} ${c.company_name ? `(${c.company_name})` : ''}`,
+        sublabel: `${c.phone || ''} ${c.address ? '• ' + c.address : ''}`.trim(),
+    }));
+});
+
+const productOptions = computed(() => {
+    return (props.products || []).map(p => ({
+        id: p.id,
+        label: p.name,
+        sublabel: `SKU: ${p.sku || 'N/A'}${p.unit_price ? ' • ৳' + Number(p.unit_price).toFixed(2) : ''}`,
+    }));
 });
 
 const form = useForm({
@@ -29,6 +63,7 @@ const form = useForm({
     discount_amount: 0,
     tax_amount: 0,
     paid_amount: 0,
+    financial_account_id: defaultAccount.value?.id || '',
     start_date: props.todayDate,
     end_date: '',
     description: '',
@@ -47,34 +82,22 @@ function addItem() {
     });
 }
 
-function onProductSelected(index) {
+function onProductSelected(index, selectedProduct = null) {
     const item = form.items[index];
-    if (!item.product_id) return;
-    const prod = props.products.find(p => p.id === parseInt(item.product_id));
+    if (!item) return;
+    const prodId = parseInt(item.product_id);
+    if (!prodId) return;
+    const prod = (selectedProduct && selectedProduct.id === prodId)
+        ? selectedProduct
+        : props.products.find(p => p.id === prodId);
     if (prod) {
         item.item_name = prod.name;
-        item.unit_price = prod.price || 0;
+        item.unit_price = Number(prod.unit_price ?? prod.price ?? 0);
     }
 }
 
 function removeItem(index) {
     form.items.splice(index, 1);
-}
-
-function addCost() {
-    form.costs.push({
-        cost_category_id: props.costCategories.length > 0 ? props.costCategories[0].id : '',
-        description: '',
-        amount: '',
-        cost_date: props.todayDate,
-        vendor_name: '',
-        receipt_reference: '',
-        notes: '',
-    });
-}
-
-function removeCost(index) {
-    form.costs.splice(index, 1);
 }
 
 const itemsTotal = computed(() => {
@@ -83,15 +106,9 @@ const itemsTotal = computed(() => {
     }, 0);
 });
 
-const directCostsTotal = computed(() => {
-    return form.costs.reduce((sum, cost) => {
-        return sum + (parseFloat(cost.amount) || 0);
-    }, 0);
-});
-
 const computedBilledTotal = computed(() => {
     const budget = parseFloat(form.budget) || 0;
-    const base = (itemsTotal.value > 0) ? (itemsTotal.value + directCostsTotal.value) : budget;
+    const base = (itemsTotal.value > 0) ? itemsTotal.value : budget;
     const discount = parseFloat(form.discount_amount) || 0;
     const tax = parseFloat(form.tax_amount) || 0;
     return Math.max(0, base - discount + tax);
@@ -125,7 +142,7 @@ function submit() {
                     </Link>
                     <div>
                         <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Create New Project</h1>
-                        <p class="text-xs text-slate-500 font-medium">Initiate contract, assign materials, estimate direct expenses, and configure client billing</p>
+                        <p class="text-xs text-slate-500 font-medium">Initiate contract, assign materials, and configure client billing</p>
                     </div>
                 </div>
 
@@ -170,17 +187,11 @@ function submit() {
                     <!-- Existing Client Select -->
                     <div v-if="form.client_mode === 'existing'">
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Select Registered Client <span class="text-rose-500">*</span></label>
-                        <select
+                        <SearchableSelect
                             v-model="form.client_id"
-                            required
-                            class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                        >
-                            <option value="">-- Choose Client --</option>
-                            <option v-for="c in clients" :key="c.id" :value="c.id">
-                                {{ c.name }} {{ c.company_name ? `(${c.company_name})` : '' }} - {{ c.phone }}
-                            </option>
-                        </select>
-                        <div v-if="form.errors.client_id" class="text-rose-500 text-xs mt-1">{{ form.errors.client_id }}</div>
+                            :options="clientOptions"
+                            :error="form.errors.client_id"
+                        />
                     </div>
 
                     <!-- New Client Inline Fields -->
@@ -353,17 +364,13 @@ class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-
                             </thead>
                             <tbody class="divide-y divide-slate-100">
                                 <tr v-for="(item, index) in form.items" :key="index" class="hover:bg-slate-50/50">
-                                    <td class="py-2.5 px-3">
-                                        <select
+                                    <td class="py-2.5 px-3 min-w-[220px]">
+                                        <SearchableSelect
                                             v-model="item.product_id"
-                                            @change="onProductSelected(index)"
-                                            class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                                        >
-                                            <option value="">Custom / Direct Item</option>
-                                            <option v-for="p in products" :key="p.id" :value="p.id">
-                                                {{ p.name }} (Stock: {{ p.current_stock || 0 }})
-                                            </option>
-                                        </select>
+                                            :options="productOptions"
+                                            size="compact"
+                                            @change="(prod) => onProductSelected(index, prod)"
+                                        />
                                     </td>
                                     <td class="py-2.5 px-3">
                                         <input
@@ -429,100 +436,6 @@ class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:bor
                     </div>
                 </div>
 
-                <!-- Direct Project Expenses & Subcontractors -->
-                <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4">
-                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                        <div>
-                            <h2 class="text-base font-bold text-slate-900">Direct Expenses & Subcontractor Costs</h2>
-                            <p class="text-xs text-slate-500">Log direct non-inventory overheads, labor wages, equipment rent, or external vendors</p>
-                        </div>
-                        <button
-                            type="button"
-                            @click="addCost"
-                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl text-xs font-bold transition"
-                        >
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            <span>Add Expense</span>
-                        </button>
-                    </div>
-
-                    <div v-if="form.costs.length === 0" class="py-6 text-center text-slate-400 text-xs italic">
-                        No direct expenses logged yet.
-                    </div>
-
-                    <div v-else class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr class="bg-slate-50/75 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                                    <th class="py-2.5 px-3 w-56">Category</th>
-                                    <th class="py-2.5 px-3">Description</th>
-                                    <th class="py-2.5 px-3 w-48">Vendor / Payee</th>
-                                    <th class="py-2.5 px-3 text-right w-36">Amount</th>
-                                    <th class="py-2.5 px-3 text-center w-12"></th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100">
-                                <tr v-for="(cost, index) in form.costs" :key="index" class="hover:bg-slate-50/50">
-                                    <td class="py-2.5 px-3">
-                                        <select
-                                            v-model="cost.cost_category_id"
-                                            class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                                        >
-                                            <option value="">General Expense</option>
-                                            <option v-for="cat in costCategories" :key="cat.id" :value="cat.id">
-                                                {{ cat.name }}
-                                            </option>
-                                        </select>
-                                    </td>
-                                    <td class="py-2.5 px-3">
-                                        <input
-                                            v-model="cost.description"
-                                            type="text"
-                                            required
-class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-medium placeholder:text-slate-400 placeholder:text-xs"
-                                        />
-                                    </td>
-                                    <td class="py-2.5 px-3">
-                                        <input
-                                            v-model="cost.vendor_name"
-                                            type="text"
-class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
-                                        />
-                                    </td>
-                                    <td class="py-2.5 px-3">
-                                        <input
-                                            v-model.number="cost.amount"
-                                            type="number"
-                                            step="0.01"
-                                            min="0.01"
-                                            required
-class="w-full text-xs text-right font-mono font-bold px-2 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                                        />
-                                    </td>
-                                    <td class="py-2.5 px-3 text-center">
-                                        <button
-                                            type="button"
-                                            @click="removeCost(index)"
-                                            class="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
-                                            title="Remove cost"
-                                        >
-                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <div class="text-right text-xs font-bold text-amber-700 pt-3">
-                            Direct Costs Subtotal: <CurrencyDisplay :amount="directCostsTotal" />
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Billing & Initial Payment -->
                 <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-6">
                     <div class="border-b border-slate-100 pb-3">
@@ -575,6 +488,16 @@ class="w-full text-xs font-mono px-3 py-2 rounded-xl border border-slate-200 foc
 class="w-full text-xs font-mono font-bold text-emerald-600 px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                                 />
                             </div>
+
+                            <div v-if="parseFloat(form.paid_amount) > 0" class="sm:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Deposit Into Account *</label>
+                                <SearchableSelect
+                                    v-model="form.financial_account_id"
+                                    :options="accountOptions"
+                                    size="compact"
+                                    :error="form.errors.financial_account_id"
+                                />
+                            </div>
                         </div>
 
                         <!-- Summary Breakdown Right (5 cols) -->
@@ -582,9 +505,9 @@ class="w-full text-xs font-mono font-bold text-emerald-600 px-3 py-2 rounded-xl 
                             <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Claim Summary</div>
 
                             <div class="flex justify-between text-xs text-slate-600">
-                                <span>{{ itemsTotal > 0 ? 'Materials & Direct Costs Base:' : 'Agreed Budget Base:' }}</span>
+                                <span>{{ itemsTotal > 0 ? 'Materials Base:' : 'Agreed Budget Base:' }}</span>
                                 <span class="font-bold text-slate-800">
-                                    <CurrencyDisplay :amount="itemsTotal > 0 ? (itemsTotal + directCostsTotal) : (parseFloat(form.budget) || 0)" />
+                                    <CurrencyDisplay :amount="itemsTotal > 0 ? itemsTotal : (parseFloat(form.budget) || 0)" />
                                 </span>
                             </div>
 

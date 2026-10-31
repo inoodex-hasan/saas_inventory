@@ -21,21 +21,21 @@ class PurchaseOrderController extends Controller
     {
         $teamId = Auth::user()->current_team_id;
 
-        $search = $request->input('search', '');
-        $status = $request->input('status', '');
+        $search = $request->input('search');
+        $status = $request->input('status');
         $supplierId = $request->input('supplier_id');
 
         $query = PurchaseOrder::where('team_id', $teamId)
             ->with(['supplier', 'warehouse', 'items.product'])
-            ->when($search, function ($q, $search) {
+            ->when($request->filled('search'), function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('order_number', 'like', "%{$search}%")
                         ->orWhere('po_number', 'like', "%{$search}%")
                         ->orWhereHas('supplier', fn ($s) => $s->where('name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%"));
                 });
             })
-            ->when($status !== '', fn ($q) => $q->where('status', $status))
-            ->when($supplierId, fn ($q, $id) => $q->where('supplier_id', $id));
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $status))
+            ->when($request->filled('supplier_id'), fn ($q) => $q->where('supplier_id', $supplierId));
 
         $orders = $query->latest('id')->paginate(15)->withQueryString();
 
@@ -381,5 +381,25 @@ class PurchaseOrderController extends Controller
         $service->cancelOrder($order);
 
         return redirect()->back()->with('success', "Purchase Order {$order->po_number} cancelled.");
+    }
+
+    public function close(Request $request, PurchaseOrder $order, PurchaseOrderService $service)
+    {
+        $teamId = Auth::user()->current_team_id;
+        abort_if($order->team_id !== $teamId, 403);
+
+        $validated = $request->validate([
+            'refund_mode' => 'nullable|in:account,credit',
+            'financial_account_id' => [
+                'nullable',
+                Rule::exists('financial_accounts', 'id')->where('team_id', $teamId),
+            ],
+            'reference_number' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $service->closeOrder($order, $validated);
+
+        return redirect()->back()->with('success', "Purchase Order {$order->po_number} completed and closed.");
     }
 }

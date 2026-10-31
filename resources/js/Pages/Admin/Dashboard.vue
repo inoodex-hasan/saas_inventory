@@ -24,18 +24,18 @@ watch(() => props.filters, (newVal) => {
 }, { deep: true });
 
 function applyFilter() {
-    router.get(route('admin.dashboard'), {
-        search: search.value,
-        status: status.value,
-        plan_id: planFilter.value,
-    }, { preserveState: true, replace: true });
+    const params = {};
+    if (search.value) params.search = search.value;
+    if (status.value) params.status = status.value;
+    if (planFilter.value) params.plan_id = planFilter.value;
+    router.get(route('admin.dashboard'), params, { preserveState: true, replace: true });
 }
 
 function resetFilter() {
     search.value = '';
     status.value = '';
     planFilter.value = '';
-    applyFilter();
+    router.get(route('admin.dashboard'), {}, { preserveState: false, replace: true });
 }
 
 // -------------------------------------------------------------
@@ -268,7 +268,6 @@ function confirmDeleteTenant(tenant) {
                         v-model="search"
                         @keyup.enter="applyFilter"
                         type="text"
-                        placeholder="Search by company name, owner, email, phone..."
                         class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition placeholder:text-slate-400 placeholder:text-xs"
                     />
                     <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

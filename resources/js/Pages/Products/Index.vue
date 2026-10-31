@@ -53,12 +53,12 @@ const importForm = useForm({
 });
 
 function applyFilters() {
-    router.get(route('products.index'), {
-        search: search.value,
-        category_id: categoryFilter.value,
-        brand_id: brandFilter.value,
-        stock: stockFilter.value,
-    }, {
+    const params = {};
+    if (search.value) params.search = search.value;
+    if (categoryFilter.value) params.category_id = categoryFilter.value;
+    if (brandFilter.value) params.brand_id = brandFilter.value;
+    if (stockFilter.value && stockFilter.value !== 'all') params.stock = stockFilter.value;
+    router.get(route('products.index'), params, {
         preserveState: true,
         replace: true,
     });
@@ -69,7 +69,7 @@ function resetFilters() {
     categoryFilter.value = '';
     brandFilter.value = '';
     stockFilter.value = 'all';
-    applyFilters();
+    router.get(route('products.index'), {}, { preserveState: false, replace: true });
 }
 
 function deleteProduct(prod) {
@@ -234,7 +234,6 @@ function submitImport() {
                             type="text" 
                             v-model="search" 
                             @keyup.enter="applyFilters"
-                            placeholder="Search by Product Name, SKU, or Barcode..."
                             class="w-full pl-9 pr-4 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-400 placeholder:text-xs"
                         />
                         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -244,16 +243,6 @@ function submitImport() {
 
                     <!-- Action Buttons -->
                     <div class="flex flex-wrap items-center gap-2.5">
-                        <button 
-                            @click="isTaxonomyModalOpen = true" 
-                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all"
-                        >
-                            <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                            </svg>
-                            <span>Categories & Brands</span>
-                        </button>
-
                         <a 
                             :href="route('products.export', { format: 'xlsx' })" 
                             class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-xs font-semibold transition-all shadow-xs"
@@ -361,32 +350,42 @@ function submitImport() {
                     <table class="w-full text-left text-xs">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-bold">
-                                <th class="py-3 px-4">Product & SKU</th>
-                                <th class="py-3 px-4">Taxonomy</th>
-                                <th class="py-3 px-4 text-right">Cost (COGS)</th>
-                                <th class="py-3 px-4 text-right">Selling Price</th>
-                                <th class="py-3 px-4 text-center">Available Stock</th>
-                                <th class="py-3 px-4 text-center">Warranty</th>
-                                <th class="py-3 px-4 text-right">Actions</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Product & SKU</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Brand/Category</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Cost (COGS)</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Selling Price</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Available Stock</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Warranty</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             <tr v-for="prod in products.data" :key="prod.id" class="hover:bg-slate-50/70 transition-colors">
                                 <!-- Product & SKU -->
                                 <td class="py-3.5 px-4">
-                                    <div class="font-bold text-slate-900 text-sm leading-tight">{{ prod.name }}</div>
-                                    <div class="flex items-center gap-2 mt-1">
-                                        <span class="font-mono text-indigo-600 font-semibold text-[11px] bg-indigo-50 px-1.5 py-0.5 rounded">
-                                            {{ prod.sku }}
-                                        </span>
-                                        <span v-if="prod.barcode" class="font-mono text-slate-400 text-[10px]">
-                                            UPC: {{ prod.barcode }}
-                                        </span>
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200/80 flex items-center justify-center overflow-hidden shrink-0">
+                                            <img v-if="prod.image_url" :src="prod.image_url" :alt="prod.name" class="w-full h-full object-cover" />
+                                            <svg v-else class="w-5 h-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-slate-900 text-sm leading-tight max-w-[200px] lg:max-w-[280px] truncate" :title="prod.name">{{ prod.name }}</div>
+                                            <div class="flex items-center gap-2 mt-1">
+                                                <span class="font-mono text-indigo-600 font-semibold text-[11px] bg-indigo-50 px-1.5 py-0.5 rounded whitespace-nowrap">
+                                                    {{ prod.sku }}
+                                                </span>
+                                                <span v-if="prod.barcode" class="font-mono text-slate-400 text-[10px] whitespace-nowrap">
+                                                    UPC: {{ prod.barcode }}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </td>
 
                                 <!-- Category & Brand -->
-                                <td class="py-3.5 px-4">
+                                <td class="py-3.5 px-4 whitespace-nowrap">
                                     <div class="flex flex-col gap-1">
                                         <span v-if="prod.category" class="inline-block px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-semibold w-max">
                                             {{ prod.category.name }}
@@ -398,12 +397,12 @@ function submitImport() {
                                 </td>
 
                                 <!-- Cost Price -->
-                                <td class="py-3.5 px-4 text-right font-mono font-medium text-slate-600">
+                                <td class="py-3.5 px-4 text-right font-mono font-medium text-slate-600 whitespace-nowrap">
                                     <CurrencyDisplay :amount="prod.cost_price" />
                                 </td>
 
                                 <!-- Selling Price & Margin -->
-                                <td class="py-3.5 px-4 text-right">
+                                <td class="py-3.5 px-4 text-right whitespace-nowrap">
                                     <div class="font-mono font-bold text-slate-900">
                                         <CurrencyDisplay :amount="prod.selling_price" />
                                     </div>
@@ -413,7 +412,7 @@ function submitImport() {
                                 </td>
 
                                 <!-- Available Stock -->
-                                <td class="py-3.5 px-4 text-center">
+                                <td class="py-3.5 px-4 text-center whitespace-nowrap">
                                     <div 
                                         class="inline-flex items-center gap-1 font-mono font-bold text-xs px-2.5 py-1 rounded-full border"
                                         :class="(prod.total_stock || 0) <= prod.reorder_level 
@@ -429,7 +428,7 @@ function submitImport() {
                                 </td>
 
                                 <!-- Warranty & Serialization -->
-                                <td class="py-3.5 px-4 text-center">
+                                <td class="py-3.5 px-4 text-center whitespace-nowrap">
                                     <div v-if="prod.warranty_days > 0" class="text-xs font-semibold text-indigo-600">
                                         {{ prod.warranty_days }} Days
                                     </div>
@@ -442,7 +441,7 @@ function submitImport() {
                                 </td>
 
                                 <!-- Actions -->
-                                <td class="py-3.5 px-4 text-right">
+                                <td class="py-3.5 px-4 text-right whitespace-nowrap">
                                     <ActionDropdown>
                                         <div class="p-1 space-y-0.5">
                                             <button 

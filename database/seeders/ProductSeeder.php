@@ -5,7 +5,9 @@ namespace Database\Seeders;
 use App\Models\Brand;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\ProductVariant;
 use App\Models\StockLevel;
+use App\Models\StockMovement;
 use App\Models\Team;
 use App\Models\Warehouse;
 use Illuminate\Database\Seeder;
@@ -176,6 +178,136 @@ class ProductSeeder extends Seeder
                         'reserved_quantity' => 0,
                     ]
                 );
+            }
+        }
+
+        // 4. Product Variants (satisfies product_variants >= 2)
+        $firstProduct = Product::where('team_id', $team->id)->where('sku', 'PROD-DELL-5540')->first();
+        if ($firstProduct) {
+            $firstProduct->forceFill(['has_variants' => true])->save();
+
+            $v1 = ProductVariant::updateOrCreate(
+                ['team_id' => $team->id, 'sku' => 'PROD-DELL-5540-16G'],
+                [
+                    'product_id' => $firstProduct->id,
+                    'name'       => '16GB RAM / 512GB SSD',
+                    'barcode'    => '884116421092-16',
+                    'attributes' => ['RAM' => '16GB', 'Storage' => '512GB SSD'],
+                    'cost_price' => 850.00,
+                    'unit_price' => 1200.00,
+                    'is_active'  => true,
+                ]
+            );
+
+            $v2 = ProductVariant::updateOrCreate(
+                ['team_id' => $team->id, 'sku' => 'PROD-DELL-5540-32G'],
+                [
+                    'product_id' => $firstProduct->id,
+                    'name'       => '32GB RAM / 1TB SSD',
+                    'barcode'    => '884116421092-32',
+                    'attributes' => ['RAM' => '32GB', 'Storage' => '1TB SSD'],
+                    'cost_price' => 1050.00,
+                    'unit_price' => 1450.00,
+                    'is_active'  => true,
+                ]
+            );
+
+            // Allocate warehouse stock levels directly to variants (25 units to v1, 20 units to v2)
+            if ($defaultWarehouse) {
+                StockLevel::where('team_id', $team->id)
+                    ->where('warehouse_id', $defaultWarehouse->id)
+                    ->where('product_id', $firstProduct->id)
+                    ->whereNull('product_variant_id')
+                    ->delete();
+
+                StockLevel::updateOrCreate(
+                    [
+                        'team_id'            => $team->id,
+                        'warehouse_id'       => $defaultWarehouse->id,
+                        'product_id'         => $firstProduct->id,
+                        'product_variant_id' => $v1->id,
+                    ],
+                    [
+                        'quantity'          => 25,
+                        'reserved_quantity' => 0,
+                    ]
+                );
+
+                StockLevel::updateOrCreate(
+                    [
+                        'team_id'            => $team->id,
+                        'warehouse_id'       => $defaultWarehouse->id,
+                        'product_id'         => $firstProduct->id,
+                        'product_variant_id' => $v2->id,
+                    ],
+                    [
+                        'quantity'          => 20,
+                        'reserved_quantity' => 0,
+                    ]
+                );
+            }
+        }
+
+        // 5. Stock Movements (satisfies stock_movements >= 2)
+        if ($defaultWarehouse && $firstProduct) {
+            $secondProduct = Product::where('team_id', $team->id)->where('sku', 'PROD-CISCO-C1000')->first();
+
+            if (isset($v1) && isset($v2)) {
+                StockMovement::create([
+                    'team_id'            => $team->id,
+                    'warehouse_id'       => $defaultWarehouse->id,
+                    'product_id'         => $firstProduct->id,
+                    'product_variant_id' => $v1->id,
+                    'type'               => 'in',
+                    'quantity'           => 25,
+                    'unit_cost'          => 850.00,
+                    'reason'             => 'Initial Inbound Stock Seeding - 16GB RAM',
+                    'reference_type'     => 'manual',
+                    'reference_id'       => 1,
+                    'created_by'         => $team->user_id,
+                ]);
+
+                StockMovement::create([
+                    'team_id'            => $team->id,
+                    'warehouse_id'       => $defaultWarehouse->id,
+                    'product_id'         => $firstProduct->id,
+                    'product_variant_id' => $v2->id,
+                    'type'               => 'in',
+                    'quantity'           => 20,
+                    'unit_cost'          => 1050.00,
+                    'reason'             => 'Initial Inbound Stock Seeding - 32GB RAM',
+                    'reference_type'     => 'manual',
+                    'reference_id'       => 1,
+                    'created_by'         => $team->user_id,
+                ]);
+            } else {
+                StockMovement::create([
+                    'team_id'        => $team->id,
+                    'warehouse_id'   => $defaultWarehouse->id,
+                    'product_id'     => $firstProduct->id,
+                    'type'           => 'in',
+                    'quantity'       => 45,
+                    'unit_cost'      => 850.00,
+                    'reason'         => 'Initial Inbound Stock Seeding',
+                    'reference_type' => 'manual',
+                    'reference_id'   => 1,
+                    'created_by'     => $team->user_id,
+                ]);
+            }
+
+            if ($secondProduct) {
+                StockMovement::create([
+                    'team_id'        => $team->id,
+                    'warehouse_id'   => $defaultWarehouse->id,
+                    'product_id'     => $secondProduct->id,
+                    'type'           => 'in',
+                    'quantity'       => 28,
+                    'unit_cost'      => 420.00,
+                    'reason'         => 'Initial Inbound Stock Seeding',
+                    'reference_type' => 'manual',
+                    'reference_id'   => 2,
+                    'created_by'     => $team->user_id,
+                ]);
             }
         }
     }

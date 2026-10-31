@@ -26,18 +26,18 @@ function openViewModal(challan) {
 }
 
 function applyFilter() {
-    router.get(route('challans.index'), {
-        search: search.value,
-        status: status.value,
-        customer_id: customerId.value,
-    }, { preserveState: true, replace: true });
+    const params = {};
+    if (search.value) params.search = search.value;
+    if (status.value) params.status = status.value;
+    if (customerId.value) params.customer_id = customerId.value;
+    router.get(route('challans.index'), params, { preserveState: true, replace: true });
 }
 
 function resetFilter() {
     search.value = '';
     status.value = '';
     customerId.value = '';
-    applyFilter();
+    router.get(route('challans.index'), {}, { preserveState: false, replace: true });
 }
 
 function markDelivered(challan) {
@@ -117,7 +117,6 @@ function deleteChallan(challan) {
                         v-model="search"
                         @keyup.enter="applyFilter"
                         type="text"
-                        placeholder="Search challan #, driver, vehicle no, sales order..."
                         class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
                     />
                     <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -171,19 +170,19 @@ function deleteChallan(challan) {
                     <table class="w-full text-left text-sm">
                         <thead class="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                             <tr>
-                                <th class="py-3.5 px-4">Challan / Gate Pass #</th>
-                                <th class="py-3.5 px-4">Sales Order #</th>
-                                <th class="py-3.5 px-4">Recipient Customer</th>
-                                <th class="py-3.5 px-4">Dispatch Date</th>
-                                <th class="py-3.5 px-4">Carrier / Vehicle</th>
-                                <th class="py-3.5 px-4">Driver</th>
-                                <th class="py-3.5 px-4">Status</th>
-                                <th class="py-3.5 px-4 text-right">Actions</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Challan / Gate Pass #</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Sales Order #</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Recipient Customer</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Dispatch Date</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Carrier / Vehicle</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Driver</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Status</th>
+                                <th class="py-3.5 px-4 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-slate-700">
                             <tr v-for="c in challans.data" :key="c.id" class="hover:bg-slate-50/70 transition">
-                                <td class="py-3.5 px-4 font-semibold text-slate-900">
+                                <td class="py-3.5 px-4 font-semibold text-slate-900 whitespace-nowrap">
                                     <button
                                         type="button"
                                         @click="openViewModal(c)"
@@ -197,28 +196,28 @@ function deleteChallan(challan) {
                                         </svg>
                                     </button>
                                 </td>
-                                <td class="py-3.5 px-4 font-medium text-slate-800">
+                                <td class="py-3.5 px-4 font-medium text-slate-800 whitespace-nowrap">
                                     {{ c.sales_order?.order_number || '-' }}
                                 </td>
-                                <td class="py-3.5 px-4">
-                                    <div class="font-medium text-slate-900">{{ c.customer?.name || c.sales_order?.customer?.name || '-' }}</div>
-                                    <div class="text-xs text-slate-400 truncate max-w-xs">{{ c.delivery_address }}</div>
+                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                    <div class="font-medium text-slate-900 max-w-[170px] lg:max-w-[220px] truncate" :title="c.customer?.name || c.sales_order?.customer?.name || '-'">{{ c.customer?.name || c.sales_order?.customer?.name || '-' }}</div>
+                                    <div class="text-xs text-slate-400 truncate max-w-[200px] lg:max-w-[260px]" :title="c.delivery_address">{{ c.delivery_address ? (c.delivery_address.length > 45 ? c.delivery_address.slice(0, 45) + '...' : c.delivery_address) : '-' }}</div>
                                 </td>
-                                <td class="py-3.5 px-4 text-xs text-slate-600 font-medium">
+                                <td class="py-3.5 px-4 text-xs text-slate-600 font-medium whitespace-nowrap">
                                     {{ formatDate(c.dispatch_date) }}
                                 </td>
-                                <td class="py-3.5 px-4 text-xs">
+                                <td class="py-3.5 px-4 text-xs whitespace-nowrap">
                                     <div class="font-semibold text-slate-800">{{ c.transport_carrier || 'Fleet' }}</div>
                                     <div class="text-slate-400">{{ c.vehicle_no || 'N/A' }}</div>
                                 </td>
-                                <td class="py-3.5 px-4 text-xs">
+                                <td class="py-3.5 px-4 text-xs whitespace-nowrap">
                                     <div class="font-medium text-slate-800">{{ c.driver_name || '-' }}</div>
                                     <div class="text-slate-400">{{ c.driver_phone || '' }}</div>
                                 </td>
-                                <td class="py-3.5 px-4">
+                                <td class="py-3.5 px-4 whitespace-nowrap">
                                     <StatusBadge :status="c.status" />
                                 </td>
-                                <td class="py-3.5 px-4 text-right">
+                                <td class="py-3.5 px-4 text-right whitespace-nowrap">
                                     <ActionDropdown align="right">
                                         <div class="p-1 space-y-0.5">
                                             <!-- View Details -->

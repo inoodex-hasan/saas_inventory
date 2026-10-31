@@ -16,6 +16,7 @@ const form = useForm({
     problem_description: props.ticket.problem_description || '',
     initial_diagnosis: props.ticket.initial_diagnosis || '',
     technician_id: props.ticket.technician_id || '',
+    technician_name: props.ticket.technician_name || props.ticket.technician?.name || '',
     priority: props.ticket.priority || 'normal',
     service_charge: props.ticket.service_charge || 0,
     discount_amount: props.ticket.discount_amount || 0,
@@ -123,13 +124,12 @@ function submitForm() {
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Assigned Technician</label>
-                            <select
-                                v-model="form.technician_id"
-                                class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
-                            >
-                                <option value="">-- Unassigned --</option>
-                                <option v-for="t in technicians" :key="t.id" :value="t.id">{{ t.name }}</option>
-                            </select>
+                            <input
+                                v-model="form.technician_name"
+                                type="text"
+                                class="w-full text-xs rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            />
+                            <div v-if="form.errors.technician_name" class="text-xs text-rose-500 mt-1">{{ form.errors.technician_name }}</div>
                         </div>
 
                         <div>

@@ -145,16 +145,16 @@ function deletePlan(plan) {
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                                <th class="py-3 px-4">Plan Name</th>
-                                <th class="py-3 px-4">Slug Identifier</th>
-                                <th class="py-3 px-4">Monthly Rate</th>
-                                <th class="py-3 px-4">Annual Rate</th>
-                                <th class="py-3 px-4 text-center">Products Quota</th>
-                                <th class="py-3 px-4 text-center">Warehouses</th>
-                                <th class="py-3 px-4 text-center">User Seats</th>
-                                <th class="py-3 px-4 text-center">Active Tenants</th>
-                                <th class="py-3 px-4 text-center">Status</th>
-                                <th class="py-3 px-4 text-right">Actions</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Plan Name</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Slug Identifier</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Monthly Rate</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Annual Rate</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Products Quota</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Warehouses</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">User Seats</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Active Tenants</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Status</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -163,30 +163,32 @@ function deletePlan(plan) {
                                 :key="plan.id"
                                 class="hover:bg-slate-50/60 transition-colors"
                             >
-                                <td class="py-3 px-4">
-                                    <div class="font-bold text-slate-900">{{ plan.name }}</div>
-                                    <div v-if="plan.description" class="text-[11px] text-slate-400 mt-0.5 line-clamp-1">{{ plan.description }}</div>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    <div class="font-bold text-slate-900 max-w-[170px] lg:max-w-[220px] truncate" :title="plan.name">{{ plan.name }}</div>
+                                    <div v-if="plan.description" class="text-[11px] text-slate-400 mt-0.5 truncate max-w-[200px] lg:max-w-[260px]" :title="plan.description">
+                                        {{ plan.description.length > 50 ? plan.description.slice(0, 50) + '...' : plan.description }}
+                                    </div>
                                 </td>
-                                <td class="py-3 px-4 font-mono text-slate-600 font-semibold">{{ plan.slug }}</td>
-                                <td class="py-3 px-4 font-mono font-bold text-slate-900">
+                                <td class="py-3 px-4 font-mono text-slate-600 font-semibold whitespace-nowrap">{{ plan.slug }}</td>
+                                <td class="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
                                     <CurrencyDisplay :amount="plan.price_bdt" />
                                 </td>
-                                <td class="py-3 px-4 font-mono font-bold text-slate-900">
+                                <td class="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
                                     <CurrencyDisplay :amount="plan.annual_price_bdt" />
                                 </td>
-                                <td class="py-3 px-4 text-center font-mono font-semibold text-slate-700">
+                                <td class="py-3 px-4 text-center font-mono font-semibold text-slate-700 whitespace-nowrap">
                                     {{ plan.max_products === -1 ? 'Unlimited' : plan.max_products }}
                                 </td>
-                                <td class="py-3 px-4 text-center font-mono font-semibold text-slate-700">
+                                <td class="py-3 px-4 text-center font-mono font-semibold text-slate-700 whitespace-nowrap">
                                     {{ plan.max_warehouses === -1 ? 'Unlimited' : plan.max_warehouses }}
                                 </td>
-                                <td class="py-3 px-4 text-center font-mono font-semibold text-slate-700">
+                                <td class="py-3 px-4 text-center font-mono font-semibold text-slate-700 whitespace-nowrap">
                                     {{ plan.max_users === -1 ? 'Unlimited' : plan.max_users }}
                                 </td>
-                                <td class="py-3 px-4 text-center font-mono font-bold text-indigo-600">
+                                <td class="py-3 px-4 text-center font-mono font-bold text-indigo-600 whitespace-nowrap">
                                     {{ plan.subscriptions_count }}
                                 </td>
-                                <td class="py-3 px-4 text-center">
+                                <td class="py-3 px-4 text-center whitespace-nowrap">
                                     <span
                                         v-if="plan.is_active"
                                         class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700"
@@ -200,7 +202,7 @@ function deletePlan(plan) {
                                         Disabled
                                     </span>
                                 </td>
-                                <td class="py-3 px-4 text-right">
+                                <td class="py-3 px-4 text-right whitespace-nowrap">
                                     <div class="flex items-center justify-end">
                                         <ActionDropdown align="right">
                                             <button

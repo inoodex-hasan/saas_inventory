@@ -14,12 +14,12 @@ class EmployeeController extends Controller
     {
         $teamId = Auth::user()->current_team_id;
 
-        $search = $request->input('search', '');
-        $status = $request->input('status', '');
-        $department = $request->input('department', '');
+        $search = $request->input('search');
+        $status = $request->input('status');
+        $department = $request->input('department');
 
         $query = Employee::where('team_id', $teamId)
-            ->when($search, function ($q, $search) {
+            ->when($request->filled('search'), function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('name', 'like', "%{$search}%")
                         ->orWhere('employee_code', 'like', "%{$search}%")
@@ -27,8 +27,8 @@ class EmployeeController extends Controller
                         ->orWhere('designation', 'like', "%{$search}%");
                 });
             })
-            ->when($status !== '', fn ($q) => $q->where('status', $status))
-            ->when($department !== '', fn ($q) => $q->where('department', $department));
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $status))
+            ->when($request->filled('department'), fn ($q) => $q->where('department', $department));
 
         $employees = $query->latest('id')->paginate(15)->withQueryString();
 

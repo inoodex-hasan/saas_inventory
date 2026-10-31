@@ -56,16 +56,16 @@ const payForm = useForm({
 });
 
 function applyFilter() {
-    router.get(route('dues.index'), {
-        search: search.value,
-        filter: filter.value,
-    }, { preserveState: true, replace: true });
+    const params = {};
+    if (search.value) params.search = search.value;
+    if (filter.value && filter.value !== 'all_with_dues') params.filter = filter.value;
+    router.get(route('dues.index'), params, { preserveState: true, replace: true });
 }
 
 function resetFilter() {
     search.value = '';
     filter.value = 'all_with_dues';
-    applyFilter();
+    router.get(route('dues.index'), {}, { preserveState: false, replace: true });
 }
 
 function openPayModal(customer, order = null) {
@@ -99,6 +99,33 @@ function submitPay() {
         },
     });
 }
+
+// Add Customer with Opening Balance
+const isAddCustomerModalOpen = ref(false);
+const customerForm = useForm({
+    name: '',
+    phone: '',
+    company_name: '',
+    email: '',
+    address: '',
+    opening_balance: 0,
+});
+
+function openAddCustomerModal() {
+    customerForm.reset();
+    customerForm.clearErrors();
+    customerForm.opening_balance = 0;
+    isAddCustomerModalOpen.value = true;
+}
+
+function submitAddCustomer() {
+    customerForm.post(route('dues.customer.store'), {
+        onSuccess: () => {
+            isAddCustomerModalOpen.value = false;
+            customerForm.reset();
+        },
+    });
+}
 </script>
 
 <template>
@@ -110,6 +137,18 @@ function submitPay() {
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Customer Receivables & Dues Ledger</h1>
                     <p class="text-xs text-slate-500 font-medium">Track outstanding customer balances, payment recovery, and credit aging</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button
+                        type="button"
+                        @click="openAddCustomerModal"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm shadow-indigo-600/30 transition-all"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span>Add Customer</span>
+                    </button>
                 </div>
             </div>
         </template>
@@ -158,7 +197,6 @@ function submitPay() {
                             v-model="search"
                             @keyup.enter="applyFilter"
                             type="text"
-                            placeholder="Search customer by name, mobile, address..."
                             class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400"
                         />
                         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -201,20 +239,20 @@ function submitPay() {
                     <table class="w-full text-left text-xs">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-bold">
-                                <th class="py-3 px-3 w-10 text-center"></th>
-                                <th class="py-3 px-4">Customer Account</th>
-                                <th class="py-3 px-4">Phone Number</th>
-                                <th class="py-3 px-4 text-center">Pending Invoices</th>
-                                <th class="py-3 px-4 text-right">Total Invoiced</th>
-                                <th class="py-3 px-4 text-right">Total Paid</th>
-                                <th class="py-3 px-4 text-right">Balance Due</th>
+                                <th class="py-3 px-3 w-10 text-center whitespace-nowrap"></th>
+                                <th class="py-3 px-4 whitespace-nowrap">Customer Account</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Phone Number</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Pending Invoices</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Total Invoiced</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Total Paid</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Balance Due</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             <template v-for="c in customers" :key="c.id">
                                 <tr class="hover:bg-slate-50/70 transition-colors">
                                     <!-- Expand / Collapse chevron -->
-                                    <td class="py-3.5 px-3 text-center">
+                                    <td class="py-3.5 px-3 text-center whitespace-nowrap">
                                         <button
                                             v-if="c.due_orders && c.due_orders.length > 0"
                                             type="button"
@@ -235,20 +273,20 @@ function submitPay() {
                                     </td>
 
                                     <!-- Customer Details -->
-                                    <td class="py-3.5 px-4">
-                                        <div class="font-bold text-slate-900 text-sm">{{ c.name }}</div>
-                                        <div class="text-[11px] text-slate-500 mt-0.5 truncate max-w-xs">
-                                            {{ c.address || c.email || 'Address not listed' }}
+                                    <td class="py-3.5 px-4 whitespace-nowrap">
+                                        <div class="font-bold text-slate-900 text-sm max-w-[180px] lg:max-w-[240px] truncate" :title="c.name">{{ c.name }}</div>
+                                        <div class="text-[11px] text-slate-500 mt-0.5 truncate max-w-[200px] lg:max-w-[260px]" :title="c.address || c.email || 'Address not listed'">
+                                            {{ (c.address || c.email) ? ((c.address || c.email).length > 45 ? (c.address || c.email).slice(0, 45) + '...' : (c.address || c.email)) : 'Address not listed' }}
                                         </div>
                                     </td>
 
                                     <!-- Phone -->
-                                    <td class="py-3.5 px-4 font-mono font-bold text-slate-800">
+                                    <td class="py-3.5 px-4 font-mono font-bold text-slate-800 whitespace-nowrap">
                                         {{ c.phone || '—' }}
                                     </td>
 
                                     <!-- Pending Invoices Count -->
-                                    <td class="py-3.5 px-4 text-center">
+                                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
                                         <button
                                             v-if="c.due_orders && c.due_orders.length > 0"
                                             type="button"
@@ -357,8 +395,8 @@ function submitPay() {
         </div>
 
         <!-- Collect Payment Modal -->
-        <Modal :show="isPayModalOpen" max-width="md" @close="isPayModalOpen = false">
-            <div class="p-6">
+        <Modal :show="isPayModalOpen" max-width="xl" @close="isPayModalOpen = false">
+            <div class="p-6 sm:p-7">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div>
                         <h3 class="text-base font-bold text-slate-900">Collect Due Payment</h3>
@@ -376,7 +414,7 @@ function submitPay() {
                     </button>
                 </div>
 
-                <form @submit.prevent="submitPay" class="space-y-4 mt-4">
+                <form @submit.prevent="submitPay" class="space-y-4 mt-5 text-xs">
                     <!-- Invoice Selector if customer has multiple due orders -->
                     <div v-if="selectedCustomer?.due_orders?.length > 1">
                         <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Target Invoice *</label>
@@ -384,7 +422,7 @@ function submitPay() {
                             v-model="payForm.order_id"
                             @change="onModalOrderChanged"
                             required
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 font-medium"
+                            class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 font-medium"
                         >
                             <option
                                 v-for="ord in selectedCustomer.due_orders"
@@ -396,74 +434,196 @@ function submitPay() {
                         </select>
                     </div>
 
-                    <div class="p-3 bg-rose-50 rounded-xl border border-rose-200/60 flex items-center justify-between text-xs">
+                    <div class="p-3.5 bg-rose-50 rounded-xl border border-rose-200/60 flex items-center justify-between text-xs">
                         <span class="text-rose-800 font-medium">Selected Invoice Due:</span>
                         <span class="font-mono font-bold text-rose-900 text-sm">
                             <CurrencyDisplay :amount="selectedOrder?.due_amount || selectedCustomer?.total_due || 0" />
                         </span>
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Collection Amount *</label>
-                        <input
-                            v-model.number="payForm.amount"
-                            type="number"
-                            step="0.01"
-                            min="0.01"
-                            :max="selectedOrder?.due_amount"
-                            required
-class="w-full text-sm font-bold font-mono px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500"
-                        />
-                        <div v-if="payForm.errors.amount" class="text-xs text-rose-500 mt-1">
-                            {{ payForm.errors.amount }}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Collection Amount *</label>
+                            <input
+                                v-model.number="payForm.amount"
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                :max="selectedOrder?.due_amount"
+                                required
+                                class="w-full text-sm font-bold font-mono px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500"
+                            />
+                            <div v-if="payForm.errors.amount" class="text-xs text-rose-500 mt-1">
+                                {{ payForm.errors.amount }}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                                Deposit Account <span class="text-rose-500">*</span>
+                            </label>
+                            <SearchableSelect
+                                v-model="payForm.financial_account_id"
+                                :options="accountOptions"
+                                size="compact"
+                                :error="payForm.errors.financial_account_id"
+                            />
                         </div>
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">
-                            Deposit Account <span class="text-rose-500">*</span>
-                        </label>
-                        <SearchableSelect
-                            v-model="payForm.financial_account_id"
-                            :options="accountOptions"
-                            placeholder="Select deposit account..."
-                            searchPlaceholder="Type account name or bank..."
-                            :error="payForm.errors.financial_account_id"
-                        />
-                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Ref / TrxID / Receipt #</label>
+                            <input
+                                v-model="payForm.payment_reference"
+                                type="text"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 font-mono"
+                            />
+                        </div>
 
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Ref / TrxID / Receipt #</label>
-                        <input
-                            v-model="payForm.payment_reference"
-                            type="text"
-class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 font-mono placeholder:font-sans placeholder:text-slate-400"
-                        />
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Remarks / Note</label>
-                        <input
-                            v-model="payForm.notes"
-                            type="text"
-class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400"
-                        />
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Remarks / Note</label>
+                            <input
+                                v-model="payForm.notes"
+                                type="text"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500"
+                            />
+                        </div>
                     </div>
 
                     <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                         <button
                             type="button"
                             @click="isPayModalOpen = false"
-                            class="px-4 py-2 text-sm text-slate-600 hover:text-slate-900"
+                            class="px-4 py-2.5 text-xs font-semibold border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             :disabled="payForm.processing || payForm.amount <= 0"
-                            class="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition disabled:opacity-50"
+                            class="px-6 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition disabled:opacity-50"
                         >
                             Confirm Collection
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </Modal>
+
+        <!-- Add Customer Modal -->
+        <Modal :show="isAddCustomerModalOpen" max-width="xl" @close="isAddCustomerModalOpen = false">
+            <div class="p-6 sm:p-7">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-5">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Add New Customer</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Register customer account and optional opening due balance</p>
+                    </div>
+                    <button
+                        @click="isAddCustomerModalOpen = false"
+                        class="text-slate-400 hover:text-slate-600 transition"
+                    >
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitAddCustomer" class="space-y-4 text-xs">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Customer Name *</label>
+                            <input
+                                v-model="customerForm.name"
+                                type="text"
+                                required
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500"
+                            />
+                            <div v-if="customerForm.errors.name" class="text-xs text-rose-500 mt-1">
+                                {{ customerForm.errors.name }}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Phone / Mobile *</label>
+                            <input
+                                v-model="customerForm.phone"
+                                type="text"
+                                required
+                                class="w-full text-xs font-mono font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500"
+                            />
+                            <div v-if="customerForm.errors.phone" class="text-xs text-rose-500 mt-1">
+                                {{ customerForm.errors.phone }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Company / Organization</label>
+                            <input
+                                v-model="customerForm.company_name"
+                                type="text"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500"
+                            />
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
+                            <input
+                                v-model="customerForm.email"
+                                type="email"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500"
+                            />
+                            <div v-if="customerForm.errors.email" class="text-xs text-rose-500 mt-1">
+                                {{ customerForm.errors.email }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Delivery / Billing Address</label>
+                        <textarea
+                            v-model="customerForm.address"
+                            rows="2"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-indigo-500"
+                        ></textarea>
+                    </div>
+
+                    <div class="bg-amber-50/70 p-3.5 rounded-xl border border-amber-200/80">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-bold text-amber-900">Opening Receivable Due Balance (৳)</label>
+                            <span class="text-[10px] text-amber-700 font-medium">Optional initial debt</span>
+                        </div>
+                        <input
+                            v-model.number="customerForm.opening_balance"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            class="w-full text-xs font-mono font-bold text-slate-800 px-3 py-2 bg-white border border-amber-300 rounded-xl focus:ring-1 focus:ring-amber-500"
+                        />
+                        <p class="text-[11px] text-amber-800/80 mt-1.5 leading-relaxed">
+                            If this customer has an outstanding balance from prior purchases before using this software, enter it here. An opening receivable invoice will be generated automatically in the ledger.
+                        </p>
+                        <div v-if="customerForm.errors.opening_balance" class="text-xs text-rose-500 mt-1">
+                            {{ customerForm.errors.opening_balance }}
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                        <button
+                            type="button"
+                            @click="isAddCustomerModalOpen = false"
+                            class="px-4 py-2.5 text-xs font-semibold border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            :disabled="customerForm.processing"
+                            class="px-6 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition disabled:opacity-50"
+                        >
+                            Save Customer
                         </button>
                     </div>
                 </form>

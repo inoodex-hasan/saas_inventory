@@ -38,7 +38,7 @@ class SuperAdminController extends Controller
             ->withCount(['users', 'teamInvitations'])
             ->whereHas('owner', fn ($q) => $q->where('is_super_admin', false));
 
-        if ($search) {
+        if ($request->filled('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('legal_name', 'like', "%{$search}%")
@@ -51,11 +51,11 @@ class SuperAdminController extends Controller
             });
         }
 
-        if ($statusFilter) {
+        if ($request->filled('status')) {
             $query->where('status', $statusFilter);
         }
 
-        if ($planFilter) {
+        if ($request->filled('plan_id')) {
             $query->whereHas('subscription', function ($sq) use ($planFilter) {
                 $sq->where('plan_id', $planFilter);
             });

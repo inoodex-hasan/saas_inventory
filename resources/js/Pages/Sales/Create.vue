@@ -38,12 +38,13 @@ const form = useForm({
     order_date: props.todayDate || new Date().toISOString().slice(0, 10),
     notes: '',
     discount_amount: 0,
+    tax_rate: 0,
     tax_amount: 0,
     shipping_cost: 0,
     paid_amount: 0,
     financial_account_id: defaultAccount?.id || '',
     payment_reference: '',
-    status: 'draft',
+    status: 'confirmed',
     items: [
         {
             product_id: '',
@@ -71,12 +72,51 @@ function removeItem(index) {
 
 function onProductSelected(index) {
     const item = form.items[index];
-    const product = props.products.find(p => p.id === parseInt(item.product_id));
+    const product = (props.products || []).find(p => p.id === parseInt(item.product_id));
     if (product) {
         item.unit_price = parseFloat(product.unit_price) || 0;
         item.warranty_days = parseInt(product.warranty_days) || 0;
     }
 }
+
+function getProductStock(productId, warehouseId) {
+    if (!productId) return { available: 0, onHand: 0, reserved: 0, hasStock: false };
+    const p = (props.products || []).find(prod => prod.id === Number(productId));
+    if (!p || !p.stock_levels) return { available: 0, onHand: 0, reserved: 0, hasStock: false };
+
+    if (warehouseId) {
+        const sl = p.stock_levels.find(s => Number(s.warehouse_id) === Number(warehouseId));
+        if (sl) {
+            const onHand = Number(sl.quantity) || 0;
+            const reserved = Number(sl.reserved_quantity) || 0;
+            const avail = Math.max(0, onHand - reserved);
+            return { available: avail, onHand, reserved, hasStock: avail > 0 };
+        }
+        return { available: 0, onHand: 0, reserved: 0, hasStock: false };
+    }
+
+    let onHand = 0;
+    let reserved = 0;
+    p.stock_levels.forEach(sl => {
+        onHand += (Number(sl.quantity) || 0);
+        reserved += (Number(sl.reserved_quantity) || 0);
+    });
+    const avail = Math.max(0, onHand - reserved);
+    return { available: avail, onHand, reserved, hasStock: avail > 0 };
+}
+
+const productSelectOptions = computed(() => {
+    const whId = form.warehouse_id;
+    return (props.products || []).map(p => {
+        const st = getProductStock(p.id, whId);
+        return {
+            ...p,
+            id: p.id,
+            name: p.name,
+            sku_stock: `${p.sku || 'No SKU'} • Stock: ${st.available} available`,
+        };
+    });
+});
 
 const subtotal = computed(() => {
     return form.items.reduce((sum, item) => {
@@ -84,10 +124,16 @@ const subtotal = computed(() => {
     }, 0);
 });
 
+const taxAmount = computed(() => {
+    const base = Math.max(0, subtotal.value - (parseFloat(form.discount_amount) || 0));
+    const rate = parseFloat(form.tax_rate) || 0;
+    return parseFloat(((base * rate) / 100).toFixed(2));
+});
+
 const totalAmount = computed(() => {
     const sub = subtotal.value;
     const disc = parseFloat(form.discount_amount) || 0;
-    const tax = parseFloat(form.tax_amount) || 0;
+    const tax = taxAmount.value;
     const ship = parseFloat(form.shipping_cost) || 0;
     return Math.max(0, sub - disc + tax + ship);
 });
@@ -103,6 +149,7 @@ function setFullPayment() {
 }
 
 function submit() {
+    form.tax_amount = taxAmount.value;
     form.post(route('sales.store'));
 }
 </script>
@@ -170,8 +217,6 @@ function submit() {
                                 :options="customers"
                                 labelKey="name"
                                 sublabelKey="phone"
-                                placeholder="Search & select customer by name or phone..."
-                                searchPlaceholder="Type customer name or phone..."
                                 :error="form.errors.customer_id"
                             />
                         </div>
@@ -184,7 +229,7 @@ function submit() {
                                     v-model="form.new_customer_name"
                                     type="text"
                                     required
-class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400 placeholder:text-xs"
+                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500"
                                 />
                                 <div v-if="form.errors.new_customer_name" class="text-xs text-rose-500 mt-1">{{ form.errors.new_customer_name }}</div>
                             </div>
@@ -195,7 +240,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                                     v-model="form.new_customer_phone"
                                     type="text"
                                     required
-class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 font-mono placeholder:text-slate-400 placeholder:text-xs"
+                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 font-mono"
                                 />
                                 <div v-if="form.errors.new_customer_phone" class="text-xs text-rose-500 mt-1">{{ form.errors.new_customer_phone }}</div>
                             </div>
@@ -206,7 +251,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                                     v-model="form.new_customer_address"
                                     type="text"
                                     required
-class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400 placeholder:text-xs"
+                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500"
                                 />
                                 <div v-if="form.errors.new_customer_address" class="text-xs text-rose-500 mt-1">{{ form.errors.new_customer_address }}</div>
                             </div>
@@ -233,72 +278,97 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                             <div
                                 v-for="(item, idx) in form.items"
                                 :key="idx"
-                                class="p-4 rounded-xl bg-slate-50/70 border border-slate-200/70 flex flex-col sm:flex-row gap-3 items-start sm:items-center"
+                                class="p-4 rounded-xl bg-slate-50/70 border border-slate-200/70 space-y-3"
                             >
-                                <div class="flex-1 w-full sm:w-auto">
-                                    <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-0.5">Product / SKU</label>
-                                    <SearchableSelect
-                                        v-model="item.product_id"
-                                        :options="products"
-                                        labelKey="name"
-                                        sublabelKey="sku"
-                                        placeholder="Search product by name or SKU..."
-                                        searchPlaceholder="Type name or SKU..."
-                                        @change="() => onProductSelected(idx)"
-                                    />
+                                <!-- Line 1: Product Selection, Live Stock Badge, & Remove Button -->
+                                <div class="flex items-start gap-3 justify-between">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <label class="block text-[11px] font-semibold text-slate-500 uppercase">Product / SKU *</label>
+                                            <div v-if="item.product_id" class="flex items-center gap-1.5 text-[11px]">
+                                                <span class="text-slate-400">Stock:</span>
+                                                <span
+                                                    class="font-mono font-bold px-1.5 py-0.5 rounded text-[10px]"
+                                                    :class="getProductStock(item.product_id, form.warehouse_id).available > 0
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                                                        : 'bg-rose-50 text-rose-700 border border-rose-200/60'"
+                                                >
+                                                    {{ getProductStock(item.product_id, form.warehouse_id).available }} in stock
+                                                </span>
+                                                <span
+                                                    v-if="item.quantity > getProductStock(item.product_id, form.warehouse_id).available"
+                                                    class="text-rose-600 font-semibold text-[10px]"
+                                                >
+                                                    (Exceeds stock!)
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <SearchableSelect
+                                            v-model="item.product_id"
+                                            :options="productSelectOptions"
+                                            labelKey="name"
+                                            sublabelKey="sku_stock"
+                                            size="compact"
+                                            @change="() => onProductSelected(idx)"
+                                        />
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        @click="removeItem(idx)"
+                                        :disabled="form.items.length <= 1"
+                                        class="mt-5 p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition shrink-0 disabled:opacity-30 disabled:hover:text-slate-400"
+                                        title="Remove item"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
                                 </div>
 
-                                <div class="w-24">
-                                    <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-0.5">Qty</label>
-                                    <input
-                                        v-model.number="item.quantity"
-                                        type="number"
-                                        min="0.01"
-                                        step="any"
-                                        required
-                                        class="w-full text-sm px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
-                                    />
-                                </div>
+                                <!-- Line 2: Qty, Unit Price, Warranty, and Line Total -->
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 items-center pt-2 border-t border-slate-200/60">
+                                    <div>
+                                        <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Qty *</label>
+                                        <input
+                                            v-model.number="item.quantity"
+                                            type="number"
+                                            min="0.01"
+                                            step="any"
+                                            required
+                                            class="w-full h-[34px] text-xs px-2.5 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-emerald-500 font-mono font-bold"
+                                        />
+                                    </div>
 
-                                <div class="w-32">
-                                    <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-0.5">Unit Price</label>
-                                    <input
-                                        v-model.number="item.unit_price"
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        required
-                                        class="w-full text-sm px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
-                                    />
-                                </div>
+                                    <div>
+                                        <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Unit Price *</label>
+                                        <input
+                                            v-model.number="item.unit_price"
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            required
+                                            class="w-full h-[34px] text-xs px-2.5 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-emerald-500 font-mono"
+                                        />
+                                    </div>
 
-                                <div class="w-24">
-                                    <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-0.5">Warranty (Days)</label>
-                                    <input
-                                        v-model.number="item.warranty_days"
-                                        type="number"
-                                        min="0"
-class="w-full text-sm px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
-                                    />
-                                </div>
+                                    <div>
+                                        <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Warranty (Days)</label>
+                                        <input
+                                            v-model.number="item.warranty_days"
+                                            type="number"
+                                            min="0"
+                                            class="w-full h-[34px] text-xs px-2.5 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-emerald-500 font-mono"
+                                        />
+                                    </div>
 
-                                <div class="w-28 text-right self-end sm:self-center">
-                                    <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-0.5">Line Total</label>
-                                    <span class="text-sm font-bold text-slate-900 block py-2">
-                                        <CurrencyDisplay :amount="(item.quantity || 0) * (item.unit_price || 0)" />
-                                    </span>
+                                    <div class="text-right">
+                                        <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Line Total</label>
+                                        <span class="text-sm font-bold text-slate-900 block py-1 font-mono">
+                                            <CurrencyDisplay :amount="(item.quantity || 0) * (item.unit_price || 0)" />
+                                        </span>
+                                    </div>
                                 </div>
-
-                                <button
-                                    type="button"
-                                    @click="removeItem(idx)"
-                                    :disabled="form.items.length <= 1"
-                                    class="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition self-end sm:self-center disabled:opacity-30 disabled:hover:text-slate-400"
-                                >
-                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -339,8 +409,8 @@ class="w-full text-sm px-3 py-2 bg-white border border-slate-200 rounded-xl focu
                                 v-model="form.status"
                                 class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 font-medium"
                             >
-                                <option value="draft">Draft (No reservation yet)</option>
                                 <option value="confirmed">Confirmed (Reserve stock immediately)</option>
+                                <option value="draft">Draft (No reservation yet)</option>
                             </select>
                         </div>
 
@@ -349,7 +419,7 @@ class="w-full text-sm px-3 py-2 bg-white border border-slate-200 rounded-xl focu
                             <textarea
                                 v-model="form.notes"
                                 rows="2"
-class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400 placeholder:text-xs"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500"
                             ></textarea>
                         </div>
                     </div>
@@ -376,9 +446,9 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                             </div>
 
                             <div class="flex items-center justify-between gap-4">
-                                <span class="text-slate-600 text-xs uppercase font-semibold">Tax / VAT:</span>
+                                <span class="text-slate-600 text-xs uppercase font-semibold">Tax / VAT (%):</span>
                                 <input
-                                    v-model.number="form.tax_amount"
+                                    v-model.number="form.tax_rate"
                                     type="number"
                                     min="0"
                                     step="0.01"
@@ -437,8 +507,6 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                                         <SearchableSelect
                                             v-model="form.financial_account_id"
                                             :options="accountOptions"
-                                            placeholder="Select deposit account..."
-                                            searchPlaceholder="Type account name or bank..."
                                             size="compact"
                                             :error="form.errors.financial_account_id"
                                         />
@@ -451,7 +519,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                                         <input
                                             v-model="form.payment_reference"
                                             type="text"
-class="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400 placeholder:text-xs font-mono"
+                                            class="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-emerald-500 font-mono"
                                         />
                                     </div>
                                 </div>

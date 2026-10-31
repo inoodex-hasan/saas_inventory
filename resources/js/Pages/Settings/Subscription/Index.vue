@@ -649,15 +649,15 @@ function paymentStatusBadge(status) {
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200/80 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                <th class="py-3 px-4">Receipt #</th>
-                                <th class="py-3 px-4">Date</th>
-                                <th class="py-3 px-4">Plan & Interval</th>
-                                <th class="py-3 px-4">Amount (BDT)</th>
-                                <th class="py-3 px-4">Method</th>
-                                <th class="py-3 px-4">Sender Number</th>
-                                <th class="py-3 px-4">TrxID</th>
-                                <th class="py-3 px-4 text-center">Status</th>
-                                <th class="py-3 px-4">Admin Remarks</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Receipt #</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Date</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Plan & Interval</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Amount (BDT)</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Method</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Sender Number</th>
+                                <th class="py-3 px-4 whitespace-nowrap">TrxID</th>
+                                <th class="py-3 px-4 text-center whitespace-nowrap">Status</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Admin Remarks</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -666,7 +666,7 @@ function paymentStatusBadge(status) {
                                 :key="pmt.id"
                                 class="hover:bg-slate-50/60 transition-colors"
                             >
-                                <td class="py-3 px-4 font-mono font-bold text-slate-900">
+                                <td class="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
                                     <span class="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-800 border border-slate-200">
                                         {{ pmt.payment_number }}
                                     </span>
@@ -674,21 +674,21 @@ function paymentStatusBadge(status) {
                                 <td class="py-3 px-4 text-slate-600 whitespace-nowrap">
                                     {{ formatDate(pmt.created_at) }}
                                 </td>
-                                <td class="py-3 px-4">
+                                <td class="py-3 px-4 whitespace-nowrap">
                                     <span class="font-bold text-slate-800">{{ pmt.plan?.name }}</span>
                                     <span class="text-[10px] text-slate-400 block uppercase font-semibold">{{ pmt.billing_cycle }}</span>
                                 </td>
-                                <td class="py-3 px-4 font-mono font-bold text-slate-900">
+                                <td class="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
                                     <CurrencyDisplay :amount="pmt.amount_bdt" />
                                 </td>
-                                <td class="py-3 px-4">
+                                <td class="py-3 px-4 whitespace-nowrap">
                                     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border" :class="pmt.payment_method === 'bkash' ? 'bg-pink-50 text-pink-700 border-pink-200' : (pmt.payment_method === 'nagad' ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-slate-50 text-slate-700 border-slate-200')">
                                         {{ pmt.payment_method }}
                                     </span>
                                 </td>
-                                <td class="py-3 px-4 font-mono font-semibold text-slate-700">{{ pmt.sender_number || '—' }}</td>
-                                <td class="py-3 px-4 font-mono font-bold text-indigo-600">{{ pmt.trx_id || '—' }}</td>
-                                <td class="py-3 px-4 text-center">
+                                <td class="py-3 px-4 font-mono font-semibold text-slate-700 whitespace-nowrap">{{ pmt.sender_number || '—' }}</td>
+                                <td class="py-3 px-4 font-mono font-bold text-indigo-600 whitespace-nowrap">{{ pmt.trx_id || '—' }}</td>
+                                <td class="py-3 px-4 text-center whitespace-nowrap">
                                     <span
                                         class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border"
                                         :class="paymentStatusBadge(pmt.status).class"
@@ -697,8 +697,8 @@ function paymentStatusBadge(status) {
                                         <span>{{ paymentStatusBadge(pmt.status).label }}</span>
                                     </span>
                                 </td>
-                                <td class="py-3 px-4 text-slate-500 text-[11px] max-w-xs truncate">
-                                    {{ pmt.rejection_reason || pmt.notes || 'No remarks recorded' }}
+                                <td class="py-3 px-4 text-slate-500 text-[11px] max-w-[200px] lg:max-w-[260px] truncate" :title="pmt.rejection_reason || pmt.notes || 'No remarks recorded'">
+                                    {{ (pmt.rejection_reason || pmt.notes) ? ((pmt.rejection_reason || pmt.notes).length > 50 ? (pmt.rejection_reason || pmt.notes).slice(0, 50) + '...' : (pmt.rejection_reason || pmt.notes)) : 'No remarks recorded' }}
                                 </td>
                             </tr>
                             <tr v-if="!payments.data || payments.data.length === 0">

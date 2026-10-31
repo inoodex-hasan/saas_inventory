@@ -28,18 +28,18 @@ const defectiveForm = useForm({
 });
 
 function applyFilter() {
-    router.get(route('warranties.index'), {
-        search: search.value,
-        status: status.value,
-        warehouse_id: warehouseId.value,
-    }, { preserveState: true, replace: true });
+    const params = {};
+    if (search.value) params.search = search.value;
+    if (status.value && status.value !== 'all') params.status = status.value;
+    if (warehouseId.value) params.warehouse_id = warehouseId.value;
+    router.get(route('warranties.index'), params, { preserveState: true, replace: true });
 }
 
 function resetFilter() {
     search.value = '';
     status.value = 'all';
     warehouseId.value = '';
-    applyFilter();
+    router.get(route('warranties.index'), {}, { preserveState: false, replace: true });
 }
 
 function openDefectiveModal(serial) {
@@ -112,7 +112,6 @@ function submitDefective() {
                         v-model="search"
                         @keyup.enter="applyFilter"
                         type="text"
-                        placeholder="Search serial number, product name, customer..."
                         class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 placeholder:text-slate-400 placeholder:text-xs transition"
                     />
                     <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -158,36 +157,36 @@ function submitDefective() {
                     <table class="w-full text-left text-sm">
                         <thead class="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                             <tr>
-                                <th class="py-3.5 px-4">Serial Number</th>
-                                <th class="py-3.5 px-4">Product Catalog Item</th>
-                                <th class="py-3.5 px-4">Status</th>
-                                <th class="py-3.5 px-4">Warehouse</th>
-                                <th class="py-3.5 px-4">Customer Holder</th>
-                                <th class="py-3.5 px-4">Warranty Expiration</th>
-                                <th class="py-3.5 px-4 text-right">Actions</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Serial Number</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Product Catalog Item</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Status</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Warehouse</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Customer Holder</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Warranty Expiration</th>
+                                <th class="py-3.5 px-4 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-slate-700">
                             <tr v-for="s in serials.data" :key="s.id" class="hover:bg-slate-50/70 transition">
-                                <td class="py-3.5 px-4 font-mono font-bold text-slate-900">
+                                <td class="py-3.5 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
                                     {{ s.serial_number }}
                                 </td>
-                                <td class="py-3.5 px-4">
-                                    <div class="font-medium text-slate-900">{{ s.product?.name }}</div>
+                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                    <div class="font-medium text-slate-900 max-w-[200px] lg:max-w-[260px] truncate" :title="s.product?.name">{{ s.product?.name }}</div>
                                     <div class="text-xs text-slate-400">SKU: {{ s.product?.sku }}</div>
                                 </td>
-                                <td class="py-3.5 px-4">
+                                <td class="py-3.5 px-4 whitespace-nowrap">
                                     <StatusBadge :status="s.status" />
                                 </td>
-                                <td class="py-3.5 px-4 text-xs font-medium text-slate-600">
+                                <td class="py-3.5 px-4 text-xs font-medium text-slate-600 whitespace-nowrap">
                                     {{ s.warehouse?.name || 'Customer Custody' }}
                                 </td>
-                                <td class="py-3.5 px-4">
-                                    <div v-if="s.customer" class="font-medium text-slate-900">{{ s.customer.name }}</div>
+                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                    <div v-if="s.customer" class="font-medium text-slate-900 max-w-[160px] lg:max-w-[220px] truncate" :title="s.customer.name">{{ s.customer.name }}</div>
                                     <div v-if="s.sales_order" class="text-xs text-slate-400">SO: {{ s.sales_order.order_number }}</div>
                                     <span v-if="!s.customer" class="text-xs text-slate-400 italic">Unsold in Depot</span>
                                 </td>
-                                <td class="py-3.5 px-4">
+                                <td class="py-3.5 px-4 whitespace-nowrap">
                                     <div v-if="s.warranty_expires_at">
                                         <div class="font-semibold text-xs text-slate-800">{{ formatDate(s.warranty_expires_at) }}</div>
                                         <div 
@@ -202,7 +201,7 @@ function submitDefective() {
                                     </div>
                                     <span v-else class="text-xs text-slate-400 italic">N/A</span>
                                 </td>
-                                <td class="py-3.5 px-4 text-right">
+                                <td class="py-3.5 px-4 text-right whitespace-nowrap">
                                     <div class="flex items-center justify-end">
                                         <ActionDropdown align="right">
                                             <button

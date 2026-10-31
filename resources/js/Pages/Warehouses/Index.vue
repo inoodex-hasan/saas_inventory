@@ -160,7 +160,6 @@ async function inspectStock(wh) {
                         type="text" 
                         v-model="search" 
                         @keyup.enter="handleSearch"
-                        placeholder="Search name, code, city..."
                         class="w-full pl-9 pr-4 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all placeholder:text-slate-400"
                     />
                     <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

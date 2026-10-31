@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 
 const props = defineProps({
     page_title: String,
@@ -12,6 +13,14 @@ const props = defineProps({
     warehouses: Array,
     technicians: Array,
     todayDate: String,
+});
+
+const customerOptions = computed(() => {
+    return (props.customers || []).map(c => ({
+        id: c.id,
+        label: `${c.name} (${c.phone || 'No phone'})`,
+        sublabel: c.address ? c.address : (c.email ? c.email : ''),
+    }));
 });
 
 const form = useForm({
@@ -29,6 +38,7 @@ const form = useForm({
     problem_description: '',
     initial_diagnosis: '',
     technician_id: '',
+    technician_name: '',
     priority: 'normal',
     warranty_days: 30,
     received_date: props.todayDate,
@@ -155,17 +165,11 @@ function submitForm() {
                     <!-- Existing Customer Dropdown -->
                     <div v-if="form.customer_mode === 'existing'">
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Select Customer <span class="text-rose-500">*</span></label>
-                        <select
+                        <SearchableSelect
                             v-model="form.customer_id"
-                            class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                            required
-                        >
-                            <option value="">-- Choose Existing Customer --</option>
-                            <option v-for="c in customers" :key="c.id" :value="c.id">
-                                {{ c.name }} ({{ c.phone }}) {{ c.address ? '- ' + c.address : '' }}
-                            </option>
-                        </select>
-                        <div v-if="form.errors.customer_id" class="text-xs text-rose-500 mt-1">{{ form.errors.customer_id }}</div>
+                            :options="customerOptions"
+                            :error="form.errors.customer_id"
+                        />
                     </div>
 
                     <!-- New Customer Inline Inputs -->
@@ -289,13 +293,12 @@ class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Assign Technician</label>
-                            <select
-                                v-model="form.technician_id"
-                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                            >
-                                <option value="">-- Unassigned --</option>
-                                <option v-for="u in technicians" :key="u.id" :value="u.id">{{ u.name }}</option>
-                            </select>
+                            <input
+                                v-model="form.technician_name"
+                                type="text"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            />
+                            <div v-if="form.errors.technician_name" class="text-xs text-rose-500 mt-1">{{ form.errors.technician_name }}</div>
                         </div>
 
                         <div>

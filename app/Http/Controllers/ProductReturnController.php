@@ -18,27 +18,27 @@ class ProductReturnController extends Controller
     {
         $teamId = Auth::user()->current_team_id;
 
-        $search = $request->input('search', '');
-        $status = $request->input('status', '');
+        $search = $request->input('search');
+        $status = $request->input('status');
 
         $query = ProductReturn::where('team_id', $teamId)
             ->with(['salesOrder', 'customer', 'warehouse', 'items.product', 'creator'])
-            ->when($search, function ($q, $search) {
+            ->when($request->filled('search'), function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('return_number', 'like', "%{$search}%")
                         ->orWhereHas('salesOrder', fn ($so) => $so->where('order_number', 'like', "%{$search}%"))
                         ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%"));
                 });
             })
-            ->when($status !== '', fn ($q) => $q->where('status', $status));
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $status));
 
         $returns = $query->latest('id')->paginate(15)->withQueryString();
 
         $warehouses = Warehouse::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
 
         $eligibleOrders = SalesOrder::where('team_id', $teamId)
-            ->whereIn('status', ['confirmed', 'dispatched', 'completed'])
-            ->with(['customer', 'items.product'])
+            ->whereIn('status', ['draft', 'confirmed', 'dispatched', 'completed'])
+            ->with(['customer', 'warehouse', 'items.product'])
             ->latest('id')
             ->take(50)
             ->get();

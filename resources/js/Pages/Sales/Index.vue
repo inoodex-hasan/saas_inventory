@@ -48,12 +48,12 @@ const paymentForm = useForm({
 });
 
 function applyFilter() {
-    router.get(route('sales.index'), {
-        search: search.value,
-        status: status.value,
-        payment_status: paymentStatus.value,
-        customer_id: customerId.value,
-    }, { preserveState: true, replace: true });
+    const params = {};
+    if (search.value) params.search = search.value;
+    if (status.value) params.status = status.value;
+    if (paymentStatus.value) params.payment_status = paymentStatus.value;
+    if (customerId.value) params.customer_id = customerId.value;
+    router.get(route('sales.index'), params, { preserveState: true, replace: true });
 }
 
 function resetFilter() {
@@ -61,7 +61,7 @@ function resetFilter() {
     status.value = '';
     paymentStatus.value = '';
     customerId.value = '';
-    applyFilter();
+    router.get(route('sales.index'), {}, { preserveState: false, replace: true });
 }
 
 function confirmOrder(order) {
@@ -162,7 +162,6 @@ function submitPayment() {
                         v-model="search"
                         @keyup.enter="applyFilter"
                         type="text"
-                        placeholder="Search order #, customer name, mobile..."
                         class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
                     />
                     <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -229,45 +228,45 @@ function submitPayment() {
                     <table class="w-full text-left text-sm">
                         <thead class="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                             <tr>
-                                <th class="py-3.5 px-4">Order / Invoice #</th>
-                                <th class="py-3.5 px-4">Customer</th>
-                                <th class="py-3.5 px-4">Warehouse</th>
-                                <th class="py-3.5 px-4">Total Amount</th>
-                                <th class="py-3.5 px-4">Paid / Due</th>
-                                <th class="py-3.5 px-4">Order Status</th>
-                                <th class="py-3.5 px-4">Payment</th>
-                                <th class="py-3.5 px-4 text-right">Actions</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Order / Invoice #</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Customer</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Warehouse</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Total Amount</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Paid / Due</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Order Status</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Payment</th>
+                                <th class="py-3.5 px-4 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-slate-700">
                             <tr v-for="order in orders.data" :key="order.id" class="hover:bg-slate-50/70 transition">
-                                <td class="py-3.5 px-4">
+                                <td class="py-3.5 px-4 whitespace-nowrap">
                                     <div class="font-semibold text-slate-900">{{ order.order_number }}</div>
                                     <div class="text-xs text-slate-400">{{ formatDate(order.order_date) }}</div>
                                 </td>
-                                <td class="py-3.5 px-4">
-                                    <div class="font-medium text-slate-900">{{ order.customer?.name || 'Walk-in Customer' }}</div>
+                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                    <div class="font-medium text-slate-900 max-w-[180px] lg:max-w-[220px] truncate" :title="order.customer?.name || 'Walk-in Customer'">{{ order.customer?.name || 'Walk-in Customer' }}</div>
                                     <div class="text-xs text-slate-500">{{ order.customer?.phone || '-' }}</div>
                                 </td>
-                                <td class="py-3.5 px-4">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700">
+                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 max-w-[150px] truncate" :title="order.warehouse?.name">
                                         {{ order.warehouse?.name }}
                                     </span>
                                 </td>
-                                <td class="py-3.5 px-4 font-bold text-slate-900">
+                                <td class="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">
                                     <CurrencyDisplay :amount="order.total_amount" />
                                 </td>
-                                <td class="py-3.5 px-4">
+                                <td class="py-3.5 px-4 whitespace-nowrap">
                                     <div class="text-xs text-emerald-600 font-medium">Paid: <CurrencyDisplay :amount="order.paid_amount" /></div>
                                     <div v-if="order.due_amount > 0" class="text-xs text-rose-600 font-semibold">Due: <CurrencyDisplay :amount="order.due_amount" /></div>
                                 </td>
-                                <td class="py-3.5 px-4">
+                                <td class="py-3.5 px-4 whitespace-nowrap">
                                     <StatusBadge :status="order.status" />
                                 </td>
-                                <td class="py-3.5 px-4">
+                                <td class="py-3.5 px-4 whitespace-nowrap">
                                     <StatusBadge :status="order.payment_status" />
                                 </td>
-                                <td class="py-3.5 px-4 text-right">
+                                <td class="py-3.5 px-4 text-right whitespace-nowrap">
                                     <ActionDropdown>
                                         <div class="p-1 space-y-0.5">
                                             <!-- Print Invoice -->
@@ -379,47 +378,48 @@ function submitPayment() {
         </div>
 
         <!-- Payment Modal -->
-        <Modal :show="isPaymentModalOpen" max-width="md" @close="isPaymentModalOpen = false">
-            <div class="p-6">
+        <Modal :show="isPaymentModalOpen" max-width="xl" @close="isPaymentModalOpen = false">
+            <div class="p-6 sm:p-7">
                 <h3 class="text-lg font-bold text-slate-900 mb-1">Record Customer Payment</h3>
                 <p class="text-sm text-slate-500 mb-4">
                     Invoice: <span class="font-semibold text-slate-800">{{ selectedOrder?.order_number }}</span>
                     (Outstanding Due: <span class="text-rose-600 font-bold"><CurrencyDisplay :amount="selectedOrder?.due_amount" /></span>)
                 </p>
 
-                <form @submit.prevent="submitPayment" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Amount Paid *</label>
-                        <input
-                            v-model.number="paymentForm.amount"
-                            type="number"
-                            step="0.01"
-                            min="0.01"
-                            :max="selectedOrder?.due_amount"
-                            required
-                            class="w-full text-base font-mono font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
-                        />
-                        <div v-if="paymentForm.errors.amount" class="text-xs text-rose-500 mt-1">{{ paymentForm.errors.amount }}</div>
+                <form @submit.prevent="submitPayment" class="space-y-4 text-xs">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Amount Paid *</label>
+                            <input
+                                v-model.number="paymentForm.amount"
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                :max="selectedOrder?.due_amount"
+                                required
+                                class="w-full text-base font-mono font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                            />
+                            <div v-if="paymentForm.errors.amount" class="text-xs text-rose-500 mt-1">{{ paymentForm.errors.amount }}</div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Deposit Into Account *</label>
+                            <SearchableSelect
+                                v-model="paymentForm.financial_account_id"
+                                :options="accountOptions"
+                                size="compact"
+                                :error="paymentForm.errors.financial_account_id"
+                            />
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Deposit Into Account *</label>
-                        <SearchableSelect
-                            v-model="paymentForm.financial_account_id"
-                            :options="accountOptions"
-                            placeholder="Select deposit account..."
-                            searchPlaceholder="Type account name or bank..."
-                            :error="paymentForm.errors.financial_account_id"
-                        />
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Ref / TrxID #</label>
                             <input
                                 v-model="paymentForm.payment_reference"
                                 type="text"
-class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 font-mono"
+                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 font-mono"
                             />
                         </div>
 
@@ -438,7 +438,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                         <input
                             v-model="paymentForm.notes"
                             type="text"
-class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
                         />
                     </div>
 
@@ -446,16 +446,16 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                         <button
                             type="button"
                             @click="isPaymentModalOpen = false"
-                            class="px-4 py-2 text-sm text-slate-600 hover:text-slate-900"
+                            class="px-4 py-2.5 text-xs font-semibold border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             :disabled="paymentForm.processing"
-                            class="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm transition"
+                            class="px-6 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm transition"
                         >
-                            Confirm Receipt
+                            Record Payment
                         </button>
                     </div>
                 </form>

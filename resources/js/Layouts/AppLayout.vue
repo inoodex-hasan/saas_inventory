@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -15,12 +15,74 @@ const props = defineProps({
 
 const page = usePage();
 const sidebarOpen = ref(false);
+const isSidebarPinned = ref(typeof window !== 'undefined' && localStorage.getItem('sidebar_pinned') === 'true');
+const isSidebarHovered = ref(false);
+const isSidebarExpanded = computed(() => {
+    if (sidebarOpen.value) return true;
+    return isSidebarPinned.value || isSidebarHovered.value;
+});
+
+function togglePinSidebar() {
+    isSidebarPinned.value = !isSidebarPinned.value;
+    if (typeof window !== 'undefined') {
+        localStorage.setItem('sidebar_pinned', isSidebarPinned.value ? 'true' : 'false');
+    }
+}
+
+const sidebarNav = ref(null);
 const userMenuOpen = ref(false);
 const topUserMenuOpen = ref(false);
 const teamMenuOpen = ref(false);
 const notificationMenuOpen = ref(false);
 const bannerDismissed = ref(false);
 const showLoginModal = ref(false);
+
+function scrollToActiveNav(smooth = true) {
+    nextTick(() => {
+        if (!sidebarNav.value) return;
+
+        const activeLink = sidebarNav.value.querySelector(
+            'nav a.bg-indigo-600, nav a.bg-amber-600, nav [aria-current="page"]'
+        );
+        if (!activeLink) return;
+
+        const container = sidebarNav.value;
+        const containerRect = container.getBoundingClientRect();
+        const linkRect = activeLink.getBoundingClientRect();
+
+        const relativeTop = linkRect.top - containerRect.top;
+        const relativeBottom = linkRect.bottom - containerRect.top;
+
+        // Check if the item is already comfortably visible within container bounds
+        const isComfortablyVisible = (
+            relativeTop >= 20 &&
+            relativeBottom <= (container.clientHeight - 20)
+        );
+
+        if (!isComfortablyVisible) {
+            const currentScroll = container.scrollTop;
+            const targetScroll = Math.max(
+                0,
+                currentScroll + relativeTop - (container.clientHeight / 2) + (activeLink.clientHeight / 2)
+            );
+
+            container.scrollTo({
+                top: targetScroll,
+                behavior: smooth ? 'smooth' : 'auto',
+            });
+        }
+    });
+}
+
+watch(() => page.url, () => {
+    scrollToActiveNav(true);
+});
+
+watch(sidebarOpen, (open) => {
+    if (open) {
+        setTimeout(() => scrollToActiveNav(false), 60);
+    }
+});
 
 const user = computed(() => page.props.auth?.user);
 const currentTeam = computed(() => page.props.auth?.team);
@@ -103,6 +165,13 @@ function closeAllMenus() {
 }
 
 onMounted(() => {
+    scrollToActiveNav(false);
+    setTimeout(() => scrollToActiveNav(true), 150);
+
+    router.on('finish', () => {
+        scrollToActiveNav(true);
+    });
+
     if (subscriptionNotice.value) {
         const teamId = currentTeam.value?.id || 'team';
         const alreadySeenKey = `sub_alert_seen_${teamId}`;
@@ -128,23 +197,44 @@ onMounted(() => {
 
         <!-- Sidebar Navigation -->
         <aside 
-            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'" 
-            class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transition-transform duration-300 ease-in-out flex flex-col justify-between border-r border-slate-800 shrink-0 shadow-xl md:shadow-none"
+            @mouseenter="isSidebarHovered = true"
+            @mouseleave="isSidebarHovered = false"
+            :class="[
+                sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+                isSidebarExpanded ? 'w-64 shadow-2xl z-50' : 'w-64 md:w-[72px] md:shadow-none'
+            ]" 
+            class="fixed inset-y-0 left-0 z-50 bg-slate-900 text-slate-300 transition-all duration-300 ease-in-out flex flex-col justify-between border-r border-slate-800 shrink-0 select-none overflow-hidden"
         >
-            <div class="overflow-y-auto flex-1 custom-scrollbar">
+            <div ref="sidebarNav" class="overflow-y-auto overflow-x-hidden flex-1 custom-scrollbar scroll-smooth">
                 <!-- Brand Header -->
-                <div class="h-16 px-6 flex items-center justify-between border-b border-slate-800/80 bg-slate-950/40">
-                    <Link :href="isSuperAdmin && !isImpersonating ? route('admin.dashboard') : route('dashboard')" class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-black text-lg shadow-md shadow-indigo-500/20">
+                <div class="h-16 px-4 flex items-center justify-between border-b border-slate-800/80 bg-slate-950/40 shrink-0">
+                    <Link :href="isSuperAdmin && !isImpersonating ? route('admin.dashboard') : route('dashboard')" class="flex items-center gap-3 min-w-0 overflow-hidden">
+                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-black text-lg shadow-md shadow-indigo-500/20 shrink-0">
                             I
                         </div>
-                        <div>
-                            <span class="font-bold text-white text-base tracking-tight leading-tight block">Inoodex</span>
-                            <span class="text-[10px] text-indigo-400 font-semibold tracking-wider uppercase block">
+                        <div v-show="isSidebarExpanded" class="min-w-0 transition-opacity duration-200">
+                            <span class="font-bold text-white text-base tracking-tight leading-tight block truncate">Inoodex</span>
+                            <span class="text-[10px] text-indigo-400 font-semibold tracking-wider uppercase block truncate">
                                 {{ isSuperAdmin && !isImpersonating ? 'Platform Admin' : 'Cloud Inventory' }}
                             </span>
                         </div>
                     </Link>
+                    <!-- Pin / Unpin Button on Desktop -->
+                    <button
+                        v-show="isSidebarExpanded"
+                        type="button"
+                        @click.stop="togglePinSidebar"
+                        :title="isSidebarPinned ? 'Unpin sidebar (Auto-collapse on hover)' : 'Pin sidebar open'"
+                        class="hidden md:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                    >
+                        <svg v-if="isSidebarPinned" class="w-4 h-4 text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+                        </svg>
+                        <svg v-else class="w-4 h-4 text-slate-400 hover:text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                        </svg>
+                    </button>
+                    <!-- Mobile Close Button -->
                     <button @click="sidebarOpen = false" class="md:hidden text-slate-400 hover:text-white">
                         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -153,21 +243,21 @@ onMounted(() => {
                 </div>
 
                 <!-- Tenant / Organization Switcher -->
-                <div v-if="isImpersonating && currentTeam" class="px-4 py-3 border-b border-amber-500/30 bg-amber-950/40">
-                    <div class="flex items-center justify-between mb-1">
+                <div v-if="isImpersonating && currentTeam" class="p-3 border-b border-amber-500/30 bg-amber-950/40 shrink-0">
+                    <div v-show="isSidebarExpanded" class="flex items-center justify-between mb-1">
                         <span class="text-[10px] uppercase font-bold text-amber-400 tracking-wider">Inspecting Tenant</span>
                         <a :href="route('admin.exit-tenant')" class="text-[10px] font-bold text-amber-300 hover:text-white underline">Exit &rarr;</a>
                     </div>
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-6 h-6 rounded-md bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 font-bold text-xs">
+                    <div class="flex items-center gap-2.5" :class="{ 'justify-center': !isSidebarExpanded }">
+                        <div class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 font-bold text-xs shrink-0" :title="!isSidebarExpanded ? currentTeam.name : ''">
                             {{ currentTeam.name.substring(0, 1) }}
                         </div>
-                        <span class="font-semibold text-xs text-amber-200 truncate">{{ currentTeam.name }}</span>
+                        <span v-show="isSidebarExpanded" class="font-semibold text-xs text-amber-200 truncate">{{ currentTeam.name }}</span>
                     </div>
                 </div>
 
-                <div v-else-if="!isSuperAdmin && currentTeam" class="px-4 py-3 border-b border-slate-800/60 bg-slate-900/40 relative">
-                    <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1 flex items-center justify-between">
+                <div v-else-if="!isSuperAdmin && currentTeam" class="p-3 border-b border-slate-800/60 bg-slate-900/40 relative shrink-0">
+                    <div v-show="isSidebarExpanded" class="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1 flex items-center justify-between">
                         <span>Current Organization</span>
                         <button 
                             v-if="user?.all_teams?.length > 1" 
@@ -177,15 +267,15 @@ onMounted(() => {
                             switch &dtrif;
                         </button>
                     </div>
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-6 h-6 rounded-md bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-300 font-bold text-xs">
+                    <div class="flex items-center gap-2.5" :class="{ 'justify-center': !isSidebarExpanded }">
+                        <div class="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-300 font-bold text-xs shrink-0" :title="!isSidebarExpanded ? currentTeam.name : ''">
                             {{ currentTeam.name.substring(0, 1) }}
                         </div>
-                        <span class="font-semibold text-xs text-slate-200 truncate">{{ currentTeam.name }}</span>
+                        <span v-show="isSidebarExpanded" class="font-semibold text-xs text-slate-200 truncate">{{ currentTeam.name }}</span>
                     </div>
 
-                    <!-- Teams Dropdown -->
-                    <div v-if="teamMenuOpen" class="absolute left-4 right-4 top-full mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-1 z-30">
+                    <!-- Teams Dropdown (only when expanded) -->
+                    <div v-if="teamMenuOpen && isSidebarExpanded" class="absolute left-4 right-4 top-full mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-1 z-30">
                         <div class="px-3 py-1 text-[10px] uppercase font-bold text-slate-400">Switch Workspace</div>
                         <button 
                             v-for="team in user.all_teams" 
@@ -201,62 +291,80 @@ onMounted(() => {
                 </div>
 
                 <!-- Navigation Links -->
-                <nav class="p-3 space-y-1">
+                <nav class="p-2 space-y-1">
                     <!-- Super Admin Platform Navigation (when not inspecting a tenant) -->
                     <template v-if="!showTenantSidebar">
-                        <div class="px-3 pt-1 pb-2">
+                        <div v-show="isSidebarExpanded" class="px-3 pt-1 pb-2">
                             <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold tracking-wider uppercase">
                                 <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
                                 Super Admin Mode
                             </div>
                         </div>
 
-                        <div class="pt-2 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Platform Management</div>
+                        <div v-if="isSidebarExpanded" class="pt-2 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Platform Management</div>
+                        <div v-else class="my-2 border-t border-slate-800/70 mx-1.5"></div>
                         
                         <Link 
                             :href="route('admin.dashboard')" 
-                            class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                            :class="route().current('admin.dashboard') ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                            :title="!isSidebarExpanded ? 'Platform Overview & Tenants' : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('admin.dashboard') ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
                         >
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                             </svg>
-                            <span>Platform Overview & Tenants</span>
+                            <span v-show="isSidebarExpanded" class="truncate">Platform Overview & Tenants</span>
                         </Link>
 
                         <Link 
                             :href="route('admin.plans.index')" 
-                            class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                            :class="route().current('admin.plans.*') ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                            :title="!isSidebarExpanded ? 'Subscription Plans' : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('admin.plans.*') ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
                         >
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                             </svg>
-                            <span>Subscription Plans</span>
+                            <span v-show="isSidebarExpanded" class="truncate">Subscription Plans</span>
                         </Link>
 
                         <Link 
                             :href="route('admin.payments.index')" 
-                            class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                            :class="route().current('admin.payments.*') ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                            :title="!isSidebarExpanded ? 'Payment Verifications' : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('admin.payments.*') ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
                         >
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <span>Payment Verifications</span>
+                            <span v-show="isSidebarExpanded" class="truncate">Payment Verifications</span>
                         </Link>
 
-                        <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Security & Account</div>
+                        <div v-if="isSidebarExpanded" class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Security & Account</div>
+                        <div v-else class="my-2 border-t border-slate-800/70 mx-1.5"></div>
 
                         <Link 
                             :href="route('profile.show')" 
-                            class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                            :class="route().current('profile.show') ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                            :title="!isSidebarExpanded ? 'Profile Settings' : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('profile.show') ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
                         >
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
-                            <span>Profile Settings</span>
+                            <span v-show="isSidebarExpanded" class="truncate">Profile Settings</span>
                         </Link>
                     </template>
 
@@ -265,277 +373,405 @@ onMounted(() => {
                         <!-- Standard Navigation -->
                         <Link 
                             :href="route('dashboard')" 
-                            class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                            :class="route().current('dashboard') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                            :title="!isSidebarExpanded ? 'Dashboard' : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('dashboard') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
                         >
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                             </svg>
-                            <span>Dashboard</span>
+                            <span v-show="isSidebarExpanded" class="truncate">Dashboard</span>
                         </Link>
 
-                    <!-- Sales & CRM -->
-                    <div class="pt-4 pb-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
-                        <span>Sales & CRM</span>
-                    </div>
+                        <!-- Sales & CRM -->
+                        <div v-if="isSidebarExpanded" class="pt-4 pb-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                            <span>Sales & CRM</span>
+                        </div>
+                        <div v-else class="my-2 border-t border-slate-800/70 mx-1.5"></div>
 
-                    <Link 
-                        :href="route('quotations.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('quotations.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
-                    >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <span>Quotations & Estimates</span>
-                    </Link>
+                        <Link 
+                            :href="route('pos.index')" 
+                            :title="!isSidebarExpanded ? 'POS Terminal' : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('pos.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
+                        >
+                            <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            <div v-show="isSidebarExpanded" class="flex items-center justify-between flex-1 truncate">
+                                <span class="truncate">POS Terminal</span>
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-extrabold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 ml-2 shrink-0">Fast</span>
+                            </div>
+                        </Link>
 
-                    <Link 
-                        :href="route('sales.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('sales.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
-                    >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                        </svg>
-                        <span>Sales & Dispatches</span>
-                    </Link>
+                        <Link 
+                            :href="route('quotations.index')" 
+                            :title="!isSidebarExpanded ? 'Quotations & Estimates' : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('quotations.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
+                        >
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span v-show="isSidebarExpanded" class="truncate">Quotations & Estimates</span>
+                        </Link>
 
-                    <Link 
-                        :href="route('recurring-invoices.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('recurring-invoices.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
-                    >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        <span>Recurring & Subscriptions</span>
-                    </Link>
+                        <Link 
+                            :href="route('sales.index')" 
+                            :title="!isSidebarExpanded ? 'Sales & Dispatches' : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('sales.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
+                        >
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                            </svg>
+                            <span v-show="isSidebarExpanded" class="truncate">Sales & Dispatches</span>
+                        </Link>
 
-                    <Link 
-                        :href="route('challans.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('challans.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
-                    >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0 0l3-3m-3 3L9 8m-5 5h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293h3.172a1 1 0 00.707-.293l2.414-2.414a1 1 0 01.707-.293H20" />
-                        </svg>
-                        <span>Delivery Challans</span>
-                    </Link>
+                        <Link 
+                            :href="route('challans.index')" 
+                            :title="!isSidebarExpanded ? 'Delivery Challans' : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('challans.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
+                        >
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0 0l3-3m-3 3L9 8m-5 5h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293h3.172a1 1 0 00.707-.293l2.414-2.414a1 1 0 01.707-.293H20" />
+                            </svg>
+                            <span v-show="isSidebarExpanded" class="truncate">Delivery Challans</span>
+                        </Link>
 
-                    <Link 
-                        :href="route('dues.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('dues.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
-                    >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        <span>Customer Due Ledger</span>
-                    </Link>
+                        <Link 
+                            :href="route('dues.index')" 
+                            :title="!isSidebarExpanded ? 'Customer Due Ledger' : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('dues.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
+                        >
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            <span v-show="isSidebarExpanded" class="truncate">Customer Due Ledger</span>
+                        </Link>
 
-                    <Link 
-                        :href="route('returns.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('returns.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
-                    >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
-                        </svg>
-                        <span>Returns & RMA</span>
-                    </Link>
+                        <Link 
+                            :href="route('returns.index')" 
+                            :title="!isSidebarExpanded ? 'Return Management' : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('returns.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
+                        >
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
+                            </svg>
+                            <span v-show="isSidebarExpanded" class="truncate">Return Management</span>
+                        </Link>
 
-                    <!-- Procurement & Vendors -->
-                    <div class="pt-4 pb-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
-                        <span>Procurement & Vendors</span>
-                    </div>
+                        <!-- Procurement & Vendors -->
+                        <div v-if="isSidebarExpanded" class="pt-4 pb-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                            <span>Procurement & Vendors</span>
+                        </div>
+                        <div v-else class="my-2 border-t border-slate-800/70 mx-1.5"></div>
 
-                    <Link 
-                        :href="route('purchases.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('purchases.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
-                    >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        <span>Purchases & Inbound</span>
-                    </Link>
+                        <Link 
+                            :href="route('purchases.index')" 
+                            :title="!isSidebarExpanded ? 'Purchases & Inbound' : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('purchases.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
+                        >
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            <span v-show="isSidebarExpanded" class="truncate">Purchases & Inbound</span>
+                        </Link>
 
-                    <Link 
-                        :href="route('vendors.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('vendors.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
-                    >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        <span>Vendors & Suppliers</span>
-                    </Link>
+                        <Link 
+                            :href="route('vendors.index')" 
+                            :title="!isSidebarExpanded ? 'Vendors & Suppliers' : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('vendors.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
+                        >
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            <span v-show="isSidebarExpanded" class="truncate">Vendors & Suppliers</span>
+                        </Link>
 
-                    <Link 
-                        :href="route('vendor-dues.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('vendor-dues.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
-                    >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
-                        </svg>
-                        <span>Vendor Due Ledger</span>
-                    </Link>
+                        <Link 
+                            :href="route('vendor-dues.index')" 
+                            :title="!isSidebarExpanded ? 'Vendor Due Ledger' : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('vendor-dues.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
+                        >
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
+                            </svg>
+                            <span v-show="isSidebarExpanded" class="truncate">Vendor Due Ledger</span>
+                        </Link>
 
-                    <!-- Inventory & Warehouses -->
-                    <div class="pt-4 pb-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
-                        <span>Inventory & Warehouses</span>
-                    </div>
+                        <!-- Inventory & Warehouses -->
+                        <div v-if="isSidebarExpanded" class="pt-4 pb-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                            <span>Inventory & Warehouses</span>
+                        </div>
+                        <div v-else class="my-2 border-t border-slate-800/70 mx-1.5"></div>
 
-                    <Link 
-                        :href="route('products.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('products.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
-                    >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                        </svg>
-                        <span>Products & Catalog</span>
-                    </Link>
+                        <Link 
+                            :href="route('inventory.index')" 
+                            :title="!isSidebarExpanded ? 'Stock & Inventory' : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('inventory.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
+                        >
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                            </svg>
+                            <span v-show="isSidebarExpanded" class="truncate">Stock & Inventory</span>
+                        </Link>
 
-                    <Link 
-                        :href="route('warehouses.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('warehouses.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
-                    >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                        <span>Warehouses & Hubs</span>
-                    </Link>
+                        <Link 
+                            :href="route('products.index')" 
+                            :title="!isSidebarExpanded ? 'Products & Catalog' : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('products.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
+                        >
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                            <span v-show="isSidebarExpanded" class="truncate">Products & Catalog</span>
+                        </Link>
 
-                    <Link 
-                        :href="route('warranties.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('warranties.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
-                    >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                        </svg>
-                        <span>Serials & Warranties</span>
-                    </Link>
+                        <Link 
+                            :href="route('categories.index')" 
+                            :title="!isSidebarExpanded ? 'Categories' : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('categories.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
+                        >
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                            <span v-show="isSidebarExpanded" class="truncate">Categories</span>
+                        </Link>
+
+                        <Link 
+                            :href="route('brands.index')" 
+                            :title="!isSidebarExpanded ? 'Brands' : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('brands.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
+                        >
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                            </svg>
+                            <span v-show="isSidebarExpanded" class="truncate">Brands</span>
+                        </Link>
+
+                        <Link 
+                            :href="route('warehouses.index')" 
+                            :title="!isSidebarExpanded ? 'Warehouses & Hubs' : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('warehouses.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
+                        >
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <span v-show="isSidebarExpanded" class="truncate">Warehouses & Hubs</span>
+                        </Link>
+
+                        <Link 
+                            :href="route('warranties.index')" 
+                            :title="!isSidebarExpanded ? 'Serials & Warranties' : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('warranties.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
+                        >
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                            <span v-show="isSidebarExpanded" class="truncate">Serials & Warranties</span>
+                        </Link>
 
                     <!-- Services & Projects -->
-                    <div class="pt-4 pb-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                    <div v-if="isSidebarExpanded" class="pt-4 pb-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
                         <span>Services & Projects</span>
                     </div>
+                    <div v-else class="my-2 border-t border-slate-800/70 mx-1.5"></div>
 
                     <Link 
                         :href="route('services.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('services.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                        :title="!isSidebarExpanded ? 'Services & Workshop' : ''"
+                        class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                        :class="[
+                            isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                            route().current('services.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                        ]"
                     >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        <span>Services & Workshop</span>
+                        <span v-show="isSidebarExpanded" class="truncate">Services & Workshop</span>
                     </Link>
 
                     <Link 
                         :href="route('projects.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('projects.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                        :title="!isSidebarExpanded ? 'Projects & Costing' : ''"
+                        class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                        :class="[
+                            isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                            route().current('projects.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                        ]"
                     >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                         </svg>
-                        <span>Projects & Costing</span>
+                        <span v-show="isSidebarExpanded" class="truncate">Projects & Costing</span>
                     </Link>
 
                     <!-- HR & Payroll -->
-                    <div class="pt-4 pb-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                    <div v-if="isSidebarExpanded" class="pt-4 pb-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
                         <span>HR & Payroll</span>
                     </div>
+                    <div v-else class="my-2 border-t border-slate-800/70 mx-1.5"></div>
 
                     <Link 
                         :href="route('employees.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('employees.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                        :title="!isSidebarExpanded ? 'Staff & Employees' : ''"
+                        class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                        :class="[
+                            isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                            route().current('employees.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                        ]"
                     >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                         </svg>
-                        <span>Staff & Employees</span>
+                        <span v-show="isSidebarExpanded" class="truncate">Staff & Employees</span>
                     </Link>
 
                     <Link 
                         :href="route('expenses.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('expenses.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                        :title="!isSidebarExpanded ? 'Daily Expenses' : ''"
+                        class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                        :class="[
+                            isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                            route().current('expenses.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                        ]"
                     >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
-                        <span>Daily Expenses</span>
-                    </Link>
-
-                    <Link 
-                        :href="route('tada.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('tada.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
-                    >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span>Field TA/DA Claims</span>
+                        <span v-show="isSidebarExpanded" class="truncate">Daily Expenses</span>
                     </Link>
 
                     <Link 
                         :href="route('payroll.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('payroll.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                        :title="!isSidebarExpanded ? 'Staff Payroll' : ''"
+                        class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                        :class="[
+                            isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                            route().current('payroll.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                        ]"
                     >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span>Staff Payroll</span>
+                        <span v-show="isSidebarExpanded" class="truncate">Staff Payroll</span>
                     </Link>
 
                     <!-- Accounting & Finance -->
-                    <div class="pt-4 pb-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                    <div v-if="isSidebarExpanded" class="pt-4 pb-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
                         <span>Accounting & Finance</span>
                     </div>
+                    <div v-else class="my-2 border-t border-slate-800/70 mx-1.5"></div>
 
                     <Link 
                         :href="route('bank-accounts.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('bank-accounts.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                        :title="!isSidebarExpanded ? 'Bank & MFS Accounts' : ''"
+                        class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                        :class="[
+                            isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                            route().current('bank-accounts.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                        ]"
                     >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
                         </svg>
-                        <span>Bank & MFS Accounts</span>
+                        <span v-show="isSidebarExpanded" class="truncate">Bank & MFS Accounts</span>
                     </Link>
 
                     <Link 
                         :href="route('accounts.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('accounts.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                        :title="!isSidebarExpanded ? 'Chart of Accounts' : ''"
+                        class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                        :class="[
+                            isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                            route().current('accounts.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                        ]"
                     >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                         </svg>
-                        <span>Chart of Accounts</span>
+                        <span v-show="isSidebarExpanded" class="truncate">Chart of Accounts</span>
                     </Link>
 
                     <Link 
                         :href="route('journal.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('journal.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                        :title="!isSidebarExpanded ? 'Journal Entries' : ''"
+                        class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                        :class="[
+                            isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                            route().current('journal.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                        ]"
                     >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                         </svg>
-                        <span>Journal Entries</span>
+                        <span v-show="isSidebarExpanded" class="truncate">Journal Entries</span>
                     </Link>
 
+                    <!-- Bank Reconciliation (Hidden for now)
                     <Link 
                         :href="route('reconciliation.index')" 
                         class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
@@ -546,115 +782,152 @@ onMounted(() => {
                         </svg>
                         <span>Bank Reconciliation</span>
                     </Link>
+                    -->
 
                     <Link 
                         :href="route('reports.trial-balance')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('reports.trial-balance') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                        :title="!isSidebarExpanded ? 'Trial Balance' : ''"
+                        class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                        :class="[
+                            isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                            route().current('reports.trial-balance') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                        ]"
                     >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
                         </svg>
-                        <span>Trial Balance</span>
+                        <span v-show="isSidebarExpanded" class="truncate">Trial Balance</span>
                     </Link>
 
                     <Link 
                         :href="route('reports.profit-loss')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('reports.profit-loss') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                        :title="!isSidebarExpanded ? 'Profit & Loss' : ''"
+                        class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                        :class="[
+                            isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                            route().current('reports.profit-loss') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                        ]"
                     >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                         </svg>
-                        <span>Profit & Loss</span>
+                        <span v-show="isSidebarExpanded" class="truncate">Profit & Loss</span>
                     </Link>
 
                     <Link 
                         :href="route('reports.balance-sheet')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('reports.balance-sheet') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                        :title="!isSidebarExpanded ? 'Balance Sheet' : ''"
+                        class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                        :class="[
+                            isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                            route().current('reports.balance-sheet') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                        ]"
                     >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <span>Balance Sheet</span>
+                        <span v-show="isSidebarExpanded" class="truncate">Balance Sheet</span>
                     </Link>
 
                     <Link 
                         :href="route('reports.general-ledger')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('reports.general-ledger') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                        :title="!isSidebarExpanded ? 'General Ledger' : ''"
+                        class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                        :class="[
+                            isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                            route().current('reports.general-ledger') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                        ]"
                     >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3V7c0-2-1.5-3-3.5-3h-9C5.5 4 4 5 4 7zm0 3h16M8 4v3m8-3v3" />
                         </svg>
-                        <span>General Ledger</span>
+                        <span v-show="isSidebarExpanded" class="truncate">General Ledger</span>
                     </Link>
 
                     <!-- Analytics -->
-                    <div class="pt-4 pb-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                    <div v-if="isSidebarExpanded" class="pt-4 pb-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
                         <span>Analytics</span>
                     </div>
+                    <div v-else class="my-2 border-t border-slate-800/70 mx-1.5"></div>
 
                     <Link 
                         :href="route('reports.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('reports.index') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                        :title="!isSidebarExpanded ? 'Reports & Valuation' : ''"
+                        class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                        :class="[
+                            isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                            route().current('reports.index') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                        ]"
                     >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
-                        <span>Reports & Valuation</span>
+                        <span v-show="isSidebarExpanded" class="truncate">Reports & Valuation</span>
                     </Link>
 
                     <!-- Settings & Team -->
-                    <div class="pt-4 pb-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                    <div v-if="isSidebarExpanded" class="pt-4 pb-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
                         <span>Settings & Team</span>
                     </div>
+                    <div v-else class="my-2 border-t border-slate-800/70 mx-1.5"></div>
 
                     <Link 
                         :href="route('settings.company')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('settings.company') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                        :title="!isSidebarExpanded ? 'Company & Branding' : ''"
+                        class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                        :class="[
+                            isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                            route().current('settings.company') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                        ]"
                     >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        <span>Company & Branding</span>
+                        <span v-show="isSidebarExpanded" class="truncate">Company & Branding</span>
                     </Link>
 
                     <Link 
                         :href="route('subscription.index')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('subscription.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                        :title="!isSidebarExpanded ? 'Subscription & Billing' : ''"
+                        class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                        :class="[
+                            isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                            route().current('subscription.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                        ]"
                     >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                         </svg>
-                        <span>Subscription & Billing</span>
+                        <span v-show="isSidebarExpanded" class="truncate">Subscription & Billing</span>
                     </Link>
 
                     <Link 
                         :href="route('settings.team')" 
-                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                        :class="route().current('settings.team') || route().current('teams.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'"
+                        :title="!isSidebarExpanded ? 'Team & Roles' : ''"
+                        class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                        :class="[
+                            isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                            route().current('settings.team') || route().current('teams.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                        ]"
                     >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                         </svg>
-                        <span>Team & Roles</span>
+                        <span v-show="isSidebarExpanded" class="truncate">Team & Roles</span>
                     </Link>
 
                     <div v-if="isImpersonating" class="pt-3 pb-1">
                         <a 
                             :href="route('admin.exit-tenant')" 
-                            class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 hover:text-amber-300 transition-all"
+                            :title="!isSidebarExpanded ? 'Exit Tenant Workspace' : ''"
+                            class="flex items-center rounded-xl text-xs font-bold bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 hover:text-amber-300 transition-all overflow-hidden whitespace-nowrap"
+                            :class="isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5'"
                         >
-                            <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="w-4 h-4 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
-                            <span>Exit Tenant Workspace</span>
+                            <span v-show="isSidebarExpanded" class="truncate">Exit Tenant Workspace</span>
                         </a>
                     </div>
                     </template>
@@ -664,7 +937,10 @@ onMounted(() => {
         </aside>
 
         <!-- Main Content Area -->
-        <div class="flex-1 md:pl-64 flex flex-col min-h-screen min-w-0 w-full">
+        <div 
+            class="flex-1 flex flex-col min-h-screen min-w-0 w-full transition-[padding] duration-300"
+            :class="isSidebarPinned ? 'md:pl-64' : 'md:pl-[72px]'"
+        >
             <!-- Sticky Impersonation Alert Banner for Super Admin -->
             <div 
                 v-if="isImpersonating" 
@@ -694,12 +970,24 @@ onMounted(() => {
             <!-- Top App Bar -->
             <header class="h-16 bg-white border-b border-slate-200 px-4 md:px-8 flex items-center justify-between sticky top-0 z-40 shadow-xs">
                 <div class="flex items-center gap-3 min-w-0 flex-1 mr-4">
+                    <!-- Mobile Hamburger -->
                     <button 
                         @click="sidebarOpen = true" 
                         class="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 shrink-0"
                     >
                         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <!-- Desktop Sidebar Toggle -->
+                    <button 
+                        @click="togglePinSidebar" 
+                        type="button"
+                        :title="isSidebarPinned ? 'Collapse to icon sidebar (expand on hover)' : 'Pin sidebar open'"
+                        class="hidden md:inline-flex items-center justify-center p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 shrink-0 transition-colors"
+                    >
+                        <svg class="w-5 h-5 transition-transform duration-200" :class="isSidebarPinned ? '' : 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
                         </svg>
                     </button>
                     <slot name="header">
@@ -714,7 +1002,20 @@ onMounted(() => {
                     </slot>
                 </div>
 
-                <div class="flex items-center gap-3 shrink-0">
+                <div class="flex items-center gap-2.5 sm:gap-3 shrink-0">
+                    <!-- POS Quick Launch Button -->
+                    <Link
+                        v-if="showTenantSidebar"
+                        :href="route('pos.index')"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold text-xs shadow-sm shadow-indigo-600/30 transition-all hover:scale-[1.03] active:scale-[0.98]"
+                        title="Open Point of Sale Terminal"
+                    >
+                        <svg class="w-4 h-4 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span class="tracking-wide">POS</span>
+                    </Link>
+
                     <!-- Quick Currency Pill -->
                     <div v-if="currentTeam" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-medium border border-slate-200">
                         <span class="text-indigo-600 font-bold">{{ currentTeam.currency_symbol || '৳' }}</span>

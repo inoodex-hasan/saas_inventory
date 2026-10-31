@@ -1,7 +1,8 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 
 const props = defineProps({
     orders: Array,
@@ -23,6 +24,14 @@ const form = useForm({
 });
 
 const selectedOrder = ref(null);
+
+const orderOptions = computed(() => {
+    return (props.orders || []).map(o => ({
+        id: o.id,
+        label: `${o.order_number} — ${o.customer?.name || 'Walk-in'}`,
+        sublabel: `Warehouse: ${o.warehouse?.name || 'N/A'}${o.status ? ' • Status: ' + o.status.toUpperCase() : ''}`,
+    }));
+});
 
 function updateSelectedOrder() {
     if (!form.sales_order_id) {
@@ -48,6 +57,10 @@ watch(() => form.sales_order_id, () => {
 }, { immediate: true });
 
 function submit() {
+    if (!form.sales_order_id) {
+        form.errors.sales_order_id = 'Please select a sales order';
+        return;
+    }
     form.post(route('challans.store'));
 }
 </script>
@@ -79,16 +92,14 @@ function submit() {
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4 border-b border-slate-100">
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Select Sales Order / Invoice *</label>
-                        <select
+                        <SearchableSelect
                             v-model="form.sales_order_id"
-                            required
-                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-cyan-500 font-medium"
-                        >
-                            <option value="" disabled>-- Select Confirmed Sales Order --</option>
-                            <option v-for="o in orders" :key="o.id" :value="o.id">
-                                {{ o.order_number }} - {{ o.customer?.name }} (Warehouse: {{ o.warehouse?.name }})
-                            </option>
-                        </select>
+                            :options="orderOptions"
+                            value-key="id"
+                            label-key="label"
+                            sublabel-key="sublabel"
+                            :error="form.errors.sales_order_id"
+                        />
                         <div v-if="form.errors.sales_order_id" class="text-xs text-rose-500 mt-1">{{ form.errors.sales_order_id }}</div>
                     </div>
 

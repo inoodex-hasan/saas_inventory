@@ -23,14 +23,14 @@ class WarrantyController extends Controller
 
         $query = ProductSerial::where('team_id', $teamId)
             ->with(['product', 'warehouse', 'customer', 'salesOrder', 'purchaseOrder.supplier'])
-            ->when($search, function ($q, $search) {
+            ->when($request->filled('search'), function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('serial_number', 'like', "%{$search}%")
                         ->orWhereHas('product', fn ($p) => $p->where('name', 'like', "%{$search}%")->orWhere('sku', 'like', "%{$search}%"))
                         ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%"));
                 });
             })
-            ->when($warehouseFilter, fn ($q, $wid) => $q->where('warehouse_id', $wid));
+            ->when($request->filled('warehouse_id'), fn ($q) => $q->where('warehouse_id', $warehouseFilter));
 
         if ($statusFilter === 'active') {
             $query->where('status', 'sold')->whereNotNull('warranty_expires_at')->where('warranty_expires_at', '>', now());

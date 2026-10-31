@@ -20,10 +20,12 @@ class Customer extends Model
         'company_name',
         'tax_number',
         'address',
+        'opening_balance',
         'is_active',
     ];
 
     protected $casts = [
+        'opening_balance' => 'decimal:2',
         'is_active' => 'boolean',
     ];
 
@@ -32,10 +34,6 @@ class Customer extends Model
         return $this->hasMany(SalesOrder::class);
     }
 
-    public function recurringInvoices(): HasMany
-    {
-        return $this->hasMany(RecurringInvoice::class);
-    }
 
     public function getShippingAddressAttribute(): ?string
     {

@@ -34,18 +34,19 @@ const convertForm = useForm({
 });
 
 function applyFilter() {
-    router.get(route('quotations.index'), {
-        search: search.value,
-        status: status.value,
-        customer_id: customerId.value,
-    }, { preserveState: true, replace: true });
+    const params = {};
+    if (search.value) params.search = search.value;
+    if (status.value) params.status = status.value;
+    if (customerId.value) params.customer_id = customerId.value;
+
+    router.get(route('quotations.index'), params, { preserveState: true, replace: true });
 }
 
 function resetFilter() {
     search.value = '';
     status.value = '';
     customerId.value = '';
-    applyFilter();
+    router.get(route('quotations.index'), {}, { preserveState: false, replace: true });
 }
 
 function openConvertModal(q) {
@@ -123,7 +124,6 @@ function deleteQuotation(q) {
                         v-model="search"
                         @keyup.enter="applyFilter"
                         type="text"
-                        placeholder="Search quotation #, customer..."
                         class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
                     />
                     <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -179,18 +179,18 @@ function deleteQuotation(q) {
                     <table class="w-full text-left text-sm">
                         <thead class="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                             <tr>
-                                <th class="py-3.5 px-4">Quotation #</th>
-                                <th class="py-3.5 px-4">Customer</th>
-                                <th class="py-3.5 px-4">Date Issued</th>
-                                <th class="py-3.5 px-4">Valid Until</th>
-                                <th class="py-3.5 px-4">Total Amount</th>
-                                <th class="py-3.5 px-4">Status</th>
-                                <th class="py-3.5 px-4 text-right">Actions</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Quotation #</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Customer</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Date Issued</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Valid Until</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Total Amount</th>
+                                <th class="py-3.5 px-4 whitespace-nowrap">Status</th>
+                                <th class="py-3.5 px-4 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-slate-700">
                             <tr v-for="q in quotations.data" :key="q.id" class="hover:bg-slate-50/70 transition">
-                                <td class="py-3.5 px-4 font-semibold text-slate-900">
+                                <td class="py-3.5 px-4 font-semibold text-slate-900 whitespace-nowrap">
                                     <button
                                         type="button"
                                         @click="openViewModal(q)"
@@ -204,22 +204,22 @@ function deleteQuotation(q) {
                                         </svg>
                                     </button>
                                 </td>
-                                <td class="py-3.5 px-4 font-medium text-slate-800">
-                                    {{ q.customer?.name }}
+                                <td class="py-3.5 px-4 font-medium text-slate-800 whitespace-nowrap">
+                                    <div class="max-w-[180px] lg:max-w-[240px] truncate" :title="q.customer?.name">{{ q.customer?.name }}</div>
                                 </td>
-                                <td class="py-3.5 px-4 text-xs text-slate-600 font-medium">
+                                <td class="py-3.5 px-4 text-xs text-slate-600 font-medium whitespace-nowrap">
                                     {{ formatDate(q.quotation_date) }}
                                 </td>
-                                <td class="py-3.5 px-4 text-xs text-slate-600 font-medium">
+                                <td class="py-3.5 px-4 text-xs text-slate-600 font-medium whitespace-nowrap">
                                     {{ formatDate(q.valid_until) }}
                                 </td>
-                                <td class="py-3.5 px-4 font-bold text-slate-900">
+                                <td class="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">
                                     <CurrencyDisplay :amount="q.total_amount" />
                                 </td>
-                                <td class="py-3.5 px-4">
+                                <td class="py-3.5 px-4 whitespace-nowrap">
                                     <StatusBadge :status="q.status" />
                                 </td>
-                                <td class="py-3.5 px-4 text-right">
+                                <td class="py-3.5 px-4 text-right whitespace-nowrap">
                                     <ActionDropdown align="right">
                                         <div class="p-1">
                                             <button

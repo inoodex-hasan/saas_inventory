@@ -21,20 +21,20 @@ class QuotationController extends Controller
     {
         $teamId = Auth::user()->current_team_id;
 
-        $search = $request->input('search', '');
-        $status = $request->input('status', '');
+        $search = $request->input('search');
+        $status = $request->input('status');
         $customerId = $request->input('customer_id');
 
         $query = Quotation::where('team_id', $teamId)
             ->with(['customer', 'items.product'])
-            ->when($search, function ($q, $search) {
+            ->when($request->filled('search'), function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('quotation_number', 'like', "%{$search}%")
                         ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%"));
                 });
             })
-            ->when($status !== '', fn ($q) => $q->where('status', $status))
-            ->when($customerId, fn ($q, $id) => $q->where('customer_id', $id));
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $status))
+            ->when($request->filled('customer_id'), fn ($q) => $q->where('customer_id', $customerId));
 
         $quotations = $query->latest('id')->paginate(15)->withQueryString();
 
@@ -65,7 +65,31 @@ class QuotationController extends Controller
         $teamId = Auth::user()->current_team_id;
 
         $customers = Customer::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
-        $products = Product::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
+        $products = Product::where('team_id', $teamId)
+            ->where('is_active', true)
+            ->with(['stockLevels' => fn ($q) => $q->where('team_id', $teamId)])
+            ->orderBy('name')
+            ->get()
+            ->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'sku' => $p->sku,
+                    'barcode' => $p->barcode,
+                    'unit' => $p->unit,
+                    'cost_price' => (float) $p->cost_price,
+                    'unit_price' => (float) ($p->unit_price ?? $p->selling_price),
+                    'warranty_days' => (int) ($p->warranty_days ?? 0),
+                    'stocks' => $p->stockLevels->mapWithKeys(fn ($sl) => [
+                        $sl->warehouse_id => [
+                            'quantity' => (float) $sl->quantity,
+                            'reserved' => (float) ($sl->reserved_quantity ?? 0),
+                            'available' => (float) max(0, $sl->quantity - ($sl->reserved_quantity ?? 0)),
+                        ]
+                    ]),
+                    'total_stock' => (float) $p->stockLevels->sum('quantity'),
+                ];
+            });
         $warehouses = Warehouse::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
 
         $prefix = 'QT-' . Carbon::now()->format('Ymd') . '-';
@@ -185,7 +209,31 @@ class QuotationController extends Controller
         $quotation->load(['customer', 'items.product']);
 
         $customers = Customer::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
-        $products = Product::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
+        $products = Product::where('team_id', $teamId)
+            ->where('is_active', true)
+            ->with(['stockLevels' => fn ($q) => $q->where('team_id', $teamId)])
+            ->orderBy('name')
+            ->get()
+            ->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'sku' => $p->sku,
+                    'barcode' => $p->barcode,
+                    'unit' => $p->unit,
+                    'cost_price' => (float) $p->cost_price,
+                    'unit_price' => (float) ($p->unit_price ?? $p->selling_price),
+                    'warranty_days' => (int) ($p->warranty_days ?? 0),
+                    'stocks' => $p->stockLevels->mapWithKeys(fn ($sl) => [
+                        $sl->warehouse_id => [
+                            'quantity' => (float) $sl->quantity,
+                            'reserved' => (float) ($sl->reserved_quantity ?? 0),
+                            'available' => (float) max(0, $sl->quantity - ($sl->reserved_quantity ?? 0)),
+                        ]
+                    ]),
+                    'total_stock' => (float) $p->stockLevels->sum('quantity'),
+                ];
+            });
         $warehouses = Warehouse::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
 
         return Inertia::render('Quotations/Edit', [

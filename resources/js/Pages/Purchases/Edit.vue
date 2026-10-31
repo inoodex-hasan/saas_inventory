@@ -146,8 +146,6 @@ function submit() {
                         :options="suppliers"
                         labelKey="name"
                         sublabelKey="phone"
-                        placeholder="Search & select vendor by name or phone..."
-                        searchPlaceholder="Type vendor name or phone..."
                         :error="form.errors.supplier_id"
                     />
                 </div>
@@ -217,29 +215,27 @@ function submit() {
                     </button>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
+                <div class="overflow-x-auto min-h-[280px]">
+                    <table class="w-full min-w-[820px] text-left text-xs table-fixed">
                         <thead>
                             <tr class="border-b border-slate-200 text-slate-400 uppercase text-[10px] font-bold">
-                                <th class="py-2.5 w-1/3">Product *</th>
-                                <th class="py-2.5 text-center w-28">Quantity *</th>
-                                <th class="py-2.5 text-right w-28">Unit Cost *</th>
-                                <th class="py-2.5 w-32">Batch / Lot #</th>
-                                <th class="py-2.5 w-28">Expiry Date</th>
-                                <th class="py-2.5 text-right w-28">Subtotal</th>
-                                <th class="py-2.5 w-10"></th>
+                                <th class="py-2.5 pr-2 w-auto min-w-[240px]">Product *</th>
+                                <th class="py-2.5 px-1 text-center w-24">Quantity *</th>
+                                <th class="py-2.5 px-1 text-right w-28">Unit Cost *</th>
+                                <th class="py-2.5 px-1 w-28">Batch / Lot #</th>
+                                <th class="py-2.5 px-1 w-32">Expiry Date</th>
+                                <th class="py-2.5 pl-2 text-right w-28">Subtotal</th>
+                                <th class="py-2.5 text-center w-10"></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <tr v-for="(it, idx) in form.items" :key="idx">
-                                <td class="py-2.5 pr-2">
+                            <tr v-for="(it, idx) in form.items" :key="idx" class="align-middle">
+                                <td class="py-2.5 pr-2 align-middle min-w-0">
                                     <SearchableSelect 
                                         v-model="it.product_id" 
                                         :options="products"
                                         labelKey="name"
                                         sublabelKey="sku"
-                                        placeholder="Search product..."
-                                        searchPlaceholder="Type name or SKU..."
                                         size="compact"
                                         @change="() => onProductSelected(it)"
                                     />
@@ -248,54 +244,54 @@ function submit() {
                                     </div>
                                 </td>
 
-                                <td class="py-2.5 px-1 text-center">
+                                <td class="py-2.5 px-1 text-center align-middle">
                                     <input 
                                         type="number" 
                                         step="0.01" 
                                         :min="it.received_quantity || 0.01"
                                         v-model.number="it.quantity_ordered" 
                                         required
-                                        class="w-full px-2 py-1.5 text-center rounded-lg border border-slate-200 text-xs font-mono font-bold"
+                                        class="w-full h-[34px] px-2 text-center rounded-lg border border-slate-200 text-xs font-mono font-bold focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                                     />
                                 </td>
 
-                                <td class="py-2.5 px-1 text-right">
+                                <td class="py-2.5 px-1 text-right align-middle">
                                     <input 
                                         type="number" 
                                         step="0.01" 
                                         min="0"
                                         v-model.number="it.unit_cost" 
                                         required
-                                        class="w-full px-2 py-1.5 text-right rounded-lg border border-slate-200 text-xs font-mono font-bold text-slate-800"
+                                        class="w-full h-[34px] px-2 text-right rounded-lg border border-slate-200 text-xs font-mono font-bold text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                                     />
                                 </td>
 
-                                <td class="py-2.5 px-1">
+                                <td class="py-2.5 px-1 align-middle">
                                     <input 
                                         type="text" 
                                         v-model="it.batch_number" 
-class="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
+                                        class="w-full h-[34px] px-2 rounded-lg border border-slate-200 text-xs font-mono focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                                     />
                                 </td>
 
-                                <td class="py-2.5 px-1">
+                                <td class="py-2.5 px-1 align-middle">
                                     <input 
                                         type="date" 
                                         v-model="it.expiry_date" 
-                                        class="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
+                                        class="w-full h-[34px] px-2 rounded-lg border border-slate-200 text-xs font-mono focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                                     />
                                 </td>
 
-                                <td class="py-2.5 pl-2 text-right font-mono font-bold text-slate-900">
+                                <td class="py-2.5 pl-2 text-right font-mono font-bold text-slate-900 align-middle whitespace-nowrap text-xs">
                                     <CurrencyDisplay :amount="(Number(it.quantity_ordered) || 0) * (Number(it.unit_cost) || 0)" />
                                 </td>
 
-                                <td class="py-2.5 pl-2 text-center">
+                                <td class="py-2.5 text-center align-middle">
                                     <button 
                                         type="button" 
                                         @click="removeItemRow(idx)"
                                         :disabled="it.received_quantity > 0"
-                                        class="text-slate-400 hover:text-rose-600 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                                        class="text-slate-400 hover:text-rose-600 disabled:opacity-30 disabled:cursor-not-allowed transition p-1 rounded-md hover:bg-slate-100 inline-flex items-center justify-center"
                                         title="Remove Line"
                                     >
                                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

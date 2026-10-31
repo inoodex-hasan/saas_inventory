@@ -24,6 +24,7 @@ class ServiceTicket extends Model
         'problem_description',
         'initial_diagnosis',
         'technician_id',
+        'technician_name',
         'status',
         'priority',
         'service_charge',
@@ -33,6 +34,8 @@ class ServiceTicket extends Model
         'paid_amount',
         'due_amount',
         'payment_status',
+        'payment_method',
+        'financial_account_id',
         'warranty_days',
         'received_date',
         'estimated_completion_date',
@@ -84,5 +87,10 @@ class ServiceTicket extends Model
     public function parts(): HasMany
     {
         return $this->hasMany(ServiceTicketItem::class);
+    }
+
+    public function financialAccount(): BelongsTo
+    {
+        return $this->belongsTo(FinancialAccount::class);
     }
 }
