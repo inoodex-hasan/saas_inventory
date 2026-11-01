@@ -419,4 +419,20 @@ class WorkshopServiceTest extends TestCase
         $response = $this->get(route('services.show', $ticket->id));
         $this->assertContains($response->status(), [403, 404]);
     }
+
+    public function test_cannot_assign_technician_from_another_tenant(): void
+    {
+        $otherUser = User::factory()->withPersonalTeam()->create();
+
+        $response = $this->post(route('services.store'), [
+            'customer_mode' => 'existing',
+            'customer_id' => $this->customer->id,
+            'device_name' => 'Dell Laptop',
+            'priority' => 'normal',
+            'received_date' => now()->toDateString(),
+            'technician_id' => $otherUser->id,
+        ]);
+
+        $response->assertSessionHasErrors('technician_id');
+    }
 }

@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ChartOfAccount;
 use App\Models\FinancialAccount;
 use App\Models\FinancialTransaction;
+use App\Models\FiscalYear;
+use App\Models\JournalEntry;
+use App\Services\AccountingService;
 use App\Services\FinancialAccountService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class FinancialAccountController extends Controller
@@ -115,6 +120,8 @@ class FinancialAccountController extends Controller
                     'description' => 'Opening balance recorded upon account creation',
                     'created_by' => Auth::id(),
                 ]);
+
+                $this->recordAccountOpeningJournalEntry($teamId, $account, $opening);
             }
 
             return redirect()->back()->with('success', "Account '{$account->name}' created successfully.");
@@ -193,11 +200,71 @@ class FinancialAccountController extends Controller
         $teamId = Auth::user()->current_team_id;
         abort_if($account->team_id !== $teamId, 403);
 
-        if ($account->transactions()->where('reference_number', '!=', 'INIT-BAL')->exists()) {
-            return redirect()->back()->with('error', "Cannot delete account '{$account->name}' because it contains transaction history. You can deactivate it instead.");
-        }
+        return DB::transaction(function () use ($account, $teamId) {
+            if ($account->transactions()->where('reference_number', '!=', 'INIT-BAL')->exists()) {
+                return redirect()->back()->with('error', "Cannot delete account '{$account->name}' because it contains transaction history. You can deactivate it instead.");
+            }
 
-        $account->delete();
-        return redirect()->back()->with('success', "Account deleted successfully.");
+            // Remove associated initial journal entries
+            JournalEntry::where('team_id', $teamId)
+                ->where('reference_type', FinancialAccount::class)
+                ->where('reference_id', $account->id)
+                ->each(fn ($entry) => $entry->delete());
+
+            $account->transactions()->delete();
+            $account->delete();
+
+            return redirect()->back()->with('success', "Account deleted successfully.");
+        });
+    }
+
+    protected function recordAccountOpeningJournalEntry(int $teamId, FinancialAccount $account, float $amount): void
+    {
+        try {
+            /** @var AccountingService $accountingService */
+            $accountingService = app(AccountingService::class);
+            $accountingService->ensureDefaultAccounts($teamId);
+
+            $assetCode = $account->type === 'cash' ? '1010' : '1020';
+            $assetAccount = ChartOfAccount::where('team_id', $teamId)->where('account_code', $assetCode)->first();
+            if (!$assetAccount) {
+                $assetAccount = ChartOfAccount::where('team_id', $teamId)
+                    ->whereIn('account_code', ['1010', '1020'])
+                    ->first();
+            }
+
+            $equityAccount = ChartOfAccount::where('team_id', $teamId)
+                ->whereIn('account_code', ['3020', '3010'])
+                ->orderBy('account_code', 'desc')
+                ->first();
+
+            if ($assetAccount && $equityAccount) {
+                $fiscalYear = FiscalYear::where('team_id', $teamId)->where('is_closed', false)->first();
+
+                $typeLabel = strtoupper($account->type);
+                $accountingService->recordJournalEntry([
+                    'fiscal_year_id' => $fiscalYear?->id,
+                    'entry_date' => now()->toDateString(),
+                    'reference_type' => FinancialAccount::class,
+                    'reference_id' => $account->id,
+                    'narration' => "Opening balance for Financial Account: {$account->name} ({$typeLabel})",
+                ], [
+                    [
+                        'chart_of_account_id' => $assetAccount->id,
+                        'debit' => $amount,
+                        'credit' => 0,
+                        'memo' => "{$assetAccount->account_name} - Opening balance for {$account->name}",
+                    ],
+                    [
+                        'chart_of_account_id' => $equityAccount->id,
+                        'debit' => 0,
+                        'credit' => $amount,
+                        'memo' => "Opening Balance Equity - Financial Account {$account->name}",
+                    ],
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Could not record journal entry for financial account opening balance: " . $e->getMessage());
+        }
     }
 }

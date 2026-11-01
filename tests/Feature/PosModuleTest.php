@@ -202,5 +202,97 @@ class PosModuleTest extends TestCase
         $this->cashAccount->refresh();
         $this->assertEquals(8500.00, (float) $this->cashAccount->current_balance);
     }
+
+    public function test_pos_fails_gracefully_when_stock_is_insufficient(): void
+    {
+        $response = $this->postJson(route('pos.store'), [
+            'customer_id' => $this->customer->id,
+            'items' => [
+                [
+                    'product_id' => $this->product->id,
+                    'quantity' => 100, // Available is only 25
+                    'unit_price' => 1750.00,
+                ],
+            ],
+            'subtotal' => 175000.00,
+            'total_amount' => 175000.00,
+            'paid_amount' => 175000.00,
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJson([
+            'success' => false,
+        ]);
+        $this->assertStringContainsString('Insufficient stock in warehouse', $response->json('message'));
+    }
+
+    public function test_pos_multi_warehouse_fulfillment_resolves_warehouse_with_complete_stock(): void
+    {
+        $warehouse2 = Warehouse::create([
+            'team_id' => $this->team->id,
+            'name' => 'Secondary Fulfillment Depot',
+            'code' => 'DEP-02',
+            'is_active' => true,
+        ]);
+
+        $product2 = Product::create([
+            'team_id' => $this->team->id,
+            'category_id' => $this->category->id,
+            'name' => 'Wireless Mouse',
+            'sku' => 'WM-01',
+            'unit' => 'pcs',
+            'cost_price' => 300.00,
+            'unit_price' => 500.00,
+            'is_active' => true,
+        ]);
+
+        // In warehouse 1 ($this->warehouse): Product 1 has 25 stock, Product 2 has 0 stock.
+        // In warehouse 2: Both Product 1 and Product 2 have 10 stock.
+        StockLevel::create([
+            'team_id' => $this->team->id,
+            'warehouse_id' => $warehouse2->id,
+            'product_id' => $this->product->id,
+            'quantity' => 10.0,
+            'reserved_quantity' => 0.0,
+        ]);
+
+        StockLevel::create([
+            'team_id' => $this->team->id,
+            'warehouse_id' => $warehouse2->id,
+            'product_id' => $product2->id,
+            'quantity' => 10.0,
+            'reserved_quantity' => 0.0,
+        ]);
+
+        $response = $this->postJson(route('pos.store'), [
+            'customer_id' => $this->customer->id,
+            'items' => [
+                [
+                    'product_id' => $this->product->id,
+                    'quantity' => 2,
+                    'unit_price' => 1750.00,
+                ],
+                [
+                    'product_id' => $product2->id,
+                    'quantity' => 3,
+                    'unit_price' => 500.00,
+                ],
+            ],
+            'subtotal' => 5000.00,
+            'total_amount' => 5000.00,
+            'paid_amount' => 5000.00,
+            'financial_account_id' => $this->cashAccount->id,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        // Warehouse 2 should have been picked because Warehouse 1 cannot fulfill Product 2
+        $order = SalesOrder::where('team_id', $this->team->id)->latest('id')->first();
+        $this->assertEquals($warehouse2->id, $order->warehouse_id);
+
+        $stockP2 = StockLevel::where('warehouse_id', $warehouse2->id)->where('product_id', $product2->id)->first();
+        $this->assertEquals(7.0, (float) $stockP2->quantity); // 10 - 3 = 7
+    }
 }
 

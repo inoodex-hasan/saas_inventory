@@ -262,4 +262,23 @@ class HrPayrollAndExpenseTest extends TestCase
         $response = $this->get(route('payroll.pdf', $otherPayroll->id));
         $this->assertTrue(in_array($response->status(), [403, 404]));
     }
+
+    public function test_cannot_generate_payroll_for_cross_tenant_employee(): void
+    {
+        $otherUser = User::factory()->withPersonalTeam()->create();
+        $otherEmployee = Employee::create([
+            'team_id' => $otherUser->currentTeam->id,
+            'employee_code' => 'EMP-OTHER-1',
+            'name' => 'Foreign Worker',
+            'designation' => 'Staff',
+            'basic_salary' => 50000,
+        ]);
+
+        $response = $this->post(route('payroll.generate'), [
+            'employee_id' => $otherEmployee->id,
+            'month_year' => '2026-11',
+        ]);
+
+        $response->assertSessionHasErrors('employee_id');
+    }
 }

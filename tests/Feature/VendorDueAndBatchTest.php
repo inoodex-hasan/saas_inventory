@@ -174,16 +174,16 @@ class VendorDueAndBatchTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('VendorDues/Index')
-            ->has('vendors', 1)
-            ->where('vendors.0.name', 'Bengal Petrochemicals Ltd.')
-            ->where('vendors.0.outstanding_due', 20000)
+            ->has('vendors.data', 1)
+            ->where('vendors.data.0.name', 'Bengal Petrochemicals Ltd.')
+            ->where('vendors.data.0.outstanding_due', 20000)
         );
 
         $searchResponse = $this->get(route('vendor-dues.index', ['search' => 'NonExistentVendor']));
         $searchResponse->assertStatus(200);
         $searchResponse->assertInertia(fn (AssertableInertia $page) => $page
             ->component('VendorDues/Index')
-            ->has('vendors', 0)
+            ->has('vendors.data', 0)
         );
     }
 

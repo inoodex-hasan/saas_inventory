@@ -44,24 +44,27 @@ class VendorDueController extends Controller
                 $q->where('status', '!=', 'cancelled')->where('due_amount', '>', 0)->latest('id');
             }]);
 
-        $suppliers = $query->latest('id')->get()->map(function ($supplier) {
-            $totalProcured = (float) ($supplier->total_procured ?? 0);
-            $totalPaid = (float) ($supplier->total_paid ?? 0);
-            $outstandingDue = (float) ($supplier->outstanding_due ?? 0);
-            $dueOrders = $supplier->purchaseOrders->values();
+        $suppliers = $query->latest('id')
+            ->paginate(15)
+            ->withQueryString()
+            ->through(function ($supplier) {
+                $totalProcured = (float) ($supplier->total_procured ?? 0);
+                $totalPaid = (float) ($supplier->total_paid ?? 0);
+                $outstandingDue = (float) ($supplier->outstanding_due ?? 0);
+                $dueOrders = $supplier->purchaseOrders->values();
 
-            return [
-                'id' => $supplier->id,
-                'name' => $supplier->name,
-                'phone' => $supplier->phone,
-                'contact_name' => $supplier->contact_name,
-                'address' => $supplier->address,
-                'total_procured' => $totalProcured,
-                'total_paid' => $totalPaid,
-                'outstanding_due' => $outstandingDue,
-                'due_orders' => $dueOrders,
-            ];
-        });
+                return [
+                    'id' => $supplier->id,
+                    'name' => $supplier->name,
+                    'phone' => $supplier->phone,
+                    'contact_name' => $supplier->contact_name,
+                    'address' => $supplier->address,
+                    'total_procured' => $totalProcured,
+                    'total_paid' => $totalPaid,
+                    'outstanding_due' => $outstandingDue,
+                    'due_orders' => $dueOrders,
+                ];
+            });
 
         // Metrics
         $totalProcuredAll = (float) PurchaseOrder::where('team_id', $teamId)->where('status', '!=', 'cancelled')->sum('total_amount');

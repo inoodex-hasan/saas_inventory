@@ -67,7 +67,7 @@ class SuperAdminInertiaTest extends TestCase
         $this->assertEquals($this->clientTeam->id, $this->superAdmin->current_team_id);
 
         // Exit tenant context
-        $exitResponse = $this->actingAs($this->superAdmin)->get(route('admin.exit-tenant'));
+        $exitResponse = $this->actingAs($this->superAdmin)->post(route('admin.exit-tenant'));
         $exitResponse->assertRedirect(route('admin.dashboard'));
 
         $this->superAdmin->refresh();

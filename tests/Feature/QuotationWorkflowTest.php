@@ -183,4 +183,43 @@ class QuotationWorkflowTest extends TestCase
         $response->assertStatus(200);
         $response->assertHeader('content-type', 'application/pdf');
     }
+
+    public function test_cannot_convert_quotation_with_cross_tenant_warehouse(): void
+    {
+        $otherTeam = Team::factory()->create();
+        $otherWarehouse = Warehouse::create([
+            'team_id' => $otherTeam->id,
+            'name' => 'Competitor Depot',
+            'code' => 'COMP-01',
+            'is_default' => true,
+            'is_active' => true,
+        ]);
+
+        $quotation = Quotation::create([
+            'team_id' => $this->team->id,
+            'customer_id' => $this->customer->id,
+            'quotation_number' => 'QT-20261012-0051',
+            'status' => 'draft',
+            'quotation_date' => now()->toDateString(),
+            'subtotal' => 45000,
+            'total_amount' => 45000,
+        ]);
+
+        QuotationItem::create([
+            'team_id' => $this->team->id,
+            'quotation_id' => $quotation->id,
+            'product_id' => $this->product->id,
+            'quantity' => 1,
+            'unit_price' => 45000,
+            'subtotal' => 45000,
+        ]);
+
+        $response = $this->post(route('quotations.convert', $quotation->id), [
+            'warehouse_id' => $otherWarehouse->id,
+        ]);
+
+        $response->assertSessionHasErrors('warehouse_id');
+        $quotation->refresh();
+        $this->assertEquals('draft', $quotation->status);
+    }
 }

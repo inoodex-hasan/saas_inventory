@@ -246,7 +246,7 @@ onMounted(() => {
                 <div v-if="isImpersonating && currentTeam" class="p-3 border-b border-amber-500/30 bg-amber-950/40 shrink-0">
                     <div v-show="isSidebarExpanded" class="flex items-center justify-between mb-1">
                         <span class="text-[10px] uppercase font-bold text-amber-400 tracking-wider">Inspecting Tenant</span>
-                        <a :href="route('admin.exit-tenant')" class="text-[10px] font-bold text-amber-300 hover:text-white underline">Exit &rarr;</a>
+                        <Link :href="route('admin.exit-tenant')" method="post" as="button" class="text-[10px] font-bold text-amber-300 hover:text-white underline cursor-pointer">Exit &rarr;</Link>
                     </div>
                     <div class="flex items-center gap-2.5" :class="{ 'justify-center': !isSidebarExpanded }">
                         <div class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 font-bold text-xs shrink-0" :title="!isSidebarExpanded ? currentTeam.name : ''">
@@ -918,17 +918,19 @@ onMounted(() => {
                     </Link>
 
                     <div v-if="isImpersonating" class="pt-3 pb-1">
-                        <a 
+                        <Link 
                             :href="route('admin.exit-tenant')" 
+                            method="post"
+                            as="button"
                             :title="!isSidebarExpanded ? 'Exit Tenant Workspace' : ''"
-                            class="flex items-center rounded-xl text-xs font-bold bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 hover:text-amber-300 transition-all overflow-hidden whitespace-nowrap"
+                            class="w-full flex items-center rounded-xl text-xs font-bold bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 hover:text-amber-300 transition-all overflow-hidden whitespace-nowrap cursor-pointer"
                             :class="isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5'"
                         >
                             <svg class="w-4 h-4 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
                             <span v-show="isSidebarExpanded" class="truncate">Exit Tenant Workspace</span>
-                        </a>
+                        </Link>
                     </div>
                     </template>
                 </nav>
@@ -956,15 +958,17 @@ onMounted(() => {
                         Super Admin Mode: Viewing tenant workspace <strong class="underline decoration-white/40">{{ currentTeam?.name }}</strong>. All actions operate on this tenant.
                     </span>
                 </div>
-                <a 
+                <Link 
                     :href="route('admin.exit-tenant')" 
-                    class="ml-4 shrink-0 px-3 py-1 rounded-md bg-white text-amber-900 font-bold hover:bg-amber-50 text-[11px] shadow-xs transition-colors flex items-center gap-1.5"
+                    method="post"
+                    as="button"
+                    class="ml-4 shrink-0 px-3 py-1 rounded-md bg-white text-amber-900 font-bold hover:bg-amber-50 text-[11px] shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                     <span>Exit Workspace</span>
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
-                </a>
+                </Link>
             </div>
 
             <!-- Top App Bar -->
@@ -1214,16 +1218,18 @@ onMounted(() => {
                                     </svg>
                                     <span>Payment Verifications</span>
                                 </Link>
-                                <a 
+                                <Link 
                                     v-if="isImpersonating"
                                     :href="route('admin.exit-tenant')" 
-                                    class="flex items-center gap-2 px-4 py-2 text-xs text-amber-700 hover:bg-amber-100 font-bold transition cursor-pointer"
+                                    method="post"
+                                    as="button"
+                                    class="w-full text-left flex items-center gap-2 px-4 py-2 text-xs text-amber-700 hover:bg-amber-100 font-bold transition cursor-pointer"
                                 >
                                     <svg class="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                     </svg>
                                     <span>Exit Tenant Workspace &rarr;</span>
-                                </a>
+                                </Link>
                             </div>
 
                             <div class="py-1">

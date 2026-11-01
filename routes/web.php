@@ -168,6 +168,7 @@ Route::middleware([
     Route::get('/dues', [CustomerDueController::class, 'index'])->name('dues.index');
     Route::post('/dues/pay', [CustomerDueController::class, 'pay'])->name('dues.pay');
     Route::post('/dues/customer', [CustomerDueController::class, 'storeCustomer'])->name('dues.customer.store');
+    Route::put('/dues/customer/{customer}', [CustomerDueController::class, 'updateCustomer'])->name('dues.customer.update');
 
     // Customer Returns & RMA Workflows
     Route::get('/returns', [ProductReturnController::class, 'index'])->name('returns.index');
@@ -295,9 +296,9 @@ Route::middleware([
     Route::get('/accounting/reports/balance-sheet', [FinancialReportController::class, 'balanceSheet'])->name('reports.balance-sheet');
     Route::get('/accounting/reports/general-ledger', [FinancialReportController::class, 'generalLedger'])->name('reports.general-ledger');
 
-    // Bank Reconciliation (Disabled/Hidden for now)
-    // Route::get('/accounting/reconciliation', [FinancialReportController::class, 'reconciliation'])->name('reconciliation.index');
-    // Route::post('/accounting/reconciliation', [FinancialReportController::class, 'storeReconciliation'])->name('reconciliation.store');
+    // Bank Reconciliation
+    Route::get('/accounting/reconciliation', [FinancialReportController::class, 'reconciliation'])->name('reconciliation.index');
+    Route::post('/accounting/reconciliation', [FinancialReportController::class, 'storeReconciliation'])->name('reconciliation.store');
 
     // Financial Reports PDF Downloads
     Route::get('/accounting/reports/trial-balance/pdf', [PdfDocumentController::class, 'trialBalancePdf'])->name('pdf.trial-balance');
@@ -319,7 +320,7 @@ Route::middleware([
     Route::delete('/admin/tenants/{team}', [SuperAdminController::class, 'destroyTenant'])->name('admin.tenants.destroy');
     Route::post('/admin/tenants/{team}/toggle-status', [SuperAdminController::class, 'toggleStatus'])->name('admin.tenants.toggle-status');
     Route::post('/admin/tenants/{team}/switch', [SuperAdminController::class, 'switchToTenant'])->name('admin.tenants.switch');
-    Route::match(['get', 'post'], '/admin/exit-tenant', function () {
+    Route::post('/admin/exit-tenant', function () {
         $user = auth()->user();
         if ($user && $user->isSuperAdmin()) {
             $user->forceFill(['current_team_id' => null])->save();

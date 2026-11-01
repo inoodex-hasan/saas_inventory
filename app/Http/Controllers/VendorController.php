@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ChartOfAccount;
 use App\Models\FiscalYear;
+use App\Models\JournalEntry;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use App\Models\Warehouse;
@@ -12,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class VendorController extends Controller
@@ -189,6 +191,7 @@ class VendorController extends Controller
             'email' => 'nullable|email|max:255',
             'address' => 'required|string|max:500',
             'tax_number' => 'nullable|string|max:100',
+            'opening_balance' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
         ], [
             'name.required' => 'The vendor / supplier name is required.',
@@ -196,7 +199,96 @@ class VendorController extends Controller
             'address.required' => 'The vendor address is required.',
         ]);
 
-        $vendor->update($validated);
+        $oldOpeningBalance = round((float) ($vendor->opening_balance ?? 0), 2);
+        $newOpeningBalance = $request->has('opening_balance')
+            ? round((float) $request->input('opening_balance', 0), 2)
+            : $oldOpeningBalance;
+        $validated['opening_balance'] = $newOpeningBalance;
+
+        DB::transaction(function () use ($vendor, $validated, $oldOpeningBalance, $newOpeningBalance, $teamId) {
+            $prefix = 'PO-OPEN-' . str_pad((string) $vendor->id, 4, '0', STR_PAD_LEFT);
+            $po = PurchaseOrder::where('team_id', $teamId)
+                ->where('supplier_id', $vendor->id)
+                ->where('order_number', 'like', $prefix . '%')
+                ->first();
+
+            if ($po && $newOpeningBalance < (float) $po->paid_amount) {
+                throw ValidationException::withMessages([
+                    'opening_balance' => 'Opening balance cannot be less than already settled amount of ' . number_format($po->paid_amount, 2),
+                ]);
+            }
+
+            $vendor->update($validated);
+
+            if ($oldOpeningBalance != $newOpeningBalance) {
+                if ($po) {
+                    if ($newOpeningBalance <= 0 && (float) $po->paid_amount <= 0) {
+                        JournalEntry::where('reference_type', PurchaseOrder::class)
+                            ->where('reference_id', $po->id)
+                            ->delete();
+                        $po->delete();
+                    } else {
+                        $po->subtotal = $newOpeningBalance;
+                        $po->total_amount = $newOpeningBalance;
+                        $po->due_amount = max(0, $newOpeningBalance - (float) $po->paid_amount);
+                        if ($po->due_amount <= 0) {
+                            $po->payment_status = 'paid';
+                        } elseif ((float) $po->paid_amount > 0) {
+                            $po->payment_status = 'partially_paid';
+                        } else {
+                            $po->payment_status = 'unpaid';
+                        }
+                        $po->save();
+
+                        JournalEntry::where('reference_type', PurchaseOrder::class)
+                            ->where('reference_id', $po->id)
+                            ->delete();
+                        if ($newOpeningBalance > 0) {
+                            $this->recordVendorOpeningJournalEntry($teamId, $vendor, $po, $newOpeningBalance);
+                        }
+                    }
+                } elseif ($newOpeningBalance > 0) {
+                    $warehouse = Warehouse::where('team_id', $teamId)->where('is_default', true)->first()
+                        ?? Warehouse::where('team_id', $teamId)->first();
+
+                    if (!$warehouse) {
+                        $warehouse = Warehouse::create([
+                            'team_id' => $teamId,
+                            'name' => 'Main Warehouse',
+                            'code' => 'WH-01',
+                            'is_default' => true,
+                            'is_active' => true,
+                        ]);
+                    }
+
+                    $orderNumber = $prefix;
+                    while (PurchaseOrder::where('team_id', $teamId)->where('order_number', $orderNumber)->exists()) {
+                        $orderNumber .= '-' . rand(10, 99);
+                    }
+
+                    $purchaseOrder = PurchaseOrder::create([
+                        'team_id' => $teamId,
+                        'supplier_id' => $vendor->id,
+                        'warehouse_id' => $warehouse->id,
+                        'order_number' => $orderNumber,
+                        'status' => 'received',
+                        'payment_status' => 'unpaid',
+                        'order_date' => now()->toDateString(),
+                        'subtotal' => $newOpeningBalance,
+                        'tax_amount' => 0.00,
+                        'shipping_cost' => 0.00,
+                        'discount_amount' => 0.00,
+                        'total_amount' => $newOpeningBalance,
+                        'paid_amount' => 0.00,
+                        'due_amount' => $newOpeningBalance,
+                        'notes' => 'Opening balance due recorded on vendor update.',
+                        'created_by' => Auth::id(),
+                    ]);
+
+                    $this->recordVendorOpeningJournalEntry($teamId, $vendor, $purchaseOrder, $newOpeningBalance);
+                }
+            }
+        });
 
         return redirect()->back()->with('success', "Vendor '{$vendor->name}' updated successfully.");
     }

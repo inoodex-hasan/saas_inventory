@@ -316,7 +316,9 @@ class QuotationController extends Controller
         abort_if($quotation->team_id !== $teamId, 403);
 
         $validated = $request->validate([
-            'warehouse_id' => 'required|exists:warehouses,id',
+            'warehouse_id' => ['required', Rule::exists('warehouses', 'id')->where('team_id', $teamId)],
+        ], [
+            'warehouse_id.exists' => 'The selected fulfillment warehouse is invalid or does not belong to your workspace.',
         ]);
 
         $items = $quotation->items->map(function ($it) {

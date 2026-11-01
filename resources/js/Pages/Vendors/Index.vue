@@ -57,6 +57,7 @@ function openEditModal(v) {
     form.email = v.email || '';
     form.address = v.address || '';
     form.tax_number = v.tax_number || '';
+    form.opening_balance = Number(v.opening_balance) || 0;
     form.is_active = Boolean(v.is_active);
     isModalOpen.value = true;
 }
@@ -376,7 +377,7 @@ class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-
                         />
                     </div>
 
-                    <div v-if="!editingVendor" class="bg-amber-50/70 p-3.5 rounded-xl border border-amber-200/80">
+                    <div class="bg-amber-50/70 p-3.5 rounded-xl border border-amber-200/80">
                         <div class="flex items-center justify-between mb-1">
                             <label class="block text-xs font-bold text-amber-900">Opening Payable Due Balance (৳)</label>
                             <span class="text-[10px] text-amber-700 font-medium">Optional initial debt</span>
@@ -389,7 +390,7 @@ class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-
                             class="w-full px-3 py-2 rounded-xl text-xs font-mono font-bold text-slate-800 bg-white border border-amber-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                         />
                         <p class="text-[11px] text-amber-800/80 mt-1.5 leading-relaxed">
-                            If you owe this vendor an outstanding balance from prior purchases before using this system, enter it here. An initial opening payable invoice will be recorded in the vendor due ledger.
+                            If you owe this vendor an outstanding balance from prior purchases before using this software, enter it here. An opening payable invoice will be recorded or adjusted in the vendor due ledger.
                         </p>
                         <p v-if="form.errors.opening_balance" class="text-[11px] text-rose-600 mt-1">{{ form.errors.opening_balance }}</p>
                     </div>

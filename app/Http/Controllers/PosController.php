@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\InsufficientStockException;
+use App\Exceptions\InvalidStockOperationException;
 use App\Models\Brand;
 use App\Models\Customer;
 use App\Models\FinancialAccount;
@@ -247,20 +249,39 @@ class PosController extends Controller
                 // 3. Resolve Fulfillment Warehouse
                 $warehouseId = $validated['warehouse_id'] ?? null;
                 if (!$warehouseId) {
-                    $firstItem = $validated['items'][0] ?? null;
-                    if ($firstItem) {
-                        $whWithStock = \App\Models\StockLevel::where('team_id', $teamId)
-                            ->where('product_id', $firstItem['product_id'])
-                            ->when(!empty($firstItem['product_variant_id']), fn ($q) => $q->where('product_variant_id', $firstItem['product_variant_id']))
-                            ->where('quantity', '>', 0)
-                            ->value('warehouse_id');
-                        if ($whWithStock) {
-                            $warehouseId = $whWithStock;
-                        }
+                    $teamWarehouses = Warehouse::where('team_id', $teamId)->get();
+                    $defaultWarehouse = $teamWarehouses->firstWhere('is_default', true) ?? $teamWarehouses->first();
+
+                    if ($defaultWarehouse && $this->warehouseCanFulfill($teamId, $defaultWarehouse->id, $validated['items'])) {
+                        $warehouseId = $defaultWarehouse->id;
+                    } else {
+                        $candidate = $teamWarehouses->first(function ($wh) use ($teamId, $validated) {
+                            return $this->warehouseCanFulfill($teamId, $wh->id, $validated['items']);
+                        });
+                        $warehouseId = $candidate?->id ?? $defaultWarehouse?->id;
                     }
-                    if (!$warehouseId) {
-                        $warehouseId = Warehouse::where('team_id', $teamId)->where('is_default', true)->value('id')
-                            ?? Warehouse::where('team_id', $teamId)->value('id');
+                }
+
+                // Verify stock availability in fulfillment warehouse before creating the order
+                if ($warehouseId) {
+                    foreach ($validated['items'] as $item) {
+                        $stock = \App\Models\StockLevel::where('team_id', $teamId)
+                            ->where('warehouse_id', $warehouseId)
+                            ->where('product_id', $item['product_id'])
+                            ->when(!empty($item['product_variant_id']), fn ($q) => $q->where('product_variant_id', $item['product_variant_id']))
+                            ->first();
+
+                        $available = $stock ? (float) $stock->available_quantity : 0.0;
+                        $needed = (float) $item['quantity'];
+                        if ($available < $needed) {
+                            $prod = Product::find($item['product_id']);
+                            $prodName = $prod?->name ?? "Product #{$item['product_id']}";
+                            $wh = Warehouse::find($warehouseId);
+                            $whName = $wh?->name ?? "Warehouse #{$warehouseId}";
+                            throw new InsufficientStockException(
+                                "Insufficient stock in warehouse '{$whName}' for '{$prodName}'. Required: {$needed}, Available: {$available}."
+                            );
+                        }
                     }
                 }
 
@@ -338,9 +359,14 @@ class PosController extends Controller
             ]);
         } catch (\Throwable $e) {
             Log::error('POS transaction failed: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
+            $userMessage = ($e instanceof InvalidStockOperationException || $e instanceof InsufficientStockException || $e instanceof \InvalidArgumentException)
+                ? $e->getMessage()
+                : 'Unable to process POS transaction. Please verify inventory or payment details and try again.';
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to process POS sale: ' . $e->getMessage(),
+                'message' => $userMessage,
             ], 422);
         }
     }
@@ -428,6 +454,23 @@ class PosController extends Controller
         $team = $order->team ?? Auth::user()->currentTeam;
 
         return view('pos.invoice', compact('order', 'team'));
+    }
+
+    protected function warehouseCanFulfill(int $teamId, int $warehouseId, array $items): bool
+    {
+        foreach ($items as $item) {
+            $stock = \App\Models\StockLevel::where('team_id', $teamId)
+                ->where('warehouse_id', $warehouseId)
+                ->where('product_id', $item['product_id'])
+                ->when(!empty($item['product_variant_id']), fn ($q) => $q->where('product_variant_id', $item['product_variant_id']))
+                ->first();
+
+            $available = $stock ? (float) $stock->available_quantity : 0.0;
+            if ($available < (float) $item['quantity']) {
+                return false;
+            }
+        }
+        return true;
     }
 }
 

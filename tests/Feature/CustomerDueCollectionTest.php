@@ -104,9 +104,9 @@ class CustomerDueCollectionTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Dues/Index')
-            ->has('customers', 1)
-            ->where('customers.0.name', 'Rafiqul Islam')
-            ->where('customers.0.total_due', 12000)
+            ->has('customers.data', 1)
+            ->where('customers.data.0.name', 'Rafiqul Islam')
+            ->where('customers.data.0.total_due', 12000)
         );
     }
 
@@ -116,15 +116,15 @@ class CustomerDueCollectionTest extends TestCase
         $responseFiltered->assertStatus(200);
         $responseFiltered->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Dues/Index')
-            ->has('customers', 2)
+            ->has('customers.data', 2)
         );
 
         $responseSearch = $this->get(route('dues.index', ['search' => 'Rafiqul']));
         $responseSearch->assertStatus(200);
         $responseSearch->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Dues/Index')
-            ->has('customers', 1)
-            ->where('customers.0.name', 'Rafiqul Islam')
+            ->has('customers.data', 1)
+            ->where('customers.data.0.name', 'Rafiqul Islam')
         );
     }
 

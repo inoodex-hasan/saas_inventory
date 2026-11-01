@@ -162,7 +162,6 @@ class HrService
                 'payroll_number' => $payrollNumber,
                 'month_year' => $monthYear,
                 'basic_salary' => $basic,
-                'tada_allowance' => 0.00,
                 'other_allowances' => $allowances,
                 'deductions_total' => $deductionsTotal,
                 'net_salary' => $netSalary,

@@ -6,13 +6,19 @@ import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import Modal from '@/Components/Modal.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
+import Pagination from '@/Components/Pagination.vue';
 import { formatDate } from '@/Utils/date';
 
 const props = defineProps({
-    customers: Array,
+    customers: [Object, Array],
     metrics: Object,
     financialAccounts: Array,
     filters: Object,
+});
+
+const customerList = computed(() => {
+    if (Array.isArray(props.customers)) return props.customers;
+    return props.customers?.data || [];
 });
 
 const defaultAccount = (props.financialAccounts || []).find(a => a.is_default) || props.financialAccounts?.[0];
@@ -100,8 +106,9 @@ function submitPay() {
     });
 }
 
-// Add Customer with Opening Balance
+// Add / Edit Customer with Opening Balance
 const isAddCustomerModalOpen = ref(false);
+const editingCustomer = ref(null);
 const customerForm = useForm({
     name: '',
     phone: '',
@@ -112,19 +119,42 @@ const customerForm = useForm({
 });
 
 function openAddCustomerModal() {
+    editingCustomer.value = null;
     customerForm.reset();
     customerForm.clearErrors();
     customerForm.opening_balance = 0;
     isAddCustomerModalOpen.value = true;
 }
 
+function openEditCustomerModal(c) {
+    editingCustomer.value = c;
+    customerForm.clearErrors();
+    customerForm.name = c.name || '';
+    customerForm.phone = c.phone || '';
+    customerForm.company_name = c.company_name || '';
+    customerForm.email = c.email || '';
+    customerForm.address = c.address || '';
+    customerForm.opening_balance = Number(c.opening_balance) || 0;
+    isAddCustomerModalOpen.value = true;
+}
+
 function submitAddCustomer() {
-    customerForm.post(route('dues.customer.store'), {
-        onSuccess: () => {
-            isAddCustomerModalOpen.value = false;
-            customerForm.reset();
-        },
-    });
+    if (editingCustomer.value) {
+        customerForm.put(route('dues.customer.update', editingCustomer.value.id), {
+            onSuccess: () => {
+                isAddCustomerModalOpen.value = false;
+                customerForm.reset();
+                editingCustomer.value = null;
+            },
+        });
+    } else {
+        customerForm.post(route('dues.customer.store'), {
+            onSuccess: () => {
+                isAddCustomerModalOpen.value = false;
+                customerForm.reset();
+            },
+        });
+    }
 }
 </script>
 
@@ -246,10 +276,11 @@ function submitAddCustomer() {
                                 <th class="py-3 px-4 text-right whitespace-nowrap">Total Invoiced</th>
                                 <th class="py-3 px-4 text-right whitespace-nowrap">Total Paid</th>
                                 <th class="py-3 px-4 text-right whitespace-nowrap">Balance Due</th>
+                                <th class="py-3 px-4 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <template v-for="c in customers" :key="c.id">
+                            <template v-for="c in customerList" :key="c.id">
                                 <tr class="hover:bg-slate-50/70 transition-colors">
                                     <!-- Expand / Collapse chevron -->
                                     <td class="py-3.5 px-3 text-center whitespace-nowrap">
@@ -325,6 +356,21 @@ function submitAddCustomer() {
                                             <CurrencyDisplay :amount="c.total_due" />
                                         </span>
                                     </td>
+
+                                    <!-- Actions -->
+                                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                                        <button
+                                            type="button"
+                                            @click="openEditCustomerModal(c)"
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition"
+                                            title="Edit customer & opening balance"
+                                        >
+                                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                            <span>Edit</span>
+                                        </button>
+                                    </td>
                                 </tr>
 
                                 <!-- Expandable Unpaid Invoices Sub-table -->
@@ -383,13 +429,21 @@ function submitAddCustomer() {
                                 </tr>
                             </template>
 
-                            <tr v-if="!customers || customers.length === 0">
+                            <tr v-if="!customerList || customerList.length === 0">
                                 <td colspan="8" class="text-center py-12 text-slate-400 text-xs">
                                     No customer accounts found matching your filter criteria.
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Pagination Component -->
+                <div v-if="customers?.links" class="p-4 border-t border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p class="text-xs text-slate-500 font-medium">
+                        Showing <span class="font-bold text-slate-700">{{ customers.from || 0 }}</span> to <span class="font-bold text-slate-700">{{ customers.to || 0 }}</span> of <span class="font-bold text-slate-700">{{ customers.total || 0 }}</span> customer accounts
+                    </p>
+                    <Pagination :links="customers.links" />
                 </div>
             </div>
         </div>
@@ -511,13 +565,13 @@ function submitAddCustomer() {
             </div>
         </Modal>
 
-        <!-- Add Customer Modal -->
+        <!-- Add / Edit Customer Modal -->
         <Modal :show="isAddCustomerModalOpen" max-width="xl" @close="isAddCustomerModalOpen = false">
             <div class="p-6 sm:p-7">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-5">
                     <div>
-                        <h3 class="text-base font-bold text-slate-900">Add New Customer</h3>
-                        <p class="text-xs text-slate-500 mt-0.5">Register customer account and optional opening due balance</p>
+                        <h3 class="text-base font-bold text-slate-900">{{ editingCustomer ? 'Edit Customer' : 'Add New Customer' }}</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">{{ editingCustomer ? 'Update customer details and opening due balance' : 'Register customer account and optional opening due balance' }}</p>
                     </div>
                     <button
                         @click="isAddCustomerModalOpen = false"
@@ -603,7 +657,7 @@ function submitAddCustomer() {
                             class="w-full text-xs font-mono font-bold text-slate-800 px-3 py-2 bg-white border border-amber-300 rounded-xl focus:ring-1 focus:ring-amber-500"
                         />
                         <p class="text-[11px] text-amber-800/80 mt-1.5 leading-relaxed">
-                            If this customer has an outstanding balance from prior purchases before using this software, enter it here. An opening receivable invoice will be generated automatically in the ledger.
+                            If this customer has an outstanding balance from prior purchases before using this software, enter it here. An opening receivable invoice will be recorded or adjusted in the ledger.
                         </p>
                         <div v-if="customerForm.errors.opening_balance" class="text-xs text-rose-500 mt-1">
                             {{ customerForm.errors.opening_balance }}
@@ -623,7 +677,7 @@ function submitAddCustomer() {
                             :disabled="customerForm.processing"
                             class="px-6 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition disabled:opacity-50"
                         >
-                            Save Customer
+                            {{ editingCustomer ? 'Update Customer' : 'Save Customer' }}
                         </button>
                     </div>
                 </form>

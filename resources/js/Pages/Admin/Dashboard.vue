@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
 
@@ -215,13 +215,15 @@ function confirmDeleteTenant(tenant) {
                 <div class="flex items-center gap-2">
 
                     <div v-if="$page.props.auth?.user?.current_team_id">
-                        <a
+                        <Link
                             :href="route('admin.exit-tenant')"
-                            class="px-3.5 py-2 text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition shadow-xs inline-flex items-center gap-1.5"
+                            method="post"
+                            as="button"
+                            class="px-3.5 py-2 text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition shadow-xs inline-flex items-center gap-1.5 cursor-pointer"
                         >
                             <span>Exit Impersonation</span>
                             <span class="text-amber-600">&rarr;</span>
-                        </a>
+                        </Link>
                     </div>
                 </div>
             </div>

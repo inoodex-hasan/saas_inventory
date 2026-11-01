@@ -106,6 +106,9 @@ class ServiceTicketController extends Controller
     {
         $teamId = Auth::user()->current_team_id;
 
+        $team = Auth::user()->currentTeam;
+        $allowedTechnicianIds = $team ? $team->allUsers()->pluck('id')->all() : [Auth::id()];
+
         $rules = [
             'customer_mode' => 'required|in:existing,new',
             'device_name' => 'required|string|max:255',
@@ -114,7 +117,7 @@ class ServiceTicketController extends Controller
             'accessories_received' => 'nullable|string|max:255',
             'problem_description' => 'nullable|string|max:2000',
             'initial_diagnosis' => 'nullable|string|max:2000',
-            'technician_id' => 'nullable|exists:users,id',
+            'technician_id' => ['nullable', Rule::in($allowedTechnicianIds)],
             'technician_name' => 'nullable|string|max:100',
             'priority' => 'required|in:low,normal,high,urgent',
             'service_charge' => 'nullable|numeric|min:0',
@@ -193,6 +196,9 @@ class ServiceTicketController extends Controller
         $teamId = Auth::user()->current_team_id;
         abort_if($ticket->team_id !== $teamId, 403);
 
+        $team = Auth::user()->currentTeam;
+        $allowedTechnicianIds = $team ? $team->allUsers()->pluck('id')->all() : [Auth::id()];
+
         $validated = $request->validate([
             'device_name' => 'required|string|max:255',
             'device_brand' => 'nullable|string|max:100',
@@ -200,7 +206,7 @@ class ServiceTicketController extends Controller
             'accessories_received' => 'nullable|string|max:255',
             'problem_description' => 'nullable|string|max:2000',
             'initial_diagnosis' => 'nullable|string|max:2000',
-            'technician_id' => 'nullable|exists:users,id',
+            'technician_id' => ['nullable', Rule::in($allowedTechnicianIds)],
             'technician_name' => 'nullable|string|max:100',
             'priority' => 'required|in:low,normal,high,urgent',
             'service_charge' => 'nullable|numeric|min:0',

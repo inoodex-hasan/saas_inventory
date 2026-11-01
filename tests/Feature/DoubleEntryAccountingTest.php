@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\ChartOfAccount;
+use App\Models\FinancialAccount;
 use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
@@ -414,7 +415,6 @@ class DoubleEntryAccountingTest extends TestCase
 
     public function test_bank_reconciliation_verifies_ledger_and_records_audit_trail(): void
     {
-        $this->markTestSkipped('Bank reconciliation route is temporarily hidden/disabled.');
         $this->accountingService->ensureDefaultAccounts($this->team->id);
 
         $bank = ChartOfAccount::where('team_id', $this->team->id)->where('account_code', '1020')->firstOrFail();
@@ -511,5 +511,54 @@ class DoubleEntryAccountingTest extends TestCase
                 ->has('accounts.data')
                 ->where('accounts.data.0.team_id', $this->team->id)
             );
+    }
+
+    public function test_financial_account_opening_balance_creates_journal_entry_and_cleanup_on_delete(): void
+    {
+        $this->accountingService->ensureDefaultAccounts($this->team->id);
+
+        // 1. Create a bank financial account with opening balance 25000
+        $response = $this->post(route('bank-accounts.store'), [
+            'name' => 'Dhaka Bank Corporate',
+            'type' => 'bank',
+            'institution_name' => 'Dhaka Bank',
+            'account_number' => '1234567890',
+            'opening_balance' => 25000.00,
+        ]);
+        $response->assertRedirect();
+
+        $account = FinancialAccount::where('team_id', $this->team->id)->where('name', 'Dhaka Bank Corporate')->first();
+        $this->assertNotNull($account);
+        $this->assertEquals(25000.00, (float) $account->current_balance);
+
+        // Verify Journal Entry was created
+        $journal = JournalEntry::where('team_id', $this->team->id)
+            ->where('reference_type', FinancialAccount::class)
+            ->where('reference_id', $account->id)
+            ->first();
+
+        $this->assertNotNull($journal);
+        $this->assertEquals(2, $journal->lines()->count());
+
+        // Line 1: Debit Bank (1020)
+        $bankAccount = ChartOfAccount::where('team_id', $this->team->id)->where('account_code', '1020')->first();
+        $debitLine = $journal->lines()->where('chart_of_account_id', $bankAccount->id)->first();
+        $this->assertNotNull($debitLine);
+        $this->assertEquals(25000.00, (float) $debitLine->debit);
+        $this->assertEquals(0.00, (float) $debitLine->credit);
+
+        // Line 2: Credit Equity (3010 or 3020)
+        $creditLine = $journal->lines()->where('chart_of_account_id', '!=', $bankAccount->id)->first();
+        $this->assertNotNull($creditLine);
+        $this->assertEquals(0.00, (float) $creditLine->debit);
+        $this->assertEquals(25000.00, (float) $creditLine->credit);
+
+        // 2. Delete the account and verify cleanup of journal entry and lines
+        $delResponse = $this->delete(route('bank-accounts.destroy', $account->id));
+        $delResponse->assertRedirect();
+
+        $this->assertSoftDeleted('financial_accounts', ['id' => $account->id]);
+        $this->assertDatabaseMissing('journal_entries', ['id' => $journal->id]);
+        $this->assertDatabaseMissing('journal_entry_lines', ['journal_entry_id' => $journal->id]);
     }
 }

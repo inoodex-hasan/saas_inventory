@@ -61,16 +61,18 @@ class PayrollController extends Controller
 
     public function generate(Request $request, HrService $service)
     {
+        $teamId = Auth::user()->current_team_id;
+
         $validated = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
+            'employee_id' => ['required', Rule::exists('employees', 'id')->where('team_id', $teamId)],
             'month_year' => 'required|date_format:Y-m',
             'other_allowances' => 'nullable|numeric|min:0',
             'deductions_total' => 'nullable|numeric|min:0',
+        ], [
+            'employee_id.exists' => 'The selected employee is invalid or does not belong to your workspace.',
         ]);
 
-        $employee = Employee::findOrFail($validated['employee_id']);
-        $teamId = Auth::user()->current_team_id;
-        abort_if($employee->team_id !== $teamId, 403);
+        $employee = Employee::where('team_id', $teamId)->findOrFail($validated['employee_id']);
 
         try {
             $payroll = $service->generatePayroll(

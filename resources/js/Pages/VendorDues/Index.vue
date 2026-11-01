@@ -6,13 +6,19 @@ import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import Modal from '@/Components/Modal.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
+import Pagination from '@/Components/Pagination.vue';
 import { formatDate } from '@/Utils/date';
 
 const props = defineProps({
-    vendors: Array,
+    vendors: [Object, Array],
     metrics: Object,
     financialAccounts: Array,
     filters: Object,
+});
+
+const vendorList = computed(() => {
+    if (Array.isArray(props.vendors)) return props.vendors;
+    return props.vendors?.data || [];
 });
 
 const defaultAccount = (props.financialAccounts || []).find(a => a.is_default) || props.financialAccounts?.[0];
@@ -223,7 +229,7 @@ function submitPay() {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <template v-for="v in vendors" :key="v.id">
+                            <template v-for="v in vendorList" :key="v.id">
                                 <tr class="hover:bg-slate-50/70 transition-colors">
                                     <!-- Expand / Collapse chevron -->
                                     <td class="py-3.5 px-3 text-center whitespace-nowrap">
@@ -357,13 +363,21 @@ function submitPay() {
                                 </tr>
                             </template>
 
-                            <tr v-if="!vendors || vendors.length === 0">
+                            <tr v-if="!vendorList || vendorList.length === 0">
                                 <td colspan="8" class="text-center py-12 text-slate-400 text-xs">
                                     No vendor accounts found matching your filter criteria.
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Pagination Component -->
+                <div v-if="vendors?.links" class="p-4 border-t border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p class="text-xs text-slate-500 font-medium">
+                        Showing <span class="font-bold text-slate-700">{{ vendors.from || 0 }}</span> to <span class="font-bold text-slate-700">{{ vendors.to || 0 }}</span> of <span class="font-bold text-slate-700">{{ vendors.total || 0 }}</span> vendor accounts
+                    </p>
+                    <Pagination :links="vendors.links" />
                 </div>
             </div>
         </div>

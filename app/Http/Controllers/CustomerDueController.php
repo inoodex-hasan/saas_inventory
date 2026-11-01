@@ -6,6 +6,7 @@ use App\Models\ChartOfAccount;
 use App\Models\Customer;
 use App\Models\FinancialAccount;
 use App\Models\FiscalYear;
+use App\Models\JournalEntry;
 use App\Models\SalesOrder;
 use App\Models\Warehouse;
 use App\Services\AccountingService;
@@ -50,8 +51,9 @@ class CustomerDueController extends Controller
                 $q->where('status', '!=', 'cancelled')->where('due_amount', '>', 0)->latest('id');
             }])
             ->latest('id')
-            ->get()
-            ->map(function ($c) {
+            ->paginate(15)
+            ->withQueryString()
+            ->through(function ($c) {
                 $totalBilled = (float) ($c->total_billed ?? 0);
                 $totalPaid = (float) ($c->total_paid ?? 0);
                 $totalDue = (float) ($c->total_due ?? 0);
@@ -60,9 +62,11 @@ class CustomerDueController extends Controller
                 return [
                     'id' => $c->id,
                     'name' => $c->name,
+                    'company_name' => $c->company_name,
                     'phone' => $c->phone,
                     'email' => $c->email,
                     'address' => $c->address,
+                    'opening_balance' => (float) ($c->opening_balance ?? 0),
                     'total_billed' => $totalBilled,
                     'total_paid' => $totalPaid,
                     'total_due' => $totalDue,
@@ -218,6 +222,124 @@ class CustomerDueController extends Controller
         $successMsg = "Customer '{$customer->name}' created successfully" . ($openingBalance > 0 ? " with opening due of ৳" . number_format($openingBalance, 2) : "") . ".";
 
         return redirect()->back()->with('success', $successMsg);
+    }
+
+    public function updateCustomer(Request $request, Customer $customer)
+    {
+        $teamId = Auth::user()->current_team_id;
+        abort_if($customer->team_id !== $teamId, 403);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:50',
+            'company_name' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'address' => 'nullable|string|max:500',
+            'opening_balance' => 'nullable|numeric|min:0',
+        ], [
+            'name.required' => 'The customer name is required.',
+            'phone.required' => 'The customer phone number is required.',
+        ]);
+
+        $oldOpeningBalance = round((float) ($customer->opening_balance ?? 0), 2);
+        $newOpeningBalance = $request->has('opening_balance')
+            ? round((float) $request->input('opening_balance', 0), 2)
+            : $oldOpeningBalance;
+        $validated['opening_balance'] = $newOpeningBalance;
+
+        DB::transaction(function () use ($customer, $validated, $oldOpeningBalance, $newOpeningBalance, $teamId) {
+            $prefix = 'INV-OPEN-' . str_pad((string) $customer->id, 4, '0', STR_PAD_LEFT);
+            $so = SalesOrder::where('team_id', $teamId)
+                ->where('customer_id', $customer->id)
+                ->where('order_number', 'like', $prefix . '%')
+                ->first();
+
+            if ($so && $newOpeningBalance < (float) $so->paid_amount) {
+                throw ValidationException::withMessages([
+                    'opening_balance' => 'Opening balance cannot be less than already collected amount of ' . number_format($so->paid_amount, 2),
+                ]);
+            }
+
+            $customer->update($validated);
+
+            if ($oldOpeningBalance != $newOpeningBalance) {
+                if ($so) {
+                    if ($newOpeningBalance <= 0 && (float) $so->paid_amount <= 0) {
+                        JournalEntry::where('reference_type', SalesOrder::class)
+                            ->where('reference_id', $so->id)
+                            ->delete();
+                        $so->delete();
+                    } else {
+                        $so->subtotal = $newOpeningBalance;
+                        $so->total_amount = $newOpeningBalance;
+                        $so->due_amount = max(0, $newOpeningBalance - (float) $so->paid_amount);
+                        if ($so->due_amount <= 0) {
+                            $so->payment_status = 'paid';
+                        } elseif ((float) $so->paid_amount > 0) {
+                            $so->payment_status = 'partially_paid';
+                        } else {
+                            $so->payment_status = 'unpaid';
+                        }
+                        $so->save();
+
+                        JournalEntry::where('reference_type', SalesOrder::class)
+                            ->where('reference_id', $so->id)
+                            ->delete();
+                        if ($newOpeningBalance > 0) {
+                            $this->recordCustomerOpeningJournalEntry($teamId, $customer, $so, $newOpeningBalance);
+                        }
+                    }
+                } elseif ($newOpeningBalance > 0) {
+                    $warehouse = Warehouse::where('team_id', $teamId)->where('is_default', true)->first()
+                        ?? Warehouse::where('team_id', $teamId)->first();
+
+                    if (!$warehouse) {
+                        $warehouse = Warehouse::create([
+                            'team_id' => $teamId,
+                            'name' => 'Main Warehouse',
+                            'code' => 'WH-01',
+                            'is_default' => true,
+                            'is_active' => true,
+                        ]);
+                    }
+
+                    $orderNumber = $prefix;
+                    while (SalesOrder::where('team_id', $teamId)->where('order_number', $orderNumber)->exists()) {
+                        $orderNumber .= '-' . rand(10, 99);
+                    }
+
+                    $salesOrder = SalesOrder::create([
+                        'team_id' => $teamId,
+                        'customer_id' => $customer->id,
+                        'warehouse_id' => $warehouse->id,
+                        'order_number' => $orderNumber,
+                        'status' => 'completed',
+                        'payment_status' => 'unpaid',
+                        'order_date' => now()->toDateString(),
+                        'subtotal' => $newOpeningBalance,
+                        'tax_amount' => 0.00,
+                        'shipping_cost' => 0.00,
+                        'discount_amount' => 0.00,
+                        'total_amount' => $newOpeningBalance,
+                        'paid_amount' => 0.00,
+                        'due_amount' => $newOpeningBalance,
+                        'notes' => 'Opening receivable due balance recorded on customer update.',
+                        'created_by' => Auth::id(),
+                    ]);
+
+                    $this->recordCustomerOpeningJournalEntry($teamId, $customer, $salesOrder, $newOpeningBalance);
+                }
+            }
+        });
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'customer' => $customer->fresh(),
+            ]);
+        }
+
+        return redirect()->back()->with('success', "Customer '{$customer->name}' updated successfully.");
     }
 
     protected function recordCustomerOpeningJournalEntry(int $teamId, Customer $customer, SalesOrder $so, float $amount): void
