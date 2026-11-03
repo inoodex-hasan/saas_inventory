@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
+use Mccarlosen\LaravelMpdf\Facades\LaravelMpdf as PDF;
 
 class ReportController extends Controller
 {
@@ -52,6 +53,83 @@ class ReportController extends Controller
             'valuation' => $valuation,
             'lowStockItems' => $lowStockItems,
             'movements' => $movements,
+        ]);
+    }
+
+    public function downloadPdf(Request $request)
+    {
+        $team = Auth::user()->currentTeam;
+        $currencySymbol = $team->currency_symbol ?: '৳';
+        $tab = $request->input('tab', 'valuation');
+
+        $movementType = $request->input('movement_type', '');
+        $movementWarehouseId = $request->input('movement_warehouse_id', '');
+        $movementSearch = $request->input('movement_search', '');
+        $lowStockSearch = $request->input('low_stock_search', '');
+
+        $valuation = null;
+        $lowStockItems = null;
+        $movements = null;
+
+        if ($tab === 'valuation') {
+            $valuation = $this->getValuationData($team->id);
+            $reportTitle = 'Stock Valuation & Inventory Assets Report';
+        } elseif ($tab === 'low_stock') {
+            $lowStockItems = $this->getLowStockData($team->id, $lowStockSearch);
+            $reportTitle = 'Low Stock Reorder Radar Report';
+        } else {
+            // Movements
+            $query = StockMovement::with(['product', 'warehouse', 'creator'])
+                ->where('team_id', $team->id)
+                ->orderByDesc('created_at');
+
+            if (!empty($movementType)) {
+                $query->where('type', $movementType);
+            }
+            if (!empty($movementWarehouseId)) {
+                $query->where('warehouse_id', $movementWarehouseId);
+            }
+            if (!empty($movementSearch)) {
+                $term = '%' . $movementSearch . '%';
+                $query->where(function ($q) use ($term) {
+                    $q->where('reason', 'like', $term)
+                      ->orWhere('reference_type', 'like', $term)
+                      ->orWhereHas('product', function ($pq) use ($term) {
+                          $pq->where('name', 'like', $term)
+                             ->orWhere('sku', 'like', $term);
+                      });
+                });
+            }
+            $movements = $query->limit(200)->get();
+            $reportTitle = 'Inventory Stock Movement Audit Log';
+        }
+
+        $marginTop = $team->report_bg_path ? ($team->report_margin_top ?? 42) : 12;
+        $marginBottom = $team->report_bg_path ? ($team->report_margin_bottom ?? 25) : 12;
+
+        $pdf = PDF::loadView('pdf.inventory-report', [
+            'team' => $team,
+            'tab' => $tab,
+            'reportTitle' => $reportTitle,
+            'currencySymbol' => $currencySymbol,
+            'valuation' => $valuation,
+            'lowStockItems' => $lowStockItems,
+            'movements' => $movements,
+            'generatedAt' => now()->format('d M Y, h:i A'),
+        ], [], [
+            'title' => $reportTitle,
+            'margin_top' => $marginTop,
+            'margin_bottom' => $marginBottom,
+            'margin_left' => 12,
+            'margin_right' => 12,
+        ]);
+
+        $safeSlug = str_replace(' ', '-', strtolower($reportTitle));
+        $filename = "{$safeSlug}-" . now()->format('Y-m-d') . ".pdf";
+
+        return response($pdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "inline; filename=\"{$filename}\"",
         ]);
     }
 

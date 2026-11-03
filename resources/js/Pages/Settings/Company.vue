@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 
 const props = defineProps({
     settings: Object,
@@ -95,28 +96,38 @@ function submit() {
     });
 }
 
+const removingLetterhead = ref(null); // 'invoice' | 'report'
+const isRemovingLetterhead = ref(false);
+
 function removeInvoiceBg() {
-    if (confirm('Are you sure you want to remove the custom invoice letterhead? Invoices will revert to standard digital header.')) {
-        router.post(route('settings.company.remove-invoice-bg'), {}, {
-            preserveScroll: true,
-            onSuccess: () => {
-                invoiceBgPreview.value = null;
-                if (invoiceBgInput.value) invoiceBgInput.value.value = '';
-            }
-        });
-    }
+    removingLetterhead.value = 'invoice';
 }
 
 function removeReportBg() {
-    if (confirm('Are you sure you want to remove the custom report letterhead? Reports will revert to standard digital header.')) {
-        router.post(route('settings.company.remove-report-bg'), {}, {
-            preserveScroll: true,
-            onSuccess: () => {
+    removingLetterhead.value = 'report';
+}
+
+function executeRemoveLetterhead() {
+    if (!removingLetterhead.value) return;
+    const isInvoice = removingLetterhead.value === 'invoice';
+    const targetRoute = isInvoice ? 'settings.company.remove-invoice-bg' : 'settings.company.remove-report-bg';
+    isRemovingLetterhead.value = true;
+    router.post(route(targetRoute), {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            if (isInvoice) {
+                invoiceBgPreview.value = null;
+                if (invoiceBgInput.value) invoiceBgInput.value.value = '';
+            } else {
                 reportBgPreview.value = null;
                 if (reportBgInput.value) reportBgInput.value.value = '';
             }
-        });
-    }
+        },
+        onFinish: () => {
+            isRemovingLetterhead.value = false;
+            removingLetterhead.value = null;
+        },
+    });
 }
 
 function previewInvoiceBg() {
@@ -754,5 +765,19 @@ class="w-full text-sm font-mono px-3 py-2 bg-slate-50 border border-slate-200 ro
                 </div>
             </form>
         </div>
+
+        <!-- Remove Letterhead Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!removingLetterhead"
+            :title="removingLetterhead === 'invoice' ? 'Remove Invoice Letterhead' : 'Remove Report Letterhead'"
+            variant="warning"
+            icon="warning"
+            :item-name="removingLetterhead === 'invoice' ? 'Custom Invoice Letterhead' : 'Custom Report Letterhead'"
+            :message="`Are you sure you want to remove the custom ${removingLetterhead || ''} letterhead? Generated PDFs will automatically revert to standard digital branding.`"
+            confirm-text="Remove Letterhead"
+            :processing="isRemovingLetterhead"
+            @confirm="executeRemoveLetterhead"
+            @close="removingLetterhead = null"
+        />
     </AppLayout>
 </template>

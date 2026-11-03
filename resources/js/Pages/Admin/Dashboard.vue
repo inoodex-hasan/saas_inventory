@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 
 const props = defineProps({
     metrics: Object,
@@ -41,23 +42,48 @@ function resetFilter() {
 // -------------------------------------------------------------
 // Action 1: Toggle Status (Suspend / Reactivate)
 // -------------------------------------------------------------
+const togglingTenant = ref(null);
+const isTogglingStatus = ref(false);
+
 function toggleStatus(tenant) {
-    const action = tenant.status === 'suspended' ? 'reactivate' : 'suspend';
-    if (confirm(`Are you sure you want to ${action} tenant workspace '${tenant.name}'?`)) {
-        router.post(route('admin.tenants.toggle-status', tenant.id), {}, {
-            preserveScroll: true,
-            only: ['tenants', 'flash', 'metrics'],
-        });
-    }
+    togglingTenant.value = tenant;
+}
+
+function executeToggleStatus() {
+    if (!togglingTenant.value) return;
+    isTogglingStatus.value = true;
+    router.post(route('admin.tenants.toggle-status', togglingTenant.value.id), {}, {
+        preserveScroll: true,
+        only: ['tenants', 'flash', 'metrics'],
+        onFinish: () => {
+            isTogglingStatus.value = false;
+            togglingTenant.value = null;
+            if (isManageModalOpen.value) {
+                isManageModalOpen.value = false;
+            }
+        },
+    });
 }
 
 // -------------------------------------------------------------
 // Action 2: Switch Workspace (Impersonation)
 // -------------------------------------------------------------
+const switchingTenant = ref(null);
+const isSwitching = ref(false);
+
 function switchToTenant(tenant) {
-    if (confirm(`Switch platform context to tenant workspace '${tenant.name}'?`)) {
-        router.post(route('admin.tenants.switch', tenant.id));
-    }
+    switchingTenant.value = tenant;
+}
+
+function executeSwitchTenant() {
+    if (!switchingTenant.value) return;
+    isSwitching.value = true;
+    router.post(route('admin.tenants.switch', switchingTenant.value.id), {}, {
+        onFinish: () => {
+            isSwitching.value = false;
+            switchingTenant.value = null;
+        },
+    });
 }
 
 // -------------------------------------------------------------
@@ -181,18 +207,26 @@ function submitUpdateSubscription() {
     });
 }
 
+const deletingTenant = ref(null);
+const isDeletingTenant = ref(false);
+
 function confirmDeleteTenant(tenant) {
-    const confirmation = prompt(`DANGER ZONE: Type "${tenant.name}" to permanently delete this organization and its records.`);
-    if (confirmation === tenant.name) {
-        router.delete(route('admin.tenants.destroy', tenant.id), {
-            preserveScroll: true,
-            onSuccess: () => {
-                isManageModalOpen.value = false;
-            },
-        });
-    } else if (confirmation !== null) {
-        alert('Verification mismatch. Deletion cancelled.');
-    }
+    deletingTenant.value = tenant;
+}
+
+function executeDeleteTenant() {
+    if (!deletingTenant.value) return;
+    isDeletingTenant.value = true;
+    router.delete(route('admin.tenants.destroy', deletingTenant.value.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            isManageModalOpen.value = false;
+        },
+        onFinish: () => {
+            isDeletingTenant.value = false;
+            deletingTenant.value = null;
+        },
+    });
 }
 </script>
 
@@ -902,5 +936,51 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                 </div>
             </div>
         </Modal>
+
+        <!-- Toggle Tenant Status Modal -->
+        <ConfirmationModal
+            :show="!!togglingTenant"
+            :title="togglingTenant?.status === 'suspended' ? 'Reactivate Tenant Access' : 'Suspend Tenant Access'"
+            :variant="togglingTenant?.status === 'suspended' ? 'warning' : 'danger'"
+            :icon="togglingTenant?.status === 'suspended' ? 'info' : 'warning'"
+            :item-name="togglingTenant?.name || ''"
+            :message="togglingTenant?.status === 'suspended' 
+                ? 'Reactivating this organization will immediately restore user and store access for this tenant.'
+                : 'Suspending this organization will block all member and manager logins for this tenant until reactivated.'"
+            :confirm-text="togglingTenant?.status === 'suspended' ? 'Reactivate Workspace' : 'Suspend Workspace'"
+            :processing="isTogglingStatus"
+            @confirm="executeToggleStatus"
+            @close="togglingTenant = null"
+        />
+
+        <!-- Switch Platform Context Modal -->
+        <ConfirmationModal
+            :show="!!switchingTenant"
+            title="Switch Workspace Context"
+            variant="warning"
+            icon="info"
+            :item-name="switchingTenant?.name || ''"
+            message="Switch platform context to this tenant workspace? You will be impersonating this organization's active workspace session."
+            confirm-text="Switch Context"
+            :processing="isSwitching"
+            @confirm="executeSwitchTenant"
+            @close="switchingTenant = null"
+        />
+
+        <!-- Permanent Delete Tenant Modal with Required Text Verification -->
+        <ConfirmationModal
+            :show="!!deletingTenant"
+            title="Permanently Delete Tenant Workspace"
+            variant="danger"
+            icon="danger"
+            :item-name="deletingTenant?.name || ''"
+            message="DANGER: This action is irreversible. All branches, warehouses, inventory records, sales, and employee accounts belonging to this tenant will be permanently wiped from the database."
+            :require-input-match="deletingTenant?.name || ''"
+            :input-placeholder="`Type '${deletingTenant?.name || ''}' to confirm`"
+            confirm-text="Delete Tenant Forever"
+            :processing="isDeletingTenant"
+            @confirm="executeDeleteTenant"
+            @close="deletingTenant = null"
+        />
     </AppLayout>
 </template>

@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
 import { formatDate } from '@/Utils/date';
@@ -141,10 +142,23 @@ function toggleActive(acc) {
     router.post(route('bank-accounts.toggle-active', acc.id));
 }
 
+const deletingAccount = ref(null);
+const isDeletingAccount = ref(false);
+
 function deleteAccount(acc) {
-    if (confirm(`Delete account '${acc.name}'?`)) {
-        router.delete(route('bank-accounts.destroy', acc.id));
-    }
+    deletingAccount.value = acc;
+}
+
+function executeDeleteAccount() {
+    if (!deletingAccount.value) return;
+    isDeletingAccount.value = true;
+    router.delete(route('bank-accounts.destroy', deletingAccount.value.id), {
+        preserveScroll: true,
+        onFinish: () => {
+            isDeletingAccount.value = false;
+            deletingAccount.value = null;
+        },
+    });
 }
 
 function getProviderBadge(acc) {
@@ -920,5 +934,17 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                 </div>
             </div>
         </Modal>
+
+        <!-- Delete Financial Account Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!deletingAccount"
+            title="Delete Financial Account"
+            :item-name="deletingAccount ? `${deletingAccount.name} (${deletingAccount.account_number || deletingAccount.type})` : ''"
+            message="Are you sure you want to delete this payment account? Any associated ledger link and balance history might be affected."
+            confirm-text="Delete Account"
+            :processing="isDeletingAccount"
+            @confirm="executeDeleteAccount"
+            @close="deletingAccount = null"
+        />
     </AppLayout>
 </template>

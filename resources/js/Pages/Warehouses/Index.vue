@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import axios from 'axios';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -7,6 +7,7 @@ import Modal from '@/Components/Modal.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 
 const props = defineProps({
     warehouses: Object,
@@ -21,6 +22,8 @@ const editingWarehouse = ref(null);
 const inspectedWarehouse = ref(null);
 const inspectedStocks = ref([]);
 const isInspectingLoading = ref(false);
+const deletingWarehouse = ref(null);
+const isDeleting = ref(false);
 
 const form = useForm({
     name: '',
@@ -83,12 +86,32 @@ function setDefault(wh) {
     });
 }
 
+const optimisticallyHiddenWarehouseIds = ref(new Set());
+const displayedWarehouses = computed(() => {
+    return (props.warehouses?.data || []).filter(w => !optimisticallyHiddenWarehouseIds.value.has(w.id));
+});
+
 function deleteWarehouse(wh) {
-    if (confirm(`Are you sure you want to delete warehouse "${wh.name}"?`)) {
-        router.delete(route('warehouses.destroy', wh.id), {
-            preserveScroll: true,
-        });
-    }
+    deletingWarehouse.value = wh;
+}
+
+function executeDeleteWarehouse() {
+    if (!deletingWarehouse.value) return;
+    const targetId = deletingWarehouse.value.id;
+    // Optimistic UI: card vanishes immediately (0ms)
+    optimisticallyHiddenWarehouseIds.value.add(targetId);
+    deletingWarehouse.value = null;
+
+    router.delete(route('warehouses.destroy', targetId), {
+        preserveScroll: true,
+        only: ['warehouses', 'metrics', 'flash'],
+        onError: () => {
+            optimisticallyHiddenWarehouseIds.value.delete(targetId);
+        },
+        onFinish: () => {
+            optimisticallyHiddenWarehouseIds.value.delete(targetId);
+        },
+    });
 }
 
 async function inspectStock(wh) {
@@ -189,7 +212,7 @@ async function inspectStock(wh) {
             <!-- Warehouses Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 <div 
-                    v-for="wh in warehouses.data" 
+                    v-for="wh in displayedWarehouses" 
                     :key="wh.id" 
                     class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:border-indigo-300 hover:shadow-md transition-all flex flex-col justify-between"
                 >
@@ -477,5 +500,17 @@ class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-
                 </div>
             </div>
         </Modal>
+
+        <!-- Delete Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!deletingWarehouse"
+            title="Delete Warehouse"
+            :item-name="deletingWarehouse ? `${deletingWarehouse.name} (${deletingWarehouse.code})` : ''"
+            message="Are you sure you want to delete this warehouse? All stock levels and bin records allocated here will be permanently archived."
+            confirm-text="Delete Warehouse"
+            :processing="isDeleting"
+            @confirm="executeDeleteWarehouse"
+            @close="deletingWarehouse = null"
+        />
     </AppLayout>
 </template>

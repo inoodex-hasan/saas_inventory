@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import Pagination from '@/Components/Pagination.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
@@ -28,10 +29,23 @@ function applyFilters() {
     });
 }
 
+const approvingPayment = ref(null);
+const isApprovingPayment = ref(false);
+
 function approvePayment(payment) {
-    if (confirm(`Approve payment ${payment.payment_number} (TrxID: ${payment.trx_id}) for ${payment.team?.name}? This will immediately activate/extend their subscription.`)) {
-        router.post(route('admin.payments.approve', payment.id));
-    }
+    approvingPayment.value = payment;
+}
+
+function executeApprovePayment() {
+    if (!approvingPayment.value) return;
+    isApprovingPayment.value = true;
+    router.post(route('admin.payments.approve', approvingPayment.value.id), {}, {
+        preserveScroll: true,
+        onFinish: () => {
+            isApprovingPayment.value = false;
+            approvingPayment.value = null;
+        },
+    });
 }
 
 // Rejection Modal
@@ -297,5 +311,19 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                 </form>
             </div>
         </Modal>
+
+        <!-- Approve Subscription Payment Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!approvingPayment"
+            title="Approve Subscription Payment"
+            variant="warning"
+            icon="info"
+            :item-name="approvingPayment ? `${approvingPayment.payment_number} • ৳${approvingPayment.amount} • TrxID: ${approvingPayment.trx_id}` : ''"
+            :message="`Approve subscription payment for ${approvingPayment?.team?.name || 'Tenant'}? This will immediately activate or extend their workspace subscription.`"
+            confirm-text="Approve Payment"
+            :processing="isApprovingPayment"
+            @confirm="executeApprovePayment"
+            @close="approvingPayment = null"
+        />
     </AppLayout>
 </template>

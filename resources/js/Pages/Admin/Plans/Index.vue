@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
 
@@ -73,10 +74,23 @@ function submit() {
     }
 }
 
+const deletingPlan = ref(null);
+const isDeletingPlan = ref(false);
+
 function deletePlan(plan) {
-    if (confirm(`Are you sure you want to delete plan '${plan.name}'?`)) {
-        router.delete(route('admin.plans.destroy', plan.id));
-    }
+    deletingPlan.value = plan;
+}
+
+function executeDeletePlan() {
+    if (!deletingPlan.value) return;
+    isDeletingPlan.value = true;
+    router.delete(route('admin.plans.destroy', deletingPlan.value.id), {
+        preserveScroll: true,
+        onFinish: () => {
+            isDeletingPlan.value = false;
+            deletingPlan.value = null;
+        },
+    });
 }
 </script>
 
@@ -358,5 +372,17 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                 </form>
             </div>
         </Modal>
+
+        <!-- Delete Plan Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!deletingPlan"
+            title="Delete Subscription Plan"
+            :item-name="deletingPlan ? `${deletingPlan.name} (৳${deletingPlan.price_bdt}/mo)` : ''"
+            message="Are you sure you want to delete this subscription plan tier? Note: Existing active tenant subscriptions tied to this plan cannot be orphaned."
+            confirm-text="Delete Plan"
+            :processing="isDeletingPlan"
+            @confirm="executeDeletePlan"
+            @close="deletingPlan = null"
+        />
     </AppLayout>
 </template>

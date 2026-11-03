@@ -5,6 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import Modal from '@/Components/Modal.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
 import { formatDate } from '@/Utils/date';
 
@@ -85,10 +86,23 @@ function submitForm() {
     }
 }
 
+const deletingEmployee = ref(null);
+const isDeletingEmployee = ref(false);
+
 function deleteEmployee(emp) {
-    if (confirm(`Are you sure you want to remove employee "${emp.name}"?`)) {
-        router.delete(route('employees.destroy', emp.id));
-    }
+    deletingEmployee.value = emp;
+}
+
+function executeDeleteEmployee() {
+    if (!deletingEmployee.value) return;
+    isDeletingEmployee.value = true;
+    router.delete(route('employees.destroy', deletingEmployee.value.id), {
+        preserveScroll: true,
+        onFinish: () => {
+            isDeletingEmployee.value = false;
+            deletingEmployee.value = null;
+        },
+    });
 }
 
 function applyFilters() {
@@ -431,5 +445,17 @@ function resetFilters() {
                 </form>
             </div>
         </Modal>
+
+        <!-- Delete Employee Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!deletingEmployee"
+            title="Remove Employee"
+            :item-name="deletingEmployee ? `${deletingEmployee.name} (${deletingEmployee.employee_code || 'No Code'})` : ''"
+            message="Are you sure you want to remove this employee? This will permanently delete their employee record and HR profile."
+            confirm-text="Remove Employee"
+            :processing="isDeletingEmployee"
+            @confirm="executeDeleteEmployee"
+            @close="deletingEmployee = null"
+        />
     </AppLayout>
 </template>

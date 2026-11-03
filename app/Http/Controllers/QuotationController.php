@@ -38,8 +38,6 @@ class QuotationController extends Controller
 
         $quotations = $query->latest('id')->paginate(15)->withQueryString();
 
-        $customers = Customer::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
-
         $metrics = [
             'total_quotations' => Quotation::where('team_id', $teamId)->count(),
             'total_quoted_value' => (float) Quotation::where('team_id', $teamId)->sum('total_amount'),
@@ -50,7 +48,7 @@ class QuotationController extends Controller
         return Inertia::render('Quotations/Index', [
             'page_title' => 'Quotations & Estimates',
             'quotations' => $quotations,
-            'customers' => $customers,
+            'customers' => fn () => Customer::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get(),
             'metrics' => $metrics,
             'filters' => [
                 'search' => $search,

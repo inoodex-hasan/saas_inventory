@@ -6,7 +6,6 @@
     <style>
         @page {
             margin: 3mm 3mm;
-            size: 80mm auto;
         }
         * {
             box-sizing: border-box;

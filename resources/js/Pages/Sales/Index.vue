@@ -5,6 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import Modal from '@/Components/Modal.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { formatDate } from '@/Utils/date';
@@ -64,28 +65,93 @@ function resetFilter() {
     router.get(route('sales.index'), {}, { preserveState: false, replace: true });
 }
 
-function confirmOrder(order) {
-    if (confirm(`Confirm Order #${order.order_number}? Warehouse inventory will be reserved.`)) {
-        router.post(route('sales.confirm', order.id));
+const activeOrderAction = ref(null);
+const isProcessingAction = ref(false);
+
+function triggerOrderAction(order, action) {
+    if (action === 'confirm') {
+        activeOrderAction.value = {
+            order,
+            action: 'confirm',
+            title: 'Confirm Sales Order',
+            message: 'Are you sure you want to confirm this order? Warehouse inventory will be reserved for fulfillment.',
+            variant: 'warning',
+            icon: 'info',
+            confirmText: 'Confirm Order',
+            routeName: 'sales.confirm',
+        };
+    } else if (action === 'dispatch') {
+        activeOrderAction.value = {
+            order,
+            action: 'dispatch',
+            title: 'Dispatch Order',
+            message: 'Are you sure you want to dispatch this order? Warehouse stock will be deducted immediately.',
+            variant: 'warning',
+            icon: 'info',
+            confirmText: 'Dispatch Order',
+            routeName: 'sales.dispatch',
+        };
+    } else if (action === 'complete') {
+        activeOrderAction.value = {
+            order,
+            action: 'complete',
+            title: 'Complete Order',
+            message: 'Mark this sales order as fully delivered and fulfilled?',
+            variant: 'warning',
+            icon: 'info',
+            confirmText: 'Mark Complete',
+            routeName: 'sales.complete',
+        };
+    } else if (action === 'cancel') {
+        activeOrderAction.value = {
+            order,
+            action: 'cancel',
+            title: 'Cancel Order',
+            message: 'Are you sure you want to cancel this order? Any inventory reservations will be released back to available stock.',
+            variant: 'danger',
+            icon: 'danger',
+            confirmText: 'Cancel Order',
+            routeName: 'sales.cancel',
+        };
     }
+}
+
+function executeOrderAction() {
+    if (!activeOrderAction.value) return;
+    const { order, action, routeName } = activeOrderAction.value;
+    const prevStatus = order.status;
+
+    // Optimistic UI: badge updates instantly (0ms)
+    if (action === 'confirm') order.status = 'confirmed';
+    else if (action === 'dispatch') order.status = 'dispatched';
+    else if (action === 'complete') order.status = 'completed';
+    else if (action === 'cancel') order.status = 'cancelled';
+
+    activeOrderAction.value = null;
+
+    router.post(route(routeName, order.id), {}, {
+        preserveScroll: true,
+        only: ['orders', 'metrics', 'flash'],
+        onError: () => {
+            order.status = prevStatus;
+        },
+    });
+}
+
+function confirmOrder(order) {
+    triggerOrderAction(order, 'confirm');
 }
 
 function dispatchOrder(order) {
-    if (confirm(`Dispatch Order #${order.order_number}? Warehouse stocks will be deducted.`)) {
-        router.post(route('sales.dispatch', order.id));
-    }
+    triggerOrderAction(order, 'dispatch');
 }
 
 function completeOrder(order) {
-    if (confirm(`Mark Order #${order.order_number} as completed / fulfilled?`)) {
-        router.post(route('sales.complete', order.id));
-    }
+    triggerOrderAction(order, 'complete');
 }
 
 function cancelOrder(order) {
-    if (confirm(`Cancel Order #${order.order_number}? Any inventory reservations will be released.`)) {
-        router.post(route('sales.cancel', order.id));
-    }
+    triggerOrderAction(order, 'cancel');
 }
 
 function openPaymentModal(order) {
@@ -461,5 +527,19 @@ function submitPayment() {
                 </form>
             </div>
         </Modal>
+
+        <!-- Order Lifecycle Action Modal -->
+        <ConfirmationModal
+            :show="!!activeOrderAction"
+            :title="activeOrderAction?.title || ''"
+            :variant="activeOrderAction?.variant || 'danger'"
+            :icon="activeOrderAction?.icon || 'danger'"
+            :item-name="activeOrderAction?.order ? `#${activeOrderAction.order.order_number} - ${activeOrderAction.order.customer?.name || 'Customer'}` : ''"
+            :message="activeOrderAction?.message || ''"
+            :confirm-text="activeOrderAction?.confirmText || 'Confirm'"
+            :processing="isProcessingAction"
+            @confirm="executeOrderAction"
+            @close="activeOrderAction = null"
+        />
     </AppLayout>
 </template>

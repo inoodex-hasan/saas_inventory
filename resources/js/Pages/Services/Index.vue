@@ -6,6 +6,7 @@ import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import Modal from '@/Components/Modal.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
 import { formatDate } from '@/Utils/date';
 
@@ -109,10 +110,23 @@ function resetFilters() {
     router.get(route('services.index'), {}, { preserveState: false, replace: true });
 }
 
+const deletingTicket = ref(null);
+const isDeletingTicket = ref(false);
+
 function deleteTicket(ticket) {
-    if (confirm(`Are you sure you want to delete service ticket #${ticket.ticket_number}?`)) {
-        router.delete(route('services.destroy', ticket.id));
-    }
+    deletingTicket.value = ticket;
+}
+
+function executeDeleteTicket() {
+    if (!deletingTicket.value) return;
+    isDeletingTicket.value = true;
+    router.delete(route('services.destroy', deletingTicket.value.id), {
+        preserveScroll: true,
+        onFinish: () => {
+            isDeletingTicket.value = false;
+            deletingTicket.value = null;
+        },
+    });
 }
 </script>
 
@@ -548,5 +562,17 @@ class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:
                 </form>
             </div>
         </Modal>
+
+        <!-- Delete Ticket Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!deletingTicket"
+            title="Delete Service Ticket"
+            :item-name="deletingTicket ? `#${deletingTicket.ticket_number} - ${deletingTicket.customer?.name || 'Customer'}` : ''"
+            message="Are you sure you want to permanently delete this service repair ticket? Any associated labor logs and parts records may be affected."
+            confirm-text="Delete Ticket"
+            :processing="isDeletingTicket"
+            @confirm="executeDeleteTicket"
+            @close="deletingTicket = null"
+        />
     </AppLayout>
 </template>

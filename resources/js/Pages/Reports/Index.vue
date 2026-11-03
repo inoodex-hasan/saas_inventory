@@ -58,8 +58,14 @@ function resetMovementsFilter() {
     router.get(route('reports.index'), { tab: currentTab.value }, { preserveState: false, replace: true, preserveScroll: true });
 }
 
-function printReport() {
-    window.print();
+function downloadPdf() {
+    const params = new URLSearchParams();
+    params.append('tab', currentTab.value);
+    if (movementType.value) params.append('movement_type', movementType.value);
+    if (movementWarehouseId.value) params.append('movement_warehouse_id', movementWarehouseId.value);
+    if (movementSearch.value) params.append('movement_search', movementSearch.value);
+    if (lowStockSearch.value) params.append('low_stock_search', lowStockSearch.value);
+    window.open(route('reports.pdf') + '?' + params.toString(), '_blank');
 }
 </script>
 
@@ -73,16 +79,6 @@ function printReport() {
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Inventory Analytics &amp; Reports</h1>
                     <p class="text-xs text-slate-500 font-medium">Real-time asset valuation, low-stock reorder alerts, and comprehensive movement audit trails</p>
                 </div>
-                <button
-                    type="button"
-                    @click="printReport"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold shadow-xs transition"
-                >
-                    <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                    </svg>
-                    <span>Print Report</span>
-                </button>
             </div>
         </template>
 
@@ -126,6 +122,18 @@ function printReport() {
                         <span>Stock Movements</span>
                     </button>
                 </div>
+
+                <!-- Download PDF Button in Tab Section -->
+                <button
+                    type="button"
+                    @click="downloadPdf"
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm shadow-indigo-600/30 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                >
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>Download PDF</span>
+                </button>
             </div>
 
             <!-- TAB 1: STOCK VALUATION -->

@@ -104,6 +104,17 @@ class PosPdfDesignTest extends TestCase
         $this->assertStringContainsString('POS-POS-20261031-0001.pdf', $response->headers->get('Content-Disposition'));
     }
 
+    public function test_thermal_pos_slip_html_preview_renders_instantly(): void
+    {
+        $response = $this->get(route('sales.pos', ['order' => $this->order->id, 'preview' => 1]));
+
+        $response->assertOk();
+        $this->assertStringContainsString('text/html', $response->headers->get('Content-Type'));
+        $response->assertSee('Print Receipt');
+        $response->assertSee('PDF');
+        $response->assertSee('POS-20261031-0001');
+    }
+
     public function test_pos_interactive_invoice_page_renders_successfully(): void
     {
         $response = $this->get(route('pos.invoice', $this->order->id));

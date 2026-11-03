@@ -6,6 +6,7 @@ import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import Modal from '@/Components/Modal.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 
 const props = defineProps({
     page_title: String,
@@ -61,10 +62,23 @@ function submitAddPart() {
     });
 }
 
+const removingPart = ref(null);
+const isRemovingPart = ref(false);
+
 function removePart(item) {
-    if (confirm(`Remove ${item.part_name}? Stock will be adjusted back to warehouse.`)) {
-        router.delete(route('services.parts.remove', [props.ticket.id, item.id]));
-    }
+    removingPart.value = item;
+}
+
+function executeRemovePart() {
+    if (!removingPart.value) return;
+    isRemovingPart.value = true;
+    router.delete(route('services.parts.remove', [props.ticket.id, removingPart.value.id]), {
+        preserveScroll: true,
+        onFinish: () => {
+            isRemovingPart.value = false;
+            removingPart.value = null;
+        },
+    });
 }
 
 // Payment Modal
@@ -604,5 +618,17 @@ class="w-full text-xs rounded-xl border-slate-200 focus:border-indigo-500 focus:
                 </form>
             </div>
         </Modal>
+
+        <!-- Remove Spare Part Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!removingPart"
+            title="Remove Spare Part"
+            :item-name="removingPart ? removingPart.part_name : ''"
+            message="Are you sure you want to remove this spare part from the service ticket? The stock will be adjusted back into warehouse inventory."
+            confirm-text="Remove Part"
+            :processing="isRemovingPart"
+            @confirm="executeRemovePart"
+            @close="removingPart = null"
+        />
     </AppLayout>
 </template>

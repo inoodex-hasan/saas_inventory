@@ -40,9 +40,6 @@ class SalesOrderController extends Controller
 
         $orders = $query->latest('id')->paginate(15)->withQueryString();
 
-        $customers = Customer::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
-        $warehouses = Warehouse::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
-
         $metrics = [
             'total_sales' => (float) SalesOrder::where('team_id', $teamId)->where('status', '!=', 'cancelled')->sum('total_amount'),
             'total_receivables' => (float) SalesOrder::where('team_id', $teamId)->where('status', '!=', 'cancelled')->sum('due_amount'),
@@ -50,13 +47,11 @@ class SalesOrderController extends Controller
             'total_orders' => SalesOrder::where('team_id', $teamId)->count(),
         ];
 
-        $financialAccounts = app(FinancialAccountService::class)->getActiveAccountsForTeam($teamId);
-
         return Inertia::render('Sales/Index', [
             'orders' => $orders,
-            'customers' => $customers,
-            'warehouses' => $warehouses,
-            'financialAccounts' => $financialAccounts,
+            'customers' => fn () => Customer::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get(),
+            'warehouses' => fn () => Warehouse::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get(),
+            'financialAccounts' => fn () => app(FinancialAccountService::class)->getActiveAccountsForTeam($teamId),
             'metrics' => $metrics,
             'filters' => [
                 'search' => $search,

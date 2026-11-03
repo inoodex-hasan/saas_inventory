@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import Modal from '@/Components/Modal.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import axios from 'axios';
 
@@ -300,17 +301,22 @@ function removeCartItem(index) {
     cart.value.splice(index, 1);
 }
 
+const showClearCartModal = ref(false);
+
 function clearCart() {
     if (cart.value.length === 0) return;
-    if (confirm('Are you sure you want to clear all items in the cart?')) {
-        cart.value = [];
-        discountValue.value = 0;
-        taxPercent.value = 0;
-        shippingCost.value = 0;
-        tenderedAmount.value = 0;
-        notes.value = '';
-        localStorage.removeItem('pos_active_cart');
-    }
+    showClearCartModal.value = true;
+}
+
+function executeClearCart() {
+    cart.value = [];
+    discountValue.value = 0;
+    taxPercent.value = 0;
+    shippingCost.value = 0;
+    tenderedAmount.value = 0;
+    notes.value = '';
+    localStorage.removeItem('pos_active_cart');
+    showClearCartModal.value = false;
 }
 
 // Calculations
@@ -549,7 +555,9 @@ function startNewSale() {
 
 // Print Handlers
 function printThermalReceipt(url) {
-    const win = window.open(url, '_blank', 'width=420,height=650');
+    // Open high-speed 0ms HTML receipt preview with 1-click thermal printing and PDF download
+    const targetUrl = url ? (url.includes('?') ? `${url}&preview=1` : `${url}?preview=1`) : url;
+    const win = window.open(targetUrl, '_blank', 'width=460,height=720,menubar=no,toolbar=no,location=no,status=no');
     if (win) {
         win.focus();
     }
@@ -1472,5 +1480,18 @@ onUnmounted(() => {
                 </button>
             </div>
         </Modal>
+
+        <!-- Clear POS Cart Confirmation Modal -->
+        <ConfirmationModal
+            :show="showClearCartModal"
+            title="Clear POS Cart"
+            variant="warning"
+            icon="warning"
+            :item-name="`${cart.length} item(s) in cart`"
+            message="Are you sure you want to remove all items from the current active register cart? This cannot be undone."
+            confirm-text="Clear Cart"
+            @confirm="executeClearCart"
+            @close="showClearCartModal = false"
+        />
     </div>
 </template>

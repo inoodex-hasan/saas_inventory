@@ -5,6 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import Modal from '@/Components/Modal.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 
@@ -113,10 +114,43 @@ function submitReturn() {
     });
 }
 
+const returnActionModal = ref(null);
+const isReturnActionProcessing = ref(false);
+
 function approveReturn(ret) {
-    if (confirm(`Approve return request #${ret.return_number}?`)) {
-        router.post(route('returns.approve', ret.id));
-    }
+    returnActionModal.value = {
+        ret,
+        title: 'Approve Return Request',
+        variant: 'warning',
+        icon: 'info',
+        message: 'Approve this customer return request? The customer may now ship/return the items to the designated warehouse.',
+        confirmText: 'Approve Return',
+        routeName: 'returns.approve',
+    };
+}
+
+function completeReturn(ret) {
+    returnActionModal.value = {
+        ret,
+        title: 'Complete and Restock Return',
+        variant: 'warning',
+        icon: 'info',
+        message: 'Complete and restock this return? Sellable inventory will be added back into warehouse inventory.',
+        confirmText: 'Complete & Restock',
+        routeName: 'returns.complete',
+    };
+}
+
+function executeReturnAction() {
+    if (!returnActionModal.value) return;
+    isReturnActionProcessing.value = true;
+    router.post(route(returnActionModal.value.routeName, returnActionModal.value.ret.id), {}, {
+        preserveScroll: true,
+        onFinish: () => {
+            isReturnActionProcessing.value = false;
+            returnActionModal.value = null;
+        },
+    });
 }
 
 function openRejectModal(ret) {
@@ -135,11 +169,7 @@ function submitReject() {
     });
 }
 
-function completeReturn(ret) {
-    if (confirm(`Complete and restock return #${ret.return_number}? Sellable inventory will be added back into warehouse.`)) {
-        router.post(route('returns.complete', ret.id));
-    }
-}
+
 </script>
 
 <template>
@@ -492,5 +522,19 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                 </form>
             </div>
         </Modal>
+
+        <!-- Return Action Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!returnActionModal"
+            :title="returnActionModal?.title || ''"
+            :variant="returnActionModal?.variant || 'danger'"
+            :icon="returnActionModal?.icon || 'danger'"
+            :item-name="returnActionModal?.ret ? `#${returnActionModal.ret.return_number}` : ''"
+            :message="returnActionModal?.message || ''"
+            :confirm-text="returnActionModal?.confirmText || 'Confirm'"
+            :processing="isReturnActionProcessing"
+            @confirm="executeReturnAction"
+            @close="returnActionModal = null"
+        />
     </AppLayout>
 </template>

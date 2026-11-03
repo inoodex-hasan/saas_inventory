@@ -1,9 +1,10 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import { formatDate } from '@/Utils/date';
 
 const props = defineProps({
@@ -19,6 +20,8 @@ const customerId = ref(props.filters.customer_id || '');
 
 const isViewModalOpen = ref(false);
 const viewingChallan = ref(null);
+const deletingChallan = ref(null);
+const isDeleting = ref(false);
 
 function openViewModal(challan) {
     viewingChallan.value = challan;
@@ -40,28 +43,66 @@ function resetFilter() {
     router.get(route('challans.index'), {}, { preserveState: false, replace: true });
 }
 
+const deliveringChallan = ref(null);
+const isDelivering = ref(false);
+
 function markDelivered(challan) {
-    if (confirm(`Mark Delivery Challan #${challan.challan_number} as safely delivered?`)) {
-        router.post(route('challans.deliver', challan.id), {}, {
-            onSuccess: () => {
-                if (viewingChallan.value && viewingChallan.value.id === challan.id) {
-                    viewingChallan.value.status = 'delivered';
-                }
-            }
-        });
-    }
+    deliveringChallan.value = challan;
 }
 
-function deleteChallan(challan) {
-    if (confirm(`Delete delivery challan #${challan.challan_number}?`)) {
-        router.delete(route('challans.destroy', challan.id), {
-            onSuccess: () => {
-                if (viewingChallan.value && viewingChallan.value.id === challan.id) {
-                    isViewModalOpen.value = false;
-                }
-            }
-        });
+function executeMarkDelivered() {
+    if (!deliveringChallan.value) return;
+    const target = deliveringChallan.value;
+    const prevStatus = target.status;
+    
+    // Optimistic UI: badge updates instantly (0ms)
+    target.status = 'delivered';
+    if (viewingChallan.value && viewingChallan.value.id === target.id) {
+        viewingChallan.value.status = 'delivered';
     }
+    deliveringChallan.value = null;
+
+    router.post(route('challans.deliver', target.id), {}, {
+        preserveScroll: true,
+        only: ['challans', 'metrics', 'flash'],
+        onError: () => {
+            target.status = prevStatus;
+            if (viewingChallan.value && viewingChallan.value.id === target.id) {
+                viewingChallan.value.status = prevStatus;
+            }
+        },
+    });
+}
+
+const optimisticallyHiddenChallanIds = ref(new Set());
+const displayedChallans = computed(() => {
+    return (props.challans?.data || []).filter(c => !optimisticallyHiddenChallanIds.value.has(c.id));
+});
+
+function deleteChallan(challan) {
+    deletingChallan.value = challan;
+}
+
+function executeDeleteChallan() {
+    if (!deletingChallan.value) return;
+    const targetId = deletingChallan.value.id;
+    // Optimistic UI: row vanishes instantly (0ms)
+    optimisticallyHiddenChallanIds.value.add(targetId);
+    if (viewingChallan.value && viewingChallan.value.id === targetId) {
+        isViewModalOpen.value = false;
+    }
+    deletingChallan.value = null;
+
+    router.delete(route('challans.destroy', targetId), {
+        preserveScroll: true,
+        only: ['challans', 'metrics', 'flash'],
+        onError: () => {
+            optimisticallyHiddenChallanIds.value.delete(targetId);
+        },
+        onFinish: () => {
+            optimisticallyHiddenChallanIds.value.delete(targetId);
+        },
+    });
 }
 </script>
 
@@ -181,7 +222,7 @@ function deleteChallan(challan) {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-slate-700">
-                            <tr v-for="c in challans.data" :key="c.id" class="hover:bg-slate-50/70 transition">
+                            <tr v-for="c in displayedChallans" :key="c.id" class="hover:bg-slate-50/70 transition">
                                 <td class="py-3.5 px-4 font-semibold text-slate-900 whitespace-nowrap">
                                     <button
                                         type="button"
@@ -477,5 +518,31 @@ function deleteChallan(challan) {
                 </div>
             </div>
         </Teleport>
+
+        <!-- Mark Delivered Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!deliveringChallan"
+            title="Mark as Delivered"
+            variant="warning"
+            icon="info"
+            :item-name="deliveringChallan ? `#${deliveringChallan.challan_number}` : ''"
+            message="Are you sure you want to mark this delivery challan as safely delivered to the customer?"
+            confirm-text="Mark as Delivered"
+            :processing="isDelivering"
+            @confirm="executeMarkDelivered"
+            @close="deliveringChallan = null"
+        />
+
+        <!-- Delete Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!deletingChallan"
+            title="Delete Delivery Challan"
+            :item-name="deletingChallan ? `#${deletingChallan.challan_number}` : ''"
+            message="Are you sure you want to delete this delivery challan dispatch record? This action cannot be undone."
+            confirm-text="Delete Challan"
+            :processing="isDeleting"
+            @confirm="executeDeleteChallan"
+            @close="deletingChallan = null"
+        />
     </AppLayout>
 </template>

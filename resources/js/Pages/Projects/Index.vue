@@ -6,6 +6,7 @@ import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import Modal from '@/Components/Modal.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
 import { formatDate } from '@/Utils/date';
 
@@ -106,10 +107,23 @@ function resetFilters() {
     router.get(route('projects.index'), {}, { preserveState: false, replace: true });
 }
 
+const deletingProject = ref(null);
+const isDeletingProject = ref(false);
+
 function deleteProject(project) {
-    if (confirm(`Are you sure you want to delete project #${project.project_code} - "${project.name}"?`)) {
-        router.delete(route('projects.destroy', project.id));
-    }
+    deletingProject.value = project;
+}
+
+function executeDeleteProject() {
+    if (!deletingProject.value) return;
+    isDeletingProject.value = true;
+    router.delete(route('projects.destroy', deletingProject.value.id), {
+        preserveScroll: true,
+        onFinish: () => {
+            isDeletingProject.value = false;
+            deletingProject.value = null;
+        },
+    });
 }
 </script>
 
@@ -548,5 +562,17 @@ class="w-full text-xs rounded-xl border border-slate-200 py-2 px-3 focus:outline
                 </form>
             </div>
         </Modal>
+
+        <!-- Delete Project Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!deletingProject"
+            title="Delete Project"
+            :item-name="deletingProject ? `#${deletingProject.project_code} - ${deletingProject.name}` : ''"
+            message="Are you sure you want to permanently delete this project? All associated budget items, tasks, and project records will be permanently removed."
+            confirm-text="Delete Project"
+            :processing="isDeletingProject"
+            @confirm="executeDeleteProject"
+            @close="deletingProject = null"
+        />
     </AppLayout>
 </template>

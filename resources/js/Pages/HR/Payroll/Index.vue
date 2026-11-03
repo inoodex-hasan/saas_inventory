@@ -6,6 +6,7 @@ import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import Modal from '@/Components/Modal.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
 
 const props = defineProps({
@@ -102,10 +103,23 @@ function submitPay() {
     });
 }
 
+const deletingPayroll = ref(null);
+const isDeletingPayroll = ref(false);
+
 function deletePayroll(p) {
-    if (confirm(`Are you sure you want to delete payroll record #${p.payroll_number}?`)) {
-        router.delete(route('payroll.destroy', p.id));
-    }
+    deletingPayroll.value = p;
+}
+
+function executeDeletePayroll() {
+    if (!deletingPayroll.value) return;
+    isDeletingPayroll.value = true;
+    router.delete(route('payroll.destroy', deletingPayroll.value.id), {
+        preserveScroll: true,
+        onFinish: () => {
+            isDeletingPayroll.value = false;
+            deletingPayroll.value = null;
+        },
+    });
 }
 
 function applyFilters() {
@@ -490,5 +504,17 @@ function resetFilters() {
                 </form>
             </div>
         </Modal>
+
+        <!-- Delete Payroll Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!deletingPayroll"
+            title="Delete Payroll Record"
+            :item-name="deletingPayroll ? `#${deletingPayroll.payroll_number} - ${deletingPayroll.employee?.name || 'Employee'}` : ''"
+            message="Are you sure you want to delete this payroll record? Any associated salary expense records will be permanently removed."
+            confirm-text="Delete Payroll"
+            :processing="isDeletingPayroll"
+            @confirm="executeDeletePayroll"
+            @close="deletingPayroll = null"
+        />
     </AppLayout>
 </template>

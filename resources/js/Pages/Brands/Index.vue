@@ -1,9 +1,10 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 
 const props = defineProps({
     brands: Object,
@@ -14,6 +15,8 @@ const props = defineProps({
 const search = ref(props.filters?.search || '');
 const isModalOpen = ref(false);
 const editingBrand = ref(null);
+const deletingBrand = ref(null);
+const isDeleting = ref(false);
 
 const form = useForm({
     name: '',
@@ -70,12 +73,31 @@ function submitForm() {
     }
 }
 
+const optimisticallyHiddenBrandIds = ref(new Set());
+const displayedBrands = computed(() => {
+    return (props.brands?.data || []).filter(b => !optimisticallyHiddenBrandIds.value.has(b.id));
+});
+
 function deleteBrand(brand) {
-    if (confirm(`Are you sure you want to delete brand "${brand.name}"?`)) {
-        router.delete(route('brands.destroy', brand.id), {
-            preserveScroll: true,
-        });
-    }
+    deletingBrand.value = brand;
+}
+
+function executeDeleteBrand() {
+    if (!deletingBrand.value) return;
+    const targetId = deletingBrand.value.id;
+    optimisticallyHiddenBrandIds.value.add(targetId);
+    deletingBrand.value = null;
+
+    router.delete(route('brands.destroy', targetId), {
+        preserveScroll: true,
+        only: ['brands', 'metrics', 'flash'],
+        onError: () => {
+            optimisticallyHiddenBrandIds.value.delete(targetId);
+        },
+        onFinish: () => {
+            optimisticallyHiddenBrandIds.value.delete(targetId);
+        },
+    });
 }
 </script>
 
@@ -178,7 +200,7 @@ function deleteBrand(brand) {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <tr v-for="b in brands.data" :key="b.id" class="hover:bg-slate-50/70 transition-colors">
+                            <tr v-for="b in displayedBrands" :key="b.id" class="hover:bg-slate-50/70 transition-colors">
                                 <td class="py-3.5 px-4 whitespace-nowrap">
                                     <div class="flex items-center gap-3">
                                         <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-800 to-slate-700 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
@@ -347,5 +369,17 @@ function deleteBrand(brand) {
                 </form>
             </div>
         </Modal>
+
+        <!-- Delete Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!deletingBrand"
+            title="Delete Brand"
+            :item-name="deletingBrand?.name"
+            message="Are you sure you want to delete this brand? Products linked to this brand will remain intact without this label."
+            confirm-text="Delete Brand"
+            :processing="isDeleting"
+            @confirm="executeDeleteBrand"
+            @close="deletingBrand = null"
+        />
     </AppLayout>
 </template>

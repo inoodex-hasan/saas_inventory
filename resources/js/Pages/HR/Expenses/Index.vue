@@ -5,6 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import Modal from '@/Components/Modal.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
 import { formatDate } from '@/Utils/date';
 
@@ -79,10 +80,23 @@ function submitExpense() {
     });
 }
 
+const deletingExpense = ref(null);
+const isDeletingExpense = ref(false);
+
 function deleteExpense(exp) {
-    if (confirm(`Are you sure you want to delete expense #${exp.expense_number} - "${exp.title}"?`)) {
-        router.delete(route('expenses.destroy', exp.id));
-    }
+    deletingExpense.value = exp;
+}
+
+function executeDeleteExpense() {
+    if (!deletingExpense.value) return;
+    isDeletingExpense.value = true;
+    router.delete(route('expenses.destroy', deletingExpense.value.id), {
+        preserveScroll: true,
+        onFinish: () => {
+            isDeletingExpense.value = false;
+            deletingExpense.value = null;
+        },
+    });
 }
 
 function openCategoryModal() {
@@ -115,12 +129,23 @@ function submitInlineCategory() {
     });
 }
 
+const deletingCategory = ref(null);
+const isDeletingCategory = ref(false);
+
 function deleteCategory(cat) {
-    if (confirm(`Are you sure you want to delete expense category "${cat.name}"?`)) {
-        router.delete(route('expense-categories.destroy', cat.id), {
-            preserveScroll: true,
-        });
-    }
+    deletingCategory.value = cat;
+}
+
+function executeDeleteCategory() {
+    if (!deletingCategory.value) return;
+    isDeletingCategory.value = true;
+    router.delete(route('expense-categories.destroy', deletingCategory.value.id), {
+        preserveScroll: true,
+        onFinish: () => {
+            isDeletingCategory.value = false;
+            deletingCategory.value = null;
+        },
+    });
 }
 
 function applyFilters() {
@@ -578,5 +603,29 @@ function resetFilters() {
                 </div>
             </div>
         </Modal>
+
+        <!-- Delete Expense Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!deletingExpense"
+            title="Delete Expense"
+            :item-name="deletingExpense ? `#${deletingExpense.expense_number} - ${deletingExpense.title}` : ''"
+            message="Are you sure you want to delete this expense voucher? The payment transaction and ledger records will be updated accordingly."
+            confirm-text="Delete Expense"
+            :processing="isDeletingExpense"
+            @confirm="executeDeleteExpense"
+            @close="deletingExpense = null"
+        />
+
+        <!-- Delete Expense Category Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!deletingCategory"
+            title="Delete Expense Category"
+            :item-name="deletingCategory ? deletingCategory.name : ''"
+            message="Are you sure you want to delete this expense category? Any existing expenses should be reassigned."
+            confirm-text="Delete Category"
+            :processing="isDeletingCategory"
+            @confirm="executeDeleteCategory"
+            @close="deletingCategory = null"
+        />
     </AppLayout>
 </template>

@@ -4,6 +4,7 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 
 const props = defineProps({
     categories: Object,
@@ -16,6 +17,8 @@ const search = ref(props.filters?.search || '');
 const parentFilter = ref(props.filters?.parent_id || '');
 const isModalOpen = ref(false);
 const editingCategory = ref(null);
+const deletingCategory = ref(null);
+const isDeleting = ref(false);
 
 const form = useForm({
     name: '',
@@ -77,12 +80,31 @@ function submitForm() {
     }
 }
 
+const optimisticallyHiddenCategoryIds = ref(new Set());
+const displayedCategories = computed(() => {
+    return (props.categories?.data || []).filter(c => !optimisticallyHiddenCategoryIds.value.has(c.id));
+});
+
 function deleteCategory(cat) {
-    if (confirm(`Are you sure you want to delete category "${cat.name}"?`)) {
-        router.delete(route('categories.destroy', cat.id), {
-            preserveScroll: true,
-        });
-    }
+    deletingCategory.value = cat;
+}
+
+function executeDeleteCategory() {
+    if (!deletingCategory.value) return;
+    const targetId = deletingCategory.value.id;
+    optimisticallyHiddenCategoryIds.value.add(targetId);
+    deletingCategory.value = null;
+
+    router.delete(route('categories.destroy', targetId), {
+        preserveScroll: true,
+        only: ['categories', 'parentOptions', 'metrics', 'flash'],
+        onError: () => {
+            optimisticallyHiddenCategoryIds.value.delete(targetId);
+        },
+        onFinish: () => {
+            optimisticallyHiddenCategoryIds.value.delete(targetId);
+        },
+    });
 }
 
 // Filter out the category being edited from parent selection options to prevent self-parenting
@@ -201,7 +223,7 @@ const availableParentOptions = computed(() => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <tr v-for="cat in categories.data" :key="cat.id" class="hover:bg-slate-50/70 transition-colors">
+                            <tr v-for="cat in displayedCategories" :key="cat.id" class="hover:bg-slate-50/70 transition-colors">
                                 <td class="py-3.5 px-4 whitespace-nowrap">
                                     <div class="flex items-center gap-2.5">
                                         <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs shrink-0">
@@ -419,5 +441,17 @@ const availableParentOptions = computed(() => {
                 </form>
             </div>
         </Modal>
+
+        <!-- Delete Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!deletingCategory"
+            title="Delete Category"
+            :item-name="deletingCategory?.name"
+            message="Are you sure you want to delete this category? Products assigned to this category will be preserved as Uncategorized."
+            confirm-text="Delete Category"
+            :processing="isDeleting"
+            @confirm="executeDeleteCategory"
+            @close="deletingCategory = null"
+        />
     </AppLayout>
 </template>

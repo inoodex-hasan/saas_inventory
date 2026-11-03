@@ -6,6 +6,7 @@ import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import Modal from '@/Components/Modal.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import { formatDate } from '@/Utils/date';
 
 const props = defineProps({
@@ -69,10 +70,23 @@ function submitAddItem() {
     });
 }
 
+const removingItem = ref(null);
+const isRemovingItem = ref(false);
+
 function removeItem(item) {
-    if (confirm(`Remove "${item.item_name}" from project? Returned items will be restored to warehouse inventory.`)) {
-        router.delete(route('projects.items.remove', [props.project.id, item.id]));
-    }
+    removingItem.value = item;
+}
+
+function executeRemoveItem() {
+    if (!removingItem.value) return;
+    isRemovingItem.value = true;
+    router.delete(route('projects.items.remove', [props.project.id, removingItem.value.id]), {
+        preserveScroll: true,
+        onFinish: () => {
+            isRemovingItem.value = false;
+            removingItem.value = null;
+        },
+    });
 }
 
 // 2. Add Direct Cost Form
@@ -95,10 +109,23 @@ function submitAddCost() {
     });
 }
 
+const removingCost = ref(null);
+const isRemovingCost = ref(false);
+
 function removeCost(cost) {
-    if (confirm(`Remove direct expense "${cost.description}"?`)) {
-        router.delete(route('projects.costs.remove', [props.project.id, cost.id]));
-    }
+    removingCost.value = cost;
+}
+
+function executeRemoveCost() {
+    if (!removingCost.value) return;
+    isRemovingCost.value = true;
+    router.delete(route('projects.costs.remove', [props.project.id, removingCost.value.id]), {
+        preserveScroll: true,
+        onFinish: () => {
+            isRemovingCost.value = false;
+            removingCost.value = null;
+        },
+    });
 }
 
 // 3. Create Milestone Bill Form
@@ -957,5 +984,29 @@ class="w-full rounded-xl border border-slate-200 py-2 px-3"
                 </form>
             </div>
         </Modal>
+
+        <!-- Remove Item Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!removingItem"
+            title="Remove Inventory Item"
+            :item-name="removingItem ? removingItem.item_name : ''"
+            message="Are you sure you want to remove this item from the project? Items that were previously issued will be restored back to warehouse stock."
+            confirm-text="Remove Item"
+            :processing="isRemovingItem"
+            @confirm="executeRemoveItem"
+            @close="removingItem = null"
+        />
+
+        <!-- Remove Cost Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!removingCost"
+            title="Remove Direct Expense"
+            :item-name="removingCost ? removingCost.description : ''"
+            message="Are you sure you want to remove this expense entry from project direct costs?"
+            confirm-text="Remove Expense"
+            :processing="isRemovingCost"
+            @confirm="executeRemoveCost"
+            @close="removingCost = null"
+        />
     </AppLayout>
 </template>

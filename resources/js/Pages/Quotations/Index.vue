@@ -1,11 +1,12 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import Modal from '@/Components/Modal.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import { formatDate } from '@/Utils/date';
 
 const props = defineProps({
@@ -23,6 +24,8 @@ const isConvertModalOpen = ref(false);
 const selectedQuotation = ref(null);
 const isViewModalOpen = ref(false);
 const viewingQuotation = ref(null);
+const deletingQuotation = ref(null);
+const isDeleting = ref(false);
 
 function openViewModal(q) {
     viewingQuotation.value = q;
@@ -64,10 +67,32 @@ function submitConvert() {
     });
 }
 
+const optimisticallyHiddenQuotationIds = ref(new Set());
+const displayedQuotations = computed(() => {
+    return (props.quotations?.data || []).filter(q => !optimisticallyHiddenQuotationIds.value.has(q.id));
+});
+
 function deleteQuotation(q) {
-    if (confirm(`Are you sure you want to delete quotation #${q.quotation_number}?`)) {
-        router.delete(route('quotations.destroy', q.id));
-    }
+    deletingQuotation.value = q;
+}
+
+function executeDeleteQuotation() {
+    if (!deletingQuotation.value) return;
+    const targetId = deletingQuotation.value.id;
+    // Optimistic UI: row vanishes instantly (0ms)
+    optimisticallyHiddenQuotationIds.value.add(targetId);
+    deletingQuotation.value = null;
+
+    router.delete(route('quotations.destroy', targetId), {
+        preserveScroll: true,
+        only: ['quotations', 'metrics', 'flash'],
+        onError: () => {
+            optimisticallyHiddenQuotationIds.value.delete(targetId);
+        },
+        onFinish: () => {
+            optimisticallyHiddenQuotationIds.value.delete(targetId);
+        },
+    });
 }
 </script>
 
@@ -189,7 +214,7 @@ function deleteQuotation(q) {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-slate-700">
-                            <tr v-for="q in quotations.data" :key="q.id" class="hover:bg-slate-50/70 transition">
+                            <tr v-for="q in displayedQuotations" :key="q.id" class="hover:bg-slate-50/70 transition">
                                 <td class="py-3.5 px-4 font-semibold text-slate-900 whitespace-nowrap">
                                     <button
                                         type="button"
@@ -505,5 +530,17 @@ function deleteQuotation(q) {
                 </div>
             </div>
         </Modal>
+
+        <!-- Delete Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!deletingQuotation"
+            title="Delete Quotation"
+            :item-name="deletingQuotation ? `#${deletingQuotation.quotation_number}` : ''"
+            message="Are you sure you want to delete this quotation estimate? This action cannot be undone."
+            confirm-text="Delete Quotation"
+            :processing="isDeleting"
+            @confirm="executeDeleteQuotation"
+            @close="deletingQuotation = null"
+        />
     </AppLayout>
 </template>

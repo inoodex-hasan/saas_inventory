@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import Pagination from '@/Components/Pagination.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
 
@@ -87,23 +88,41 @@ function submitEdit() {
     });
 }
 
+const deletingAccount = ref(null);
+const isDeletingAccount = ref(false);
+
 function deleteAccount(account) {
-    if (confirm(`Are you sure you want to delete account ${account.account_code} - ${account.name}?`)) {
-        router.delete(route('accounts.destroy', account.id));
-    }
+    deletingAccount.value = account;
 }
 
+function executeDeleteAccount() {
+    if (!deletingAccount.value) return;
+    isDeletingAccount.value = true;
+    router.delete(route('accounts.destroy', deletingAccount.value.id), {
+        preserveScroll: true,
+        onFinish: () => {
+            isDeletingAccount.value = false;
+            deletingAccount.value = null;
+        },
+    });
+}
+
+const showInitTemplateModal = ref(false);
 const isInitializing = ref(false);
 
 function initializeTemplate() {
-    if (confirm('Load the standard chart of accounts template (Assets, Liabilities, Equity, Revenue, Expense)?')) {
-        isInitializing.value = true;
-        router.post(route('accounts.initialize'), {}, {
-            onFinish: () => {
-                isInitializing.value = false;
-            },
-        });
-    }
+    showInitTemplateModal.value = true;
+}
+
+function executeInitializeTemplate() {
+    isInitializing.value = true;
+    router.post(route('accounts.initialize'), {}, {
+        preserveScroll: true,
+        onFinish: () => {
+            isInitializing.value = false;
+            showInitTemplateModal.value = false;
+        },
+    });
 }
 
 function typeBadgeClass(type) {
@@ -510,5 +529,30 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                 </form>
             </div>
         </Modal>
+
+        <!-- Delete Account Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!deletingAccount"
+            title="Delete Account"
+            :item-name="deletingAccount ? `${deletingAccount.account_code} - ${deletingAccount.name}` : ''"
+            message="Are you sure you want to delete this ledger account? Accounts with existing journal entries cannot be deleted."
+            confirm-text="Delete Account"
+            :processing="isDeletingAccount"
+            @confirm="executeDeleteAccount"
+            @close="deletingAccount = null"
+        />
+
+        <!-- Initialize Template Confirmation Modal -->
+        <ConfirmationModal
+            :show="showInitTemplateModal"
+            title="Load Default Chart of Accounts"
+            variant="warning"
+            icon="info"
+            message="This will create the standard chart of accounts hierarchy (Assets, Liabilities, Equity, Revenue, Expense) if they don't already exist. Existing accounts will not be overwritten."
+            confirm-text="Load Standard Accounts"
+            :processing="isInitializing"
+            @confirm="executeInitializeTemplate"
+            @close="showInitTemplateModal = false"
+        />
     </AppLayout>
 </template>

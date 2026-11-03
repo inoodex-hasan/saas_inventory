@@ -50,10 +50,6 @@ class ProductController extends Controller
 
         $products = $query->latest('id')->paginate(15)->withQueryString();
 
-        $categories = ProductCategory::where('team_id', $teamId)->orderBy('name')->get();
-        $brands = Brand::where('team_id', $teamId)->orderBy('name')->get();
-        $warehouses = Warehouse::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
-
         $metrics = [
             'total_products' => Product::where('team_id', $teamId)->count(),
             'total_units' => (float) StockLevel::where('team_id', $teamId)->sum('quantity'),
@@ -68,9 +64,9 @@ class ProductController extends Controller
 
         return Inertia::render('Products/Index', [
             'products' => $products,
-            'categories' => $categories,
-            'brands' => $brands,
-            'warehouses' => $warehouses,
+            'categories' => fn () => ProductCategory::where('team_id', $teamId)->orderBy('name')->get(),
+            'brands' => fn () => Brand::where('team_id', $teamId)->orderBy('name')->get(),
+            'warehouses' => fn () => Warehouse::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get(),
             'metrics' => $metrics,
             'filters' => [
                 'search' => $search,

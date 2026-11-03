@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
@@ -158,20 +159,43 @@ function resetFilters() {
     router.get(route('purchases.index'), {}, { preserveState: false, replace: true });
 }
 
+const poActionModal = ref(null);
+const isPoActionProcessing = ref(false);
+
 function markOrdered(order) {
-    if (confirm(`Mark PO ${order.po_number} as Ordered / Sent to Vendor?`)) {
-        router.post(route('purchases.mark-ordered', order.id), {}, {
-            preserveScroll: true,
-        });
-    }
+    poActionModal.value = {
+        order,
+        title: 'Mark PO as Ordered',
+        variant: 'warning',
+        icon: 'info',
+        message: 'Mark this Purchase Order as officially ordered and transmitted to vendor?',
+        confirmText: 'Mark Ordered',
+        routeName: 'purchases.mark-ordered',
+    };
 }
 
 function cancelOrder(order) {
-    if (confirm(`Cancel Purchase Order ${order.po_number}?`)) {
-        router.post(route('purchases.cancel', order.id), {}, {
-            preserveScroll: true,
-        });
-    }
+    poActionModal.value = {
+        order,
+        title: 'Cancel Purchase Order',
+        variant: 'danger',
+        icon: 'danger',
+        message: 'Are you sure you want to cancel this Purchase Order? Any pending deliveries will be aborted.',
+        confirmText: 'Cancel Purchase Order',
+        routeName: 'purchases.cancel',
+    };
+}
+
+function executePoAction() {
+    if (!poActionModal.value) return;
+    isPoActionProcessing.value = true;
+    router.post(route(poActionModal.value.routeName, poActionModal.value.order.id), {}, {
+        preserveScroll: true,
+        onFinish: () => {
+            isPoActionProcessing.value = false;
+            poActionModal.value = null;
+        },
+    });
 }
 
 function openReceiveModal(order) {
@@ -1089,5 +1113,19 @@ class="w-24 px-2 py-1 rounded-lg border border-slate-200 text-xs font-mono"
                 </form>
             </div>
         </Modal>
+
+        <!-- PO Action Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!poActionModal"
+            :title="poActionModal?.title || ''"
+            :variant="poActionModal?.variant || 'danger'"
+            :icon="poActionModal?.icon || 'danger'"
+            :item-name="poActionModal?.order ? `PO #${poActionModal.order.po_number} - ${poActionModal.order.supplier?.name || 'Vendor'}` : ''"
+            :message="poActionModal?.message || ''"
+            :confirm-text="poActionModal?.confirmText || 'Confirm'"
+            :processing="isPoActionProcessing"
+            @confirm="executePoAction"
+            @close="poActionModal = null"
+        />
     </AppLayout>
 </template>

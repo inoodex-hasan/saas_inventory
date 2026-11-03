@@ -40,8 +40,6 @@ class DeliveryChallanController extends Controller
 
         $challans = $query->latest('id')->paginate(15)->withQueryString();
 
-        $customers = Customer::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
-
         $metrics = [
             'total_challans' => DeliveryChallan::where('team_id', $teamId)->count(),
             'dispatched_count' => DeliveryChallan::where('team_id', $teamId)->where('status', 'dispatched')->count(),
@@ -52,7 +50,7 @@ class DeliveryChallanController extends Controller
         return Inertia::render('Challans/Index', [
             'page_title' => 'Delivery Challans & Gate Passes',
             'challans' => $challans,
-            'customers' => $customers,
+            'customers' => fn () => Customer::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get(),
             'metrics' => $metrics,
             'filters' => [
                 'search' => $search,

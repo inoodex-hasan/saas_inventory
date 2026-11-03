@@ -1,11 +1,12 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 
 const props = defineProps({
     vendors: Object,
@@ -17,6 +18,8 @@ const search = ref(props.filters?.search || '');
 const status = ref(props.filters?.status || '');
 const isModalOpen = ref(false);
 const editingVendor = ref(null);
+const deletingVendor = ref(null);
+const isDeleting = ref(false);
 
 const form = useForm({
     name: '',
@@ -79,8 +82,14 @@ function submitForm() {
 }
 
 function toggleActive(v) {
+    const prev = v.is_active;
+    v.is_active = !prev;
     router.post(route('vendors.toggle-active', v.id), {}, {
         preserveScroll: true,
+        only: ['vendors', 'metrics', 'flash'],
+        onError: () => {
+            v.is_active = prev;
+        },
     });
 }
 
@@ -92,12 +101,31 @@ function setVendorStatus(v, newStatus) {
     }
 }
 
+const optimisticallyHiddenVendorIds = ref(new Set());
+const displayedVendors = computed(() => {
+    return (props.vendors?.data || []).filter(v => !optimisticallyHiddenVendorIds.value.has(v.id));
+});
+
 function deleteVendor(v) {
-    if (confirm(`Are you sure you want to delete vendor "${v.name}"?`)) {
-        router.delete(route('vendors.destroy', v.id), {
-            preserveScroll: true,
-        });
-    }
+    deletingVendor.value = v;
+}
+
+function executeDeleteVendor() {
+    if (!deletingVendor.value) return;
+    const targetId = deletingVendor.value.id;
+    optimisticallyHiddenVendorIds.value.add(targetId);
+    deletingVendor.value = null;
+
+    router.delete(route('vendors.destroy', targetId), {
+        preserveScroll: true,
+        only: ['vendors', 'metrics', 'flash'],
+        onError: () => {
+            optimisticallyHiddenVendorIds.value.delete(targetId);
+        },
+        onFinish: () => {
+            optimisticallyHiddenVendorIds.value.delete(targetId);
+        },
+    });
 }
 </script>
 
@@ -202,7 +230,7 @@ function deleteVendor(v) {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <tr v-for="v in vendors.data" :key="v.id" class="hover:bg-slate-50/70 transition-colors">
+                            <tr v-for="v in displayedVendors" :key="v.id" class="hover:bg-slate-50/70 transition-colors">
                                 <td class="py-3.5 px-4 whitespace-nowrap">
                                     <div class="font-bold text-slate-900 text-sm max-w-[180px] lg:max-w-[220px] truncate" :title="v.name">{{ v.name }}</div>
                                     <div v-if="v.tax_number" class="text-[10px] text-slate-400 font-mono mt-0.5">
@@ -425,5 +453,17 @@ class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-
                 </form>
             </div>
         </Modal>
+
+        <!-- Delete Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!deletingVendor"
+            title="Delete Vendor"
+            :item-name="deletingVendor?.name"
+            message="Are you sure you want to delete this vendor? Historical purchase orders and payables will remain intact for accounting integrity."
+            confirm-text="Delete Vendor"
+            :processing="isDeleting"
+            @confirm="executeDeleteVendor"
+            @close="deletingVendor = null"
+        />
     </AppLayout>
 </template>

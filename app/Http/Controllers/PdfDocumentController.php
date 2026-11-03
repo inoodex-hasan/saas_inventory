@@ -110,7 +110,7 @@ class PdfDocumentController extends Controller
     /**
      * Download or stream 80mm POS Thermal Slip PDF.
      */
-    public function posSlip(SalesOrder $order)
+    public function posSlip(Request $request, SalesOrder $order)
     {
         $user = Auth::user();
         $order->load(['customer', 'warehouse', 'items.product', 'team']);
@@ -119,23 +119,39 @@ class PdfDocumentController extends Controller
             abort(403, 'Unauthorized access to tenant document.');
         }
 
+        $team = $order->team ?? $user->currentTeam;
+
+        // Instant HTML Preview & 1-Click Print Mode (bypasses heavy browser PDFium plugin)
+        if ($request->has('preview') || $request->has('html')) {
+            return view('pdf.pos-slip-preview', compact('order', 'team'));
+        }
+
+        $itemCount = $order->items->count();
+        $slipHeight = max(160, 115 + ($itemCount * 13) + (!empty($order->notes) ? 15 : 0));
+
         $pdf = PDF::loadView('pdf.pos-slip', [
             'order' => $order,
             'team' => $order->team ?? $user->currentTeam,
         ], [], [
-            'format' => [80, 220],
+            'format' => [80, $slipHeight],
             'title' => "POS-{$order->order_number}",
-            'margin_top' => 4,
-            'margin_bottom' => 4,
+            'margin_top' => 3,
+            'margin_bottom' => 3,
             'margin_left' => 3,
             'margin_right' => 3,
+            'autoScriptToLang' => false,
+            'autoLangToFont' => false,
         ]);
 
+        $content = $pdf->output();
         $filename = "POS-{$order->order_number}.pdf";
 
-        return response($pdf->output(), 200, [
+        return response($content, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => "inline; filename=\"{$filename}\"",
+            'Content-Length' => strlen($content),
+            'Accept-Ranges' => 'bytes',
+            'Cache-Control' => 'private, max-age=120, must-revalidate',
         ]);
     }
 

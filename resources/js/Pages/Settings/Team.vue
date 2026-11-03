@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
 import { formatDate } from '@/Utils/date';
 
@@ -83,12 +84,23 @@ function submitRoleUpdate() {
 }
 
 // Remove Member
+const removingMember = ref(null);
+const isRemovingMember = ref(false);
+
 function removeMember(member) {
-    if (confirm(`Are you sure you want to remove ${member.name} from ${props.team?.name}?`)) {
-        router.delete(route('settings.team.members.remove', member.id), {
-            preserveScroll: true,
-        });
-    }
+    removingMember.value = member;
+}
+
+function executeRemoveMember() {
+    if (!removingMember.value) return;
+    isRemovingMember.value = true;
+    router.delete(route('settings.team.members.remove', removingMember.value.id), {
+        preserveScroll: true,
+        onFinish: () => {
+            isRemovingMember.value = false;
+            removingMember.value = null;
+        },
+    });
 }
 </script>
 
@@ -411,5 +423,17 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                 </form>
             </div>
         </Modal>
+
+        <!-- Remove Member Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!removingMember"
+            title="Remove Team Member"
+            :item-name="removingMember ? `${removingMember.name} (${removingMember.email})` : ''"
+            :message="`Are you sure you want to remove this member from ${props.team?.name || 'this team'}? They will immediately lose access to this organization.`"
+            confirm-text="Remove Member"
+            :processing="isRemovingMember"
+            @confirm="executeRemoveMember"
+            @close="removingMember = null"
+        />
     </AppLayout>
 </template>

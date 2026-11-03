@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import axios from 'axios';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -7,6 +7,7 @@ import Modal from '@/Components/Modal.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 
 const props = defineProps({
     products: Object,
@@ -28,6 +29,8 @@ const inspectedProduct = ref(null);
 const inspectedLevels = ref([]);
 const inspectedBarcodeSvg = ref('');
 const inspectedBarcodeValue = ref('');
+const deletingProduct = ref(null);
+const isDeleting = ref(false);
 const isInspectLoading = ref(false);
 
 const isTaxonomyModalOpen = ref(false);
@@ -73,11 +76,32 @@ function resetFilters() {
 }
 
 function deleteProduct(prod) {
-    if (confirm(`Are you sure you want to delete product "${prod.name}"?`)) {
-        router.delete(route('products.destroy', prod.id), {
-            preserveScroll: true,
-        });
-    }
+    deletingProduct.value = prod;
+}
+
+const optimisticallyHiddenProductIds = ref(new Set());
+
+const displayedProducts = computed(() => {
+    return (props.products?.data || []).filter(p => !optimisticallyHiddenProductIds.value.has(p.id));
+});
+
+function executeDeleteProduct() {
+    if (!deletingProduct.value) return;
+    const targetId = deletingProduct.value.id;
+    // Optimistic UI: row vanishes instantly (0ms)
+    optimisticallyHiddenProductIds.value.add(targetId);
+    deletingProduct.value = null;
+
+    router.delete(route('products.destroy', targetId), {
+        preserveScroll: true,
+        only: ['products', 'metrics', 'flash'],
+        onError: () => {
+            optimisticallyHiddenProductIds.value.delete(targetId);
+        },
+        onFinish: () => {
+            optimisticallyHiddenProductIds.value.delete(targetId);
+        },
+    });
 }
 
 async function inspectStock(prod) {
@@ -141,29 +165,73 @@ function submitCategory() {
     });
 }
 
+const deletingCategory = ref(null);
+const isDeletingCategory = ref(false);
+
+const optimisticallyHiddenCategoryIds = ref(new Set());
+const displayedCategories = computed(() => {
+    return (props.categories || []).filter(c => !optimisticallyHiddenCategoryIds.value.has(c.id));
+});
+
 function deleteCategory(cat) {
-    if (confirm(`Delete category "${cat.name}"?`)) {
-        router.delete(route('products.categories.destroy', cat.id), {
-            preserveScroll: true,
-        });
-    }
+    deletingCategory.value = cat;
+}
+
+function executeDeleteCategory() {
+    if (!deletingCategory.value) return;
+    const targetId = deletingCategory.value.id;
+    optimisticallyHiddenCategoryIds.value.add(targetId);
+    deletingCategory.value = null;
+
+    router.delete(route('products.categories.destroy', targetId), {
+        preserveScroll: true,
+        only: ['categories', 'flash'],
+        onError: () => {
+            optimisticallyHiddenCategoryIds.value.delete(targetId);
+        },
+        onFinish: () => {
+            optimisticallyHiddenCategoryIds.value.delete(targetId);
+        },
+    });
 }
 
 function submitBrand() {
     brandForm.post(route('products.brands.store'), {
         preserveScroll: true,
+        only: ['brands', 'flash'],
         onSuccess: () => {
             brandForm.reset();
         },
     });
 }
 
+const deletingBrand = ref(null);
+const isDeletingBrand = ref(false);
+const optimisticallyHiddenBrandIds = ref(new Set());
+const displayedBrands = computed(() => {
+    return (props.brands || []).filter(b => !optimisticallyHiddenBrandIds.value.has(b.id));
+});
+
 function deleteBrand(b) {
-    if (confirm(`Delete brand "${b.name}"?`)) {
-        router.delete(route('products.brands.destroy', b.id), {
-            preserveScroll: true,
-        });
-    }
+    deletingBrand.value = b;
+}
+
+function executeDeleteBrand() {
+    if (!deletingBrand.value) return;
+    const targetId = deletingBrand.value.id;
+    optimisticallyHiddenBrandIds.value.add(targetId);
+    deletingBrand.value = null;
+
+    router.delete(route('products.brands.destroy', targetId), {
+        preserveScroll: true,
+        only: ['brands', 'flash'],
+        onError: () => {
+            optimisticallyHiddenBrandIds.value.delete(targetId);
+        },
+        onFinish: () => {
+            optimisticallyHiddenBrandIds.value.delete(targetId);
+        },
+    });
 }
 
 function handleImport(e) {
@@ -360,7 +428,7 @@ function submitImport() {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <tr v-for="prod in products.data" :key="prod.id" class="hover:bg-slate-50/70 transition-colors">
+                            <tr v-for="prod in displayedProducts" :key="prod.id" class="hover:bg-slate-50/70 transition-colors">
                                 <!-- Product & SKU -->
                                 <td class="py-3.5 px-4">
                                     <div class="flex items-center gap-3">
@@ -630,7 +698,7 @@ class="flex-1 px-3 py-1.5 rounded-lg text-xs border border-slate-200 focus:borde
                     <!-- Categories List -->
                     <div class="max-h-72 overflow-y-auto divide-y divide-slate-100 border border-slate-200 rounded-xl">
                         <div 
-                            v-for="cat in categories" 
+                            v-for="cat in displayedCategories" 
                             :key="cat.id" 
                             class="p-2.5 px-3.5 flex items-center justify-between hover:bg-slate-50 text-xs"
                         >
@@ -669,7 +737,7 @@ class="flex-1 px-3 py-1.5 rounded-lg text-xs border border-slate-200 focus:borde
                     <!-- Brands List -->
                     <div class="max-h-72 overflow-y-auto divide-y divide-slate-100 border border-slate-200 rounded-xl">
                         <div 
-                            v-for="b in brands" 
+                            v-for="b in displayedBrands" 
                             :key="b.id" 
                             class="p-2.5 px-3.5 flex items-center justify-between hover:bg-slate-50 text-xs"
                         >
@@ -743,5 +811,41 @@ class="flex-1 px-3 py-1.5 rounded-lg text-xs border border-slate-200 focus:borde
                 </form>
             </div>
         </Modal>
+
+        <!-- Delete Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!deletingProduct"
+            title="Delete Product"
+            :item-name="deletingProduct ? `${deletingProduct.name} (${deletingProduct.sku})` : ''"
+            message="Are you sure you want to delete this product? All current warehouse stock records for this item will be removed from active inventory."
+            confirm-text="Delete Product"
+            :processing="isDeleting"
+            @confirm="executeDeleteProduct"
+            @close="deletingProduct = null"
+        />
+
+        <!-- Delete Category Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!deletingCategory"
+            title="Delete Category"
+            :item-name="deletingCategory ? deletingCategory.name : ''"
+            message="Are you sure you want to delete this category? Products assigned to it will become unassigned."
+            confirm-text="Delete Category"
+            :processing="isDeletingCategory"
+            @confirm="executeDeleteCategory"
+            @close="deletingCategory = null"
+        />
+
+        <!-- Delete Brand Confirmation Modal -->
+        <ConfirmationModal
+            :show="!!deletingBrand"
+            title="Delete Brand"
+            :item-name="deletingBrand ? deletingBrand.name : ''"
+            message="Are you sure you want to delete this brand? Products assigned to it will have their brand removed."
+            confirm-text="Delete Brand"
+            :processing="isDeletingBrand"
+            @confirm="executeDeleteBrand"
+            @close="deletingBrand = null"
+        />
     </AppLayout>
 </template>
