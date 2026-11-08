@@ -160,7 +160,7 @@
                 </a>
 
                 <!-- Desktop Nav Links -->
-                <nav class="hidden lg:flex items-center gap-7 text-sm font-medium text-slate-300">
+                <nav class="hidden md:flex items-center gap-5 lg:gap-7 text-sm font-medium text-slate-300">
                     <a href="#features" class="hover:text-white transition-colors">Features</a>
                     <a href="#pricing" class="hover:text-white transition-colors">Pricing</a>
                     <a href="#reviews" class="hover:text-white transition-colors">Review</a>
@@ -223,7 +223,7 @@
                                     id="btn-nav-register"
                                     class="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
                                 >
-                                    <span>Free Trail</span>
+                                    <span>Free Trial</span>
                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                                     </svg>
@@ -235,7 +235,7 @@
                     <!-- Mobile Menu Button -->
                     <button 
                         id="btn-mobile-menu"
-                        class="lg:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.05] focus:outline-none"
+                        class="md:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.05] focus:outline-none"
                         aria-label="Toggle Navigation Menu"
                     >
                         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -246,7 +246,7 @@
             </div>
 
             <!-- Mobile Dropdown Navigation -->
-            <div id="mobile-menu" class="hidden lg:hidden border-t border-white/[0.06] bg-[#070b1a]/95 backdrop-blur-xl px-4 pt-3 pb-6 space-y-3">
+            <div id="mobile-menu" class="hidden md:hidden border-t border-white/[0.06] bg-[#070b1a]/95 backdrop-blur-xl px-4 pt-3 pb-6 space-y-3">
                 <a href="#features" class="block py-2 text-sm font-medium text-slate-300 hover:text-white">Features</a>
                 <a href="#pricing" class="block py-2 text-sm font-medium text-slate-300 hover:text-white">Pricing</a>
                 <a href="#reviews" class="block py-2 text-sm font-medium text-slate-300 hover:text-white">Review</a>
@@ -264,8 +264,8 @@
                     </div>
                 </div>
                 <div class="pt-2 flex flex-col gap-2">
-                    <a href="{{ route('login') }}" class="w-full text-center py-2.5 rounded-lg bg-white/[0.05] text-xs font-bold text-white">Signin</a>
-                    <a href="{{ route('register') }}" class="w-full text-center py-2.5 rounded-lg bg-indigo-600 text-xs font-bold text-white">Free Trail</a>
+                    <a href="{{ route('login') }}" class="w-full text-center py-2.5 rounded-lg bg-white/[0.05] text-xs font-bold text-white">Sign In</a>
+                    <a href="{{ route('register') }}" class="w-full text-center py-2.5 rounded-lg bg-indigo-600 text-xs font-bold text-white">Free Trial</a>
                 </div>
             </div>
         </header>
