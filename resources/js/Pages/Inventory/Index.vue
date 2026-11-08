@@ -1,10 +1,14 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import axios from 'axios';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import Modal from '@/Components/Modal.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
+import BarcodeCameraModal from '@/Components/BarcodeCameraModal.vue';
+import { useBarcodeScanner } from '@/Composables/useBarcodeScanner';
+import { playScanSuccess, playScanError } from '@/Utils/sound';
 import { formatDate } from '@/Utils/date';
 
 const props = defineProps({
@@ -25,6 +29,15 @@ const categoryFilter = ref(props.filters?.category_id || '');
 // Modals state
 const isAdjustModalOpen = ref(false);
 const isTransferModalOpen = ref(false);
+const isAuditModalOpen = ref(false);
+const isCameraModalOpen = ref(false);
+
+// Audit Cycle Count State
+const auditWarehouseId = ref(props.warehouseFilter || props.warehouses[0]?.id || '');
+const auditBarcode = ref('');
+const auditFeedback = ref(null);
+const auditList = ref([]);
+const isLookingUp = ref(false);
 
 // Adjust Form
 const adjustForm = useForm({
@@ -90,6 +103,188 @@ function openTransferModal(product = null) {
     isTransferModalOpen.value = true;
 }
 
+function openAuditModal() {
+    auditWarehouseId.value = warehouseFilter.value || props.warehouses[0]?.id || '';
+    auditFeedback.value = null;
+    isAuditModalOpen.value = true;
+}
+
+function updateAuditCount(item, change) {
+    item.counted_qty = Math.max(0, Number((item.counted_qty + change).toFixed(2)));
+    item.variance = Number((item.counted_qty - item.system_stock).toFixed(2));
+    item.reconciled = item.variance === 0;
+}
+
+function onCountInput(item) {
+    item.counted_qty = Math.max(0, Number(item.counted_qty || 0));
+    item.variance = Number((item.counted_qty - item.system_stock).toFixed(2));
+    item.reconciled = item.variance === 0;
+}
+
+function reconcileItem(item) {
+    if (item.reconciling) return;
+    item.reconciling = true;
+    router.post(route('inventory.adjust'), {
+        warehouse_id: auditWarehouseId.value,
+        product_id: item.product_id,
+        new_quantity: item.counted_qty,
+        reason: 'Physical stock audit cycle count scan reconciliation',
+    }, {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => {
+            item.reconciling = false;
+            item.reconciled = true;
+            item.system_stock = item.counted_qty;
+            item.variance = 0;
+            playScanSuccess();
+            auditFeedback.value = {
+                type: 'success',
+                text: `Successfully reconciled stock for "${item.name}" to ${item.counted_qty} units.`
+            };
+        },
+        onError: (errors) => {
+            item.reconciling = false;
+            playScanError();
+            auditFeedback.value = {
+                type: 'error',
+                text: 'Adjustment failed: ' + (Object.values(errors)[0] || 'Unknown error')
+            };
+        }
+    });
+}
+
+function removeAuditItem(index) {
+    auditList.value.splice(index, 1);
+}
+
+function clearAuditSheet() {
+    auditList.value = [];
+    auditFeedback.value = null;
+}
+
+async function handleBarcode(code) {
+    if (!code || !code.trim()) return;
+    const clean = code.trim();
+
+    if (isAuditModalOpen.value) {
+        await processAuditScan(clean);
+    } else {
+        search.value = clean;
+        handleFilter();
+        playScanSuccess();
+    }
+}
+
+async function processAuditScan(code) {
+    auditFeedback.value = null;
+
+    // Check if already in audit list
+    const existing = auditList.value.find(i =>
+        (i.barcode && i.barcode.toLowerCase() === code.toLowerCase()) ||
+        (i.sku && i.sku.toLowerCase() === code.toLowerCase())
+    );
+
+    if (existing) {
+        existing.counted_qty += 1;
+        existing.variance = Number((existing.counted_qty - existing.system_stock).toFixed(2));
+        existing.reconciled = existing.variance === 0;
+        playScanSuccess();
+        auditFeedback.value = {
+            type: 'success',
+            text: `Count incremented for "${existing.name}" (Counted: ${existing.counted_qty} | System: ${existing.system_stock})`
+        };
+        auditBarcode.value = '';
+        return;
+    }
+
+    // Lookup via API for stock level at selected warehouse
+    isLookingUp.value = true;
+    try {
+        const response = await axios.get(route('products.lookup-barcode'), {
+            params: { barcode: code }
+        });
+
+        if (response.data && response.data.found && response.data.product) {
+            const prod = response.data.product;
+            const sl = prod.stock_levels?.find(s => String(s.warehouse_id) === String(auditWarehouseId.value));
+            const systemStock = sl ? Number(sl.quantity) : 0;
+            const counted = 1;
+            const variance = Number((counted - systemStock).toFixed(2));
+
+            auditList.value.unshift({
+                product_id: prod.id,
+                name: prod.name,
+                sku: prod.sku,
+                barcode: prod.barcode || code,
+                category: prod.category?.name || 'General',
+                unit: prod.unit?.short_name || 'pcs',
+                system_stock: systemStock,
+                counted_qty: counted,
+                variance: variance,
+                reconciling: false,
+                reconciled: variance === 0
+            });
+
+            playScanSuccess();
+            auditFeedback.value = {
+                type: 'success',
+                text: `Added "${prod.name}" to audit sheet (Counted: 1 | System: ${systemStock})`
+            };
+        } else {
+            // Check local productsList fallback
+            const local = (props.productsList || []).find(p =>
+                (p.barcode && p.barcode.toLowerCase() === code.toLowerCase()) ||
+                (p.sku && p.sku.toLowerCase() === code.toLowerCase())
+            );
+            if (local) {
+                auditList.value.unshift({
+                    product_id: local.id,
+                    name: local.name,
+                    sku: local.sku,
+                    barcode: local.barcode || code,
+                    category: 'General',
+                    unit: 'pcs',
+                    system_stock: 0,
+                    counted_qty: 1,
+                    variance: 1,
+                    reconciling: false,
+                    reconciled: false
+                });
+                playScanSuccess();
+                auditFeedback.value = {
+                    type: 'success',
+                    text: `Added "${local.name}" to audit sheet (Counted: 1)`
+                };
+            } else {
+                playScanError();
+                auditFeedback.value = {
+                    type: 'error',
+                    text: `Barcode or SKU "${code}" not found in catalog.`
+                };
+            }
+        }
+    } catch (err) {
+        console.error('Audit lookup error:', err);
+        playScanError();
+        auditFeedback.value = {
+            type: 'error',
+            text: `Lookup failed for barcode "${code}".`
+        };
+    } finally {
+        isLookingUp.value = false;
+        auditBarcode.value = '';
+    }
+}
+
+// Global Hardware Scanner Composable
+useBarcodeScanner({
+    onScan: (code) => {
+        handleBarcode(code);
+    },
+    enabled: true,
+});
+
 function submitAdjust() {
     adjustForm.post(route('inventory.adjust'), {
         preserveScroll: true,
@@ -115,6 +310,7 @@ const productOptions = computed(() => {
         id: p.id,
         name: p.name,
         sku: p.sku,
+        barcode: p.barcode,
         cost_price: p.cost_price,
     }));
 });
@@ -196,6 +392,17 @@ const productOptions = computed(() => {
                 <!-- Action Buttons -->
                 <div class="flex items-center gap-2">
                     <button
+                        @click="openAuditModal()"
+                        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold shadow-sm shadow-emerald-500/20 transition-all"
+                        title="Open physical stock audit cycle count scanner"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                        </svg>
+                        <span>Stock Audit Scan</span>
+                    </button>
+
+                    <button
                         @click="openTransferModal()"
                         class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-all"
                     >
@@ -225,11 +432,23 @@ const productOptions = computed(() => {
                             type="text"
                             v-model="search"
                             @keyup.enter="handleFilter"
-                            class="w-full pl-9 pr-4 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
+                            placeholder="Search by name, SKU or scan barcode..."
+                            class="w-full pl-9 pr-9 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
                         />
                         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
+                        <button
+                            type="button"
+                            @click="isCameraModalOpen = true"
+                            title="Scan barcode with camera"
+                            class="absolute right-2.5 top-2 p-0.5 text-slate-400 hover:text-indigo-600 transition"
+                        >
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </button>
                     </div>
 
                     <select
@@ -668,5 +887,241 @@ const productOptions = computed(() => {
                 </form>
             </div>
         </Modal>
+
+        <!-- Warehouse Stock Audit / Cycle Count Modal -->
+        <Modal :show="isAuditModalOpen" @close="isAuditModalOpen = false" max-width="4xl">
+            <div class="p-6">
+                <!-- Modal Header -->
+                <div class="flex items-start justify-between pb-4 border-b border-slate-100 mb-5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-md shadow-emerald-500/20">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-base font-extrabold text-slate-900">Stock Audit & Cycle Count Scanner</h2>
+                                <span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 rounded-full animate-pulse">Live Hardware / Camera Ready</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-0.5">Scan product barcodes continuously to audit physical on-hand stock and reconcile discrepancies.</p>
+                        </div>
+                    </div>
+                    <button @click="isAuditModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Scanner Controls & Warehouse Switcher -->
+                <div class="space-y-3 mb-5">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Target Audit Warehouse *</label>
+                            <select
+                                v-model="auditWarehouseId"
+                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-emerald-500 font-medium"
+                            >
+                                <option v-for="w in warehouses" :key="w.id" :value="w.id">
+                                    {{ w.name }} ({{ w.code }})
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Barcode / SKU Scanner (Auto-records on Enter or Laser scan)</label>
+                            <div class="flex gap-2">
+                                <div class="relative flex-1">
+                                    <input
+                                        v-model="auditBarcode"
+                                        @keyup.enter="handleBarcode(auditBarcode)"
+                                        type="text"
+                                        placeholder="Scan barcode label or type SKU..."
+                                        class="w-full pl-9 pr-4 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition"
+                                    />
+                                    <svg class="w-4 h-4 text-emerald-600 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                                    </svg>
+                                </div>
+                                <button
+                                    type="button"
+                                    @click="isCameraModalOpen = true"
+                                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
+                                >
+                                    <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    <span>Camera</span>
+                                </button>
+                                <button
+                                    v-if="auditList.length > 0"
+                                    type="button"
+                                    @click="clearAuditSheet"
+                                    class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 text-xs font-semibold transition"
+                                >
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scan Feedback Banner -->
+                    <div
+                        v-if="auditFeedback"
+                        class="p-2.5 rounded-xl text-xs font-medium flex items-center justify-between"
+                        :class="auditFeedback.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'"
+                    >
+                        <span>{{ auditFeedback.text }}</span>
+                        <button @click="auditFeedback = null" class="text-xs font-bold hover:underline">Dismiss</button>
+                    </div>
+                </div>
+
+                <!-- Live Audit Summary Tally -->
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Items Audited</span>
+                        <div class="text-lg font-black text-slate-900 mt-0.5">{{ auditList.length }}</div>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Units Counted</span>
+                        <div class="text-lg font-black text-indigo-600 mt-0.5">
+                            {{ auditList.reduce((acc, i) => acc + (Number(i.counted_qty) || 0), 0) }}
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Variances to Reconcile</span>
+                        <div class="text-lg font-black mt-0.5" :class="auditList.some(i => i.variance !== 0 && !i.reconciled) ? 'text-rose-600' : 'text-emerald-600'">
+                            {{ auditList.filter(i => i.variance !== 0 && !i.reconciled).length }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Audit Items Table -->
+                <div class="border border-slate-200 rounded-xl overflow-hidden max-h-80 overflow-y-auto mb-4">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50/90 text-slate-500 uppercase text-[10px] font-bold sticky top-0 border-b border-slate-200">
+                            <tr>
+                                <th class="py-2.5 px-3">Product Catalog Item</th>
+                                <th class="py-2.5 px-3 text-center">System Stock</th>
+                                <th class="py-2.5 px-3 text-center">Audited Count</th>
+                                <th class="py-2.5 px-3 text-center">Variance</th>
+                                <th class="py-2.5 px-3 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr v-for="(item, idx) in auditList" :key="item.product_id" class="hover:bg-slate-50/60 transition">
+                                <td class="py-2.5 px-3">
+                                    <div class="font-bold text-slate-900">{{ item.name }}</div>
+                                    <div class="text-[11px] text-slate-400 font-mono flex items-center gap-2">
+                                        <span>SKU: {{ item.sku }}</span>
+                                        <span v-if="item.barcode" class="text-indigo-600 font-semibold">• Barcode: {{ item.barcode }}</span>
+                                    </div>
+                                </td>
+                                <td class="py-2.5 px-3 text-center font-bold text-slate-600">
+                                    {{ item.system_stock }}
+                                </td>
+                                <td class="py-2.5 px-3 text-center">
+                                    <div class="inline-flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white">
+                                        <button
+                                            type="button"
+                                            @click="updateAuditCount(item, -1)"
+                                            class="w-7 h-7 flex items-center justify-center text-slate-500 hover:bg-slate-100 text-sm font-bold"
+                                        >-</button>
+                                        <input
+                                            type="number"
+                                            v-model.number="item.counted_qty"
+                                            @input="onCountInput(item)"
+                                            min="0"
+                                            class="w-14 text-center font-mono font-bold text-xs border-0 focus:ring-0 p-0"
+                                        />
+                                        <button
+                                            type="button"
+                                            @click="updateAuditCount(item, 1)"
+                                            class="w-7 h-7 flex items-center justify-center text-slate-500 hover:bg-slate-100 text-sm font-bold"
+                                        >+</button>
+                                    </div>
+                                </td>
+                                <td class="py-2.5 px-3 text-center whitespace-nowrap">
+                                    <span
+                                        v-if="item.variance === 0 || item.reconciled"
+                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800"
+                                    >
+                                        ✓ Match (0)
+                                    </span>
+                                    <span
+                                        v-else-if="item.variance < 0"
+                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800"
+                                    >
+                                        Missing {{ Math.abs(item.variance) }}
+                                    </span>
+                                    <span
+                                        v-else
+                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800"
+                                    >
+                                        Over +{{ item.variance }}
+                                    </span>
+                                </td>
+                                <td class="py-2.5 px-3 text-right whitespace-nowrap">
+                                    <div class="flex items-center justify-end gap-1.5">
+                                        <button
+                                            v-if="item.variance !== 0 && !item.reconciled"
+                                            @click="reconcileItem(item)"
+                                            :disabled="item.reconciling"
+                                            class="px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-xs transition disabled:opacity-50"
+                                        >
+                                            <span v-if="item.reconciling">Updating...</span>
+                                            <span v-else>Reconcile</span>
+                                        </button>
+                                        <span
+                                            v-else-if="item.reconciled"
+                                            class="text-[11px] text-emerald-600 font-bold"
+                                        >
+                                            Reconciled ✓
+                                        </span>
+                                        <button
+                                            type="button"
+                                            @click="removeAuditItem(idx)"
+                                            class="p-1 text-slate-400 hover:text-rose-500 rounded transition"
+                                            title="Remove item"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-if="auditList.length === 0">
+                                <td colspan="5" class="py-8 text-center text-xs text-slate-400">
+                                    No items audited yet. Point your barcode scanner or camera at product packaging to start counting.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+                    <p class="text-[11px] text-slate-400">
+                        Adjustments post atomic balance corrections to the inventory movement audit log.
+                    </p>
+                    <button
+                        type="button"
+                        @click="isAuditModalOpen = false"
+                        class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition"
+                    >
+                        Done / Close
+                    </button>
+                </div>
+            </div>
+        </Modal>
+
+        <!-- Camera Scanner Modal -->
+        <BarcodeCameraModal
+            v-model:open="isCameraModalOpen"
+            @scan="handleBarcode"
+        />
     </AppLayout>
 </template>

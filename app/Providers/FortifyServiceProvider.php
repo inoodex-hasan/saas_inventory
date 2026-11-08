@@ -27,7 +27,10 @@ class FortifyServiceProvider extends ServiceProvider
                 {
                     $user = $request->user();
                     if ($user && $user->isSuperAdmin()) {
-                        return redirect()->intended(route('admin.dashboard'));
+                        $request->session()->forget('url.intended');
+                        $request->session()->forget('impersonated_tenant_id');
+                        $user->forceFill(['current_team_id' => null])->save();
+                        return redirect()->route('admin.dashboard');
                     }
                     return redirect()->intended(config('fortify.home'));
                 }
@@ -40,7 +43,10 @@ class FortifyServiceProvider extends ServiceProvider
                 {
                     $user = $request->user();
                     if ($user && $user->isSuperAdmin()) {
-                        return redirect()->intended(route('admin.dashboard'));
+                        $request->session()->forget('url.intended');
+                        $request->session()->forget('impersonated_tenant_id');
+                        $user->forceFill(['current_team_id' => null])->save();
+                        return redirect()->route('admin.dashboard');
                     }
                     return redirect()->intended(config('fortify.home'));
                 }

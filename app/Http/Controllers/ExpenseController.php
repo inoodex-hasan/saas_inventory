@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\FinancialAccount;
+use App\Models\Team;
 use App\Services\FinancialAccountService;
 use App\Services\HrService;
 use Illuminate\Http\Request;
@@ -15,9 +16,25 @@ use Inertia\Inertia;
 
 class ExpenseController extends Controller
 {
+    protected function resolveTeamId(): int
+    {
+        $user = Auth::user();
+        $teamId = $user?->current_team_id ?? $user?->currentTeam?->id;
+        if (!$teamId) {
+            $firstTeam = Team::first();
+            if ($firstTeam) {
+                $teamId = (int) $firstTeam->id;
+                if ($user) {
+                    $user->forceFill(['current_team_id' => $teamId])->save();
+                }
+            }
+        }
+        return (int) ($teamId ?? 1);
+    }
+
     public function index(Request $request, FinancialAccountService $accountService)
     {
-        $teamId = Auth::user()->current_team_id;
+        $teamId = $this->resolveTeamId();
 
         $search = $request->input('search');
         $categoryId = $request->input('category_id');
@@ -72,7 +89,7 @@ class ExpenseController extends Controller
         $accountService->ensureDefaultAccounts($teamId);
         $financialAccounts = $accountService->getActiveAccountsForTeam($teamId);
 
-        return Inertia::render('HR/Expenses/Index', [
+        return Inertia::render('Accounting/Expenses/Index', [
             'page_title' => 'Daily Business Expenses & Outflows',
             'expenses' => $expenses,
             'metrics' => $metrics,
@@ -90,7 +107,7 @@ class ExpenseController extends Controller
 
     public function store(Request $request, HrService $service)
     {
-        $teamId = Auth::user()->current_team_id;
+        $teamId = $this->resolveTeamId();
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -112,7 +129,7 @@ class ExpenseController extends Controller
 
     public function destroy(Expense $expense)
     {
-        $teamId = Auth::user()->current_team_id;
+        $teamId = $this->resolveTeamId();
         abort_if($expense->team_id !== $teamId, 403);
 
         $num = $expense->expense_number;
@@ -123,7 +140,7 @@ class ExpenseController extends Controller
 
     public function storeCategory(Request $request)
     {
-        $teamId = Auth::user()->current_team_id;
+        $teamId = $this->resolveTeamId();
 
         $validated = $request->validate([
             'name' => [
@@ -148,7 +165,7 @@ class ExpenseController extends Controller
 
     public function destroyCategory(ExpenseCategory $expenseCategory)
     {
-        $teamId = Auth::user()->current_team_id;
+        $teamId = $this->resolveTeamId();
         abort_if($expenseCategory->team_id !== $teamId, 403);
 
         $name = $expenseCategory->name;

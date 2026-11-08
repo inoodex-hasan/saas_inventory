@@ -4,6 +4,9 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
+import BarcodeCameraModal from '@/Components/BarcodeCameraModal.vue';
+import { useBarcodeScanner } from '@/Composables/useBarcodeScanner';
+import { playScanSuccess, playScanError } from '@/Utils/sound';
 
 const props = defineProps({
     customers: Array,
@@ -69,6 +72,73 @@ function removeItem(index) {
         form.items.splice(index, 1);
     }
 }
+
+// Barcode Scanning System (Hardware Laser Guns + Camera)
+const isCameraModalOpen = ref(false);
+const barcodeScanInput = ref('');
+const scanNotification = ref('');
+
+function handleBarcodeScanned(rawCode) {
+    if (!rawCode) return;
+    const code = rawCode.trim().toLowerCase();
+    if (!code) return;
+
+    const prod = (props.products || []).find(p => 
+        (p.barcode && p.barcode.toLowerCase() === code) ||
+        (p.sku && p.sku.toLowerCase() === code)
+    );
+
+    if (prod) {
+        const existingItem = form.items.find(it => Number(it.product_id) === prod.id);
+
+        if (existingItem) {
+            existingItem.quantity = (Number(existingItem.quantity) || 0) + 1;
+            scanNotification.value = `Increased quantity for "${prod.name}" to ${existingItem.quantity}.`;
+        } else {
+            if (form.items.length === 1 && !form.items[0].product_id) {
+                form.items[0].product_id = prod.id;
+                form.items[0].unit_price = parseFloat(prod.unit_price) || 0;
+                form.items[0].warranty_days = parseInt(prod.warranty_days) || 0;
+                form.items[0].quantity = 1;
+            } else {
+                form.items.push({
+                    product_id: prod.id,
+                    quantity: 1,
+                    unit_price: parseFloat(prod.unit_price) || 0,
+                    warranty_days: parseInt(prod.warranty_days) || 0,
+                });
+            }
+            scanNotification.value = `Added "${prod.name}" to order items.`;
+        }
+
+        playScanSuccess();
+        barcodeScanInput.value = '';
+
+        setTimeout(() => {
+            scanNotification.value = '';
+        }, 4000);
+        return;
+    }
+
+    playScanError();
+    scanNotification.value = `Product with barcode "${rawCode}" not found in catalog!`;
+    setTimeout(() => {
+        scanNotification.value = '';
+    }, 4000);
+}
+
+function handleBarcodeSubmit() {
+    if (barcodeScanInput.value.trim()) {
+        handleBarcodeScanned(barcodeScanInput.value.trim());
+    }
+}
+
+// Hardware Barcode Scanner listener (USB / Bluetooth / Wireless Gun)
+useBarcodeScanner({
+    onScan: (code) => {
+        handleBarcodeScanned(code);
+    },
+});
 
 function onProductSelected(index) {
     const item = form.items[index];
@@ -149,7 +219,38 @@ function setFullPayment() {
 }
 
 function submit() {
+    form.clearErrors();
     form.tax_amount = taxAmount.value;
+
+    if (form.customer_mode === 'existing' && !form.customer_id) {
+        form.setError('customer_id', 'Please select a customer or switch to New Customer.');
+        return;
+    }
+
+    for (let i = 0; i < form.items.length; i++) {
+        if (!form.items[i].product_id) {
+            form.setError('items', `Please select a product for line item #${i + 1}.`);
+            return;
+        }
+        if ((parseFloat(form.items[i].quantity) || 0) <= 0) {
+            form.setError('items', `Quantity for line item #${i + 1} must be greater than zero.`);
+            return;
+        }
+    }
+
+    if (form.status === 'confirmed' && form.warehouse_id) {
+        for (let i = 0; i < form.items.length; i++) {
+            const it = form.items[i];
+            const stock = getProductStock(it.product_id, form.warehouse_id);
+            if (it.quantity > stock.available) {
+                const prod = (props.products || []).find(p => p.id === Number(it.product_id));
+                const prodName = prod ? prod.name : `Line item #${i + 1}`;
+                form.setError('items', `Cannot confirm order: '${prodName}' requested quantity (${it.quantity}) exceeds available stock (${stock.available}) in this warehouse. Please reduce quantity or save order as Draft.`);
+                return;
+            }
+        }
+    }
+
     form.post(route('sales.store'));
 }
 </script>
@@ -181,6 +282,23 @@ function submit() {
         </template>
 
         <div class="space-y-6">
+            <!-- Global Form Errors Alert Banner -->
+            <div
+                v-if="Object.keys(form.errors).length > 0"
+                class="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs shadow-xs"
+            >
+                <div class="font-bold mb-1.5 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span>Please resolve the following before submitting:</span>
+                </div>
+                <ul class="list-disc list-inside space-y-1 ml-1 text-slate-700">
+                    <li v-for="(err, field) in form.errors" :key="field">
+                        {{ err }}
+                    </li>
+                </ul>
+            </div>
 
             <form @submit.prevent="submit" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Left 2 Cols: Customer & Line items -->
@@ -272,6 +390,46 @@ function submit() {
                                 </svg>
                                 Add Line Item
                             </button>
+                        </div>
+
+                        <!-- Barcode Quick Scan Bar -->
+                        <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 border border-slate-200/90 rounded-xl">
+                            <div class="flex items-center gap-2 flex-1 max-w-md">
+                                <div class="relative flex-1">
+                                    <input
+                                        v-model="barcodeScanInput"
+                                        @keydown.enter.prevent="handleBarcodeSubmit"
+                                        type="text"
+                                        placeholder="Scan barcode to add product (USB Gun or Camera)..."
+                                        class="w-full pl-9 pr-4 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+                                    />
+                                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                                    </svg>
+                                </div>
+                                <button
+                                    type="button"
+                                    @click="isCameraModalOpen = true"
+                                    class="px-3 py-2 rounded-xl bg-white hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 border border-slate-200 text-xs font-semibold flex items-center gap-1.5 transition shadow-2xs shrink-0"
+                                    title="Scan Barcode with Camera"
+                                >
+                                    <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    <span>Camera</span>
+                                </button>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <span v-if="scanNotification" class="text-xs font-bold text-emerald-600 animate-pulse flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                    {{ scanNotification }}
+                                </span>
+                                <span v-else class="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                                    USB Scanner Ready
+                                </span>
+                            </div>
                         </div>
 
                         <div class="space-y-3">
@@ -538,5 +696,11 @@ function submit() {
                 </div>
             </form>
         </div>
+
+        <!-- Camera Barcode Scanner Modal -->
+        <BarcodeCameraModal
+            v-model:open="isCameraModalOpen"
+            @scan="handleBarcodeScanned"
+        />
     </AppLayout>
 </template>

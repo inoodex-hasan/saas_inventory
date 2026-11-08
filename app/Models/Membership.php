@@ -12,4 +12,12 @@ class Membership extends JetstreamMembership
      * @var bool
      */
     public $incrementing = true;
+
+    /**
+     * Get the assigned branch / warehouse for this membership.
+     */
+    public function warehouse()
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
 }

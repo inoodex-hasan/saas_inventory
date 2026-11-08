@@ -5,6 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
 import ConfirmationModal from '@/Components/ConfirmationModal.vue';
+import LoadingSpinner from '@/Components/LoadingSpinner.vue';
 
 const props = defineProps({
     categories: Object,
@@ -214,9 +215,7 @@ const availableParentOptions = computed(() => {
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-bold">
                                 <th class="py-3 px-4 whitespace-nowrap">Category Name</th>
-                                <th class="py-3 px-4 whitespace-nowrap">Hierarchy / Parent</th>
-                                <th class="py-3 px-4 whitespace-nowrap">Slug Identifier</th>
-                                <th class="py-3 px-4 text-center whitespace-nowrap">Sub-Categories</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Hierarchy / Parent</th>                                <th class="py-3 px-4 text-center whitespace-nowrap">Sub-Categories</th>
                                 <th class="py-3 px-4 text-center whitespace-nowrap">Assigned Products</th>
                                 <th class="py-3 px-4 whitespace-nowrap">Description</th>
                                 <th class="py-3 px-4 text-right whitespace-nowrap">Actions</th>
@@ -249,10 +248,6 @@ const availableParentOptions = computed(() => {
                                     >
                                         Top-Level Root
                                     </span>
-                                </td>
-
-                                <td class="py-3.5 px-4 font-mono text-[11px] text-slate-500 whitespace-nowrap">
-                                    {{ cat.slug }}
                                 </td>
 
                                 <td class="py-3.5 px-4 text-center whitespace-nowrap">
@@ -433,9 +428,10 @@ const availableParentOptions = computed(() => {
                         <button 
                             type="submit" 
                             :disabled="form.processing"
-                            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm shadow-indigo-600/30 transition disabled:opacity-50"
+                            class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm shadow-indigo-600/30 transition disabled:opacity-50 cursor-pointer"
                         >
-                            <span>{{ editingCategory ? 'Update Category' : 'Save Category' }}</span>
+                            <LoadingSpinner v-if="form.processing" size="sm" color="text-white" />
+                            <span>{{ form.processing ? 'Saving...' : (editingCategory ? 'Update Category' : 'Save Category') }}</span>
                         </button>
                     </div>
                 </form>

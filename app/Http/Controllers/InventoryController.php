@@ -27,7 +27,7 @@ class InventoryController extends Controller
         // Warehouses & Categories for filters & modals
         $warehouses = Warehouse::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']);
         $categories = ProductCategory::where('team_id', $teamId)->orderBy('name')->get(['id', 'name']);
-        $productsList = Product::where('team_id', $teamId)->orderBy('name')->get(['id', 'name', 'sku', 'cost_price']);
+        $productsList = Product::where('team_id', $teamId)->orderBy('name')->get(['id', 'name', 'sku', 'barcode', 'cost_price']);
 
         // Global KPI Metrics across all inventory
         $totalUnits = (float) StockLevel::where('team_id', $teamId)->sum('quantity');

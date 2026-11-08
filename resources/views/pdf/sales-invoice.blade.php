@@ -336,10 +336,26 @@
                                     <td style="padding: 6px 0; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; font-size: 13px; font-weight: 800; color: #4f46e5;">Grand Total:</td>
                                     <td style="padding: 6px 0; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; text-align: right; font-size: 13px; font-weight: 800; color: #4f46e5;">{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->total_amount, 2) }}</td>
                                 </tr>
+                                @php
+                                    $tendered = $order->tendered_amount !== null ? (float)$order->tendered_amount : (float)$order->paid_amount;
+                                    $change = $order->change_amount !== null ? (float)$order->change_amount : max(0, $tendered - (float)$order->paid_amount);
+                                @endphp
+                                @if($tendered > 0 && ($tendered > (float)$order->paid_amount || $change > 0))
+                                <tr>
+                                    <td style="padding: 3.5px 0; color: #475569;">Cash Tendered:</td>
+                                    <td style="padding: 3.5px 0; text-align: right; font-weight: 600; color: #0f172a;">{{ $team->currency_symbol ?? '৳' }}{{ number_format($tendered, 2) }}</td>
+                                </tr>
+                                @endif
                                 <tr>
                                     <td style="padding: 3.5px 0; color: #475569;">Received / Paid:</td>
                                     <td style="padding: 3.5px 0; text-align: right; font-weight: 600; color: #059669;">{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->paid_amount, 2) }}</td>
                                 </tr>
+                                @if($change > 0)
+                                <tr>
+                                    <td style="padding: 3.5px 0; font-weight: 700; color: #059669;">Change Return:</td>
+                                    <td style="padding: 3.5px 0; text-align: right; font-weight: 700; color: #059669;">{{ $team->currency_symbol ?? '৳' }}{{ number_format($change, 2) }}</td>
+                                </tr>
+                                @endif
                                 <tr>
                                     <td style="padding: 3.5px 0; font-weight: 800; color: #dc2626;">Total Due:</td>
                                     <td style="padding: 3.5px 0; text-align: right; font-weight: 800; color: {{ ($order->total_amount - $order->paid_amount) > 0 ? '#dc2626' : '#16a34a' }};">

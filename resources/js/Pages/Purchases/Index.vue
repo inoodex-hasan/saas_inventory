@@ -8,6 +8,9 @@ import StatusBadge from '@/Components/StatusBadge.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
+import BarcodeCameraModal from '@/Components/BarcodeCameraModal.vue';
+import { useBarcodeScanner } from '@/Composables/useBarcodeScanner';
+import { playScanSuccess, playScanError } from '@/Utils/sound';
 import { formatDate } from '@/Utils/date';
 
 const props = defineProps({
@@ -198,12 +201,59 @@ function executePoAction() {
     });
 }
 
+// Inbound Stock Receiving Barcode Scanner
+const isReceiveCameraOpen = ref(false);
+const receiveScanNotification = ref('');
+
+function handleReceiveBarcodeScanned(rawCode) {
+    if (!rawCode || !isReceiveModalOpen.value) return;
+    const code = rawCode.trim().toLowerCase();
+
+    const item = receiveForm.items.find(it => 
+        (it.barcode && it.barcode.toLowerCase() === code) ||
+        (it.sku && it.sku.toLowerCase() === code)
+    );
+
+    if (item) {
+        if (item.is_serialized) {
+            const currentSerials = item.serial_input ? item.serial_input.split(/[\n,]+/).map(s => s.trim()).filter(Boolean) : [];
+            if (!currentSerials.includes(rawCode.trim())) {
+                currentSerials.push(rawCode.trim());
+                item.serial_input = currentSerials.join(', ');
+                item.quantity = currentSerials.length;
+            }
+        } else {
+            const current = Number(item.quantity) || 0;
+            if (current < item.remaining_quantity) {
+                item.quantity = current + 1;
+            }
+        }
+        playScanSuccess();
+        receiveScanNotification.value = `Scanned item "${item.product_name}"`;
+        setTimeout(() => { receiveScanNotification.value = ''; }, 3000);
+        return;
+    }
+
+    playScanError();
+    receiveScanNotification.value = `Barcode "${rawCode}" does not match any items on this PO!`;
+    setTimeout(() => { receiveScanNotification.value = ''; }, 3000);
+}
+
+useBarcodeScanner({
+    onScan: (code) => {
+        if (isReceiveModalOpen.value) {
+            handleReceiveBarcodeScanned(code);
+        }
+    },
+});
+
 function openReceiveModal(order) {
     receivingPo.value = order;
     receiveForm.items = (order.items || []).map(item => {
         const remaining = (item.quantity || 0) - (item.received_quantity || 0);
         return {
             item_id: item.id,
+            barcode: item.product?.barcode || '',
             product_name: item.product?.name || `Product #${item.product_id}`,
             sku: item.product?.sku || '',
             unit: item.product?.unit || 'pcs',
@@ -561,6 +611,32 @@ function submitReceive() {
                 </div>
 
                 <form @submit.prevent="submitReceive" class="space-y-4">
+                    <!-- Inbound Receiving Barcode Assistant -->
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span class="font-bold text-slate-700">Barcode Check-In:</span>
+                            <span v-if="receiveScanNotification" class="text-indigo-600 font-bold animate-pulse">
+                                {{ receiveScanNotification }}
+                            </span>
+                            <span v-else class="text-slate-400">
+                                Scan items with USB gun or camera to increment received count
+                            </span>
+                        </div>
+
+                        <button
+                            type="button"
+                            @click="isReceiveCameraOpen = true"
+                            class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-indigo-50 border border-slate-200 text-slate-700 hover:text-indigo-600 font-semibold text-xs flex items-center gap-1.5 transition shadow-2xs"
+                        >
+                            <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span>Scan with Camera</span>
+                        </button>
+                    </div>
+
                     <div class="overflow-x-auto max-h-96">
                         <table class="w-full text-left text-xs">
                             <thead>
@@ -1126,6 +1202,13 @@ class="w-24 px-2 py-1 rounded-lg border border-slate-200 text-xs font-mono"
             :processing="isPoActionProcessing"
             @confirm="executePoAction"
             @close="poActionModal = null"
+        />
+
+        <!-- Camera Barcode Scanner Modal for Inbound Receiving -->
+        <BarcodeCameraModal
+            v-model:open="isReceiveCameraOpen"
+            title="Scan Delivery Box Barcode"
+            @scan="handleReceiveBarcodeScanned"
         />
     </AppLayout>
 </template>

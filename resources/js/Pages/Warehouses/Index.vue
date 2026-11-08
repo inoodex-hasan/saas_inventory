@@ -27,6 +27,7 @@ const isDeleting = ref(false);
 
 const form = useForm({
     name: '',
+    type: 'outlet',
     code: '',
     address: '',
     phone: '',
@@ -46,6 +47,7 @@ function openCreateModal() {
     editingWarehouse.value = null;
     form.reset();
     form.clearErrors();
+    form.type = 'outlet';
     form.is_active = true;
     form.is_default = false;
     isFormModalOpen.value = true;
@@ -55,6 +57,7 @@ function openEditModal(wh) {
     editingWarehouse.value = wh;
     form.clearErrors();
     form.name = wh.name;
+    form.type = wh.type || 'outlet';
     form.code = wh.code || '';
     form.address = wh.address || '';
     form.phone = wh.phone || '';
@@ -133,13 +136,13 @@ async function inspectStock(wh) {
 
 <template>
     <AppLayout>
-        <Head title="Warehouses & Hubs" />
+        <Head title="Branches & Outlets" />
 
         <template #header>
             <div class="flex items-center justify-between w-full">
                 <div>
-                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Fulfillment Hubs & Warehouses</h1>
-                    <p class="text-xs text-slate-500 font-medium">Multi-location fulfillment points, inventory distribution & holding</p>
+                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Branches & Fulfillment Locations</h1>
+                    <p class="text-xs text-slate-500 font-medium">Manage retail shops (POS counters) and central storage godowns</p>
                 </div>
             </div>
         </template>
@@ -148,23 +151,23 @@ async function inspectStock(wh) {
             <!-- Metrics Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Warehouses</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Locations</span>
                     <div class="text-2xl font-black text-slate-900 mt-2">
                         {{ metrics?.total_warehouses || 0 }}
                     </div>
                 </div>
 
                 <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Active Fulfillment Hubs</span>
-                    <div class="text-2xl font-black text-emerald-600 mt-2">
-                        {{ metrics?.active_warehouses || 0 }}
+                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-500">Retail Outlets (POS)</span>
+                    <div class="text-2xl font-black text-indigo-600 mt-2">
+                        {{ metrics?.total_outlets || 0 }}
                     </div>
                 </div>
 
                 <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Units Stocked</span>
-                    <div class="text-2xl font-black text-indigo-600 mt-2">
-                        {{ Number(metrics?.total_units || 0).toLocaleString() }}
+                    <span class="text-xs font-bold uppercase tracking-wider text-amber-500">Central Godowns</span>
+                    <div class="text-2xl font-black text-amber-600 mt-2">
+                        {{ metrics?.total_godowns || 0 }}
                     </div>
                 </div>
 
@@ -183,6 +186,7 @@ async function inspectStock(wh) {
                         type="text" 
                         v-model="search" 
                         @keyup.enter="handleSearch"
+                        placeholder="Search branches or godowns..."
                         class="w-full pl-9 pr-4 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all placeholder:text-slate-400"
                     />
                     <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -204,7 +208,7 @@ async function inspectStock(wh) {
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
-                        <span>Add Warehouse</span>
+                        <span>Add Branch / Godown</span>
                     </button>
                 </div>
             </div>
@@ -220,14 +224,28 @@ async function inspectStock(wh) {
                         <div class="flex items-start justify-between gap-3 mb-3">
                             <div>
                                 <h3 class="font-bold text-slate-900 text-base leading-snug">{{ wh.name }}</h3>
-                                <p class="text-xs font-mono text-indigo-600 font-semibold">{{ wh.code }}</p>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-xs font-mono text-indigo-600 font-bold">{{ wh.code }}</span>
+                                    <span 
+                                        v-if="wh.type === 'warehouse'"
+                                        class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200"
+                                    >
+                                        📦 Central Godown
+                                    </span>
+                                    <span 
+                                        v-else
+                                        class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200"
+                                    >
+                                        🏪 Retail Outlet
+                                    </span>
+                                </div>
                             </div>
                             <div class="flex flex-col items-end gap-1.5">
                                 <span 
                                     v-if="wh.is_default" 
-                                    class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700"
+                                    class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200"
                                 >
-                                    Default Hub
+                                    ★ Default Hub
                                 </span>
                                 <StatusBadge :status="wh.is_active ? 'active' : 'inactive'" />
                             </div>
@@ -327,9 +345,9 @@ async function inspectStock(wh) {
                 <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
                     <div>
                         <h2 class="text-base font-bold text-slate-900">
-                            {{ editingWarehouse ? 'Edit Warehouse Hub' : 'Add New Fulfillment Hub' }}
+                            {{ editingWarehouse ? 'Edit Branch / Godown' : 'Add New Branch / Godown' }}
                         </h2>
-                        <p class="text-xs text-slate-500">Configure fulfillment location routing and logistics</p>
+                        <p class="text-xs text-slate-500">Configure outlet shop for POS or central godown for bulk holding</p>
                     </div>
                     <button @click="isFormModalOpen = false" class="text-slate-400 hover:text-slate-600">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -339,22 +357,72 @@ async function inspectStock(wh) {
                 </div>
 
                 <form @submit.prevent="submitForm" class="space-y-4">
+                    <!-- Location Type Selector -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Location Purpose & Type *</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label 
+                                class="flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all"
+                                :class="form.type === 'outlet' ? 'bg-indigo-50/70 border-indigo-500 ring-1 ring-indigo-500' : 'bg-slate-50/70 border-slate-200 hover:bg-slate-100/70'"
+                            >
+                                <input 
+                                    type="radio" 
+                                    value="outlet" 
+                                    v-model="form.type" 
+                                    class="mt-0.5 text-indigo-600 focus:ring-indigo-500" 
+                                />
+                                <div>
+                                    <div class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                                        <span>🏪 Retail Shop / Outlet</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                                        Customer-facing store with POS counter & retail stock
+                                    </p>
+                                </div>
+                            </label>
+
+                            <label 
+                                class="flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all"
+                                :class="form.type === 'warehouse' ? 'bg-amber-50/70 border-amber-500 ring-1 ring-amber-500' : 'bg-slate-50/70 border-slate-200 hover:bg-slate-100/70'"
+                            >
+                                <input 
+                                    type="radio" 
+                                    value="warehouse" 
+                                    v-model="form.type" 
+                                    class="mt-0.5 text-amber-600 focus:ring-amber-500" 
+                                />
+                                <div>
+                                    <div class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                                        <span>📦 Central Godown</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                                        Bulk storage & supplier receiving hub (Storage only)
+                                    </p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Warehouse Name *</label>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                {{ form.type === 'warehouse' ? 'Godown / Warehouse Name *' : 'Branch / Outlet Name *' }}
+                            </label>
                             <input 
                                 type="text" 
                                 v-model="form.name" 
-class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+                                :placeholder="form.type === 'warehouse' ? 'e.g. Central Godown' : 'e.g. Gulshan Outlet'"
+                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <p v-if="form.errors.name" class="text-[11px] text-rose-600 mt-1">{{ form.errors.name }}</p>
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Code / Identifier *</label>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Branch Code *</label>
                             <input 
                                 type="text" 
                                 v-model="form.code" 
-class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 uppercase font-mono placeholder:text-slate-400 placeholder:text-xs"
+                                :placeholder="form.type === 'warehouse' ? 'e.g. GDW-01' : 'e.g. OUT-01'"
+                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 uppercase font-mono placeholder:text-slate-400 placeholder:text-xs"
                             />
                             <p v-if="form.errors.code" class="text-[11px] text-rose-600 mt-1">{{ form.errors.code }}</p>
                         </div>
@@ -365,7 +433,8 @@ class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-
                         <input 
                             type="text" 
                             v-model="form.address" 
-class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+                            placeholder="Physical address of the branch or godown"
+                            class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                         <p v-if="form.errors.address" class="text-[11px] text-rose-600 mt-1">{{ form.errors.address }}</p>
                     </div>
@@ -376,7 +445,8 @@ class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-
                             <input 
                                 type="text" 
                                 v-model="form.phone" 
-class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+                                placeholder="Branch phone number"
+                                class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                         <div>
@@ -384,7 +454,8 @@ class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 foc
                             <input 
                                 type="email" 
                                 v-model="form.email" 
-class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+                                placeholder="Branch email address"
+                                class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                     </div>
@@ -396,7 +467,7 @@ class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-
                                 v-model="form.is_default" 
                                 class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                             />
-                            <span class="text-xs font-semibold text-slate-700">Set as Default Routing Hub</span>
+                            <span class="text-xs font-semibold text-slate-700">Set as Primary Default Location</span>
                         </label>
                         <label class="inline-flex items-center gap-2 cursor-pointer">
                             <input 
@@ -421,7 +492,7 @@ class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-
                             :disabled="form.processing"
                             class="px-5 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 shadow-sm transition-colors disabled:opacity-50"
                         >
-                            {{ editingWarehouse ? 'Update Warehouse' : 'Save Warehouse' }}
+                            {{ editingWarehouse ? 'Update Location' : 'Save Location' }}
                         </button>
                     </div>
                 </form>

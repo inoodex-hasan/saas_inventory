@@ -29,6 +29,8 @@ class SalesOrder extends Model
         'discount_amount',
         'total_amount',
         'paid_amount',
+        'tendered_amount',
+        'change_amount',
         'due_amount',
         'notes',
         'created_by',
@@ -42,6 +44,8 @@ class SalesOrder extends Model
         'discount_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
+        'tendered_amount' => 'decimal:2',
+        'change_amount' => 'decimal:2',
         'due_amount' => 'decimal:2',
     ];
 

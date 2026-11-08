@@ -152,6 +152,17 @@ class Team extends JetstreamTeam
     }
 
     /**
+     * Get all of the team's users including assigned branch / warehouse.
+     */
+    public function users()
+    {
+        return $this->belongsToMany(User::class, Membership::class)
+            ->withPivot(['role', 'warehouse_id'])
+            ->withTimestamps()
+            ->as('membership');
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

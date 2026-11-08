@@ -3,6 +3,9 @@ import { ref, computed, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
+import BarcodeCameraModal from '@/Components/BarcodeCameraModal.vue';
+import { useBarcodeScanner } from '@/Composables/useBarcodeScanner';
+import { playScanSuccess, playScanError } from '@/Utils/sound';
 
 const props = defineProps({
     orders: Array,
@@ -33,6 +36,38 @@ const orderOptions = computed(() => {
     }));
 });
 
+// Barcode Verification System
+const isCameraModalOpen = ref(false);
+const scanNotification = ref('');
+
+function handleBarcodeScanned(rawCode) {
+    if (!rawCode || form.items.length === 0) return;
+    const code = rawCode.trim().toLowerCase();
+
+    const item = form.items.find(it => 
+        (it.barcode && it.barcode.toLowerCase() === code) ||
+        (it.sku && it.sku.toLowerCase() === code)
+    );
+
+    if (item) {
+        item.verified_count = (item.verified_count || 0) + 1;
+        playScanSuccess();
+        scanNotification.value = `Verified: 1x "${item.product_name}" (${item.verified_count}/${item.quantity})`;
+        setTimeout(() => { scanNotification.value = ''; }, 3500);
+        return;
+    }
+
+    playScanError();
+    scanNotification.value = `Scanned barcode "${rawCode}" is NOT in this delivery order!`;
+    setTimeout(() => { scanNotification.value = ''; }, 3500);
+}
+
+useBarcodeScanner({
+    onScan: (code) => {
+        handleBarcodeScanned(code);
+    },
+});
+
 function updateSelectedOrder() {
     if (!form.sales_order_id) {
         selectedOrder.value = null;
@@ -46,8 +81,11 @@ function updateSelectedOrder() {
         form.items = (order.items || []).map(item => ({
             sales_order_item_id: item.id,
             product_id: item.product_id,
+            barcode: item.product?.barcode || '',
+            sku: item.product?.sku || '',
             product_name: item.product?.name || `Product #${item.product_id}`,
             quantity: item.quantity,
+            verified_count: 0,
         }));
     }
 }
@@ -164,7 +202,26 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
 
                 <!-- Transport Packing List -->
                 <div class="space-y-3 pt-2">
-                    <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider text-xs">Transport Packing List</h2>
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider text-xs">Transport Packing List</h2>
+                        <button
+                            v-if="form.items.length > 0"
+                            type="button"
+                            @click="isCameraModalOpen = true"
+                            class="px-2.5 py-1 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 text-xs font-semibold flex items-center gap-1.5 transition"
+                        >
+                            <svg class="w-3.5 h-3.5 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span>Verify by Camera</span>
+                        </button>
+                    </div>
+
+                    <div v-if="scanNotification" class="p-2.5 rounded-xl bg-cyan-50 border border-cyan-200 text-xs font-bold text-cyan-800 flex items-center gap-2 animate-pulse">
+                        <span class="w-2 h-2 rounded-full bg-cyan-500"></span>
+                        {{ scanNotification }}
+                    </div>
 
                     <div v-if="form.items.length > 0" class="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
                         <div
@@ -172,8 +229,13 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                             :key="idx"
                             class="p-3.5 bg-slate-50/50 flex items-center justify-between gap-4"
                         >
-                            <div class="font-medium text-slate-900 text-sm">
-                                {{ item.product_name }}
+                            <div class="space-y-0.5">
+                                <div class="font-medium text-slate-900 text-sm">
+                                    {{ item.product_name }}
+                                </div>
+                                <span v-if="item.verified_count > 0" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold" :class="item.verified_count >= item.quantity ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'">
+                                    ✓ {{ item.verified_count }} / {{ item.quantity }} Scanned & Verified
+                                </span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <label class="text-xs text-slate-500">Dispatch Qty:</label>
@@ -219,5 +281,11 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                 </div>
             </form>
         </div>
+
+        <!-- Camera Scanner Modal -->
+        <BarcodeCameraModal
+            v-model:open="isCameraModalOpen"
+            @scan="handleBarcodeScanned"
+        />
     </AppLayout>
 </template>

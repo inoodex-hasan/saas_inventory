@@ -4,32 +4,37 @@
             <x-authentication-card-logo />
         </x-slot>
 
+        <div class="mb-6 text-center">
+            <h1 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight">{{ __('Reset Password') }}</h1>
+            <p class="text-xs sm:text-sm text-slate-400 mt-1">{{ __('Enter a new secure password for your account') }}</p>
+        </div>
+
         <x-validation-errors class="mb-4" />
 
-        <form method="POST" action="{{ route('password.update') }}">
+        <form method="POST" action="{{ route('password.update') }}" class="space-y-4">
             @csrf
 
             <input type="hidden" name="token" value="{{ $request->route('token') }}">
 
-            <div class="block">
-                <x-label for="email" value="{{ __('Email') }}" />
-                <x-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email', $request->email)" required autofocus autocomplete="username" />
+            <div>
+                <label for="email" class="block font-medium text-xs sm:text-sm text-slate-300 mb-1.5">{{ __('Email Address') }}</label>
+                <input id="email" class="block w-full px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all" type="email" name="email" value="{{ old('email', $request->email) }}" required autofocus autocomplete="username" />
             </div>
 
-            <div class="mt-4">
-                <x-label for="password" value="{{ __('Password') }}" />
-                <x-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
+            <div>
+                <label for="password" class="block font-medium text-xs sm:text-sm text-slate-300 mb-1.5">{{ __('New Password') }}</label>
+                <input id="password" class="block w-full px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all" type="password" name="password" required autocomplete="new-password" placeholder="At least 8 characters" />
             </div>
 
-            <div class="mt-4">
-                <x-label for="password_confirmation" value="{{ __('Confirm Password') }}" />
-                <x-input id="password_confirmation" class="block mt-1 w-full" type="password" name="password_confirmation" required autocomplete="new-password" />
+            <div>
+                <label for="password_confirmation" class="block font-medium text-xs sm:text-sm text-slate-300 mb-1.5">{{ __('Confirm New Password') }}</label>
+                <input id="password_confirmation" class="block w-full px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all" type="password" name="password_confirmation" required autocomplete="new-password" placeholder="Re-enter password" />
             </div>
 
-            <div class="flex items-center justify-end mt-4">
-                <x-button>
-                    {{ __('Reset Password') }}
-                </x-button>
+            <div class="pt-2">
+                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-bold shadow-lg shadow-indigo-600/30 hover:scale-[1.01] active:scale-[0.99] transition-all">
+                    <span>{{ __('Reset Password') }}</span>
+                </button>
             </div>
         </form>
     </x-authentication-card>

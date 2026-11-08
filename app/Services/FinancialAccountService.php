@@ -12,8 +12,12 @@ class FinancialAccountService
     /**
      * Ensure default accounts exist for a tenant team.
      */
-    public function ensureDefaultAccounts(int $teamId): void
+    public function ensureDefaultAccounts(?int $teamId): void
     {
+        if (!$teamId) {
+            return;
+        }
+
         $count = FinancialAccount::where('team_id', $teamId)->count();
         if ($count > 0) {
             return;
@@ -69,8 +73,12 @@ class FinancialAccountService
     /**
      * Get active accounts grouped or ordered for payment dropdowns.
      */
-    public function getActiveAccountsForTeam(int $teamId)
+    public function getActiveAccountsForTeam(?int $teamId)
     {
+        if (!$teamId) {
+            return collect();
+        }
+
         return FinancialAccount::where('team_id', $teamId)
             ->where('is_active', true)
             ->orderByDesc('is_default')
@@ -82,8 +90,12 @@ class FinancialAccountService
     /**
      * Resolve the default financial account for a team.
      */
-    public function getDefaultAccount(int $teamId): ?FinancialAccount
+    public function getDefaultAccount(?int $teamId): ?FinancialAccount
     {
+        if (!$teamId) {
+            return null;
+        }
+
         $account = FinancialAccount::where('team_id', $teamId)
             ->where('is_active', true)
             ->where('is_default', true)

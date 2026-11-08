@@ -45,7 +45,7 @@ class HandleInertiaRequests extends Middleware
                     'name' => $user->name,
                     'email' => $user->email,
                     'is_super_admin' => $user->isSuperAdmin(),
-                    'is_impersonating' => $user->isSuperAdmin() && $user->current_team_id !== null && !$user->ownedTeams->contains('id', $user->current_team_id),
+                    'is_impersonating' => !$request->routeIs('admin.*') && $user->isSuperAdmin() && $user->current_team_id !== null && !$user->ownedTeams->contains('id', $user->current_team_id),
                     'current_team_id' => $user->current_team_id,
                     'all_teams' => $user->allTeams()->map(fn ($team) => [
                         'id' => $team->id,
@@ -72,6 +72,31 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
                 'warning' => fn () => $request->session()->get('warning'),
             ],
+            'site' => function () {
+                $raw = [];
+                try {
+                    if (\Illuminate\Support\Facades\Schema::hasTable('site_settings')) {
+                        $raw = \App\Models\SiteSetting::getAll();
+                    }
+                } catch (\Throwable $e) {
+                }
+
+                $logoPath = $raw['logo_path'] ?? null;
+                $faviconPath = $raw['favicon_path'] ?? null;
+
+                return [
+                    'logo_url' => $logoPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($logoPath)
+                        ? asset(\Illuminate\Support\Facades\Storage::url($logoPath)) : null,
+                    'favicon_url' => $faviconPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($faviconPath)
+                        ? asset(\Illuminate\Support\Facades\Storage::url($faviconPath)) : null,
+                    'brand_name' => $raw['brand_name'] ?? 'InoManage',
+                    'brand_tagline' => $raw['brand_tagline'] ?? 'Cloud Inventory Platform',
+                    'site_title' => $raw['site_title'] ?? 'InoManage Cloud Inventory Management Software',
+                    'hero_chip_text' => $raw['hero_chip_text'] ?? 'Enterprise Multi-Tenant SaaS • 99.99% Uptime SLA • Zero Race Conditions',
+                    'hero_headline' => $raw['hero_headline'] ?? 'The Operating System for Modern Inventory & Supply Chains',
+                    'hero_subtext' => $raw['hero_subtext'] ?? '',
+                ];
+            },
             'subscription_notice' => function () use ($user) {
                 if (!$user || !$user->currentTeam) {
                     return null;

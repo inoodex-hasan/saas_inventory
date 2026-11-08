@@ -34,6 +34,10 @@ class WarehouseController extends Controller
 
         $metrics = [
             'total_warehouses' => Warehouse::where('team_id', $teamId)->count(),
+            'total_outlets' => Warehouse::where('team_id', $teamId)->where(function ($q) {
+                $q->where('type', 'outlet')->orWhereNull('type');
+            })->count(),
+            'total_godowns' => Warehouse::where('team_id', $teamId)->where('type', 'warehouse')->count(),
             'active_warehouses' => Warehouse::where('team_id', $teamId)->where('is_active', true)->count(),
             'total_units' => (float) StockLevel::where('team_id', $teamId)->sum('quantity'),
             'total_valuation' => (float) (StockLevel::where('stock_levels.team_id', $teamId)
@@ -63,6 +67,7 @@ class WarehouseController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'type' => 'nullable|string|in:outlet,warehouse',
             'code' => ['required', 'string', 'max:50', Rule::unique('warehouses', 'code')->where('team_id', $teamId)],
             'address' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:50',
@@ -78,12 +83,13 @@ class WarehouseController extends Controller
         }
 
         $validated['team_id'] = $teamId;
+        $validated['type'] = $validated['type'] ?? 'outlet';
         $validated['is_default'] = ($validated['is_default'] ?? false) || $isFirst;
         $validated['is_active'] = $validated['is_active'] ?? true;
 
         Warehouse::create($validated);
 
-        return redirect()->back()->with('success', 'Warehouse created successfully.');
+        return redirect()->back()->with('success', 'Branch/Warehouse created successfully.');
     }
 
     public function update(Request $request, Warehouse $warehouse)
@@ -93,6 +99,7 @@ class WarehouseController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'type' => 'nullable|string|in:outlet,warehouse',
             'code' => ['required', 'string', 'max:50', Rule::unique('warehouses', 'code')->ignore($warehouse->id)->where('team_id', $teamId)],
             'address' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:50',
@@ -105,9 +112,10 @@ class WarehouseController extends Controller
             Warehouse::where('team_id', $teamId)->where('id', '!=', $warehouse->id)->update(['is_default' => false]);
         }
 
+        $validated['type'] = $validated['type'] ?? ($warehouse->type ?: 'outlet');
         $warehouse->update($validated);
 
-        return redirect()->back()->with('success', 'Warehouse updated successfully.');
+        return redirect()->back()->with('success', 'Branch/Warehouse updated successfully.');
     }
 
     public function setDefault(Warehouse $warehouse)

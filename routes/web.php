@@ -35,6 +35,7 @@ use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarrantyController;
 use App\Http\Controllers\SslCommerzPaymentController;
+use App\Http\Controllers\LegalPageController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -49,6 +50,12 @@ Route::get('/', function () {
     
     return view('welcome', compact('plans'));
 });
+
+// Dynamic Public Legal Pages
+Route::get('/terms-and-conditions', [LegalPageController::class, 'terms'])->name('terms.show');
+Route::get('/terms', [LegalPageController::class, 'terms']);
+Route::get('/privacy-policy', [LegalPageController::class, 'privacy'])->name('policy.show');
+Route::get('/privacy', [LegalPageController::class, 'privacy']);
 
 Route::get('/suspended', function () {
     return view('errors.tenant-suspended');
@@ -88,6 +95,7 @@ Route::middleware([
     Route::put('/products/brands/{brand}', [BrandController::class, 'update'])->name('products.brands.update');
     Route::delete('/products/brands/{brand}', [BrandController::class, 'destroy'])->name('products.brands.destroy');
 
+    Route::get('/products/lookup-barcode', [ProductController::class, 'lookupBarcode'])->name('products.lookup-barcode');
     Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
     Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
     Route::post('/products/{product}', [ProductController::class, 'update'])->name('products.update.post');
@@ -216,13 +224,6 @@ Route::middleware([
     Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
     Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
 
-    // Business Expenses & Outflows
-    Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
-    Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
-    Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
-    Route::post('/expense-categories', [ExpenseController::class, 'storeCategory'])->name('expense-categories.store');
-    Route::delete('/expense-categories/{expenseCategory}', [ExpenseController::class, 'destroyCategory'])->name('expense-categories.destroy');
-
     // Monthly Payroll & Salary Slips
     Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
     Route::post('/payroll/generate', [PayrollController::class, 'generate'])->name('payroll.generate');
@@ -279,6 +280,13 @@ Route::middleware([
     Route::post('/accounting/bank-accounts/{account}/set-default', [FinancialAccountController::class, 'setDefault'])->name('bank-accounts.set-default');
     Route::delete('/accounting/bank-accounts/{account}', [FinancialAccountController::class, 'destroy'])->name('bank-accounts.destroy');
 
+    // Daily Business Expenses & Outflows
+    Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+    Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+    Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+    Route::post('/expense-categories', [ExpenseController::class, 'storeCategory'])->name('expense-categories.store');
+    Route::delete('/expense-categories/{expenseCategory}', [ExpenseController::class, 'destroyCategory'])->name('expense-categories.destroy');
+
     // Double-Entry Accounting Engine
     Route::get('/accounting/accounts', [ChartOfAccountController::class, 'index'])->name('accounts.index');
     Route::post('/accounting/accounts', [ChartOfAccountController::class, 'store'])->name('accounts.store');
@@ -324,6 +332,7 @@ Route::middleware([
     Route::post('/admin/exit-tenant', function () {
         $user = auth()->user();
         if ($user && $user->isSuperAdmin()) {
+            session()->forget('impersonated_tenant_id');
             $user->forceFill(['current_team_id' => null])->save();
             return redirect()->route('admin.dashboard')->with('success', 'Exited tenant workspace. Back to Platform Super-Admin mode.');
         }
@@ -340,6 +349,10 @@ Route::middleware([
     Route::get('/admin/payments', [AdminPaymentController::class, 'index'])->name('admin.payments.index');
     Route::post('/admin/payments/{payment}/approve', [AdminPaymentController::class, 'approve'])->name('admin.payments.approve');
     Route::post('/admin/payments/{payment}/reject', [AdminPaymentController::class, 'reject'])->name('admin.payments.reject');
+
+    // Site Settings & Branding (Super Admin Only)
+    Route::get('/admin/site-settings', [SuperAdminController::class, 'siteSettings'])->name('admin.site-settings');
+    Route::post('/admin/site-settings', [SuperAdminController::class, 'updateSiteSettings'])->name('admin.site-settings.update');
 });
 
 // SSLCommerz Payment Gateway Callbacks (Sandbox & Production Verified)
@@ -347,4 +360,13 @@ Route::post('/sslcommerz/success', [SslCommerzPaymentController::class, 'success
 Route::post('/sslcommerz/fail', [SslCommerzPaymentController::class, 'fail'])->name('sslcommerz.fail');
 Route::post('/sslcommerz/cancel', [SslCommerzPaymentController::class, 'cancel'])->name('sslcommerz.cancel');
 Route::post('/sslcommerz/ipn', [SslCommerzPaymentController::class, 'ipn'])->name('sslcommerz.ipn');
+
+// Storage File Fallback Route (ensures public/storage files serve even when symlink is missing or unsupported)
+Route::get('/storage/{path}', function ($path) {
+    $fullPath = storage_path('app/public/' . $path);
+    if (!file_exists($fullPath)) {
+        abort(404);
+    }
+    return response()->file($fullPath);
+})->where('path', '.*')->name('storage.fallback');
 

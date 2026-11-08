@@ -5,7 +5,10 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Inoodex Inventory') }}</title>
+        <title>{{ $site['site_title'] ?? config('app.name', 'InoManage Cloud Inventory Management Software') }}</title>
+        @if(!empty($site['favicon_url']))
+        <link rel="icon" href="{{ $site['favicon_url'] }}">
+        @endif
 
         <!-- Google Fonts: Plus Jakarta Sans -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -45,12 +48,16 @@
                 <!-- Brand / Logo Header -->
                 <div class="h-16 px-6 flex items-center justify-between border-b border-slate-800/80 bg-slate-950/40">
                     <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-black text-lg shadow-md shadow-indigo-500/20">
-                            I
-                        </div>
+                        @if(!empty($site['logo_url']))
+                            <img src="{{ $site['logo_url'] }}" alt="{{ $site['brand_name'] ?? 'Logo' }}" class="w-9 h-9 rounded-xl object-contain bg-slate-950/80 p-1 shadow-md shadow-indigo-500/20 border border-slate-800">
+                        @else
+                            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-black text-lg shadow-md shadow-indigo-500/20">
+                                {{ strtoupper(substr($site['brand_name'] ?? 'I', 0, 1)) }}
+                            </div>
+                        @endif
                         <div>
-                            <span class="font-bold text-white text-base tracking-tight leading-tight block">Inoodex</span>
-                            <span class="text-[10px] text-indigo-400 font-semibold tracking-wider uppercase block">Cloud Inventory</span>
+                            <span class="font-bold text-white text-base tracking-tight leading-tight block">{{ $site['brand_name'] ?? 'InoManage' }}</span>
+                            <span class="text-[10px] text-indigo-400 font-semibold tracking-wider uppercase block">{{ $site['brand_tagline'] ?? 'Cloud Inventory' }}</span>
                         </div>
                     </a>
                     <button @click="sidebarOpen = false" class="md:hidden text-slate-400 hover:text-white">
@@ -293,6 +300,15 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                     </button>
+                    <a href="{{ route('dashboard') }}" class="md:hidden flex items-center gap-2">
+                        @if(!empty($site['logo_url']))
+                            <img src="{{ $site['logo_url'] }}" alt="{{ $site['brand_name'] ?? 'Logo' }}" class="w-8 h-8 rounded-lg object-contain bg-slate-900 p-1 shadow-xs">
+                        @else
+                            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-black text-xs">
+                                {{ strtoupper(substr($site['brand_name'] ?? 'I', 0, 1)) }}
+                            </div>
+                        @endif
+                    </a>
                     <div class="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-400">
                         <span>Workspace</span>
                         <span>/</span>

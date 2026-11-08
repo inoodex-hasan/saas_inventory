@@ -25,11 +25,30 @@ use Inertia\Inertia;
 class PosController extends Controller
 {
     /**
+     * Resolve the active team ID for the current session/user.
+     */
+    protected function resolveTeamId(): int
+    {
+        $user = Auth::user();
+        $teamId = $user?->current_team_id ?? $user?->currentTeam?->id;
+        if (!$teamId) {
+            $firstTeam = Team::first();
+            if ($firstTeam) {
+                $teamId = (int) $firstTeam->id;
+                if ($user) {
+                    $user->forceFill(['current_team_id' => $teamId])->save();
+                }
+            }
+        }
+        return (int) ($teamId ?? 1);
+    }
+
+    /**
      * Render the high-speed Vue 3 POS interface.
      */
     public function index(Request $request, FinancialAccountService $accountService)
     {
-        $teamId = Auth::user()->current_team_id;
+        $teamId = $this->resolveTeamId();
 
         // Ensure default financial accounts exist
         $accountService->ensureDefaultAccounts($teamId);
@@ -39,9 +58,10 @@ class PosController extends Controller
             ->where('is_active', true)
             ->orderByDesc('is_default')
             ->orderBy('name')
-            ->get(['id', 'name', 'code']);
+            ->get(['id', 'name', 'code', 'type']);
 
-        $defaultWarehouse = $warehouses->first();
+        $userAssignedWh = Auth::user()->assignedWarehouse(Auth::user()->currentTeam);
+        $defaultWarehouse = $userAssignedWh ?? $warehouses->first();
         $selectedWarehouseId = (int) ($defaultWarehouse?->id ?? 0);
 
         // 2. Categories
@@ -177,7 +197,7 @@ class PosController extends Controller
      */
     public function store(Request $request, SalesOrderService $salesService)
     {
-        $teamId = Auth::user()->current_team_id;
+        $teamId = $this->resolveTeamId();
 
         $validated = $request->validate([
             'warehouse_id' => ['nullable', Rule::exists('warehouses', 'id')->where('team_id', $teamId)],
@@ -244,7 +264,23 @@ class PosController extends Controller
                 $orderNumber = $prefix . $nextSeq;
 
                 $grandTotal = (float) $validated['total_amount'];
-                $paidAmount = isset($validated['paid_amount']) ? (float) $validated['paid_amount'] : $grandTotal;
+                $rawTendered = isset($validated['tendered_amount']) ? (float) $validated['tendered_amount'] : null;
+
+                if ($rawTendered !== null && $rawTendered > 0) {
+                    $tenderedAmount = $rawTendered;
+                    if ($tenderedAmount >= $grandTotal) {
+                        $paidAmount = $grandTotal;
+                        $changeAmount = round($tenderedAmount - $grandTotal, 2);
+                    } else {
+                        // Customer tendered less than grand total (partial cash payment / due sale)
+                        $paidAmount = $tenderedAmount;
+                        $changeAmount = 0.00;
+                    }
+                } else {
+                    $paidAmount = isset($validated['paid_amount']) ? min($grandTotal, (float) $validated['paid_amount']) : $grandTotal;
+                    $tenderedAmount = $paidAmount;
+                    $changeAmount = 0.00;
+                }
 
                 // 3. Resolve Fulfillment Warehouse
                 $warehouseId = $validated['warehouse_id'] ?? null;
@@ -296,6 +332,8 @@ class PosController extends Controller
                     'tax_amount' => (float) ($validated['tax_amount'] ?? 0.00),
                     'shipping_cost' => (float) ($validated['shipping_cost'] ?? 0.00),
                     'paid_amount' => $paidAmount,
+                    'tendered_amount' => $tenderedAmount,
+                    'change_amount' => $changeAmount,
                     'notes' => $validated['notes'] ?? 'POS Counter Sale',
                     'status' => 'confirmed',
                 ];
@@ -352,6 +390,8 @@ class PosController extends Controller
                 'order_number' => $order->order_number,
                 'total_amount' => (float) $order->total_amount,
                 'paid_amount' => (float) $order->paid_amount,
+                'tendered_amount' => (float) ($order->tendered_amount ?? $tenderedAmount),
+                'change_amount' => (float) ($order->change_amount ?? $changeAmount),
                 'due_amount' => (float) $order->due_amount,
                 'pos_slip_url' => route('sales.pos', $order->id),
                 'invoice_url' => route('sales.invoice', $order->id),
@@ -376,7 +416,7 @@ class PosController extends Controller
      */
     public function storeCustomer(Request $request)
     {
-        $teamId = Auth::user()->current_team_id;
+        $teamId = $this->resolveTeamId();
 
         $validated = $request->validate([
             'phone' => 'required|string|max:50',

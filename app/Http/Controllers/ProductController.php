@@ -244,6 +244,42 @@ class ProductController extends Controller
         return redirect()->route('products.index')->with('success', "Product '{$product->name}' deleted successfully.");
     }
 
+    public function lookupBarcode(Request $request)
+    {
+        $code = trim($request->input('barcode', ''));
+        if (!$code) {
+            return response()->json(['found' => false]);
+        }
+        $teamId = Auth::user()->current_team_id ?? Auth::user()->currentTeam?->id;
+        $excludeId = $request->input('exclude_id');
+
+        $product = Product::where('team_id', $teamId)
+            ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+            ->where(function ($q) use ($code) {
+                $q->where('barcode', $code)->orWhere('sku', $code);
+            })
+            ->with(['category', 'brand'])
+            ->first();
+
+        if ($product) {
+            return response()->json([
+                'found' => true,
+                'product' => [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'sku' => $product->sku,
+                    'barcode' => $product->barcode,
+                    'category' => $product->category?->name,
+                    'brand' => $product->brand?->name,
+                    'unit_price' => (float) $product->unit_price,
+                    'cost_price' => (float) $product->cost_price,
+                ],
+            ]);
+        }
+
+        return response()->json(['found' => false]);
+    }
+
     public function inspectStock(Product $product)
     {
         $teamId = Auth::user()->current_team_id;

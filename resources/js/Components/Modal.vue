@@ -58,29 +58,32 @@ const maxWidthClass = computed(() => {
             leave-from-class="opacity-100"
             leave-to-class="opacity-0"
         >
-            <div v-if="show" class="fixed inset-0 overflow-y-auto px-4 py-6 sm:px-0 z-50 flex items-center justify-center">
+            <div v-if="show" class="fixed inset-0 z-50 overflow-y-auto">
                 <!-- Backdrop -->
                 <div class="fixed inset-0 transform transition-all" @click="close">
                     <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
                 </div>
 
-                <!-- Modal Dialog -->
-                <transition
-                    enter-active-class="ease-out duration-300"
-                    enter-from-class="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                    enter-to-class="opacity-100 translate-y-0 sm:scale-100"
-                    leave-active-class="ease-in duration-200"
-                    leave-from-class="opacity-100 translate-y-0 sm:scale-100"
-                    leave-to-class="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                >
-                    <div 
-                        v-if="show" 
-                        class="mb-6 bg-white rounded-2xl overflow-hidden shadow-2xl transform transition-all sm:w-full border border-slate-200 z-10"
-                        :class="maxWidthClass"
+                <!-- Centering Wrapper with natural overflow support -->
+                <div class="min-h-full flex items-center justify-center p-4 sm:p-6 text-center">
+                    <!-- Modal Dialog -->
+                    <transition
+                        enter-active-class="ease-out duration-300"
+                        enter-from-class="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                        enter-to-class="opacity-100 translate-y-0 sm:scale-100"
+                        leave-active-class="ease-in duration-200"
+                        leave-from-class="opacity-100 translate-y-0 sm:scale-100"
+                        leave-to-class="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                     >
-                        <slot />
-                    </div>
-                </transition>
+                        <div 
+                            v-if="show" 
+                            class="my-8 w-full bg-white rounded-2xl overflow-hidden shadow-2xl transform transition-all text-left border border-slate-200 z-10 relative"
+                            :class="maxWidthClass"
+                        >
+                            <slot />
+                        </div>
+                    </transition>
+                </div>
             </div>
         </transition>
     </teleport>

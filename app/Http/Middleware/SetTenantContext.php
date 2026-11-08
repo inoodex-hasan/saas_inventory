@@ -19,8 +19,8 @@ class SetTenantContext
         if (Auth::check()) {
             $user = Auth::user();
 
-            // Ensure current_team_id is initialized if user has teams
-            if (!$user->current_team_id && $user->allTeams()->isNotEmpty()) {
+            // Ensure current_team_id is initialized if user has teams (skip super admin so platform mode is preserved)
+            if (!$user->isSuperAdmin() && !$user->current_team_id && $user->allTeams()->isNotEmpty()) {
                 $user->switchTeam($user->allTeams()->first());
             }
 

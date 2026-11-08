@@ -104,37 +104,117 @@ class VendorDueController extends Controller
         }
 
         $validated = $request->validate([
-            'order_id' => ['required', Rule::exists('purchase_orders', 'id')->where('team_id', $teamId)],
+            'vendor_id' => ['nullable', Rule::exists('suppliers', 'id')->where('team_id', $teamId)],
+            'supplier_id' => ['nullable', Rule::exists('suppliers', 'id')->where('team_id', $teamId)],
+            'order_id' => ['nullable', Rule::exists('purchase_orders', 'id')->where('team_id', $teamId)],
             'amount' => 'required|numeric|min:0.01',
             'financial_account_id' => ['required', Rule::exists('financial_accounts', 'id')->where('team_id', $teamId)],
             'payment_reference' => 'nullable|string|max:100',
             'notes' => 'nullable|string|max:500',
+            'allocations' => 'nullable|array',
+            'allocations.*.order_id' => ['required_with:allocations', Rule::exists('purchase_orders', 'id')->where('team_id', $teamId)],
+            'allocations.*.amount' => 'required_with:allocations|numeric|min:0',
         ]);
 
-        $order = PurchaseOrder::where('team_id', $teamId)->findOrFail($validated['order_id']);
+        $totalPayment = round((float) $validated['amount'], 2);
 
-        if ((float) $validated['amount'] > (float) $order->due_amount) {
+        // Normalize allocations: support both multi-allocation array and single order fallback
+        $allocations = [];
+        if (!empty($validated['allocations'])) {
+            $allocations = array_values(array_filter($validated['allocations'], function ($a) {
+                return (float) ($a['amount'] ?? 0) > 0;
+            }));
+        } elseif (!empty($validated['order_id'])) {
+            $allocations = [
+                [
+                    'order_id' => $validated['order_id'],
+                    'amount' => $totalPayment,
+                ],
+            ];
+        }
+
+        if (empty($allocations)) {
             throw ValidationException::withMessages([
-                'amount' => 'Payment amount cannot exceed the outstanding PO balance of ' . number_format($order->due_amount, 2),
+                'amount' => 'Please allocate the payment amount to at least one purchase order.',
             ]);
+        }
+
+        $totalAllocated = round(array_sum(array_column($allocations, 'amount')), 2);
+        if (abs($totalAllocated - $totalPayment) > 0.01) {
+            throw ValidationException::withMessages([
+                'amount' => "Total allocated amount (৳" . number_format($totalAllocated, 2) . ") must match the payment disbursement amount (৳" . number_format($totalPayment, 2) . ").",
+            ]);
+        }
+
+        $orderIds = array_column($allocations, 'order_id');
+        $orders = PurchaseOrder::where('team_id', $teamId)
+            ->whereIn('id', $orderIds)
+            ->get()
+            ->keyBy('id');
+
+        foreach ($allocations as $alloc) {
+            $order = $orders->get($alloc['order_id']);
+            if (!$order) {
+                throw ValidationException::withMessages([
+                    'amount' => "Purchase order ID {$alloc['order_id']} not found.",
+                ]);
+            }
+            if ((float) $alloc['amount'] > (float) $order->due_amount + 0.01) {
+                throw ValidationException::withMessages([
+                    'amount' => "Allocated amount of ৳" . number_format($alloc['amount'], 2) . " exceeds outstanding balance for PO {$order->po_number} (৳" . number_format($order->due_amount, 2) . ").",
+                ]);
+            }
         }
 
         $account = FinancialAccount::where('team_id', $teamId)->findOrFail($validated['financial_account_id']);
 
-        DB::transaction(function () use ($service, $order, $account, $validated) {
-            $service->recordPayment($order, (float) $validated['amount'], [
-                'payment_method' => $account->type,
-                'notes' => $validated['notes'] ?? null,
-            ]);
+        $supplierId = $validated['vendor_id'] ?? $validated['supplier_id'] ?? null;
+        $vendor = null;
+        if (!empty($supplierId)) {
+            $vendor = Supplier::where('team_id', $teamId)->find($supplierId);
+        }
+        if (!$vendor && $orders->isNotEmpty()) {
+            $vendor = $orders->first()->supplier;
+        }
 
-            $account->withdraw((float) $validated['amount'], [
-                'reference_type' => PurchaseOrder::class,
-                'reference_id' => $order->id,
-                'reference_number' => $validated['payment_reference'] ?? null,
-                'description' => "Vendor bill settlement for PO #{$order->po_number}" . (!empty($validated['notes']) ? " - {$validated['notes']}" : ''),
-            ]);
+        $processedOrders = [];
+
+        DB::transaction(function () use ($service, $orders, $allocations, $account, $validated, $totalPayment, $vendor, &$processedOrders) {
+            foreach ($allocations as $alloc) {
+                $order = $orders->get($alloc['order_id']);
+                $allocatedAmount = round((float) $alloc['amount'], 2);
+                $service->recordPayment($order, $allocatedAmount, [
+                    'payment_method' => $account->type,
+                    'notes' => $validated['notes'] ?? null,
+                ]);
+                $processedOrders[] = "{$order->po_number} (৳" . number_format($allocatedAmount, 2) . ")";
+            }
+
+            $vendorName = $vendor?->name ?? 'Vendor';
+            $description = count($processedOrders) === 1
+                ? "Vendor bill settlement to {$vendorName} - PO {$processedOrders[0]}"
+                : "Multi-PO bill settlement to {$vendorName} across " . count($processedOrders) . " purchase orders: " . implode(', ', $processedOrders);
+
+            if (!empty($validated['notes'])) {
+                $description .= " - {$validated['notes']}";
+            }
+
+            $account->withdraw(
+                $totalPayment,
+                [
+                    'description' => $description,
+                    'reference_type' => $vendor ? Supplier::class : PurchaseOrder::class,
+                    'reference_id' => $vendor ? $vendor->id : $orders->first()->id,
+                    'reference_number' => $validated['payment_reference'] ?? null,
+                ]
+            );
         });
 
-        return redirect()->back()->with('success', "Disbursement of ৳{$validated['amount']} recorded from {$account->name} for PO {$order->po_number}.");
+        $vendorDisplayName = $vendor?->name ?? 'Vendor';
+        $successMsg = count($processedOrders) === 1
+            ? "Disbursement of ৳" . number_format($totalPayment, 2) . " recorded from {$account->name} for PO {$processedOrders[0]}."
+            : "Disbursement of ৳" . number_format($totalPayment, 2) . " successfully distributed across " . count($processedOrders) . " purchase orders to {$vendorDisplayName}.";
+
+        return redirect()->back()->with('success', $successMsg);
     }
 }

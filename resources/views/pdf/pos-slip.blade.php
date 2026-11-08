@@ -290,19 +290,31 @@
                 @endif
             </td>
         </tr>
+        @php
+            $tendered = $order->tendered_amount !== null ? (float)$order->tendered_amount : (float)$order->paid_amount;
+            $change = $order->change_amount !== null ? (float)$order->change_amount : max(0, $tendered - (float)$order->paid_amount);
+            $due = max(0, (float)$order->total_amount - (float)$order->paid_amount);
+        @endphp
+        @if($tendered > 0)
+        <tr>
+            <td class="text-left">Cash Tendered:</td>
+            <td class="text-right font-bold">{{ $team->currency_symbol ?? '৳' }}{{ number_format($tendered, 2) }}</td>
+        </tr>
+        @endif
         <tr>
             <td class="text-left">Paid Amount:</td>
             <td class="text-right font-bold">{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->paid_amount, 2) }}</td>
         </tr>
-        @if($order->total_amount - $order->paid_amount > 0)
+        @if($change > 0)
+        <tr style="color: #15803d;">
+            <td class="text-left font-bold">Change / Return:</td>
+            <td class="text-right font-bold">{{ $team->currency_symbol ?? '৳' }}{{ number_format($change, 2) }}</td>
+        </tr>
+        @endif
+        @if($due > 0)
         <tr style="color: #dc2626;">
             <td class="text-left font-bold">Due Remaining:</td>
-            <td class="text-right font-bold">{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->total_amount - $order->paid_amount, 2) }}</td>
-        </tr>
-        @else
-        <tr>
-            <td class="text-left">Change / Return:</td>
-            <td class="text-right font-bold">{{ $team->currency_symbol ?? '৳' }}0.00</td>
+            <td class="text-right font-bold">{{ $team->currency_symbol ?? '৳' }}{{ number_format($due, 2) }}</td>
         </tr>
         @endif
     </table>

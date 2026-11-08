@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Team;
 use App\Models\User;
+use App\Models\Warehouse;
 use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Laravel\Jetstream\Jetstream;
 
@@ -42,11 +44,20 @@ class TeamMemberController extends Controller
 
         $activeTeam->load(['owner', 'users']);
 
+        // Load active team branches / warehouses
+        $warehouses = Warehouse::where('team_id', $activeTeam->id)
+            ->where('is_active', true)
+            ->orderByDesc('is_default')
+            ->orderBy('name')
+            ->get(['id', 'name', 'code', 'type', 'is_default']);
+
         // Format members list
         $members = collect();
 
         // 1. Add Owner first
         if ($activeTeam->owner) {
+            $ownerWh = $activeTeam->owner->warehouse_id ? $warehouses->firstWhere('id', $activeTeam->owner->warehouse_id) : null;
+
             $members->push([
                 'id' => $activeTeam->owner->id,
                 'name' => $activeTeam->owner->name,
@@ -54,6 +65,9 @@ class TeamMemberController extends Controller
                 'role' => 'Owner',
                 'role_key' => 'owner',
                 'is_owner' => true,
+                'warehouse_id' => $activeTeam->owner->warehouse_id,
+                'warehouse_name' => $ownerWh?->name ?? 'All Branches (Company-wide)',
+                'warehouse_type' => $ownerWh?->type ?? null,
                 'joined_at' => $activeTeam->created_at ? $activeTeam->created_at->format('M d, Y') : 'Original Owner',
             ]);
         }
@@ -62,6 +76,8 @@ class TeamMemberController extends Controller
         foreach ($activeTeam->users as $member) {
             $roleKey = $member->membership->role ?? 'editor';
             $roleTitle = $roleKey === 'admin' ? 'Administrator' : 'Editor / Staff';
+            $assignedWhId = $member->membership->warehouse_id;
+            $assignedWh = $assignedWhId ? $warehouses->firstWhere('id', $assignedWhId) : null;
 
             $members->push([
                 'id' => $member->id,
@@ -70,6 +86,9 @@ class TeamMemberController extends Controller
                 'role' => $roleTitle,
                 'role_key' => $roleKey,
                 'is_owner' => false,
+                'warehouse_id' => $assignedWhId,
+                'warehouse_name' => $assignedWh?->name ?? 'All Branches (Default)',
+                'warehouse_type' => $assignedWh?->type ?? null,
                 'joined_at' => $member->membership->created_at ? $member->membership->created_at->format('M d, Y') : 'N/A',
             ]);
         }
@@ -118,6 +137,7 @@ class TeamMemberController extends Controller
                 'created_at' => $activeTeam->created_at ? $activeTeam->created_at->format('M d, Y') : '',
             ],
             'members' => $members,
+            'warehouses' => $warehouses,
             'availableRoles' => $availableRoles,
             'canManage' => $canManage,
             'currentUserId' => $user->id,
@@ -144,6 +164,7 @@ class TeamMemberController extends Controller
             'email' => 'required|email|max:255',
             'role' => 'required|string|in:admin,editor',
             'name' => 'nullable|string|max:255',
+            'warehouse_id' => ['nullable', Rule::exists('warehouses', 'id')->where('team_id', $team->id)],
         ]);
 
         $email = strtolower(trim($validated['email']));
@@ -170,11 +191,15 @@ class TeamMemberController extends Controller
                 'email' => $email,
                 'password' => Hash::make($tempPassword),
                 'current_team_id' => $team->id,
+                'warehouse_id' => $validated['warehouse_id'] ?? null,
             ]);
         }
 
-        // Attach to team
-        $team->users()->attach($memberUser->id, ['role' => $validated['role']]);
+        // Attach to team with role & branch assignment
+        $team->users()->attach($memberUser->id, [
+            'role' => $validated['role'],
+            'warehouse_id' => $validated['warehouse_id'] ?? null,
+        ]);
 
         if ($memberUser->current_team_id === null) {
             $memberUser->forceFill(['current_team_id' => $team->id])->save();
@@ -188,7 +213,7 @@ class TeamMemberController extends Controller
     }
 
     /**
-     * Update a team member's role.
+     * Update a team member's role and branch assignment.
      */
     public function updateRole(Request $request, User $user)
     {
@@ -201,20 +226,26 @@ class TeamMemberController extends Controller
 
         $validated = $request->validate([
             'role' => 'required|string|in:admin,editor',
+            'warehouse_id' => ['nullable', Rule::exists('warehouses', 'id')->where('team_id', $team->id)],
         ]);
 
+        // If updating the organization owner's assigned branch
         if ($team->owner && $team->owner->id === $user->id) {
-            return back()->with('error', 'The team owner role cannot be changed.');
+            $user->update(['warehouse_id' => $validated['warehouse_id'] ?? null]);
+            return back()->with('success', "Updated branch assignment for {$user->name}.");
         }
 
         if (!$team->users()->where('users.id', $user->id)->exists()) {
             return back()->with('error', 'This user is not a member of this team.');
         }
 
-        $team->users()->updateExistingPivot($user->id, ['role' => $validated['role']]);
+        $team->users()->updateExistingPivot($user->id, [
+            'role' => $validated['role'],
+            'warehouse_id' => $validated['warehouse_id'] ?? null,
+        ]);
 
         $roleTitle = $validated['role'] === 'admin' ? 'Administrator' : 'Editor / Staff';
-        return back()->with('success', "Updated role for {$user->name} to {$roleTitle}.");
+        return back()->with('success', "Updated role and branch assignment for {$user->name}.");
     }
 
     /**

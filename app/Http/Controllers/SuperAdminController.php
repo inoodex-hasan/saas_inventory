@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Plan;
 use App\Models\Product;
 use App\Models\SalesOrder;
+use App\Models\SiteSetting;
 use App\Models\Team;
 use App\Models\TenantSubscription;
 use App\Models\User;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -358,6 +360,370 @@ class SuperAdminController extends Controller
             'current_team_id' => $team->id,
         ])->save();
 
+        session()->put('impersonated_tenant_id', $team->id);
+
         return redirect()->route('dashboard')->with('success', "Switched workspace context to '{$team->name}'.");
+    }
+
+    /**
+     * Show site settings management form for Super Admin.
+     */
+    public function siteSettings()
+    {
+        $logoPath    = SiteSetting::get('logo_path');
+        $faviconPath = SiteSetting::get('favicon_path');
+        $brandName   = SiteSetting::get('brand_name', 'InoManage');
+
+        $defaultTestimonials = [
+            [
+                'name' => 'Rahim Chowdhury',
+                'role' => 'Managing Director',
+                'company' => 'Apex Retail Ltd',
+                'rating' => 5,
+                'quote' => 'Switching to ' . $brandName . ' solved our stock mismatch permanently. Real-time POS multi-warehouse deduction across our 4 Dhaka outlets stopped stockouts and overselling completely.',
+                'avatar_text' => 'RC',
+            ],
+            [
+                'name' => 'Tanvir Hasan',
+                'role' => 'Chief Executive',
+                'company' => 'ElectroTech Wholesale',
+                'rating' => 5,
+                'quote' => 'The double-entry accounting engine combined with automatic journal vouchers saves our finance team over 25 hours every single month. The localized PDF invoice printing is super crisp.',
+                'avatar_text' => 'TH',
+            ],
+            [
+                'name' => 'Sharmin Akter',
+                'role' => 'Head of Operations',
+                'company' => 'Prime Auto Services',
+                'rating' => 5,
+                'quote' => 'Our repair workshop handles 60+ devices daily. Service ticketing with spare parts consumption auto-deducted from our stock room has brought total transparency to our customers.',
+                'avatar_text' => 'SA',
+            ],
+            [
+                'name' => 'Mahmudul Karim',
+                'role' => 'Supply Chain Lead',
+                'company' => 'Bengal Agro Distributors',
+                'rating' => 5,
+                'quote' => 'The multi-stage purchase orders and vendor dues ledger helped us manage millions in inventory without a single discrepancy across our regional depots.',
+                'avatar_text' => 'MK',
+            ],
+        ];
+
+        $defaultFaqs = [
+            [
+                'question' => 'Is our company data completely isolated from other tenants?',
+                'answer' => 'Yes, absolutely. Every query executed in Inoodex passes through an automatic global tenant scope (`BelongsToTenant`) that enforces `WHERE team_id = current_team_id`. Cross-tenant ID enumeration returns 403 Forbidden or 404 Not Found at all times.',
+            ],
+            [
+                'question' => 'How does pessimistic row locking prevent overselling?',
+                'answer' => 'When an order reservation is placed, MySQL row-level locking (`lockForUpdate()`) serializes concurrent access within an ACID database transaction. No two orders can claim the same physical inventory unit simultaneously, preventing dirty reads and negative stock.',
+            ],
+            [
+                'question' => 'How do we pay with bKash, Nagad, or Bank Transfer?',
+                'answer' => 'In addition to card gateways via SSLCommerz, you can submit manual bKash or Nagad Transaction IDs (TrxID) directly inside your billing portal. Our Super Admin team verifies the transaction in the admin payment portal, instantly updating your plan quotas.',
+            ],
+            [
+                'question' => 'Can we print vector invoices with custom barcodes and logos?',
+                'answer' => 'Yes! Our integrated high-resolution vector PDF engine dynamically renders your company logo, tax registration number, custom currency symbol (৳, $, €, etc.), and barcode tracking for Sales Invoices, Packing Slips, POs, and Service Tokens.',
+            ],
+        ];
+
+        $defaultHeroSlides = [
+            [
+                'chip'               => 'Enterprise Multi-Tenant SaaS • 99.99% Uptime SLA • Zero Race Conditions',
+                'headline_prefix'    => 'The Operating System for',
+                'headline_highlight' => 'Modern Inventory & Supply Chains',
+                'subtext'            => 'Empower your organization with multi-warehouse tracking, atomic stock reservation, double-entry financial accounting, POS checkout, workshop service ticketing, and vectorized PDF invoicing — completely tenant-isolated.',
+                'primary_cta_text'   => 'Start 14-Day Free Trial',
+                'primary_cta_url'    => '/register',
+                'secondary_cta_text' => 'Explore Modules',
+                'secondary_cta_url'  => '#features',
+                'mockup_type'        => 'inventory',
+                'trust_badges'       => [
+                    'No Credit Card Required',
+                    'Instant Setup & Seeding',
+                    'Pessimistic Row-Locking',
+                    'bKash, Nagad & Cards Supported',
+                ],
+            ],
+            [
+                'chip'               => 'High-Speed Retail Billing • Barcode Scanning • Multi-Store Ready',
+                'headline_prefix'    => 'Turn Every Device Into a',
+                'headline_highlight' => 'Next-Gen POS Checkout Terminal',
+                'subtext'            => 'Serve customers in seconds with sub-millisecond barcode lookups, digital customer receipts, instant bKash/Nagad and cash handling, and automatic stock deduction across all locations.',
+                'primary_cta_text'   => 'Start Free POS Trial',
+                'primary_cta_url'    => '/register',
+                'secondary_cta_text' => 'See POS Capabilities',
+                'secondary_cta_url'  => '#features',
+                'mockup_type'        => 'pos',
+                'trust_badges'       => [
+                    'Thermal Printing Ready',
+                    'Split Payments Supported',
+                    'Barcode & QR Scanning',
+                    'Offline-Resilient Ledger',
+                ],
+            ],
+            [
+                'chip'               => 'Audit-Grade ERP Ledger • Real-Time Vouchers • Vector PDF Statements',
+                'headline_prefix'    => 'Total Financial Clarity With',
+                'headline_highlight' => 'Automated Double-Entry Accounting',
+                'subtext'            => 'Eliminate manual bookkeeping. Every sales invoice, purchase order, return, and expense automatically writes balanced debit and credit entries to your Chart of Accounts with audit-grade precision.',
+                'primary_cta_text'   => 'Try Accounting Free',
+                'primary_cta_url'    => '/register',
+                'secondary_cta_text' => 'View Financial Reports',
+                'secondary_cta_url'  => '#features',
+                'mockup_type'        => 'accounting',
+                'trust_badges'       => [
+                    'Debit/Credit Balance Validation',
+                    'Automated Journal Entries',
+                    'Real-Time Profit & Loss',
+                    'Tax & VAT Ready',
+                ],
+            ],
+        ];
+
+        $heroSlidesJson = SiteSetting::get('hero_slides');
+        $heroSlides = !empty($heroSlidesJson) ? json_decode($heroSlidesJson, true) : null;
+        if (!is_array($heroSlides) || empty($heroSlides)) {
+            $heroSlides = $defaultHeroSlides;
+        }
+
+        foreach ($heroSlides as &$slide) {
+            if (!empty($slide['image_path']) && Storage::disk('public')->exists($slide['image_path'])) {
+                $slide['image_url'] = asset(Storage::url($slide['image_path']));
+            }
+        }
+        unset($slide);
+
+        $testimonialsJson = SiteSetting::get('testimonials');
+        $testimonials = !empty($testimonialsJson) ? json_decode($testimonialsJson, true) : null;
+        if (!is_array($testimonials) || empty($testimonials)) {
+            $testimonials = $defaultTestimonials;
+        }
+
+        $faqsJson = SiteSetting::get('faqs');
+        $faqs = !empty($faqsJson) ? json_decode($faqsJson, true) : null;
+        if (!is_array($faqs) || empty($faqs)) {
+            $faqs = $defaultFaqs;
+        }
+
+        return Inertia::render('Admin/SiteSettings', [
+            'settings' => [
+                'logo_url'         => $logoPath && Storage::disk('public')->exists($logoPath) ? asset(Storage::url($logoPath)) : null,
+                'favicon_url'      => $faviconPath && Storage::disk('public')->exists($faviconPath) ? asset(Storage::url($faviconPath)) : null,
+                'brand_name'       => $brandName,
+                'brand_tagline'    => SiteSetting::get('brand_tagline', 'Cloud Inventory Platform'),
+                'site_title'       => SiteSetting::get('site_title', 'InoManage Cloud Inventory Management Software'),
+                'meta_description' => SiteSetting::get('meta_description', 'Next-generation multi-tenant ERP platform for modern businesses. Multi-warehouse tracking, atomic stock locking, double-entry accounting, POS billing, workshop service ticketing, and vectorized PDF invoicing.'),
+                'support_email'    => SiteSetting::get('support_email', ''),
+                'contact_phone'    => SiteSetting::get('contact_phone', ''),
+                'contact_address'  => SiteSetting::get('contact_address', ''),
+                'footer_copyright' => SiteSetting::get('footer_copyright', 'InoManage. All rights reserved.'),
+                'hero_chip_text'   => SiteSetting::get('hero_chip_text', 'Enterprise Multi-Tenant SaaS • 99.99% Uptime SLA • Zero Race Conditions'),
+                'hero_headline'    => SiteSetting::get('hero_headline', 'The Operating System for Modern Inventory & Supply Chains'),
+                'hero_subtext'     => SiteSetting::get('hero_subtext', 'Empower your organization with multi-warehouse tracking, atomic stock reservation, double-entry financial accounting, POS checkout, workshop service ticketing, and vectorized PDF invoicing — completely tenant-isolated.'),
+                'hero_slides'      => $heroSlides,
+                'testimonials'     => $testimonials,
+                'faqs'             => $faqs,
+                'terms_and_conditions' => SiteSetting::get('terms_and_conditions', ''),
+                'privacy_policy'       => SiteSetting::get('privacy_policy', ''),
+            ],
+        ]);
+    }
+
+    /**
+     * Update site branding and configuration settings.
+     */
+    public function updateSiteSettings(Request $request)
+    {
+        $request->validate([
+            'logo'             => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif', 'max:2048'],
+            'favicon'          => ['nullable', 'file', 'mimes:ico,png', 'max:512'],
+            'brand_name'       => ['required', 'string', 'max:60'],
+            'brand_tagline'    => ['required', 'string', 'max:80'],
+            'site_title'       => ['required', 'string', 'max:120'],
+            'meta_description' => ['nullable', 'string', 'max:500'],
+            'support_email'    => ['nullable', 'email', 'max:100'],
+            'contact_phone'    => ['nullable', 'string', 'max:30'],
+            'contact_address'  => ['nullable', 'string', 'max:300'],
+            'footer_copyright' => ['required', 'string', 'max:120'],
+            'hero_chip_text'   => ['nullable', 'string', 'max:150'],
+            'hero_headline'    => ['nullable', 'string', 'max:150'],
+            'hero_subtext'     => ['nullable', 'string', 'max:600'],
+            'hero_slides'      => ['nullable', 'array'],
+            'testimonials'     => ['nullable', 'array'],
+            'faqs'             => ['nullable', 'array'],
+            'terms_and_conditions' => ['nullable', 'string'],
+            'privacy_policy'       => ['nullable', 'string'],
+        ]);
+
+        // Handle logo upload or removal
+        if ($request->boolean('remove_logo')) {
+            $oldLogo = SiteSetting::get('logo_path');
+            if ($oldLogo) {
+                if (Storage::disk('public')->exists($oldLogo)) {
+                    Storage::disk('public')->delete($oldLogo);
+                }
+                $pubFile = public_path('storage/' . $oldLogo);
+                if (file_exists($pubFile)) {
+                    @unlink($pubFile);
+                }
+            }
+            SiteSetting::set('logo_path', null);
+        } elseif ($request->hasFile('logo')) {
+            $oldLogo = SiteSetting::get('logo_path');
+            if ($oldLogo) {
+                if (Storage::disk('public')->exists($oldLogo)) {
+                    Storage::disk('public')->delete($oldLogo);
+                }
+                $pubFile = public_path('storage/' . $oldLogo);
+                if (file_exists($pubFile)) {
+                    @unlink($pubFile);
+                }
+            }
+            $logoPath = $request->file('logo')->store('site', 'public');
+            SiteSetting::set('logo_path', $logoPath);
+
+            // Mirror to public/storage if public/storage is a real directory
+            try {
+                $destDir = public_path('storage/site');
+                if (!is_dir($destDir)) {
+                    @mkdir($destDir, 0755, true);
+                }
+                @copy(storage_path('app/public/' . $logoPath), public_path('storage/' . $logoPath));
+            } catch (\Throwable $e) {}
+        }
+
+        // Handle favicon upload or removal
+        if ($request->boolean('remove_favicon')) {
+            $oldFavicon = SiteSetting::get('favicon_path');
+            if ($oldFavicon) {
+                if (Storage::disk('public')->exists($oldFavicon)) {
+                    Storage::disk('public')->delete($oldFavicon);
+                }
+                $pubFile = public_path('storage/' . $oldFavicon);
+                if (file_exists($pubFile)) {
+                    @unlink($pubFile);
+                }
+            }
+            SiteSetting::set('favicon_path', null);
+        } elseif ($request->hasFile('favicon')) {
+            $oldFavicon = SiteSetting::get('favicon_path');
+            if ($oldFavicon) {
+                if (Storage::disk('public')->exists($oldFavicon)) {
+                    Storage::disk('public')->delete($oldFavicon);
+                }
+                $pubFile = public_path('storage/' . $oldFavicon);
+                if (file_exists($pubFile)) {
+                    @unlink($pubFile);
+                }
+            }
+            $faviconPath = $request->file('favicon')->store('site', 'public');
+            SiteSetting::set('favicon_path', $faviconPath);
+
+            // Mirror to public/storage if public/storage is a real directory
+            try {
+                $destDir = public_path('storage/site');
+                if (!is_dir($destDir)) {
+                    @mkdir($destDir, 0755, true);
+                }
+                @copy(storage_path('app/public/' . $faviconPath), public_path('storage/' . $faviconPath));
+            } catch (\Throwable $e) {}
+        }
+
+        // Save text settings
+        $keys = [
+            'brand_name',
+            'brand_tagline',
+            'site_title',
+            'meta_description',
+            'support_email',
+            'contact_phone',
+            'contact_address',
+            'footer_copyright',
+            'hero_chip_text',
+            'hero_headline',
+            'hero_subtext',
+            'terms_and_conditions',
+            'privacy_policy',
+        ];
+
+        foreach ($keys as $key) {
+            SiteSetting::set($key, $request->input($key));
+        }
+
+        if ($request->has('hero_slides')) {
+            $slidesVal = $request->input('hero_slides');
+            if (is_string($slidesVal)) {
+                $slidesVal = json_decode($slidesVal, true);
+            }
+            if (is_array($slidesVal)) {
+                $slidesVal = array_values($slidesVal);
+
+                // Handle slide image uploads
+                if ($request->hasFile('slide_images')) {
+                    foreach ($request->file('slide_images') as $idx => $file) {
+                        if ($file && $file->isValid()) {
+                            // Delete old image if exists
+                            if (isset($slidesVal[$idx]['image_path']) && !empty($slidesVal[$idx]['image_path'])) {
+                                if (Storage::disk('public')->exists($slidesVal[$idx]['image_path'])) {
+                                    Storage::disk('public')->delete($slidesVal[$idx]['image_path']);
+                                }
+                                $oldPub = public_path('storage/' . $slidesVal[$idx]['image_path']);
+                                if (file_exists($oldPub)) {
+                                    @unlink($oldPub);
+                                }
+                            }
+
+                            $path = $file->store('site/hero', 'public');
+                            $slidesVal[$idx]['image_path'] = $path;
+                            $slidesVal[$idx]['image_url']  = asset(Storage::url($path));
+
+                            // Mirror to public/storage
+                            try {
+                                $destDir = public_path('storage/site/hero');
+                                if (!is_dir($destDir)) {
+                                    @mkdir($destDir, 0755, true);
+                                }
+                                @copy(storage_path('app/public/' . $path), public_path('storage/' . $path));
+                            } catch (\Throwable $e) {}
+                        }
+                    }
+                }
+
+                // Handle slide image removals
+                if ($request->has('remove_slide_images')) {
+                    foreach ($request->input('remove_slide_images', []) as $idx => $shouldRemove) {
+                        if ($shouldRemove && isset($slidesVal[$idx])) {
+                            if (!empty($slidesVal[$idx]['image_path'])) {
+                                if (Storage::disk('public')->exists($slidesVal[$idx]['image_path'])) {
+                                    Storage::disk('public')->delete($slidesVal[$idx]['image_path']);
+                                }
+                                $oldPub = public_path('storage/' . $slidesVal[$idx]['image_path']);
+                                if (file_exists($oldPub)) {
+                                    @unlink($oldPub);
+                                }
+                            }
+                            $slidesVal[$idx]['image_path'] = null;
+                            $slidesVal[$idx]['image_url']  = null;
+                        }
+                    }
+                }
+
+                SiteSetting::set('hero_slides', json_encode($slidesVal));
+            }
+        }
+
+        if ($request->has('testimonials')) {
+            $testimonialsVal = $request->input('testimonials');
+            SiteSetting::set('testimonials', is_array($testimonialsVal) ? json_encode(array_values($testimonialsVal)) : $testimonialsVal);
+        }
+
+        if ($request->has('faqs')) {
+            $faqsVal = $request->input('faqs');
+            SiteSetting::set('faqs', is_array($faqsVal) ? json_encode(array_values($faqsVal)) : $faqsVal);
+        }
+
+        return redirect()->route('admin.site-settings')->with('success', 'Site settings updated successfully.');
     }
 }

@@ -700,11 +700,20 @@
                     <div class="tot-divider"></div>
                     <div class="tot-line-total"><span>Grand Total:</span><b>{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->total_amount, 2) }}</b></div>
                     <div class="tot-payment-summary">
+                        @php
+                            $tendered = $order->tendered_amount !== null ? (float)$order->tendered_amount : (float)$order->paid_amount;
+                            $change = $order->change_amount !== null ? (float)$order->change_amount : max(0, $tendered - (float)$order->paid_amount);
+                            $due = max(0, (float)$order->total_amount - (float)$order->paid_amount);
+                        @endphp
+                        @if($tendered > 0)
+                            <div class="tot-sub-row"><span>Cash Tendered:</span><b>{{ $team->currency_symbol ?? '৳' }}{{ number_format($tendered, 2) }}</b></div>
+                        @endif
                         <div class="tot-sub-row"><span>Paid Amount:</span><b>{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->paid_amount, 2) }}</b></div>
-                        @if($order->total_amount - $order->paid_amount > 0)
-                            <div class="tot-sub-row"><span style="color:#DC2626;">Due Balance:</span><b style="color:#DC2626;">{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->total_amount - $order->paid_amount, 2) }}</b></div>
-                        @else
-                            <div class="tot-sub-row"><span>Change / Return:</span><b>{{ $team->currency_symbol ?? '৳' }}0.00</b></div>
+                        @if($change > 0)
+                            <div class="tot-sub-row"><span style="color:#15803D;">Change / Return:</span><b style="color:#15803D;">{{ $team->currency_symbol ?? '৳' }}{{ number_format($change, 2) }}</b></div>
+                        @endif
+                        @if($due > 0)
+                            <div class="tot-sub-row"><span style="color:#DC2626;">Due Balance:</span><b style="color:#DC2626;">{{ $team->currency_symbol ?? '৳' }}{{ number_format($due, 2) }}</b></div>
                         @endif
                     </div>
                 </div>
@@ -746,9 +755,10 @@
         tax: {{ (float) $order->tax_amount }},
         ship: {{ (float) $order->shipping_cost }},
         total: {{ (float) $order->total_amount }},
+        tendered: {{ $order->tendered_amount !== null ? (float) $order->tendered_amount : (float) $order->paid_amount }},
         paid: {{ (float) $order->paid_amount }},
-        change: {{ (float) max(0, $order->paid_amount - $order->total_amount) }},
-        due: {{ (float) max(0, $order->total_amount - $order->paid_amount) }},
+        change: {{ $order->change_amount !== null ? (float) $order->change_amount : max(0, ($order->tendered_amount !== null ? (float) $order->tendered_amount : (float) $order->paid_amount) - (float) $order->paid_amount) }},
+        due: {{ (float) max(0, (float)$order->total_amount - (float)$order->paid_amount) }},
         items: [
             @foreach($order->items as $item)
             {
@@ -814,9 +824,11 @@
         '<div class="sw-grand-banner"><span>TOTAL:</span><span>' + money(d.total) + '</span></div>' +
         '<div class="sw-line-double"></div>' +
         '<div class="sw-tot-row"><span>Payment:</span><b>' + esc(d.pay) + '</b></div>' +
-        '<div class="sw-tot-row"><span>Status:</span><b style="color:#15803D;">PAID</b></div>' +
+        '<div class="sw-tot-row"><span>Status:</span><b style="color:' + (d.due > 0 ? '#DC2626' : '#15803D') + ';">' + (d.due > 0 ? (d.paid > 0 ? 'PARTIALLY PAID' : 'DUE / UNPAID') : 'PAID') + '</b></div>' +
+        (d.tendered > 0 ? '<div class="sw-tot-row"><span>Cash Tendered:</span><b>' + money(d.tendered) + '</b></div>' : '') +
         '<div class="sw-tot-row"><span>Paid Amount:</span><b>' + money(d.paid) + '</b></div>' +
-        (d.due > 0 ? '<div class="sw-tot-row" style="color:#DC2626;"><span>Due:</span><b>' + money(d.due) + '</b></div>' : '<div class="sw-tot-row"><span>Change:</span><b>' + money(d.change) + '</b></div>') +
+        (d.change > 0 ? '<div class="sw-tot-row" style="color:#15803D;"><span>Change / Return:</span><b>' + money(d.change) + '</b></div>' : '') +
+        (d.due > 0 ? '<div class="sw-tot-row" style="color:#DC2626;"><span>Due Remaining:</span><b>' + money(d.due) + '</b></div>' : '') +
         '<div class="sw-line-dashed"></div>' +
         '<div class="sw-thanks">Thank You for Shopping with Us!</div>';
     }

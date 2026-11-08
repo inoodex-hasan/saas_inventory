@@ -10,6 +10,7 @@ import { formatDate } from '@/Utils/date';
 const props = defineProps({
     team: Object,
     members: Array,
+    warehouses: Array,
     availableRoles: Array,
     canManage: Boolean,
     currentUserId: Number,
@@ -24,7 +25,8 @@ const filteredMembers = computed(() => {
     return (props.members || []).filter(m => 
         m.name?.toLowerCase().includes(q) || 
         m.email?.toLowerCase().includes(q) || 
-        m.role?.toLowerCase().includes(q)
+        m.role?.toLowerCase().includes(q) ||
+        m.warehouse_name?.toLowerCase().includes(q)
     );
 });
 
@@ -39,12 +41,14 @@ const addForm = useForm({
     name: '',
     email: '',
     role: 'editor',
+    warehouse_id: '',
 });
 
 function openAddModal() {
     addForm.reset();
     addForm.clearErrors();
     addForm.role = 'editor';
+    addForm.warehouse_id = '';
     isAddModalOpen.value = true;
 }
 
@@ -58,16 +62,18 @@ function submitAddMember() {
     });
 }
 
-// Edit Role Modal State
+// Edit Role & Branch Modal State
 const isRoleModalOpen = ref(false);
 const editingMember = ref(null);
 const roleForm = useForm({
     role: 'editor',
+    warehouse_id: '',
 });
 
 function openRoleModal(member) {
     editingMember.value = member;
     roleForm.role = member.role_key || 'editor';
+    roleForm.warehouse_id = member.warehouse_id || '';
     roleForm.clearErrors();
     isRoleModalOpen.value = true;
 }
@@ -181,6 +187,7 @@ function executeRemoveMember() {
                             <tr>
                                 <th class="py-3 px-4">Member Name & Account</th>
                                 <th class="py-3 px-4">Assigned Role</th>
+                                <th class="py-3 px-4">Assigned Branch / Location</th>
                                 <th class="py-3 px-4">Membership Since</th>
                                 <th class="py-3 px-4 text-right" v-if="canManage">Actions</th>
                             </tr>
@@ -219,12 +226,26 @@ function executeRemoveMember() {
                                     </span>
                                 </td>
 
+                                <td class="py-3.5 px-4">
+                                    <div v-if="member.warehouse_name" class="flex items-center gap-1.5">
+                                        <span 
+                                            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold"
+                                            :class="member.warehouse_type === 'warehouse' ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-200'"
+                                        >
+                                            <span v-if="member.warehouse_type === 'warehouse'">📦</span>
+                                            <span v-else>🏪</span>
+                                            {{ member.warehouse_name }}
+                                        </span>
+                                    </div>
+                                    <span v-else class="text-[11px] text-slate-400 font-medium">All Branches / Default</span>
+                                </td>
+
                                 <td class="py-3.5 px-4 text-slate-500 font-mono text-[11px]">
                                     {{ formatDate(member.joined_at) }}
                                 </td>
 
                                 <td class="py-3.5 px-4 text-right" v-if="canManage">
-                                    <div v-if="!member.is_owner" class="flex items-center justify-end">
+                                    <div class="flex items-center justify-end">
                                         <ActionDropdown align="right">
                                             <button
                                                 @click="openRoleModal(member)"
@@ -233,9 +254,10 @@ function executeRemoveMember() {
                                                 <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                 </svg>
-                                                <span>Change Access Role</span>
+                                                <span>{{ member.is_owner ? 'Assign Branch' : 'Change Role & Branch' }}</span>
                                             </button>
                                             <button
+                                                v-if="!member.is_owner"
                                                 @click="removeMember(member)"
                                                 class="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-rose-600 hover:bg-rose-50 font-semibold transition-colors"
                                             >
@@ -246,12 +268,11 @@ function executeRemoveMember() {
                                             </button>
                                         </ActionDropdown>
                                     </div>
-                                    <span v-else class="text-slate-400 text-[11px] italic">Permanent Owner</span>
                                 </td>
                             </tr>
 
                             <tr v-if="filteredMembers.length === 0">
-                                <td :colspan="canManage ? 4 : 3" class="py-8 text-center text-slate-400">
+                                <td :colspan="canManage ? 5 : 4" class="py-8 text-center text-slate-400">
                                     No team members found matching your search.
                                 </td>
                             </tr>
@@ -325,6 +346,20 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                     </div>
 
                     <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Assigned Branch / Location</label>
+                        <select
+                            v-model="addForm.warehouse_id"
+                            class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                        >
+                            <option value="">All Branches / Default Location</option>
+                            <option v-for="wh in warehouses" :key="wh.id" :value="wh.id">
+                                {{ wh.type === 'warehouse' ? '📦 Godown: ' : '🏪 Outlet: ' }}{{ wh.name }} ({{ wh.code }})
+                            </option>
+                        </select>
+                        <p class="text-[11px] text-slate-400 mt-1">POS and sales will automatically default to this branch for this staff member.</p>
+                    </div>
+
+                    <div>
                         <label class="block font-semibold text-slate-700 mb-1">Assigned Role *</label>
                         <div class="space-y-2 mt-2">
                             <label
@@ -368,19 +403,37 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
             </div>
         </Modal>
 
-        <!-- Edit Role Modal -->
+        <!-- Edit Role & Branch Modal -->
         <Modal :show="isRoleModalOpen" @close="isRoleModalOpen = false" max-width="md">
             <div class="p-6 space-y-4">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div>
-                        <h3 class="text-base font-extrabold text-slate-900">Change Member Role</h3>
-                        <p class="text-xs text-slate-500 mt-0.5">Update access privileges for {{ editingMember?.name }}</p>
+                        <h3 class="text-base font-extrabold text-slate-900">
+                            {{ editingMember?.is_owner ? 'Assign Branch Location' : 'Change Member Role & Branch' }}
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Update access privileges and branch routing for {{ editingMember?.name }}</p>
                     </div>
                     <button @click="isRoleModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1 text-lg leading-none">&times;</button>
                 </div>
 
                 <form @submit.prevent="submitRoleUpdate" class="space-y-4 text-xs">
+                    <!-- Branch Assignment -->
                     <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Assigned Branch / Location</label>
+                        <select
+                            v-model="roleForm.warehouse_id"
+                            class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                        >
+                            <option value="">All Branches / Default Location</option>
+                            <option v-for="wh in warehouses" :key="wh.id" :value="wh.id">
+                                {{ wh.type === 'warehouse' ? '📦 Godown: ' : '🏪 Outlet: ' }}{{ wh.name }} ({{ wh.code }})
+                            </option>
+                        </select>
+                        <p class="text-[11px] text-slate-400 mt-1">POS counter and stock movements will automatically default to this location for this user.</p>
+                    </div>
+
+                    <!-- Role Selection (Disabled for Owner) -->
+                    <div v-if="!editingMember?.is_owner">
                         <label class="block font-semibold text-slate-700 mb-1">Select Role *</label>
                         <div class="space-y-2 mt-2">
                             <label
@@ -417,7 +470,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                             :disabled="roleForm.processing"
                             class="px-4 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm transition disabled:opacity-50"
                         >
-                            {{ roleForm.processing ? 'Saving...' : 'Update Role' }}
+                            {{ roleForm.processing ? 'Saving...' : 'Update Settings' }}
                         </button>
                     </div>
                 </form>

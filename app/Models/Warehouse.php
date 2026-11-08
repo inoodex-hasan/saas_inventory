@@ -15,6 +15,7 @@ class Warehouse extends Model
     protected $fillable = [
         'team_id',
         'name',
+        'type',
         'code',
         'address',
         'phone',
@@ -22,6 +23,16 @@ class Warehouse extends Model
         'is_default',
         'is_active',
     ];
+
+    public function isOutlet(): bool
+    {
+        return ($this->type ?? 'outlet') === 'outlet';
+    }
+
+    public function isWarehouse(): bool
+    {
+        return $this->type === 'warehouse';
+    }
 
     protected $casts = [
         'is_default' => 'boolean',

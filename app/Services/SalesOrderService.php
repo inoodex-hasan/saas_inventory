@@ -134,6 +134,8 @@ class SalesOrderService
                 'discount_amount' => $discount,
                 'total_amount' => $totalAmount,
                 'paid_amount' => $paidAmount,
+                'tendered_amount' => isset($data['tendered_amount']) ? (float) $data['tendered_amount'] : null,
+                'change_amount' => isset($data['change_amount']) ? (float) $data['change_amount'] : null,
                 'due_amount' => $dueAmount,
                 'notes' => $data['notes'] ?? null,
                 'created_by' => Auth::id(),

@@ -5,7 +5,10 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title inertia>{{ config('app.name', 'Inoodex Inventory') }}</title>
+        <title inertia>{{ $site['site_title'] ?? config('app.name', 'InoManage Cloud Inventory Management Software') }}</title>
+        @if(!empty($site['favicon_url']))
+        <link rel="icon" href="{{ $site['favicon_url'] }}">
+        @endif
 
         <!-- Google Fonts: Plus Jakarta Sans -->
         <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -8,6 +8,9 @@ import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
 import ConfirmationModal from '@/Components/ConfirmationModal.vue';
+import BarcodeCameraModal from '@/Components/BarcodeCameraModal.vue';
+import { useBarcodeScanner } from '@/Composables/useBarcodeScanner';
+import { playScanSuccess, playScanError } from '@/Utils/sound';
 
 const props = defineProps({
     products: Object,
@@ -32,6 +35,41 @@ const inspectedBarcodeValue = ref('');
 const deletingProduct = ref(null);
 const isDeleting = ref(false);
 const isInspectLoading = ref(false);
+
+// Barcode Scanning & Quick Inspection
+const isCameraModalOpen = ref(false);
+
+async function handleBarcodeScanned(code) {
+    if (!code) return;
+    const trimmed = code.trim();
+    try {
+        const res = await axios.get(route('products.lookup-barcode'), { params: { barcode: trimmed } });
+        if (res.data.found) {
+            playScanSuccess();
+            const productMatch = props.products?.data?.find(p => p.id === res.data.product.id);
+            if (productMatch) {
+                inspectStock(productMatch);
+            } else {
+                search.value = trimmed;
+                applyFilters();
+            }
+        } else {
+            playScanError();
+            search.value = trimmed;
+            applyFilters();
+        }
+    } catch (e) {
+        search.value = trimmed;
+        applyFilters();
+    }
+}
+
+// Global Hardware Barcode Scanner listener (USB / Bluetooth / Wireless Gun)
+useBarcodeScanner({
+    onScan: (code) => {
+        handleBarcodeScanned(code);
+    },
+});
 
 const isTaxonomyModalOpen = ref(false);
 const taxonomyTab = ref('categories');
@@ -296,17 +334,32 @@ function submitImport() {
             <!-- Filter Bar & Actions -->
             <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-4">
                 <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <!-- Search Input -->
-                    <div class="relative flex-1 max-w-md">
-                        <input 
-                            type="text" 
-                            v-model="search" 
-                            @keyup.enter="applyFilters"
-                            class="w-full pl-9 pr-4 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-400 placeholder:text-xs"
-                        />
-                        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
+                    <!-- Search Input & Camera Scan -->
+                    <div class="flex items-center gap-2 flex-1 max-w-lg">
+                        <div class="relative flex-1">
+                            <input 
+                                type="text" 
+                                v-model="search" 
+                                @keyup.enter="applyFilters"
+                                placeholder="Search by name, SKU, or scan barcode (USB Gun or Camera)..."
+                                class="w-full pl-9 pr-4 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-400 placeholder:text-xs"
+                            />
+                            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                        <button
+                            type="button"
+                            @click="isCameraModalOpen = true"
+                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200 text-slate-700 text-xs font-semibold transition-all shrink-0 shadow-2xs"
+                            title="Scan Barcode with Camera"
+                        >
+                            <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span class="hidden sm:inline">Scan</span>
+                        </button>
                     </div>
 
                     <!-- Action Buttons -->
@@ -846,6 +899,12 @@ class="flex-1 px-3 py-1.5 rounded-lg text-xs border border-slate-200 focus:borde
             :processing="isDeletingBrand"
             @confirm="executeDeleteBrand"
             @close="deletingBrand = null"
+        />
+
+        <!-- Camera Barcode Scanner Modal -->
+        <BarcodeCameraModal
+            v-model:open="isCameraModalOpen"
+            @scan="handleBarcodeScanned"
         />
     </AppLayout>
 </template>

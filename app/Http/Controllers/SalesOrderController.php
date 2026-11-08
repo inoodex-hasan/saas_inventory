@@ -2,24 +2,47 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\InsufficientStockException;
+use App\Exceptions\InvalidStockOperationException;
 use App\Models\Customer;
 use App\Models\FinancialAccount;
 use App\Models\Product;
 use App\Models\SalesOrder;
+use App\Models\Team;
 use App\Models\Warehouse;
 use App\Services\FinancialAccountService;
 use App\Services\SalesOrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class SalesOrderController extends Controller
 {
+    /**
+     * Resolve the active team ID for the current session/user.
+     */
+    protected function resolveTeamId(): int
+    {
+        $user = Auth::user();
+        $teamId = $user?->current_team_id ?? $user?->currentTeam?->id;
+        if (!$teamId) {
+            $firstTeam = Team::first();
+            if ($firstTeam) {
+                $teamId = (int) $firstTeam->id;
+                if ($user) {
+                    $user->forceFill(['current_team_id' => $teamId])->save();
+                }
+            }
+        }
+        return (int) ($teamId ?? 1);
+    }
+
     public function index(Request $request)
     {
-        $teamId = Auth::user()->current_team_id;
+        $teamId = $this->resolveTeamId();
 
         $search = $request->input('search');
         $status = $request->input('status');
@@ -64,7 +87,7 @@ class SalesOrderController extends Controller
 
     public function create()
     {
-        $teamId = Auth::user()->current_team_id;
+        $teamId = $this->resolveTeamId();
 
         $customers = Customer::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
         $warehouses = Warehouse::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
@@ -111,7 +134,7 @@ class SalesOrderController extends Controller
 
     public function store(Request $request, SalesOrderService $service)
     {
-        $teamId = Auth::user()->current_team_id;
+        $teamId = $this->resolveTeamId();
 
         $rules = [
             'customer_mode' => 'required|in:existing,new',
@@ -168,15 +191,48 @@ class SalesOrderController extends Controller
             'customer_id.required' => 'Please select an existing customer or switch to New Customer.',
             'financial_account_id.required' => 'Please select the bank or MFS account where the payment was deposited.',
             'items.min' => 'At least one line item is required.',
+            'items.*.product_id.required' => 'Each line item must have a valid product selected.',
         ]);
+
+        $itemsData = array_map(function ($it) {
+            return [
+                'product_id' => (int) $it['product_id'],
+                'quantity' => (float) $it['quantity'],
+                'unit_price' => (float) $it['unit_price'],
+                'warranty_days' => isset($it['warranty_days']) ? (int) $it['warranty_days'] : null,
+            ];
+        }, $validated['items']);
+
+        // Calculate grand total, tendered, change, and effective paid amount
+        $subtotal = 0.00;
+        foreach ($itemsData as $it) {
+            $subtotal += ($it['quantity'] * $it['unit_price']);
+        }
+        $discount = (float) ($validated['discount_amount'] ?? 0.00);
+        $tax = (float) ($validated['tax_amount'] ?? 0.00);
+        $shipping = (float) ($validated['shipping_cost'] ?? 0.00);
+        $grandTotal = max(0, $subtotal + $tax + $shipping - $discount);
+
+        $rawPaid = (float) ($validated['paid_amount'] ?? 0.00);
+        if ($rawPaid > $grandTotal) {
+            $tenderedAmount = $rawPaid;
+            $paidAmount = $grandTotal;
+            $changeAmount = round($rawPaid - $grandTotal, 2);
+        } else {
+            $tenderedAmount = $rawPaid;
+            $paidAmount = $rawPaid;
+            $changeAmount = 0.00;
+        }
 
         $orderData = [
             'warehouse_id' => $validated['warehouse_id'],
             'order_date' => $validated['order_date'],
-            'discount_amount' => $validated['discount_amount'] ?? 0.00,
-            'tax_amount' => $validated['tax_amount'] ?? 0.00,
-            'shipping_cost' => $validated['shipping_cost'] ?? 0.00,
-            'paid_amount' => $validated['paid_amount'] ?? 0.00,
+            'discount_amount' => $discount,
+            'tax_amount' => $tax,
+            'shipping_cost' => $shipping,
+            'paid_amount' => $paidAmount,
+            'tendered_amount' => $tenderedAmount,
+            'change_amount' => $changeAmount,
             'notes' => $validated['notes'] ?? null,
             'status' => $validated['status'] ?? 'draft',
         ];
@@ -192,39 +248,35 @@ class SalesOrderController extends Controller
             $orderData['customer_id'] = $validated['customer_id'];
         }
 
-        $itemsData = array_map(function ($it) {
-            return [
-                'product_id' => $it['product_id'],
-                'quantity' => (float) $it['quantity'],
-                'unit_price' => (float) $it['unit_price'],
-                'warranty_days' => isset($it['warranty_days']) ? (int) $it['warranty_days'] : null,
-            ];
-        }, $validated['items']);
+        try {
+            $order = DB::transaction(function () use ($service, $orderData, $itemsData, $validated, $teamId, $paidAmount) {
+                $order = $service->createOrder($orderData, $itemsData);
 
-        $teamId = Auth::user()->current_team_id;
+                if ($paidAmount > 0 && !empty($validated['financial_account_id'])) {
+                    $account = FinancialAccount::where('team_id', $teamId)->findOrFail($validated['financial_account_id']);
+                    $account->deposit($paidAmount, [
+                        'reference_type' => SalesOrder::class,
+                        'reference_id' => $order->id,
+                        'reference_number' => $validated['payment_reference'] ?? null,
+                        'description' => "Initial payment collection for Sales Order #{$order->order_number}",
+                    ]);
+                }
 
-        $order = DB::transaction(function () use ($service, $orderData, $itemsData, $validated, $teamId) {
-            $order = $service->createOrder($orderData, $itemsData);
+                return $order;
+            });
 
-            if ((float) $order->paid_amount > 0 && !empty($validated['financial_account_id'])) {
-                $account = FinancialAccount::where('team_id', $teamId)->findOrFail($validated['financial_account_id']);
-                $account->deposit((float) $order->paid_amount, [
-                    'reference_type' => SalesOrder::class,
-                    'reference_id' => $order->id,
-                    'reference_number' => $validated['payment_reference'] ?? null,
-                    'description' => "Initial payment collection for Sales Order #{$order->order_number}",
-                ]);
-            }
-
-            return $order;
-        });
-
-        return redirect()->route('sales.index')->with('success', "Sales Order {$order->order_number} generated successfully.");
+            return redirect()->route('sales.index')->with('success', "Sales Order {$order->order_number} generated successfully.");
+        } catch (InsufficientStockException | InvalidStockOperationException | \InvalidArgumentException $e) {
+            return redirect()->back()->withInput()->withErrors(['items' => $e->getMessage()]);
+        } catch (\Throwable $e) {
+            Log::error('Sales order creation failed: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return redirect()->back()->withInput()->withErrors(['general' => 'Failed to generate sales order: ' . $e->getMessage()]);
+        }
     }
 
     public function confirm(SalesOrder $order, SalesOrderService $service)
     {
-        $teamId = Auth::user()->current_team_id;
+        $teamId = $this->resolveTeamId();
         abort_if($order->team_id !== $teamId, 403);
 
         $service->confirmOrder($order);
@@ -234,7 +286,7 @@ class SalesOrderController extends Controller
 
     public function dispatchOrder(SalesOrder $order, SalesOrderService $service)
     {
-        $teamId = Auth::user()->current_team_id;
+        $teamId = $this->resolveTeamId();
         abort_if($order->team_id !== $teamId, 403);
 
         $service->dispatchOrder($order);
@@ -244,7 +296,7 @@ class SalesOrderController extends Controller
 
     public function complete(SalesOrder $order, SalesOrderService $service)
     {
-        $teamId = Auth::user()->current_team_id;
+        $teamId = $this->resolveTeamId();
         abort_if($order->team_id !== $teamId, 403);
 
         $service->completeOrder($order);
@@ -254,7 +306,7 @@ class SalesOrderController extends Controller
 
     public function cancel(SalesOrder $order, SalesOrderService $service)
     {
-        $teamId = Auth::user()->current_team_id;
+        $teamId = $this->resolveTeamId();
         abort_if($order->team_id !== $teamId, 403);
 
         $service->cancelOrder($order);
@@ -264,7 +316,7 @@ class SalesOrderController extends Controller
 
     public function pay(Request $request, SalesOrder $order, SalesOrderService $service)
     {
-        $teamId = Auth::user()->current_team_id;
+        $teamId = $this->resolveTeamId();
         abort_if($order->team_id !== $teamId, 403);
 
         if (!$request->filled('financial_account_id')) {

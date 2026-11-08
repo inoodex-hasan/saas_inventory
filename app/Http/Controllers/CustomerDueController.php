@@ -110,38 +110,113 @@ class CustomerDueController extends Controller
         }
 
         $validated = $request->validate([
-            'order_id' => ['required', Rule::exists('sales_orders', 'id')->where('team_id', $teamId)],
+            'customer_id' => ['nullable', Rule::exists('customers', 'id')->where('team_id', $teamId)],
+            'order_id' => ['nullable', Rule::exists('sales_orders', 'id')->where('team_id', $teamId)],
             'amount' => 'required|numeric|min:0.01',
             'financial_account_id' => ['required', Rule::exists('financial_accounts', 'id')->where('team_id', $teamId)],
             'payment_reference' => 'nullable|string|max:100',
             'notes' => 'nullable|string|max:500',
+            'allocations' => 'nullable|array',
+            'allocations.*.order_id' => ['required_with:allocations', Rule::exists('sales_orders', 'id')->where('team_id', $teamId)],
+            'allocations.*.amount' => 'required_with:allocations|numeric|min:0',
         ]);
 
-        $order = SalesOrder::where('team_id', $teamId)->findOrFail($validated['order_id']);
+        $totalPayment = round((float) $validated['amount'], 2);
 
-        if ((float) $validated['amount'] > (float) $order->due_amount) {
+        // Normalize allocations: support both multi-allocation array and single order fallback
+        $allocations = [];
+        if (!empty($validated['allocations'])) {
+            $allocations = array_values(array_filter($validated['allocations'], function ($a) {
+                return (float) ($a['amount'] ?? 0) > 0;
+            }));
+        } elseif (!empty($validated['order_id'])) {
+            $allocations = [
+                [
+                    'order_id' => $validated['order_id'],
+                    'amount' => $totalPayment,
+                ],
+            ];
+        }
+
+        if (empty($allocations)) {
             throw ValidationException::withMessages([
-                'amount' => 'Payment amount cannot exceed the outstanding invoice balance of ' . number_format($order->due_amount, 2),
+                'amount' => 'Please allocate the payment amount to at least one invoice.',
             ]);
+        }
+
+        $totalAllocated = round(array_sum(array_column($allocations, 'amount')), 2);
+        if (abs($totalAllocated - $totalPayment) > 0.01) {
+            throw ValidationException::withMessages([
+                'amount' => "Total allocated amount (৳" . number_format($totalAllocated, 2) . ") must match the payment collection amount (৳" . number_format($totalPayment, 2) . ").",
+            ]);
+        }
+
+        $orderIds = array_column($allocations, 'order_id');
+        $orders = SalesOrder::where('team_id', $teamId)
+            ->whereIn('id', $orderIds)
+            ->get()
+            ->keyBy('id');
+
+        foreach ($allocations as $alloc) {
+            $order = $orders->get($alloc['order_id']);
+            if (!$order) {
+                throw ValidationException::withMessages([
+                    'amount' => "Invoice ID {$alloc['order_id']} not found.",
+                ]);
+            }
+            if ((float) $alloc['amount'] > (float) $order->due_amount + 0.01) {
+                throw ValidationException::withMessages([
+                    'amount' => "Allocated amount of ৳" . number_format($alloc['amount'], 2) . " exceeds outstanding balance for invoice {$order->order_number} (৳" . number_format($order->due_amount, 2) . ").",
+                ]);
+            }
         }
 
         $account = FinancialAccount::where('team_id', $teamId)->findOrFail($validated['financial_account_id']);
 
-        DB::transaction(function () use ($service, $order, $account, $validated) {
-            $service->recordPayment($order, (float) $validated['amount']);
+        $customer = null;
+        if (!empty($validated['customer_id'])) {
+            $customer = Customer::where('team_id', $teamId)->find($validated['customer_id']);
+        }
+        if (!$customer && $orders->isNotEmpty()) {
+            $customer = $orders->first()->customer;
+        }
+
+        $processedInvoices = [];
+
+        DB::transaction(function () use ($service, $orders, $allocations, $account, $validated, $totalPayment, $customer, &$processedInvoices) {
+            foreach ($allocations as $alloc) {
+                $order = $orders->get($alloc['order_id']);
+                $allocatedAmount = round((float) $alloc['amount'], 2);
+                $service->recordPayment($order, $allocatedAmount);
+                $processedInvoices[] = "{$order->order_number} (৳" . number_format($allocatedAmount, 2) . ")";
+            }
+
+            $customerName = $customer?->name ?? 'Customer';
+            $description = count($processedInvoices) === 1
+                ? "Customer due settlement for {$customerName} - Invoice {$processedInvoices[0]}"
+                : "Multi-invoice due settlement for {$customerName} across " . count($processedInvoices) . " invoices: " . implode(', ', $processedInvoices);
+
+            if (!empty($validated['notes'])) {
+                $description .= " - {$validated['notes']}";
+            }
 
             $account->deposit(
-                (float) $validated['amount'],
+                $totalPayment,
                 [
-                    'description' => "Customer due settlement for Invoice #{$order->order_number}" . (!empty($validated['notes']) ? " - {$validated['notes']}" : ''),
-                    'reference_type' => SalesOrder::class,
-                    'reference_id' => $order->id,
+                    'description' => $description,
+                    'reference_type' => $customer ? Customer::class : SalesOrder::class,
+                    'reference_id' => $customer ? $customer->id : $orders->first()->id,
                     'reference_number' => $validated['payment_reference'] ?? null,
                 ]
             );
         });
 
-        return redirect()->back()->with('success', "Payment of ৳{$validated['amount']} recorded into {$account->name} for invoice {$order->order_number}.");
+        $customerDisplayName = $customer?->name ?? 'Customer';
+        $successMsg = count($processedInvoices) === 1
+            ? "Payment of ৳" . number_format($totalPayment, 2) . " recorded for invoice {$processedInvoices[0]}."
+            : "Payment of ৳" . number_format($totalPayment, 2) . " successfully distributed across " . count($processedInvoices) . " invoices for {$customerDisplayName}.";
+
+        return redirect()->back()->with('success', $successMsg);
     }
 
     public function storeCustomer(Request $request)

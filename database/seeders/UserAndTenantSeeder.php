@@ -96,12 +96,13 @@ class UserAndTenantSeeder extends Seeder
                 'country'                 => 'United States',
                 'invoice_prefix'          => 'INV-',
                 'po_prefix'               => 'PO-',
-                'personal_team'           => true,
+                'personal_team'           => false,
                 'status'                  => 'active',
                 'subscription_plan'       => 'enterprise',
             ]);
         }
-        $superAdmin->current_team_id = $secondTeam->id;
+        // Platform Super-Admin stays in global platform mode by default
+        $superAdmin->current_team_id = null;
         $superAdmin->save();
         $secondTeam->users()->syncWithoutDetaching([
             $superAdmin->id => ['role' => 'owner'],

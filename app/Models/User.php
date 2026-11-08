@@ -35,7 +35,44 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'warehouse_id',
     ];
+
+    /**
+     * The assigned default branch / warehouse.
+     */
+    public function warehouse()
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
+
+    /**
+     * Resolve the assigned branch/outlet for this user within a specific or active team context.
+     */
+    public function assignedWarehouse(?Team $team = null): ?Warehouse
+    {
+        $activeTeam = $team ?: $this->currentTeam;
+        if (!$activeTeam) {
+            return null;
+        }
+
+        // 1. Check team membership pivot
+        $membership = $this->teamMembership($activeTeam);
+        if ($membership && $membership->warehouse_id) {
+            $wh = Warehouse::where('team_id', $activeTeam->id)->where('is_active', true)->find($membership->warehouse_id);
+            if ($wh) return $wh;
+        }
+
+        // 2. Direct user warehouse assignment
+        if ($this->warehouse_id) {
+            $wh = Warehouse::where('team_id', $activeTeam->id)->where('is_active', true)->find($this->warehouse_id);
+            if ($wh) return $wh;
+        }
+
+        // 3. Fallback to default team branch/warehouse
+        return Warehouse::where('team_id', $activeTeam->id)->where('is_active', true)->where('is_default', true)->first()
+            ?: Warehouse::where('team_id', $activeTeam->id)->where('is_active', true)->first();
+    }
 
     /**
      * The attributes that should be hidden for serialization.
@@ -78,5 +115,22 @@ class User extends Authenticatable
     public function isSuperAdmin(): bool
     {
         return (bool) $this->is_super_admin;
+    }
+
+    /**
+     * Get the current team of the user's context.
+     * Platform Super Admin operates in platform control plane (null) unless actively impersonating a tenant.
+     */
+    public function currentTeam()
+    {
+        if ($this->isSuperAdmin()) {
+            return $this->belongsTo(\Laravel\Jetstream\Jetstream::teamModel(), 'current_team_id');
+        }
+
+        if (is_null($this->current_team_id) && $this->id) {
+            $this->switchTeam($this->personalTeam());
+        }
+
+        return $this->belongsTo(\Laravel\Jetstream\Jetstream::teamModel(), 'current_team_id');
     }
 }

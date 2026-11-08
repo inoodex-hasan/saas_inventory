@@ -4,6 +4,9 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
 import ConfirmationModal from '@/Components/ConfirmationModal.vue';
+import { useTranslation } from '@/Utils/translations';
+
+const { t, currentLang } = useTranslation();
 
 const props = defineProps({
     metrics: Object,
@@ -232,18 +235,18 @@ function executeDeleteTenant() {
 
 <template>
     <AppLayout>
-        <Head title="Platform Super-Admin Control Plane" />
+        <Head :title="t('Platform Super-Admin Control Plane')" />
 
         <template #header>
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
                 <div>
                     <div class="flex items-center gap-2">
-                        <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Platform Control Panel</h1>
+                        <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">{{ t('Platform Control Panel') }}</h1>
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                            Super Admin
+                            {{ t('Super Admin') }}
                         </span>
                     </div>
-                    <p class="text-xs text-slate-500 font-medium">Tenant provisioning, lifecycle administration, cross-tenant isolation enforcement, and workspace switching</p>
+                    <p class="text-xs text-slate-500 font-medium">{{ t('Tenant provisioning, lifecycle administration, cross-tenant isolation enforcement, and workspace switching') }}</p>
                 </div>
 
                 <div class="flex items-center gap-2">
@@ -255,7 +258,7 @@ function executeDeleteTenant() {
                             as="button"
                             class="px-3.5 py-2 text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition shadow-xs inline-flex items-center gap-1.5 cursor-pointer"
                         >
-                            <span>Exit Impersonation</span>
+                            <span>{{ t('Exit Impersonation') }}</span>
                             <span class="text-amber-600">&rarr;</span>
                         </Link>
                     </div>
@@ -267,32 +270,32 @@ function executeDeleteTenant() {
             <!-- Platform System Metrics -->
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
                 <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Tenants</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ t('Total Tenants') }}</p>
                     <p class="text-2xl font-black text-slate-900 font-mono mt-1">{{ metrics.total_tenants }}</p>
                 </div>
 
                 <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Tenants</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ t('Active Tenants') }}</p>
                     <p class="text-2xl font-black text-emerald-600 font-mono mt-1">{{ metrics.active_tenants }}</p>
                 </div>
 
                 <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Suspended</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ t('Suspended') }}</p>
                     <p class="text-2xl font-black text-rose-600 font-mono mt-1">{{ metrics.suspended_tenants }}</p>
                 </div>
 
                 <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Platform Users</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ t('Platform Users') }}</p>
                     <p class="text-2xl font-black text-blue-600 font-mono mt-1">{{ metrics.total_users }}</p>
                 </div>
 
                 <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Products</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ t('Total Products') }}</p>
                     <p class="text-2xl font-black text-indigo-600 font-mono mt-1">{{ metrics.total_products }}</p>
                 </div>
 
                 <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Orders</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ t('Total Orders') }}</p>
                     <p class="text-2xl font-black text-purple-600 font-mono mt-1">{{ metrics.total_sales }}</p>
                 </div>
             </div>
@@ -304,6 +307,7 @@ function executeDeleteTenant() {
                         v-model="search"
                         @keyup.enter="applyFilter"
                         type="text"
+                        :placeholder="t('Search tenants by name, domain, owner...')"
                         class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition placeholder:text-slate-400 placeholder:text-xs"
                     />
                     <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -317,9 +321,9 @@ function executeDeleteTenant() {
                         @change="applyFilter"
                         class="py-2 pl-3 pr-8 text-xs bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 min-w-[130px]"
                     >
-                        <option value="">All Statuses</option>
-                        <option value="active">Active Only</option>
-                        <option value="suspended">Suspended Only</option>
+                        <option value="">{{ t('All Statuses') }}</option>
+                        <option value="active">{{ t('Active Only') }}</option>
+                        <option value="suspended">{{ t('Suspended Only') }}</option>
                     </select>
 
                     <select
@@ -327,7 +331,7 @@ function executeDeleteTenant() {
                         @change="applyFilter"
                         class="py-2 pl-3 pr-8 text-xs bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 min-w-[130px]"
                     >
-                        <option value="">All Plans</option>
+                        <option value="">{{ t('All Plans') }}</option>
                         <option v-for="p in plans" :key="p.id" :value="String(p.id)">{{ p.name }}</option>
                     </select>
 
@@ -335,7 +339,7 @@ function executeDeleteTenant() {
                         @click="resetFilter"
                         class="px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer"
                     >
-                        Clear
+                        {{ t('Clear') }}
                     </button>
 
                     <button
@@ -346,7 +350,7 @@ function executeDeleteTenant() {
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                         </svg>
-                        <span>New Tenant</span>
+                        <span>{{ t('New Tenant') }}</span>
                     </button>
                 </div>
             </div>
@@ -365,14 +369,14 @@ function executeDeleteTenant() {
                                 <div class="flex items-center gap-2">
                                     <h2 class="text-base font-extrabold text-slate-900 tracking-tight">{{ tenant.name }}</h2>
                                 </div>
-                                <p class="text-xs text-slate-400 mt-0.5 truncate">{{ tenant.legal_name || 'Individual SaaS Account' }}</p>
+                                <p class="text-xs text-slate-400 mt-0.5 truncate">{{ tenant.legal_name || t('Individual SaaS Account') }}</p>
                             </div>
                             <span
                                 :class="tenant.status === 'suspended' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'"
                                 class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border uppercase shrink-0"
                             >
                                 <span class="w-1.5 h-1.5 rounded-full" :class="tenant.status === 'suspended' ? 'bg-rose-500' : 'bg-emerald-500 animate-pulse'"></span>
-                                {{ tenant.status }}
+                                {{ t(tenant.status.charAt(0).toUpperCase() + tenant.status.slice(1)) || tenant.status }}
                             </span>
                         </div>
 
@@ -383,12 +387,12 @@ function executeDeleteTenant() {
                                     {{ tenant.subscription_info?.plan_name }}
                                 </span>
                                 <span class="text-[11px] text-slate-400 uppercase font-semibold">
-                                    {{ tenant.subscription_info?.billing_cycle }}
+                                    {{ t(tenant.subscription_info?.billing_cycle?.charAt(0).toUpperCase() + tenant.subscription_info?.billing_cycle?.slice(1)) || tenant.subscription_info?.billing_cycle }}
                                 </span>
                             </div>
                             <div class="text-right">
                                 <span class="text-[11px] font-mono font-bold" :class="tenant.subscription_info?.days_remaining <= 5 ? 'text-rose-600 font-extrabold' : 'text-slate-700'">
-                                    {{ tenant.subscription_info?.days_remaining }}d left
+                                    {{ tenant.subscription_info?.days_remaining }}d {{ t('left') }}
                                 </span>
                             </div>
                         </div>
@@ -396,15 +400,15 @@ function executeDeleteTenant() {
                         <!-- Owner Details -->
                         <div class="text-xs text-slate-500 space-y-1 pt-1 border-t border-slate-100">
                             <div class="flex items-center justify-between">
-                                <span class="font-medium text-slate-500">Owner:</span>
+                                <span class="font-medium text-slate-500">{{ t('Owner:') }}</span>
                                 <span class="font-bold text-slate-800">{{ tenant.owner?.name }}</span>
                             </div>
                             <div class="flex items-center justify-between">
-                                <span class="font-medium text-slate-500">Email:</span>
+                                <span class="font-medium text-slate-500">{{ t('Email:') }}</span>
                                 <span class="font-mono text-slate-700 text-[11px]">{{ tenant.owner?.email }}</span>
                             </div>
                             <div v-if="tenant.phone" class="flex items-center justify-between">
-                                <span class="font-medium text-slate-500">Phone:</span>
+                                <span class="font-medium text-slate-500">{{ t('Phone:') }}</span>
                                 <span class="font-mono text-slate-700 text-[11px]">{{ tenant.phone }}</span>
                             </div>
                         </div>
@@ -413,19 +417,19 @@ function executeDeleteTenant() {
                         <div class="grid grid-cols-4 gap-1.5 pt-2 text-center text-xs">
                             <div class="bg-slate-50/80 p-2 rounded-xl border border-slate-100">
                                 <span class="font-bold font-mono text-slate-900 block">{{ tenant.users_count || 1 }}</span>
-                                <span class="text-[9px] text-slate-400 uppercase font-bold">Staff</span>
+                                <span class="text-[9px] text-slate-400 uppercase font-bold">{{ t('Staff') }}</span>
                             </div>
                             <div class="bg-slate-50/80 p-2 rounded-xl border border-slate-100">
                                 <span class="font-bold font-mono text-slate-900 block">{{ tenant.warehouses_count || 0 }}</span>
-                                <span class="text-[9px] text-slate-400 uppercase font-bold">Hubs</span>
+                                <span class="text-[9px] text-slate-400 uppercase font-bold">{{ t('Hubs') }}</span>
                             </div>
                             <div class="bg-slate-50/80 p-2 rounded-xl border border-slate-100">
                                 <span class="font-bold font-mono text-slate-900 block">{{ tenant.products_count || 0 }}</span>
-                                <span class="text-[9px] text-slate-400 uppercase font-bold">SKUs</span>
+                                <span class="text-[9px] text-slate-400 uppercase font-bold">{{ t('SKUs') }}</span>
                             </div>
                             <div class="bg-slate-50/80 p-2 rounded-xl border border-slate-100">
                                 <span class="font-bold font-mono text-slate-900 block">{{ tenant.sales_orders_count || 0 }}</span>
-                                <span class="text-[9px] text-slate-400 uppercase font-bold">Orders</span>
+                                <span class="text-[9px] text-slate-400 uppercase font-bold">{{ t('Orders') }}</span>
                             </div>
                         </div>
                     </div>
@@ -437,14 +441,14 @@ function executeDeleteTenant() {
                             @click="switchToTenant(tenant)"
                             class="flex-1 py-2 px-3 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition text-center cursor-pointer"
                         >
-                            Switch Workspace
+                            {{ t('Switch Workspace') }}
                         </button>
                         <button
                             type="button"
                             @click="openManageModal(tenant, 'profile')"
                             class="py-2 px-3 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer"
                         >
-                            Manage
+                            {{ t('Manage') }}
                         </button>
                         <button
                             type="button"
@@ -452,7 +456,7 @@ function executeDeleteTenant() {
                             :class="tenant.status === 'suspended' ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200' : 'text-rose-700 bg-rose-50 hover:bg-rose-100 border-rose-200'"
                             class="py-2 px-2.5 text-xs font-bold rounded-xl border transition cursor-pointer"
                         >
-                            {{ tenant.status === 'suspended' ? 'Reactivate' : 'Suspend' }}
+                            {{ tenant.status === 'suspended' ? t('Reactivate') : t('Suspend') }}
                         </button>
                     </div>
                 </div>

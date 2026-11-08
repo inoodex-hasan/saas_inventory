@@ -4,6 +4,9 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import Modal from '@/Components/Modal.vue';
 import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
+import BarcodeCameraModal from '@/Components/BarcodeCameraModal.vue';
+import { useBarcodeScanner } from '@/Composables/useBarcodeScanner';
+import { playScanSuccess, playScanError } from '@/Utils/sound';
 import axios from 'axios';
 
 const props = defineProps({
@@ -269,6 +272,78 @@ function addToCart(p, variant = null) {
     }
 }
 
+// Barcode Scanning System (Hardware Laser Guns + Camera)
+const isCameraModalOpen = ref(false);
+
+function handleBarcodeScanned(rawCode) {
+    if (!rawCode) return;
+    const code = rawCode.trim();
+    if (!code) return;
+
+    // 1. Check for exact match against product variants first
+    for (const p of props.products) {
+        if (p.variants && p.variants.length > 0) {
+            const matchedVariant = p.variants.find(v => 
+                (v.barcode && v.barcode.toLowerCase() === code.toLowerCase()) ||
+                (v.sku && v.sku.toLowerCase() === code.toLowerCase())
+            );
+            if (matchedVariant) {
+                const vStock = Number(matchedVariant.stock ?? 0);
+                if (vStock <= 0) {
+                    playScanError();
+                    showToast(`Variant '${matchedVariant.name}' of '${p.name}' is out of stock in this fulfillment store!`, 'error');
+                    return;
+                }
+                addToCart(p, matchedVariant);
+                playScanSuccess();
+                showToast(`Scanned & added: ${p.name} (${matchedVariant.name})`, 'success');
+                if (searchQuery.value) searchQuery.value = '';
+                return;
+            }
+        }
+    }
+
+    // 2. Check for exact match against base products (barcode or SKU)
+    const matchedProduct = props.products.find(p => 
+        (p.barcode && p.barcode.toLowerCase() === code.toLowerCase()) ||
+        (p.sku && p.sku.toLowerCase() === code.toLowerCase())
+    );
+
+    if (matchedProduct) {
+        if (matchedProduct.has_variants && matchedProduct.variants && matchedProduct.variants.length > 0) {
+            playScanSuccess();
+            openVariantModal(matchedProduct);
+            showToast(`Scanned '${matchedProduct.name}'. Please choose a variant.`, 'warning');
+            if (searchQuery.value) searchQuery.value = '';
+            return;
+        }
+
+        const pStock = Number(matchedProduct.stock ?? 0);
+        if (pStock <= 0) {
+            playScanError();
+            showToast(`'${matchedProduct.name}' is out of stock in this fulfillment store!`, 'error');
+            return;
+        }
+
+        addToCart(matchedProduct, null);
+        playScanSuccess();
+        showToast(`Scanned & added: ${matchedProduct.name}`, 'success');
+        if (searchQuery.value) searchQuery.value = '';
+        return;
+    }
+
+    // 3. Not found in catalog
+    playScanError();
+    showToast(`Unknown barcode '${code}' - item not found in catalog!`, 'error');
+}
+
+// Hook up hardware barcode scanner globally on window (USB, Bluetooth, 2.4GHz HID guns)
+useBarcodeScanner({
+    onScan: (code) => {
+        handleBarcodeScanned(code);
+    },
+});
+
 function updateQuantity(item, delta) {
     const maxStock = item.stock !== undefined ? Number(item.stock) : Infinity;
     const newQty = Number((item.quantity + delta).toFixed(2));
@@ -483,6 +558,10 @@ function completeSale() {
     isProcessingSale.value = true;
     checkoutError.value = '';
 
+    const rawTendered = parseFloat(tenderedAmount.value);
+    const effectiveTendered = (!isNaN(rawTendered) && rawTendered > 0) ? rawTendered : calculatedTotal.value;
+    const effectivePaid = Math.min(calculatedTotal.value, effectiveTendered);
+
     const payload = {
         warehouse_id: activeWarehouseId.value,
         customer_id: isAddingCustomer.value && customerPhoneInput.value.trim() ? null : activeCustomerId.value,
@@ -499,8 +578,8 @@ function completeSale() {
         tax_amount: taxAmount.value,
         shipping_cost: parseFloat(shippingCost.value) || 0,
         total_amount: calculatedTotal.value,
-        paid_amount: calculatedTotal.value,
-        tendered_amount: parseFloat(tenderedAmount.value) || calculatedTotal.value,
+        paid_amount: effectivePaid,
+        tendered_amount: effectiveTendered,
         financial_account_id: selectedAccountId.value,
         notes: notes.value,
     };
@@ -513,8 +592,9 @@ function completeSale() {
                     order_number: res.data.order_number,
                     total_amount: res.data.total_amount,
                     paid_amount: res.data.paid_amount,
-                    tendered: parseFloat(tenderedAmount.value) || calculatedTotal.value,
-                    change: Math.max(0, (parseFloat(tenderedAmount.value) || calculatedTotal.value) - calculatedTotal.value),
+                    tendered: res.data.tendered_amount !== undefined ? res.data.tendered_amount : effectiveTendered,
+                    change: res.data.change_amount !== undefined ? res.data.change_amount : Math.max(0, effectiveTendered - calculatedTotal.value),
+                    due: res.data.due_amount !== undefined ? res.data.due_amount : Math.max(0, calculatedTotal.value - effectivePaid),
                     pos_slip_url: res.data.pos_slip_url,
                     invoice_url: res.data.invoice_url,
                     pos_invoice_page_url: res.data.pos_invoice_page_url || route('pos.invoice', res.data.order_id),
@@ -575,6 +655,9 @@ function handleGlobalKeydown(e) {
     if (e.key === 'F2') {
         e.preventDefault();
         searchInput.value?.focus();
+    } else if (e.key === 'F3') {
+        e.preventDefault();
+        isCameraModalOpen.value = !isCameraModalOpen.value;
     } else if (e.key === 'F8') {
         e.preventDefault();
         if (!isSuccessModalOpen.value && cart.value.length > 0) {
@@ -589,18 +672,13 @@ function handleGlobalKeydown(e) {
         isParkedModalOpen.value = false;
         isRecentModalOpen.value = false;
         isCustomerDropdownOpen.value = false;
+        isCameraModalOpen.value = false;
     } else if (e.key === 'Enter' && isSuccessModalOpen.value) {
         e.preventDefault();
         startNewSale();
     } else if (e.key === 'Enter' && e.target === searchInput.value && searchQuery.value.trim()) {
-        const exactMatch = props.products.find(p =>
-            (p.barcode && p.barcode.toLowerCase() === searchQuery.value.trim().toLowerCase()) ||
-            (p.sku && p.sku.toLowerCase() === searchQuery.value.trim().toLowerCase())
-        );
-        if (exactMatch) {
-            e.preventDefault();
-            handleProductClick(exactMatch);
-        }
+        e.preventDefault();
+        handleBarcodeScanned(searchQuery.value.trim());
     }
 }
 
@@ -701,6 +779,7 @@ onUnmounted(() => {
             <!-- Header Middle: Keyboard Shortcuts Legend -->
             <div class="hidden lg:flex items-center gap-2 text-[11px] text-slate-500">
                 <span class="px-2 py-0.5 bg-slate-50 rounded border border-slate-200 font-mono font-bold text-slate-700 shadow-2xs">[F2] Search</span>
+                <span class="px-2 py-0.5 bg-indigo-50 rounded border border-indigo-200 font-mono font-bold text-indigo-700 shadow-2xs">[F3] Camera</span>
                 <span class="px-2 py-0.5 bg-slate-50 rounded border border-slate-200 font-mono font-bold text-slate-700 shadow-2xs">[F4] Hold</span>
                 <span class="px-2 py-0.5 bg-emerald-50 rounded border border-emerald-200 font-mono font-bold text-emerald-700 shadow-2xs">[F8] Pay</span>
             </div>
@@ -759,6 +838,7 @@ onUnmounted(() => {
                                 ref="searchInput"
                                 v-model="searchQuery"
                                 type="text"
+                                placeholder="Search products by title, SKU, or scan barcode (USB Gun or F3 Camera)..."
                                 class="w-full bg-slate-50 border border-slate-200 focus:border-indigo-500 rounded-xl pl-10 pr-9 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-1 focus:ring-indigo-500 font-medium"
                             />
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -774,6 +854,20 @@ onUnmounted(() => {
                                 &times;
                             </button>
                         </div>
+
+                        <!-- Camera Barcode Scan Trigger -->
+                        <button
+                            type="button"
+                            @click="isCameraModalOpen = true"
+                            class="px-2.5 py-2 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-slate-700 hover:text-indigo-600 font-semibold text-xs flex items-center gap-1.5 transition shrink-0 shadow-2xs"
+                            title="Scan Barcode with Camera (F3)"
+                        >
+                            <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span class="hidden sm:inline">Camera (F3)</span>
+                        </button>
 
                         <!-- Brand Filter -->
                         <select
@@ -1428,9 +1522,17 @@ onUnmounted(() => {
                         <span>Cash Tendered:</span>
                         <span class="font-bold text-slate-900 font-mono"><CurrencyDisplay :amount="lastCompletedOrder?.tendered || 0" /></span>
                     </div>
+                    <div class="flex justify-between text-slate-500">
+                        <span>Paid Amount:</span>
+                        <span class="font-bold text-emerald-600 font-mono"><CurrencyDisplay :amount="lastCompletedOrder?.paid_amount || 0" /></span>
+                    </div>
                     <div v-if="(lastCompletedOrder?.change || 0) > 0" class="flex justify-between text-emerald-600 pt-2 border-t border-slate-200 font-bold text-sm">
                         <span>Return Change:</span>
                         <span class="font-mono"><CurrencyDisplay :amount="lastCompletedOrder?.change || 0" /></span>
+                    </div>
+                    <div v-if="(lastCompletedOrder?.due || 0) > 0" class="flex justify-between text-rose-600 pt-2 border-t border-slate-200 font-bold text-sm">
+                        <span>Due Remaining:</span>
+                        <span class="font-mono"><CurrencyDisplay :amount="lastCompletedOrder?.due || 0" /></span>
                     </div>
                 </div>
 
@@ -1492,6 +1594,12 @@ onUnmounted(() => {
             confirm-text="Clear Cart"
             @confirm="executeClearCart"
             @close="showClearCartModal = false"
+        />
+
+        <!-- Camera Barcode Scanner Modal (F3) -->
+        <BarcodeCameraModal
+            v-model:open="isCameraModalOpen"
+            @scan="handleBarcodeScanned"
         />
     </div>
 </template>

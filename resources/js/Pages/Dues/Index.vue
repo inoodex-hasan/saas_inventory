@@ -54,11 +54,22 @@ const selectedCustomer = ref(null);
 const selectedOrder = ref(null);
 
 const payForm = useForm({
+    customer_id: '',
     order_id: '',
     amount: '',
     financial_account_id: defaultAccount?.id || '',
     payment_reference: '',
     notes: '',
+    allocations: [],
+});
+
+const totalAllocated = computed(() => {
+    return (payForm.allocations || []).reduce((acc, it) => acc + (Number(it.amount) || 0), 0);
+});
+
+const unallocatedAmount = computed(() => {
+    const total = Number(payForm.amount) || 0;
+    return Number((total - totalAllocated.value).toFixed(2));
 });
 
 function applyFilter() {
@@ -76,25 +87,114 @@ function resetFilter() {
 
 function openPayModal(customer, order = null) {
     selectedCustomer.value = customer;
-    const dueOrders = customer.due_orders || [];
-    const targetOrder = order || dueOrders[0];
-
-    selectedOrder.value = targetOrder;
-    payForm.order_id = targetOrder ? targetOrder.id : '';
-    payForm.amount = targetOrder ? Number(targetOrder.due_amount) : Number(customer.total_due);
+    payForm.clearErrors();
+    payForm.customer_id = customer.id;
     payForm.financial_account_id = defaultAccount?.id || '';
     payForm.payment_reference = '';
     payForm.notes = '';
-    payForm.clearErrors();
+
+    const dueOrders = customer.due_orders || [];
+    selectedOrder.value = order || dueOrders[0] || null;
+
+    if (order) {
+        payForm.order_id = order.id;
+        payForm.amount = Number(order.due_amount);
+        payForm.allocations = dueOrders.map(o => ({
+            order_id: o.id,
+            order_number: o.order_number,
+            order_date: o.order_date,
+            total_amount: Number(o.total_amount),
+            paid_amount: Number(o.paid_amount),
+            due_amount: Number(o.due_amount),
+            amount: o.id === order.id ? Number(o.due_amount) : 0,
+        }));
+    } else {
+        const totalDue = Number(customer.total_due);
+        payForm.order_id = '';
+        payForm.amount = totalDue;
+        payForm.allocations = dueOrders.map(o => ({
+            order_id: o.id,
+            order_number: o.order_number,
+            order_date: o.order_date,
+            total_amount: Number(o.total_amount),
+            paid_amount: Number(o.paid_amount),
+            due_amount: Number(o.due_amount),
+            amount: 0,
+        }));
+        autoAllocateFIFO();
+    }
+
     isPayModalOpen.value = true;
 }
 
-function onModalOrderChanged() {
-    const order = selectedCustomer.value?.due_orders?.find(o => o.id === Number(payForm.order_id));
-    if (order) {
-        selectedOrder.value = order;
-        payForm.amount = Number(order.due_amount);
+function autoAllocateFIFO() {
+    let remaining = Number(payForm.amount) || 0;
+    const sorted = [...(payForm.allocations || [])].sort((a, b) => {
+        if (a.order_date && b.order_date) {
+            return new Date(a.order_date) - new Date(b.order_date);
+        }
+        return a.order_id - b.order_id;
+    });
+
+    const allocMap = {};
+    for (const ord of sorted) {
+        if (remaining <= 0) {
+            allocMap[ord.order_id] = 0;
+        } else {
+            const take = Math.min(remaining, ord.due_amount);
+            allocMap[ord.order_id] = Number(take.toFixed(2));
+            remaining -= take;
+        }
     }
+
+    payForm.allocations.forEach(it => {
+        it.amount = allocMap[it.order_id] || 0;
+    });
+}
+
+function autoAllocateEvenly() {
+    const total = Number(payForm.amount) || 0;
+    if (total <= 0 || !payForm.allocations?.length) return;
+
+    const totalDue = payForm.allocations.reduce((sum, i) => sum + i.due_amount, 0);
+    if (totalDue <= 0) return;
+
+    let remaining = total;
+    payForm.allocations.forEach((it, idx) => {
+        if (idx === payForm.allocations.length - 1) {
+            it.amount = Math.min(Number(remaining.toFixed(2)), it.due_amount);
+        } else {
+            const ratio = it.due_amount / totalDue;
+            const take = Math.min(Number((total * ratio).toFixed(2)), it.due_amount);
+            it.amount = take;
+            remaining -= take;
+        }
+    });
+}
+
+function clearAllocations() {
+    (payForm.allocations || []).forEach(it => {
+        it.amount = 0;
+    });
+}
+
+function fillMax(item) {
+    item.amount = Number(item.due_amount.toFixed(2));
+}
+
+function syncTotalWithAllocated() {
+    payForm.amount = Number(totalAllocated.value.toFixed(2));
+}
+
+function onTotalAmountInput() {
+    autoAllocateFIFO();
+}
+
+function setQuickPercent(percent) {
+    if (!selectedCustomer.value) return;
+    const baseDue = selectedOrder.value ? Number(selectedOrder.value.due_amount) : Number(selectedCustomer.value.total_due || 0);
+    payForm.amount = Math.round((baseDue * (percent / 100)) * 100) / 100;
+    autoAllocateFIFO();
 }
 
 function submitPay() {
@@ -359,27 +459,52 @@ function submitAddCustomer() {
 
                                     <!-- Actions -->
                                     <td class="py-3.5 px-4 text-right whitespace-nowrap">
-                                        <button
-                                            type="button"
-                                            @click="openEditCustomerModal(c)"
-                                            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition"
-                                            title="Edit customer & opening balance"
-                                        >
-                                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                            </svg>
-                                            <span>Edit</span>
-                                        </button>
+                                        <div class="inline-flex items-center gap-1.5">
+                                            <button
+                                                v-if="c.total_due > 0"
+                                                type="button"
+                                                @click="openPayModal(c)"
+                                                class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs shadow-emerald-600/20 transition"
+                                                title="Collect payment across customer invoices"
+                                            >
+                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                </svg>
+                                                <span>Collect Due</span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                @click="openEditCustomerModal(c)"
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition"
+                                                title="Edit customer & opening balance"
+                                            >
+                                                <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                                <span>Edit</span>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
 
                                 <!-- Expandable Unpaid Invoices Sub-table -->
                                 <tr v-if="expandedCustomerIds.has(c.id) && c.due_orders && c.due_orders.length > 0" class="bg-slate-50/60">
                                     <td colspan="8" class="p-3 pl-12 pr-4">
-                                        <div class="bg-white rounded-xl border border-slate-200/80 p-3 shadow-xs space-y-2">
-                                            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center justify-between border-b border-slate-100 pb-2">
-                                                <span>Unpaid Invoices for {{ c.name }}</span>
-                                                <span class="text-rose-600 font-mono">Total Outstanding: <CurrencyDisplay :amount="c.total_due" /></span>
+                                        <div class="bg-white rounded-xl border border-slate-200/80 p-3.5 shadow-xs space-y-2.5">
+                                            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+                                                <span>Unpaid Invoices for {{ c.name }} ({{ c.due_orders.length }})</span>
+                                                <div class="flex items-center gap-3">
+                                                    <span class="text-rose-600 font-mono font-bold">Total Outstanding: <CurrencyDisplay :amount="c.total_due" /></span>
+                                                    <button
+                                                        v-if="c.total_due > 0"
+                                                        type="button"
+                                                        @click="openPayModal(c)"
+                                                        class="px-3 py-1 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs transition flex items-center gap-1"
+                                                    >
+                                                        <span>Collect Due</span>
+                                                    </button>
+                                                </div>
                                             </div>
 
                                             <div class="overflow-x-auto">
@@ -391,7 +516,7 @@ function submitAddCustomer() {
                                                             <th class="py-1.5 text-right">Invoice Total</th>
                                                             <th class="py-1.5 text-right">Paid</th>
                                                             <th class="py-1.5 text-right">Due Balance</th>
-                                                            <th class="py-1.5 text-right">Action</th>
+                                                            <th class="py-1.5 text-center">Status</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody class="divide-y divide-slate-50 font-mono">
@@ -411,14 +536,13 @@ function submitAddCustomer() {
                                                             <td class="py-2 text-right font-bold text-rose-600">
                                                                 <CurrencyDisplay :amount="order.due_amount" />
                                                             </td>
-                                                            <td class="py-2 text-right">
-                                                                <button
-                                                                    type="button"
-                                                                    @click="openPayModal(c, order)"
-                                                                    class="px-2.5 py-1 text-[11px] font-bold text-emerald-700 hover:text-white bg-emerald-50 hover:bg-emerald-600 border border-emerald-200/80 rounded-lg transition"
+                                                            <td class="py-2 text-center font-sans">
+                                                                <span
+                                                                    class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                                                    :class="Number(order.paid_amount) > 0 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-rose-50 text-rose-700 border border-rose-200'"
                                                                 >
-                                                                    Collect
-                                                                </button>
+                                                                    {{ Number(order.paid_amount) > 0 ? 'Partial' : 'Unpaid' }}
+                                                                </span>
                                                             </td>
                                                         </tr>
                                                     </tbody>
@@ -448,19 +572,34 @@ function submitAddCustomer() {
             </div>
         </div>
 
-        <!-- Collect Payment Modal -->
-        <Modal :show="isPayModalOpen" max-width="xl" @close="isPayModalOpen = false">
-            <div class="p-6 sm:p-7">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <div>
-                        <h3 class="text-base font-bold text-slate-900">Collect Due Payment</h3>
-                        <p class="text-xs text-slate-500 mt-0.5">
-                            Customer: <strong class="text-slate-800">{{ selectedCustomer?.name }}</strong>
-                        </p>
+        <!-- Collect Payment Modal (Multi-Invoice Allocation) -->
+        <Modal :show="isPayModalOpen" max-width="2xl" @close="isPayModalOpen = false">
+            <div class="flex flex-col max-h-[90vh]">
+                <!-- Modal Sticky Header -->
+                <div class="px-6 py-4 bg-slate-50 border-b border-slate-200/80 flex items-center justify-between shrink-0">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-sm shadow-emerald-500/20 shrink-0">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-base font-bold text-slate-900">Collect Due Payment</h3>
+                                <span v-if="payForm.allocations?.length > 1" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                    Multi-Invoice Settlement
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-0.5">
+                                Customer: <strong class="text-slate-800">{{ selectedCustomer?.name }}</strong>
+                                <span v-if="selectedCustomer?.phone" class="text-slate-500 font-mono"> ({{ selectedCustomer.phone }})</span>
+                            </p>
+                        </div>
                     </div>
                     <button
+                        type="button"
                         @click="isPayModalOpen = false"
-                        class="text-slate-400 hover:text-slate-600 transition"
+                        class="text-slate-400 hover:text-slate-600 transition p-1.5 rounded-lg hover:bg-slate-200/60"
                     >
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -468,97 +607,238 @@ function submitAddCustomer() {
                     </button>
                 </div>
 
-                <form @submit.prevent="submitPay" class="space-y-4 mt-5 text-xs">
-                    <!-- Invoice Selector if customer has multiple due orders -->
-                    <div v-if="selectedCustomer?.due_orders?.length > 1">
-                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Target Invoice *</label>
-                        <select
-                            v-model="payForm.order_id"
-                            @change="onModalOrderChanged"
-                            required
-                            class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 font-medium"
-                        >
-                            <option
-                                v-for="ord in selectedCustomer.due_orders"
-                                :key="ord.id"
-                                :value="ord.id"
-                            >
-                                {{ ord.order_number }} — Due: ৳{{ Number(ord.due_amount).toFixed(2) }} ({{ formatDate(ord.order_date) }})
-                            </option>
-                        </select>
-                    </div>
+                <form @submit.prevent="submitPay" class="flex flex-col flex-1 min-h-0">
+                    <!-- Scrollable Modal Body -->
+                    <div class="p-6 space-y-4 text-xs overflow-y-auto flex-1">
+                        <!-- Customer Due Overview Card -->
+                        <div class="p-3.5 bg-gradient-to-r from-slate-50 to-slate-100/80 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <span class="text-[11px] text-slate-500 font-medium">Total Customer Outstanding:</span>
+                                <div class="text-lg font-black text-rose-600">
+                                    <CurrencyDisplay :amount="selectedCustomer?.total_due || 0" />
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-[11px] text-slate-500 font-medium">Pending Due Invoices:</span>
+                                <div class="text-sm font-bold text-slate-800">
+                                    {{ payForm.allocations?.length || 0 }} {{ (payForm.allocations?.length || 0) === 1 ? 'Invoice' : 'Invoices' }}
+                                </div>
+                            </div>
+                        </div>
 
-                    <div class="p-3.5 bg-rose-50 rounded-xl border border-rose-200/60 flex items-center justify-between text-xs">
-                        <span class="text-rose-800 font-medium">Selected Invoice Due:</span>
-                        <span class="font-mono font-bold text-rose-900 text-sm">
-                            <CurrencyDisplay :amount="selectedOrder?.due_amount || selectedCustomer?.total_due || 0" />
-                        </span>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Total Collection Amount & Quick Allocation Presets -->
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Collection Amount *</label>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="block text-xs font-semibold text-slate-700 uppercase">
+                                    Total Collection Amount <span class="text-rose-500">*</span>
+                                </label>
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <button
+                                        type="button"
+                                        @click="setQuickPercent(100)"
+                                        class="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded transition"
+                                    >
+                                        Full Due (100%)
+                                    </button>
+                                    <button
+                                        type="button"
+                                        @click="setQuickPercent(50)"
+                                        class="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded transition"
+                                    >
+                                        50% Due
+                                    </button>
+                                    <button
+                                        type="button"
+                                        @click="autoAllocateFIFO"
+                                        title="Allocate payment to oldest due invoices first"
+                                        class="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded transition flex items-center gap-1"
+                                    >
+                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                        </svg>
+                                        Auto-Allocate (FIFO)
+                                    </button>
+                                    <button
+                                        type="button"
+                                        @click="clearAllocations"
+                                        class="text-[10px] font-semibold text-slate-500 hover:text-rose-600 px-1.5 py-0.5 rounded hover:bg-slate-100 transition"
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+                            </div>
                             <input
                                 v-model.number="payForm.amount"
+                                @input="onTotalAmountInput"
                                 type="number"
                                 step="0.01"
                                 min="0.01"
-                                :max="selectedOrder?.due_amount"
+                                :max="selectedCustomer?.total_due"
                                 required
-                                class="w-full text-sm font-bold font-mono px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500"
+                                placeholder="Enter amount customer is paying (e.g. 5000)"
+                                class="w-full text-base font-bold font-mono px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-slate-900 shadow-xs"
                             />
-                            <div v-if="payForm.errors.amount" class="text-xs text-rose-500 mt-1">
+                            <div v-if="payForm.errors.amount" class="text-xs text-rose-500 mt-1 font-medium">
                                 {{ payForm.errors.amount }}
                             </div>
                         </div>
 
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">
-                                Deposit Account <span class="text-rose-500">*</span>
-                            </label>
-                            <SearchableSelect
-                                v-model="payForm.financial_account_id"
-                                :options="accountOptions"
-                                size="compact"
-                                :error="payForm.errors.financial_account_id"
-                            />
-                        </div>
-                    </div>
+                        <!-- Multi-Invoice Allocation Breakdown Table -->
+                        <div class="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+                            <div class="bg-slate-50 px-3.5 py-2 border-b border-slate-200 flex items-center justify-between">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                                    Invoice Payment Allocation
+                                </span>
+                                <span class="text-[11px] text-slate-500">
+                                    Type custom amount per invoice or use Auto-FIFO
+                                </span>
+                            </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Ref / TrxID / Receipt #</label>
-                            <input
-                                v-model="payForm.payment_reference"
-                                type="text"
-                                class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 font-mono"
-                            />
+                            <div class="max-h-56 overflow-y-auto">
+                                <table class="w-full text-left text-xs">
+                                    <thead class="bg-slate-50/70 text-slate-500 uppercase text-[10px] font-bold border-b border-slate-200 sticky top-0">
+                                        <tr>
+                                            <th class="py-2.5 px-3">Invoice # / Date</th>
+                                            <th class="py-2.5 px-3 text-right">Outstanding Due</th>
+                                            <th class="py-2.5 px-3 text-center w-40">Payment Allocation</th>
+                                            <th class="py-2.5 px-3 text-right">Remaining</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        <tr v-for="item in payForm.allocations" :key="item.order_id" class="hover:bg-slate-50/70 transition">
+                                            <td class="py-2.5 px-3">
+                                                <div class="font-bold text-slate-900 font-mono">{{ item.order_number }}</div>
+                                                <div class="text-[11px] text-slate-400">{{ formatDate(item.order_date) }} • Total: ৳{{ item.total_amount?.toFixed(2) }}</div>
+                                            </td>
+                                            <td class="py-2.5 px-3 text-right font-bold text-rose-600 font-mono">
+                                                ৳{{ Number(item.due_amount).toFixed(2) }}
+                                            </td>
+                                            <td class="py-2 px-3 text-center">
+                                                <div class="relative flex items-center">
+                                                    <span class="absolute left-2.5 text-slate-400 font-bold">৳</span>
+                                                    <input
+                                                        v-model.number="item.amount"
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        :max="item.due_amount"
+                                                        class="w-full pl-6 pr-11 py-1.5 text-xs font-mono font-bold text-right bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-1 focus:ring-emerald-500"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        @click="fillMax(item)"
+                                                        title="Allocate full invoice due"
+                                                        class="absolute right-1 px-1.5 py-0.5 text-[9px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 rounded transition"
+                                                    >
+                                                        MAX
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td class="py-2.5 px-3 text-right whitespace-nowrap font-mono text-[11px]">
+                                                <span v-if="(item.due_amount - (Number(item.amount) || 0)) <= 0.001" class="text-emerald-600 font-bold">
+                                                    ✓ Settled (৳0)
+                                                </span>
+                                                <span v-else class="text-slate-600 font-semibold">
+                                                    ৳{{ (item.due_amount - (Number(item.amount) || 0)).toFixed(2) }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr v-if="!payForm.allocations || payForm.allocations.length === 0">
+                                            <td colspan="4" class="py-6 text-center text-slate-400 text-xs">
+                                                No outstanding due invoices found for this customer.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Live Allocation Reconciliation Bar -->
+                            <div
+                                class="p-2.5 border-t flex flex-wrap items-center justify-between text-xs font-medium"
+                                :class="{
+                                    'bg-emerald-50/80 border-emerald-200 text-emerald-800': Math.abs(unallocatedAmount) <= 0.01 && totalAllocated > 0,
+                                    'bg-amber-50/80 border-amber-200 text-amber-800': unallocatedAmount > 0.01,
+                                    'bg-rose-50/80 border-rose-200 text-rose-800': unallocatedAmount < -0.01,
+                                    'bg-slate-50 border-slate-200 text-slate-600': totalAllocated === 0
+                                }"
+                            >
+                                <div class="flex items-center gap-2">
+                                    <span class="font-semibold">Allocated: ৳{{ totalAllocated.toFixed(2) }} of ৳{{ (Number(payForm.amount) || 0).toFixed(2) }}</span>
+                                    <span v-if="Math.abs(unallocatedAmount) <= 0.01 && totalAllocated > 0" class="text-[11px] font-bold bg-emerald-200/60 text-emerald-900 px-2 py-0.5 rounded-full">
+                                        ✓ Balanced
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span v-if="unallocatedAmount > 0.01" class="text-[11px] font-bold text-amber-700">
+                                        ৳{{ unallocatedAmount.toFixed(2) }} unallocated
+                                    </span>
+                                    <span v-else-if="unallocatedAmount < -0.01" class="text-[11px] font-bold text-rose-700">
+                                        Overallocated by ৳{{ Math.abs(unallocatedAmount).toFixed(2) }}
+                                    </span>
+                                    <button
+                                        v-if="Math.abs(unallocatedAmount) > 0.01 && totalAllocated > 0"
+                                        type="button"
+                                        @click="syncTotalWithAllocated"
+                                        class="text-[10px] font-bold underline hover:no-underline ml-1"
+                                    >
+                                        Set Total to ৳{{ totalAllocated.toFixed(2) }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Deposit Financial Account & Reference -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                                    Deposit Financial Account <span class="text-rose-500">*</span>
+                                </label>
+                                <SearchableSelect
+                                    v-model="payForm.financial_account_id"
+                                    :options="accountOptions"
+                                    size="compact"
+                                    :error="payForm.errors.financial_account_id"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Ref / TrxID / Receipt #</label>
+                                <input
+                                    v-model="payForm.payment_reference"
+                                    type="text"
+                                    placeholder="e.g. Bank TrxID, Cheque #"
+                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500 font-mono"
+                                />
+                            </div>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Remarks / Note</label>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Remarks / Note (Optional)</label>
                             <input
                                 v-model="payForm.notes"
                                 type="text"
+                                placeholder="Optional notes for accounting ledger"
                                 class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-500"
                             />
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                    <!-- Modal Sticky Footer -->
+                    <div class="px-6 py-4 bg-slate-50/90 border-t border-slate-200/80 flex items-center justify-end gap-3 shrink-0">
                         <button
                             type="button"
                             @click="isPayModalOpen = false"
-                            class="px-4 py-2.5 text-xs font-semibold border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition"
+                            class="px-4 py-2.5 text-xs font-semibold border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-100 transition"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            :disabled="payForm.processing || payForm.amount <= 0"
-                            class="px-6 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition disabled:opacity-50"
+                            :disabled="payForm.processing || payForm.amount <= 0 || totalAllocated <= 0 || Math.abs(unallocatedAmount) > 0.01"
+                            class="px-6 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition disabled:opacity-50 flex items-center gap-1.5"
                         >
-                            Confirm Collection
+                            <span v-if="payForm.processing">Processing...</span>
+                            <span v-else>Confirm Collection (৳{{ (Number(payForm.amount) || 0).toFixed(2) }})</span>
                         </button>
                     </div>
                 </form>
