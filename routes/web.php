@@ -232,6 +232,7 @@ Route::middleware([
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/pdf', [ReportController::class, 'downloadPdf'])->name('reports.pdf');
+    Route::get('/reports/excel', [ReportController::class, 'downloadExcel'])->name('reports.excel');
 
     // User & Profile Settings (Inertia SPA)
     Route::get('/user/profile', [UserProfileController::class, 'show'])->name('profile.show');

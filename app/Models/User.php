@@ -57,7 +57,7 @@ class User extends Authenticatable
         }
 
         // 1. Check team membership pivot
-        $membership = $this->teamMembership($activeTeam);
+        $membership = Membership::where('user_id', $this->id)->where('team_id', $activeTeam->id)->first();
         if ($membership && $membership->warehouse_id) {
             $wh = Warehouse::where('team_id', $activeTeam->id)->where('is_active', true)->find($membership->warehouse_id);
             if ($wh) return $wh;

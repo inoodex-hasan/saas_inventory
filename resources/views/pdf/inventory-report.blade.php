@@ -410,6 +410,246 @@
         </table>
     @endif
 
+    {{-- TAB 4: BATCH & EXPIRY RADAR --}}
+    @if($tab === 'expiry' && $expiryData)
+        <table class="kpi-table">
+            <tr>
+                <td style="width: 25%; padding-right: 5px;">
+                    <div class="kpi-card" style="border-left: 3px solid #e11d48;">
+                        <div class="kpi-title" style="color: #e11d48;">Expired Batches</div>
+                        <div class="kpi-value" style="color: #e11d48;">{{ number_format($expiryData['summary']['expired_count']) }}</div>
+                        <div class="kpi-sub">Immediate write-off / scrap</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-right: 5px; padding-left: 5px;">
+                    <div class="kpi-card" style="border-left: 3px solid #ea580c;">
+                        <div class="kpi-title" style="color: #ea580c;">Expiring (&lt; 30 Days)</div>
+                        <div class="kpi-value" style="color: #ea580c;">{{ number_format($expiryData['summary']['expiring_30_count']) }}</div>
+                        <div class="kpi-sub">Priority liquidation / promo</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-right: 5px; padding-left: 5px;">
+                    <div class="kpi-card" style="border-left: 3px solid #d97706;">
+                        <div class="kpi-title" style="color: #d97706;">Warning (&lt; 90 Days)</div>
+                        <div class="kpi-value" style="color: #d97706;">{{ number_format($expiryData['summary']['expiring_90_count']) }}</div>
+                        <div class="kpi-sub">Monitor inventory turnover</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-left: 5px;">
+                    <div class="kpi-card">
+                        <div class="kpi-title">Capital at Risk</div>
+                        <div class="kpi-value">{{ $currencySymbol }}{{ number_format($expiryData['summary']['at_risk_cost'], 2) }}</div>
+                        <div class="kpi-sub">Cost in expired/urgent items</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-header">Batch Expiry Tracking &amp; Shelf Life Audit</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 14%;">Batch #</th>
+                    <th style="width: 28%;">Product / SKU</th>
+                    <th style="width: 16%;">Warehouse</th>
+                    <th style="width: 10%; text-align: right;">Quantity</th>
+                    <th style="width: 12%; text-align: right;">Unit Cost</th>
+                    <th style="width: 10%; text-align: center;">Expiry Date</th>
+                    <th style="width: 10%; text-align: center;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($expiryData['items'] as $item)
+                    <tr>
+                        <td class="font-mono font-bold">{{ $item['batch_number'] }}</td>
+                        <td>
+                            <div class="font-bold">{{ $item['product_name'] }}</div>
+                            <div class="text-slate-500 font-mono" style="font-size: 7pt;">SKU: {{ $item['sku'] }}</div>
+                        </td>
+                        <td>{{ $item['warehouse_name'] }}</td>
+                        <td class="text-right font-mono font-bold">{{ number_format($item['quantity']) }}</td>
+                        <td class="text-right font-mono">{{ $currencySymbol }}{{ number_format($item['unit_cost'], 2) }}</td>
+                        <td class="text-center font-mono">{{ $item['expiry_date'] }}</td>
+                        <td class="text-center">
+                            @if($item['status_key'] === 'expired')
+                                <span class="badge badge-danger">EXPIRED</span>
+                            @elseif($item['status_key'] === 'expiring_30')
+                                <span class="badge badge-adjustment">URGENT</span>
+                            @elseif($item['status_key'] === 'expiring_90')
+                                <span class="badge badge-transfer">&lt; 90D</span>
+                            @else
+                                <span class="badge badge-in">OK</span>
+                            @endif
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="7" class="text-center text-slate-500">No batch expiry records found matching filters.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    @endif
+
+    {{-- TAB 5: STOCK AGING & DEAD STOCK --}}
+    @if($tab === 'aging' && $agingData)
+        <table class="kpi-table">
+            <tr>
+                <td style="width: 25%; padding-right: 5px;">
+                    <div class="kpi-card" style="border-left: 3px solid #16a34a;">
+                        <div class="kpi-title" style="color: #16a34a;">Fresh (0-30 Days)</div>
+                        <div class="kpi-value" style="color: #16a34a;">{{ number_format($agingData['summary']['fresh_count']) }}</div>
+                        <div class="kpi-sub">Active turnover items</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-right: 5px; padding-left: 5px;">
+                    <div class="kpi-card" style="border-left: 3px solid #0284c7;">
+                        <div class="kpi-title" style="color: #0284c7;">Moderate (31-60 Days)</div>
+                        <div class="kpi-value" style="color: #0284c7;">{{ number_format($agingData['summary']['moderate_count']) }}</div>
+                        <div class="kpi-sub">Normal inventory cycle</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-right: 5px; padding-left: 5px;">
+                    <div class="kpi-card" style="border-left: 3px solid #d97706;">
+                        <div class="kpi-title" style="color: #d97706;">Slow-Moving (61-90 Days)</div>
+                        <div class="kpi-value" style="color: #d97706;">{{ number_format($agingData['summary']['slow_count']) }}</div>
+                        <div class="kpi-sub">Stagnation warning</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-left: 5px;">
+                    <div class="kpi-card" style="border-left: 3px solid #e11d48;">
+                        <div class="kpi-title" style="color: #e11d48;">Dead Stock (90+ Days)</div>
+                        <div class="kpi-value" style="color: #e11d48;">{{ number_format($agingData['summary']['dead_count']) }}</div>
+                        <div class="kpi-sub">Frozen: {{ $currencySymbol }}{{ number_format($agingData['summary']['dead_stock_cost'], 2) }}</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-header">Inventory Aging &amp; Dormant Capital Analysis</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 14%;">SKU</th>
+                    <th style="width: 28%;">Product Name</th>
+                    <th style="width: 16%;">Category</th>
+                    <th style="width: 10%; text-align: right;">Stock Qty</th>
+                    <th style="width: 12%; text-align: right;">Frozen Capital</th>
+                    <th style="width: 10%; text-align: center;">Days Inactive</th>
+                    <th style="width: 10%; text-align: center;">Aging Bracket</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($agingData['items'] as $item)
+                    <tr>
+                        <td class="font-mono font-bold">{{ $item['sku'] }}</td>
+                        <td>{{ $item['name'] }}</td>
+                        <td>{{ $item['category_name'] }}</td>
+                        <td class="text-right font-mono font-bold">{{ number_format($item['total_stock']) }}</td>
+                        <td class="text-right font-mono">{{ $currencySymbol }}{{ number_format($item['total_cost_value'], 2) }}</td>
+                        <td class="text-center font-mono font-bold">{{ $item['days_inactive'] }}d</td>
+                        <td class="text-center">
+                            @if($item['bracket_key'] === 'dead')
+                                <span class="badge badge-danger">DEAD STOCK</span>
+                            @elseif($item['bracket_key'] === 'slow')
+                                <span class="badge badge-adjustment">SLOW</span>
+                            @elseif($item['bracket_key'] === 'moderate')
+                                <span class="badge badge-transfer">MODERATE</span>
+                            @else
+                                <span class="badge badge-in">FRESH</span>
+                            @endif
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="7" class="text-center text-slate-500">No stock aging records found matching filters.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    @endif
+
+    {{-- TAB 6: SALES & PRODUCT PROFITABILITY --}}
+    @if($tab === 'profitability' && $profitabilityData)
+        <table class="kpi-table">
+            <tr>
+                <td style="width: 25%; padding-right: 5px;">
+                    <div class="kpi-card" style="border-left: 3px solid #059669;">
+                        <div class="kpi-title" style="color: #059669;">Total Sales Revenue</div>
+                        <div class="kpi-value" style="color: #065f46;">{{ $currencySymbol }}{{ number_format($profitabilityData['summary']['total_revenue'], 2) }}</div>
+                        <div class="kpi-sub">Across active sales orders</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-left: 5px; padding-right: 5px;">
+                    <div class="kpi-card" style="border-left: 3px solid #475569;">
+                        <div class="kpi-title">Cost of Goods Sold (COGS)</div>
+                        <div class="kpi-value">{{ $currencySymbol }}{{ number_format($profitabilityData['summary']['total_cogs'], 2) }}</div>
+                        <div class="kpi-sub">Product acquisition cost basis</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-left: 5px; padding-right: 5px;">
+                    <div class="kpi-card" style="border-left: 3px solid #4f46e5;">
+                        <div class="kpi-title" style="color: #4f46e5;">Gross Profit Margin</div>
+                        <div class="kpi-value" style="color: #3730a3;">{{ $currencySymbol }}{{ number_format($profitabilityData['summary']['total_gross_profit'], 2) }}</div>
+                        <div class="kpi-sub">Overall Margin: {{ $profitabilityData['summary']['overall_margin_percent'] }}%</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-left: 5px;">
+                    <div class="kpi-card" style="border-left: 3px solid #0284c7;">
+                        <div class="kpi-title">High Margin Catalog (> 40%)</div>
+                        <div class="kpi-value">{{ number_format($profitabilityData['summary']['high_count']) }}</div>
+                        <div class="kpi-sub">Low/Loss skus: {{ $profitabilityData['summary']['low_count'] + $profitabilityData['summary']['loss_count'] }}</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-header">Product Sales, COGS &amp; Gross Profit Margin Breakdown</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 13%;">SKU</th>
+                    <th style="width: 25%;">Product Name</th>
+                    <th style="width: 14%;">Category</th>
+                    <th style="width: 10%; text-align: right;">Qty Sold</th>
+                    <th style="width: 12%; text-align: right;">Revenue</th>
+                    <th style="width: 12%; text-align: right;">COGS</th>
+                    <th style="width: 14%; text-align: right;">Gross Profit (Margin)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($profitabilityData['items'] as $item)
+                    <tr>
+                        <td class="font-mono font-bold">{{ $item['sku'] }}</td>
+                        <td>{{ $item['product_name'] }}</td>
+                        <td>{{ $item['category_name'] }}</td>
+                        <td class="text-right font-mono font-bold">{{ number_format($item['units_sold']) }}</td>
+                        <td class="text-right font-mono">{{ $currencySymbol }}{{ number_format($item['total_revenue'], 2) }}</td>
+                        <td class="text-right font-mono text-slate-500">{{ $currencySymbol }}{{ number_format($item['total_cogs'], 2) }}</td>
+                        <td class="text-right font-mono font-bold" style="color: {{ $item['gross_profit'] >= 0 ? '#059669' : '#e11d48' }};">
+                            {{ $currencySymbol }}{{ number_format($item['gross_profit'], 2) }}
+                            <span style="font-size: 8px; font-weight: normal; color: #64748b;">({{ $item['margin_percent'] }}%)</span>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="7" class="text-center text-slate-500">No sales transactions found matching filters.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+            @if(count($profitabilityData['items']) > 0)
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="4">PORTFOLIO TOTALS</td>
+                        <td class="text-right font-mono">{{ $currencySymbol }}{{ number_format($profitabilityData['summary']['total_revenue'], 2) }}</td>
+                        <td class="text-right font-mono">{{ $currencySymbol }}{{ number_format($profitabilityData['summary']['total_cogs'], 2) }}</td>
+                        <td class="text-right font-mono">{{ $currencySymbol }}{{ number_format($profitabilityData['summary']['total_gross_profit'], 2) }} ({{ $profitabilityData['summary']['overall_margin_percent'] }}%)</td>
+                    </tr>
+                </tfoot>
+            @endif
+        </table>
+    @endif
+
 </body>
 </html>
 

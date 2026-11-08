@@ -233,7 +233,7 @@ class SuperAdminControlTest extends TestCase
 
     public function test_super_admin_cannot_delete_super_admin_team(): void
     {
-        $superAdminTeam = $this->superAdmin->currentTeam;
+        $superAdminTeam = $this->superAdmin->personalTeam();
         $response = $this->actingAs($this->superAdmin)->delete(route('admin.tenants.destroy', $superAdminTeam->id));
 
         $response->assertSessionHas('error');

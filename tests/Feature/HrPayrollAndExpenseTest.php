@@ -138,7 +138,7 @@ class HrPayrollAndExpenseTest extends TestCase
         $indexResp = $this->get(route('expenses.index'));
         $indexResp->assertStatus(200);
         $indexResp->assertInertia(fn (AssertableInertia $page) => $page
-            ->component('HR/Expenses/Index')
+            ->component('Accounting/Expenses/Index')
             ->has('expenses.data', 1)
             ->where('expenses.data.0.amount', '4500.00')
         );

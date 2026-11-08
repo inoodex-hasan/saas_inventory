@@ -64,20 +64,19 @@ function submitForm() {
     if (editingBrand.value) {
         form.put(route('brands.update', editingBrand.value.id), {
             preserveScroll: true,
-            onSuccess: () => closeModal(),
+            onSuccess: () => {
+                closeModal();
+            },
         });
     } else {
         form.post(route('brands.store'), {
             preserveScroll: true,
-            onSuccess: () => closeModal(),
+            onSuccess: () => {
+                closeModal();
+            },
         });
     }
 }
-
-const optimisticallyHiddenBrandIds = ref(new Set());
-const displayedBrands = computed(() => {
-    return (props.brands?.data || []).filter(b => !optimisticallyHiddenBrandIds.value.has(b.id));
-});
 
 function deleteBrand(brand) {
     deletingBrand.value = brand;
@@ -85,18 +84,15 @@ function deleteBrand(brand) {
 
 function executeDeleteBrand() {
     if (!deletingBrand.value) return;
-    const targetId = deletingBrand.value.id;
-    optimisticallyHiddenBrandIds.value.add(targetId);
-    deletingBrand.value = null;
+    isDeleting.value = true;
 
-    router.delete(route('brands.destroy', targetId), {
+    router.delete(route('brands.destroy', deletingBrand.value.id), {
         preserveScroll: true,
-        only: ['brands', 'metrics', 'flash'],
-        onError: () => {
-            optimisticallyHiddenBrandIds.value.delete(targetId);
+        onSuccess: () => {
+            deletingBrand.value = null;
         },
         onFinish: () => {
-            optimisticallyHiddenBrandIds.value.delete(targetId);
+            isDeleting.value = false;
         },
     });
 }
@@ -200,7 +196,7 @@ function executeDeleteBrand() {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <tr v-for="b in displayedBrands" :key="b.id" class="hover:bg-slate-50/70 transition-colors">
+                            <tr v-for="b in (brands?.data || [])" :key="b.id" class="hover:bg-slate-50/70 transition-colors">
                                 <td class="py-3.5 px-4 whitespace-nowrap">
                                     <div class="flex items-center gap-3">
                                         <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-800 to-slate-700 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm">

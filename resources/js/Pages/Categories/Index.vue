@@ -71,20 +71,19 @@ function submitForm() {
     if (editingCategory.value) {
         form.put(route('categories.update', editingCategory.value.id), {
             preserveScroll: true,
-            onSuccess: () => closeModal(),
+            onSuccess: () => {
+                closeModal();
+            },
         });
     } else {
         form.post(route('categories.store'), {
             preserveScroll: true,
-            onSuccess: () => closeModal(),
+            onSuccess: () => {
+                closeModal();
+            },
         });
     }
 }
-
-const optimisticallyHiddenCategoryIds = ref(new Set());
-const displayedCategories = computed(() => {
-    return (props.categories?.data || []).filter(c => !optimisticallyHiddenCategoryIds.value.has(c.id));
-});
 
 function deleteCategory(cat) {
     deletingCategory.value = cat;
@@ -92,18 +91,15 @@ function deleteCategory(cat) {
 
 function executeDeleteCategory() {
     if (!deletingCategory.value) return;
-    const targetId = deletingCategory.value.id;
-    optimisticallyHiddenCategoryIds.value.add(targetId);
-    deletingCategory.value = null;
+    isDeleting.value = true;
 
-    router.delete(route('categories.destroy', targetId), {
+    router.delete(route('categories.destroy', deletingCategory.value.id), {
         preserveScroll: true,
-        only: ['categories', 'parentOptions', 'metrics', 'flash'],
-        onError: () => {
-            optimisticallyHiddenCategoryIds.value.delete(targetId);
+        onSuccess: () => {
+            deletingCategory.value = null;
         },
         onFinish: () => {
-            optimisticallyHiddenCategoryIds.value.delete(targetId);
+            isDeleting.value = false;
         },
     });
 }
@@ -222,7 +218,7 @@ const availableParentOptions = computed(() => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <tr v-for="cat in displayedCategories" :key="cat.id" class="hover:bg-slate-50/70 transition-colors">
+                            <tr v-for="cat in (categories?.data || [])" :key="cat.id" class="hover:bg-slate-50/70 transition-colors">
                                 <td class="py-3.5 px-4 whitespace-nowrap">
                                     <div class="flex items-center gap-2.5">
                                         <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs shrink-0">

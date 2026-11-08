@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 class SiteSetting extends Model
 {
@@ -16,7 +17,8 @@ class SiteSetting extends Model
      */
     public static function get(string $key, mixed $default = null): mixed
     {
-        return static::where('key', $key)->value('value') ?? $default;
+        $all = static::getAll();
+        return $all[$key] ?? $default;
     }
 
     /**
@@ -28,6 +30,9 @@ class SiteSetting extends Model
             ['key' => $key],
             ['value' => $value]
         );
+
+        Cache::forget('site_settings_all');
+        Cache::forget('site_settings_shared_payload');
     }
 
     /**
@@ -35,7 +40,10 @@ class SiteSetting extends Model
      */
     public static function getAll(): array
     {
-        return static::pluck('value', 'key')->toArray();
+        return Cache::remember('site_settings_all', 3600, function () {
+            return static::pluck('value', 'key')->toArray();
+        });
     }
 }
+
 

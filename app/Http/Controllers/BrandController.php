@@ -6,6 +6,7 @@ use App\Models\Brand;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -33,17 +34,30 @@ class BrandController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $topBrand = Brand::where('team_id', $teamId)
-            ->withCount('products')
+        $topBrandStats = DB::table('products')
+            ->select('brand_id', DB::raw('COUNT(*) as products_count'))
+            ->where('team_id', $teamId)
+            ->whereNotNull('brand_id')
+            ->groupBy('brand_id')
             ->orderByDesc('products_count')
+            ->first();
+
+        $topBrand = $topBrandStats ? Brand::where('team_id', $teamId)->find($topBrandStats->brand_id) : null;
+
+        $productCounts = DB::table('products')
+            ->where('team_id', $teamId)
+            ->selectRaw("
+                COUNT(CASE WHEN brand_id IS NOT NULL THEN 1 END) as branded_count,
+                COUNT(CASE WHEN brand_id IS NULL THEN 1 END) as unbranded_count
+            ")
             ->first();
 
         $metrics = [
             'total_brands' => Brand::where('team_id', $teamId)->count(),
-            'total_products_branded' => Product::where('team_id', $teamId)->whereNotNull('brand_id')->count(),
+            'total_products_branded' => (int) ($productCounts->branded_count ?? 0),
             'top_brand_name' => $topBrand ? $topBrand->name : 'N/A',
-            'top_brand_count' => $topBrand ? $topBrand->products_count : 0,
-            'unbranded_products' => Product::where('team_id', $teamId)->whereNull('brand_id')->count(),
+            'top_brand_count' => (int) ($topBrandStats->products_count ?? 0),
+            'unbranded_products' => (int) ($productCounts->unbranded_count ?? 0),
         ];
 
         return Inertia::render('Brands/Index', [

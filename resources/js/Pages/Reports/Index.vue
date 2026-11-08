@@ -4,6 +4,9 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import { formatDate } from '@/Utils/date';
+import { useTranslation } from '@/Utils/translations';
+
+const { t } = useTranslation();
 
 const props = defineProps({
     currencySymbol: String,
@@ -17,6 +20,9 @@ const props = defineProps({
     valuation: Object,
     lowStockItems: Array,
     movements: Object,
+    expiryData: Object,
+    agingData: Object,
+    profitabilityData: Object,
 });
 
 const currentTab = ref(props.filters?.tab || props.activeTab || 'valuation');
@@ -24,6 +30,31 @@ const movementType = ref(props.filters?.movement_type || '');
 const movementWarehouseId = ref(props.filters?.movement_warehouse_id || '');
 const movementSearch = ref(props.filters?.movement_search || '');
 const lowStockSearch = ref(props.filters?.low_stock_search || '');
+const datePreset = ref(props.filters?.date_preset || 'all_time');
+const startDate = ref(props.filters?.start_date || '');
+const endDate = ref(props.filters?.end_date || '');
+
+const expiryStatus = ref(props.filters?.expiry_status || 'all');
+const expiryWarehouseId = ref(props.filters?.expiry_warehouse_id || '');
+const expirySearch = ref(props.filters?.expiry_search || '');
+
+const agingBracket = ref(props.filters?.aging_bracket || 'all');
+const agingCategoryId = ref(props.filters?.aging_category_id || '');
+const agingSearch = ref(props.filters?.aging_search || '');
+
+const profitabilityPerformance = ref(props.filters?.profitability_performance || 'all');
+const profitabilityCategoryId = ref(props.filters?.profitability_category_id || '');
+const profitabilitySearch = ref(props.filters?.profitability_search || '');
+
+const datePresets = [
+    { id: 'all_time', label: 'All Time' },
+    { id: 'today', label: 'Today' },
+    { id: 'this_week', label: 'This Week' },
+    { id: 'this_month', label: 'This Month' },
+    { id: 'last_month', label: 'Last Month' },
+    { id: 'this_year', label: 'This Year' },
+    { id: 'custom', label: 'Custom' },
+];
 
 function setTab(tab) {
     currentTab.value = tab;
@@ -44,6 +75,21 @@ function applyFilter() {
     if (movementWarehouseId.value) params.movement_warehouse_id = movementWarehouseId.value;
     if (movementSearch.value) params.movement_search = movementSearch.value;
     if (lowStockSearch.value) params.low_stock_search = lowStockSearch.value;
+    if (datePreset.value && datePreset.value !== 'all_time') params.date_preset = datePreset.value;
+    if (datePreset.value === 'custom') {
+        if (startDate.value) params.start_date = startDate.value;
+        if (endDate.value) params.end_date = endDate.value;
+    }
+    if (expiryStatus.value && expiryStatus.value !== 'all') params.expiry_status = expiryStatus.value;
+    if (expiryWarehouseId.value) params.expiry_warehouse_id = expiryWarehouseId.value;
+    if (expirySearch.value) params.expiry_search = expirySearch.value;
+    if (agingBracket.value && agingBracket.value !== 'all') params.aging_bracket = agingBracket.value;
+    if (agingCategoryId.value) params.aging_category_id = agingCategoryId.value;
+    if (agingSearch.value) params.aging_search = agingSearch.value;
+    if (profitabilityPerformance.value && profitabilityPerformance.value !== 'all') params.profitability_performance = profitabilityPerformance.value;
+    if (profitabilityCategoryId.value) params.profitability_category_id = profitabilityCategoryId.value;
+    if (profitabilitySearch.value) params.profitability_search = profitabilitySearch.value;
+
     router.get(route('reports.index'), params, {
         preserveState: true,
         replace: true,
@@ -55,17 +101,66 @@ function resetMovementsFilter() {
     movementType.value = '';
     movementWarehouseId.value = '';
     movementSearch.value = '';
+    datePreset.value = 'all_time';
+    startDate.value = '';
+    endDate.value = '';
     router.get(route('reports.index'), { tab: currentTab.value }, { preserveState: false, replace: true, preserveScroll: true });
 }
 
-function downloadPdf() {
+function resetExpiryFilter() {
+    expiryStatus.value = 'all';
+    expiryWarehouseId.value = '';
+    expirySearch.value = '';
+    applyFilter();
+}
+
+function resetAgingFilter() {
+    agingBracket.value = 'all';
+    agingCategoryId.value = '';
+    agingSearch.value = '';
+    applyFilter();
+}
+
+function resetProfitabilityFilter() {
+    profitabilityPerformance.value = 'all';
+    profitabilityCategoryId.value = '';
+    profitabilitySearch.value = '';
+    datePreset.value = 'all_time';
+    startDate.value = '';
+    endDate.value = '';
+    applyFilter();
+}
+
+function buildExportParams() {
     const params = new URLSearchParams();
     params.append('tab', currentTab.value);
     if (movementType.value) params.append('movement_type', movementType.value);
     if (movementWarehouseId.value) params.append('movement_warehouse_id', movementWarehouseId.value);
     if (movementSearch.value) params.append('movement_search', movementSearch.value);
     if (lowStockSearch.value) params.append('low_stock_search', lowStockSearch.value);
-    window.open(route('reports.pdf') + '?' + params.toString(), '_blank');
+    if (datePreset.value && datePreset.value !== 'all_time') params.append('date_preset', datePreset.value);
+    if (datePreset.value === 'custom') {
+        if (startDate.value) params.append('start_date', startDate.value);
+        if (endDate.value) params.append('end_date', endDate.value);
+    }
+    if (expiryStatus.value && expiryStatus.value !== 'all') params.append('expiry_status', expiryStatus.value);
+    if (expiryWarehouseId.value) params.append('expiry_warehouse_id', expiryWarehouseId.value);
+    if (expirySearch.value) params.append('expiry_search', expirySearch.value);
+    if (agingBracket.value && agingBracket.value !== 'all') params.append('aging_bracket', agingBracket.value);
+    if (agingCategoryId.value) params.append('aging_category_id', agingCategoryId.value);
+    if (agingSearch.value) params.append('aging_search', agingSearch.value);
+    if (profitabilityPerformance.value && profitabilityPerformance.value !== 'all') params.append('profitability_performance', profitabilityPerformance.value);
+    if (profitabilityCategoryId.value) params.append('profitability_category_id', profitabilityCategoryId.value);
+    if (profitabilitySearch.value) params.append('profitability_search', profitabilitySearch.value);
+    return params.toString();
+}
+
+function downloadPdf() {
+    window.open(route('reports.pdf') + '?' + buildExportParams(), '_blank');
+}
+
+function downloadExcel() {
+    window.open(route('reports.excel') + '?' + buildExportParams(), '_blank');
 }
 </script>
 
@@ -121,19 +216,118 @@ function downloadPdf() {
                         </svg>
                         <span>Stock Movements</span>
                     </button>
+
+                    <button
+                        type="button"
+                        @click="setTab('expiry')"
+                        :class="currentTab === 'expiry' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                        class="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>{{ t('Batch Expiry') }}</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        @click="setTab('aging')"
+                        :class="currentTab === 'aging' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                        class="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                        <span>{{ t('Stock Aging') }}</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        @click="setTab('profitability')"
+                        :class="currentTab === 'profitability' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                        class="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        <span>{{ t('Sales & Profit Margin') }}</span>
+                    </button>
                 </div>
 
-                <!-- Download PDF Button in Tab Section -->
-                <button
-                    type="button"
-                    @click="downloadPdf"
-                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm shadow-indigo-600/30 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
-                >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    <span>Download PDF</span>
-                </button>
+                <!-- Export Actions: Excel & PDF -->
+                <div class="flex items-center gap-2">
+                    <button
+                        type="button"
+                        @click="downloadExcel"
+                        class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-600/30 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                        :title="t('Download Excel')"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span>{{ t('Download Excel') }}</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        @click="downloadPdf"
+                        class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm shadow-indigo-600/30 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                        :title="t('Download PDF')"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        <span>{{ t('Download PDF') }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Date Range Filter Toolbar (Visible when Movements or Profitability tab active) -->
+            <div v-if="currentTab === 'movements' || currentTab === 'profitability'" class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="text-xs font-bold text-slate-500 mr-2 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        {{ t('Date Range') }}:
+                    </span>
+                    <button
+                        v-for="preset in datePresets"
+                        :key="preset.id"
+                        type="button"
+                        @click="datePreset = preset.id; if (preset.id !== 'custom') applyFilter();"
+                        :class="datePreset === preset.id ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                        class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer"
+                    >
+                        {{ t(preset.label) }}
+                    </button>
+                </div>
+
+                <div v-if="datePreset === 'custom'" class="flex flex-wrap items-center gap-2">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[11px] text-slate-400 font-medium">{{ t('From Date') }}:</span>
+                        <input
+                            type="date"
+                            v-model="startDate"
+                            class="bg-white border border-slate-300 rounded-xl px-2.5 py-1 text-xs text-slate-800 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[11px] text-slate-400 font-medium">{{ t('To Date') }}:</span>
+                        <input
+                            type="date"
+                            v-model="endDate"
+                            class="bg-white border border-slate-300 rounded-xl px-2.5 py-1 text-xs text-slate-800 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        @click="applyFilter"
+                        class="px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                    >
+                        {{ t('Apply') }}
+                    </button>
+                </div>
             </div>
 
             <!-- TAB 1: STOCK VALUATION -->
@@ -584,6 +778,685 @@ function downloadPdf() {
                                 />
                             </template>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 4: Batch & Expiry Radar -->
+            <div v-if="currentTab === 'expiry'" class="space-y-6">
+                <!-- Summary KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white rounded-2xl p-5 border border-rose-100 shadow-xs relative overflow-hidden">
+                        <div class="absolute -right-3 -top-3 w-16 h-16 bg-rose-50 rounded-full opacity-60"></div>
+                        <div class="relative z-10 flex items-start justify-between">
+                            <div>
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-rose-600">{{ t('Expired Batches') }}</span>
+                                <div class="text-2xl font-black text-rose-700 mt-1">
+                                    {{ (expiryData?.summary?.expired_count || 0).toLocaleString() }}
+                                </div>
+                                <span class="text-[11px] text-rose-500 font-medium">Critical immediate action</span>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-rose-100 text-rose-600">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-5 border border-amber-100 shadow-xs relative overflow-hidden">
+                        <div class="absolute -right-3 -top-3 w-16 h-16 bg-amber-50 rounded-full opacity-60"></div>
+                        <div class="relative z-10 flex items-start justify-between">
+                            <div>
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-amber-700">{{ t('Expiring (< 30 Days)') }}</span>
+                                <div class="text-2xl font-black text-amber-800 mt-1">
+                                    {{ (expiryData?.summary?.expiring_30_count || 0).toLocaleString() }}
+                                </div>
+                                <span class="text-[11px] text-amber-600 font-medium">Discount or prioritize sales</span>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-amber-100 text-amber-700">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-5 border border-sky-100 shadow-xs relative overflow-hidden">
+                        <div class="absolute -right-3 -top-3 w-16 h-16 bg-sky-50 rounded-full opacity-60"></div>
+                        <div class="relative z-10 flex items-start justify-between">
+                            <div>
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-sky-700">{{ t('Warning (< 90 Days)') }}</span>
+                                <div class="text-2xl font-black text-sky-800 mt-1">
+                                    {{ (expiryData?.summary?.expiring_90_count || 0).toLocaleString() }}
+                                </div>
+                                <span class="text-[11px] text-sky-600 font-medium">Monitor movement rate</span>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-sky-100 text-sky-700">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-5 border border-indigo-100 shadow-xs relative overflow-hidden">
+                        <div class="absolute -right-3 -top-3 w-16 h-16 bg-indigo-50 rounded-full opacity-60"></div>
+                        <div class="relative z-10 flex items-start justify-between">
+                            <div>
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-700">{{ t('Capital at Risk') }}</span>
+                                <div class="text-2xl font-black text-indigo-900 mt-1">
+                                    <CurrencyDisplay :amount="expiryData?.summary?.at_risk_cost || 0" />
+                                </div>
+                                <span class="text-[11px] text-indigo-500 font-medium">Expired &amp; Urgent inventory cost</span>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-indigo-100 text-indigo-700">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expiry Filter Toolbar & Table Card -->
+                <div class="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
+                    <div class="p-4 sm:p-5 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto flex-1">
+                            <!-- Search -->
+                            <div class="relative flex-1 sm:max-w-xs">
+                                <input
+                                    type="text"
+                                    v-model="expirySearch"
+                                    @input="handleSearchDebounced"
+                                    placeholder="Search batch #, product or SKU..."
+                                    class="w-full bg-white border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-800 transition"
+                                />
+                                <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+
+                            <!-- Expiry Status Filter -->
+                            <select
+                                v-model="expiryStatus"
+                                @change="applyFilter"
+                                class="w-full sm:w-44 bg-white border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl pl-3 pr-8 min-w-[150px] py-2 text-xs text-slate-700 transition"
+                            >
+                                <option value="all">{{ t('All Batches') }}</option>
+                                <option value="expired">Expired</option>
+                                <option value="expiring_30">Urgent (&lt; 30 Days)</option>
+                                <option value="expiring_90">Warning (&lt; 90 Days)</option>
+                                <option value="healthy">Healthy</option>
+                            </select>
+
+                            <!-- Warehouse Filter -->
+                            <select
+                                v-model="expiryWarehouseId"
+                                @change="applyFilter"
+                                class="w-full sm:w-44 bg-white border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl pl-3 pr-8 min-w-[150px] py-2 text-xs text-slate-700 transition"
+                            >
+                                <option value="">All Warehouses</option>
+                                <option v-for="wh in warehouses" :key="wh.id" :value="wh.id">
+                                    {{ wh.name }}
+                                </option>
+                            </select>
+
+                            <!-- Reset Filter -->
+                            <button
+                                v-if="(expiryStatus && expiryStatus !== 'all') || expiryWarehouseId || expirySearch"
+                                @click="resetExpiryFilter"
+                                type="button"
+                                class="text-xs text-slate-500 hover:text-slate-800 underline transition cursor-pointer"
+                            >
+                                Reset
+                            </button>
+                        </div>
+
+                        <div class="text-xs text-slate-400 font-mono">
+                            Showing {{ expiryData?.items?.length || 0 }} recorded batches
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50/75 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                                <tr>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">{{ t('Batch #') }}</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Product &amp; SKU</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Warehouse Hub</th>
+                                    <th class="px-5 py-3.5 text-center whitespace-nowrap">Quantity</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Unit Cost</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Total Cost</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">{{ t('Expiry Date') }}</th>
+                                    <th class="px-5 py-3.5 text-center whitespace-nowrap">{{ t('Days Remaining') }}</th>
+                                    <th class="px-5 py-3.5 text-center whitespace-nowrap">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr v-for="item in expiryData?.items || []" :key="item.id" class="hover:bg-slate-50 transition">
+                                    <td class="px-5 py-3.5 whitespace-nowrap font-mono font-bold text-slate-900">
+                                        {{ item.batch_number }}
+                                    </td>
+                                    <td class="px-5 py-3.5 whitespace-nowrap">
+                                        <div class="font-bold text-slate-900 text-sm max-w-[180px] lg:max-w-[240px] truncate" :title="item.product_name">{{ item.product_name }}</div>
+                                        <div class="text-[10px] font-mono text-indigo-500">SKU: {{ item.sku }}</div>
+                                    </td>
+                                    <td class="px-5 py-3.5 text-slate-600 font-medium whitespace-nowrap">
+                                        {{ item.warehouse_name }}
+                                    </td>
+                                    <td class="px-5 py-3.5 text-center font-bold text-slate-800 whitespace-nowrap">
+                                        {{ Number(item.quantity).toLocaleString() }}
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono text-slate-500 whitespace-nowrap">
+                                        <CurrencyDisplay :amount="item.unit_cost" />
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
+                                        <CurrencyDisplay :amount="item.total_cost" />
+                                    </td>
+                                    <td class="px-5 py-3.5 whitespace-nowrap font-mono text-[11px] text-slate-600">
+                                        {{ formatDate(item.expiry_date) }}
+                                    </td>
+                                    <td class="px-5 py-3.5 text-center whitespace-nowrap font-mono font-extrabold text-xs">
+                                        <span v-if="item.days_remaining < 0" class="text-rose-600">
+                                            {{ Math.abs(item.days_remaining) }}d overdue
+                                        </span>
+                                        <span v-else-if="item.days_remaining <= 30" class="text-amber-600">
+                                            {{ item.days_remaining }}d left
+                                        </span>
+                                        <span v-else class="text-slate-700">
+                                            {{ item.days_remaining }}d left
+                                        </span>
+                                    </td>
+                                    <td class="px-5 py-3.5 text-center whitespace-nowrap">
+                                        <span
+                                            v-if="item.status_key === 'expired'"
+                                            class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-rose-50 text-rose-700 border border-rose-200"
+                                        >
+                                            Expired
+                                        </span>
+                                        <span
+                                            v-else-if="item.status_key === 'expiring_30'"
+                                            class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-50 text-amber-700 border border-amber-200"
+                                        >
+                                            Urgent (&lt; 30d)
+                                        </span>
+                                        <span
+                                            v-else-if="item.status_key === 'expiring_90'"
+                                            class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-sky-50 text-sky-700 border border-sky-200"
+                                        >
+                                            Warning (&lt; 90d)
+                                        </span>
+                                        <span
+                                            v-else
+                                            class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                        >
+                                            Healthy
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr v-if="!expiryData?.items?.length">
+                                    <td colspan="9" class="px-5 py-8 text-center text-slate-400">
+                                        No batch expiry records matching your filters.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 5: Stock Aging & Dead Stock -->
+            <div v-if="currentTab === 'aging'" class="space-y-6">
+                <!-- Summary KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white rounded-2xl p-5 border border-emerald-100 shadow-xs relative overflow-hidden">
+                        <div class="absolute -right-3 -top-3 w-16 h-16 bg-emerald-50 rounded-full opacity-60"></div>
+                        <div class="relative z-10 flex items-start justify-between">
+                            <div>
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">{{ t('Fresh (0-30 Days)') }}</span>
+                                <div class="text-2xl font-black text-emerald-800 mt-1">
+                                    {{ (agingData?.summary?.fresh_count || 0).toLocaleString() }}
+                                </div>
+                                <span class="text-[11px] text-emerald-600 font-medium">Fast-moving active inventory</span>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-emerald-100 text-emerald-700">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-5 border border-sky-100 shadow-xs relative overflow-hidden">
+                        <div class="absolute -right-3 -top-3 w-16 h-16 bg-sky-50 rounded-full opacity-60"></div>
+                        <div class="relative z-10 flex items-start justify-between">
+                            <div>
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-sky-700">{{ t('Moderate (31-60 Days)') }}</span>
+                                <div class="text-2xl font-black text-sky-800 mt-1">
+                                    {{ (agingData?.summary?.moderate_count || 0).toLocaleString() }}
+                                </div>
+                                <span class="text-[11px] text-sky-600 font-medium">Healthy turnover range</span>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-sky-100 text-sky-700">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-5 border border-amber-100 shadow-xs relative overflow-hidden">
+                        <div class="absolute -right-3 -top-3 w-16 h-16 bg-amber-50 rounded-full opacity-60"></div>
+                        <div class="relative z-10 flex items-start justify-between">
+                            <div>
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-amber-700">{{ t('Slow-Moving (61-90 Days)') }}</span>
+                                <div class="text-2xl font-black text-amber-800 mt-1">
+                                    {{ (agingData?.summary?.slow_count || 0).toLocaleString() }}
+                                </div>
+                                <span class="text-[11px] text-amber-600 font-medium">Requires marketing push</span>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-amber-100 text-amber-700">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-5 border border-rose-100 shadow-xs relative overflow-hidden">
+                        <div class="absolute -right-3 -top-3 w-16 h-16 bg-rose-50 rounded-full opacity-60"></div>
+                        <div class="relative z-10 flex items-start justify-between">
+                            <div>
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-rose-600">{{ t('Dead Stock (90+ Days)') }}</span>
+                                <div class="text-2xl font-black text-rose-700 mt-1">
+                                    {{ (agingData?.summary?.dead_count || 0).toLocaleString() }}
+                                </div>
+                                <div class="text-[11px] text-rose-600 font-medium flex items-center gap-1 mt-0.5">
+                                    <span>{{ t('Frozen Capital') }}:</span>
+                                    <span class="font-bold"><CurrencyDisplay :amount="agingData?.summary?.dead_stock_cost || 0" /></span>
+                                </div>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-rose-100 text-rose-600">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Aging Filter Toolbar & Table Card -->
+                <div class="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
+                    <div class="p-4 sm:p-5 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto flex-1">
+                            <!-- Search -->
+                            <div class="relative flex-1 sm:max-w-xs">
+                                <input
+                                    type="text"
+                                    v-model="agingSearch"
+                                    @input="handleSearchDebounced"
+                                    placeholder="Search product name or SKU..."
+                                    class="w-full bg-white border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-800 transition"
+                                />
+                                <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+
+                            <!-- Aging Bracket Filter -->
+                            <select
+                                v-model="agingBracket"
+                                @change="applyFilter"
+                                class="w-full sm:w-44 bg-white border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl pl-3 pr-8 min-w-[150px] py-2 text-xs text-slate-700 transition"
+                            >
+                                <option value="all">{{ t('All Brackets') }}</option>
+                                <option value="fresh">Fresh (0-30 Days)</option>
+                                <option value="moderate">Moderate (31-60 Days)</option>
+                                <option value="slow">Slow-Moving (61-90 Days)</option>
+                                <option value="dead">Dead Stock (90+ Days)</option>
+                            </select>
+
+                            <!-- Category Filter -->
+                            <select
+                                v-model="agingCategoryId"
+                                @change="applyFilter"
+                                class="w-full sm:w-44 bg-white border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl pl-3 pr-8 min-w-[150px] py-2 text-xs text-slate-700 transition"
+                            >
+                                <option value="">All Categories</option>
+                                <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                                    {{ cat.name }}
+                                </option>
+                            </select>
+
+                            <!-- Reset Filter -->
+                            <button
+                                v-if="(agingBracket && agingBracket !== 'all') || agingCategoryId || agingSearch"
+                                @click="resetAgingFilter"
+                                type="button"
+                                class="text-xs text-slate-500 hover:text-slate-800 underline transition cursor-pointer"
+                            >
+                                Reset
+                            </button>
+                        </div>
+
+                        <div class="text-xs text-slate-400 font-mono">
+                            Showing {{ agingData?.items?.length || 0 }} tracked items
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50/75 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                                <tr>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Product &amp; SKU</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Category</th>
+                                    <th class="px-5 py-3.5 text-center whitespace-nowrap">Stock on Hand</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Unit Cost</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">{{ t('Frozen Capital') }}</th>
+                                    <th class="px-5 py-3.5 text-center whitespace-nowrap">{{ t('Days Inactive') }}</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Last Outbound / Sale</th>
+                                    <th class="px-5 py-3.5 text-center whitespace-nowrap">{{ t('Aging Bracket') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr v-for="item in agingData?.items || []" :key="item.id" class="hover:bg-slate-50 transition">
+                                    <td class="px-5 py-3.5 whitespace-nowrap">
+                                        <div class="font-bold text-slate-900 text-sm max-w-[200px] lg:max-w-[260px] truncate" :title="item.name">{{ item.name }}</div>
+                                        <div class="text-[10px] font-mono text-indigo-500">SKU: {{ item.sku }}</div>
+                                    </td>
+                                    <td class="px-5 py-3.5 text-slate-600 font-medium whitespace-nowrap">
+                                        {{ item.category_name || 'Uncategorized' }}
+                                    </td>
+                                    <td class="px-5 py-3.5 text-center font-bold text-slate-800 whitespace-nowrap">
+                                        {{ Number(item.total_stock).toLocaleString() }} <span class="text-[10px] text-slate-400 font-normal">{{ item.unit || '' }}</span>
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono text-slate-500 whitespace-nowrap">
+                                        <CurrencyDisplay :amount="item.cost_price" />
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
+                                        <CurrencyDisplay :amount="item.total_cost" />
+                                    </td>
+                                    <td class="px-5 py-3.5 text-center whitespace-nowrap font-mono font-extrabold text-xs">
+                                        <span v-if="item.days_inactive > 90" class="text-rose-600">
+                                            {{ item.days_inactive }}d
+                                        </span>
+                                        <span v-else-if="item.days_inactive > 60" class="text-amber-600">
+                                            {{ item.days_inactive }}d
+                                        </span>
+                                        <span v-else class="text-slate-700">
+                                            {{ item.days_inactive }}d
+                                        </span>
+                                    </td>
+                                    <td class="px-5 py-3.5 whitespace-nowrap font-mono text-[11px] text-slate-600">
+                                        {{ item.last_activity_date ? formatDate(item.last_activity_date) : 'No recorded movement' }}
+                                    </td>
+                                    <td class="px-5 py-3.5 text-center whitespace-nowrap">
+                                        <span
+                                            v-if="item.bracket_key === 'dead'"
+                                            class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-rose-50 text-rose-700 border border-rose-200"
+                                        >
+                                            Dead (90+d)
+                                        </span>
+                                        <span
+                                            v-else-if="item.bracket_key === 'slow'"
+                                            class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-50 text-amber-700 border border-amber-200"
+                                        >
+                                            Slow (61-90d)
+                                        </span>
+                                        <span
+                                            v-else-if="item.bracket_key === 'moderate'"
+                                            class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-sky-50 text-sky-700 border border-sky-200"
+                                        >
+                                            Moderate (31-60d)
+                                        </span>
+                                        <span
+                                            v-else
+                                            class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                        >
+                                            Fresh (0-30d)
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr v-if="!agingData?.items?.length">
+                                    <td colspan="8" class="px-5 py-8 text-center text-slate-400">
+                                        No stock aging records matching your filters.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 6: Product Sales & Gross Margin Profitability -->
+            <div v-if="currentTab === 'profitability'" class="space-y-6">
+                <!-- Summary KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white rounded-2xl p-5 border border-emerald-100 shadow-xs relative overflow-hidden">
+                        <div class="absolute -right-3 -top-3 w-16 h-16 bg-emerald-50 rounded-full opacity-60"></div>
+                        <div class="relative z-10 flex items-start justify-between">
+                            <div>
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">{{ t('Total Revenue') }}</span>
+                                <div class="text-2xl font-black text-emerald-800 mt-1">
+                                    <CurrencyDisplay :amount="profitabilityData?.summary?.total_revenue || 0" />
+                                </div>
+                                <span class="text-[11px] text-emerald-600 font-medium">Across active sales orders</span>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-emerald-100 text-emerald-700">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs relative overflow-hidden">
+                        <div class="absolute -right-3 -top-3 w-16 h-16 bg-slate-100 rounded-full opacity-60"></div>
+                        <div class="relative z-10 flex items-start justify-between">
+                            <div>
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-600">{{ t('Total COGS') }}</span>
+                                <div class="text-2xl font-black text-slate-800 mt-1">
+                                    <CurrencyDisplay :amount="profitabilityData?.summary?.total_cogs || 0" />
+                                </div>
+                                <span class="text-[11px] text-slate-500 font-medium">Acquisition cost basis</span>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-slate-100 text-slate-700">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-5 border border-indigo-100 shadow-xs relative overflow-hidden">
+                        <div class="absolute -right-3 -top-3 w-16 h-16 bg-indigo-50 rounded-full opacity-60"></div>
+                        <div class="relative z-10 flex items-start justify-between">
+                            <div>
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-700">{{ t('Gross Profit') }}</span>
+                                <div class="text-2xl font-black text-indigo-900 mt-1">
+                                    <CurrencyDisplay :amount="profitabilityData?.summary?.total_gross_profit || 0" />
+                                </div>
+                                <span class="text-[11px] text-indigo-500 font-medium">Net trading surplus</span>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-indigo-100 text-indigo-700">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-5 border border-sky-100 shadow-xs relative overflow-hidden">
+                        <div class="absolute -right-3 -top-3 w-16 h-16 bg-sky-50 rounded-full opacity-60"></div>
+                        <div class="relative z-10 flex items-start justify-between">
+                            <div>
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-sky-700">{{ t('Gross Margin') }}</span>
+                                <div class="text-2xl font-black text-sky-900 mt-1">
+                                    {{ profitabilityData?.summary?.overall_margin_percent || 0 }}%
+                                </div>
+                                <div class="text-[11px] text-sky-600 font-medium">
+                                    {{ profitabilityData?.summary?.high_count || 0 }} high margin, {{ profitabilityData?.summary?.loss_count || 0 }} loss
+                                </div>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-sky-100 text-sky-700">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profitability Filter Toolbar & Table Card -->
+                <div class="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
+                    <div class="p-4 sm:p-5 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto flex-1">
+                            <!-- Search -->
+                            <div class="relative flex-1 sm:max-w-xs">
+                                <input
+                                    type="text"
+                                    v-model="profitabilitySearch"
+                                    @input="handleSearchDebounced"
+                                    placeholder="Search product name or SKU..."
+                                    class="w-full bg-white border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-800 transition"
+                                />
+                                <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+
+                            <!-- Performance Level Filter -->
+                            <select
+                                v-model="profitabilityPerformance"
+                                @change="applyFilter"
+                                class="w-full sm:w-48 bg-white border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl pl-3 pr-8 min-w-[160px] py-2 text-xs text-slate-700 transition"
+                            >
+                                <option value="all">{{ t('All Performance Levels') }}</option>
+                                <option value="high">High Margin (&gt;= 40%)</option>
+                                <option value="healthy">Healthy (20-39%)</option>
+                                <option value="low">Low Margin (1-19%)</option>
+                                <option value="loss">Loss Making (&lt;= 0%)</option>
+                            </select>
+
+                            <!-- Category Filter -->
+                            <select
+                                v-model="profitabilityCategoryId"
+                                @change="applyFilter"
+                                class="w-full sm:w-44 bg-white border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl pl-3 pr-8 min-w-[150px] py-2 text-xs text-slate-700 transition"
+                            >
+                                <option value="">All Categories</option>
+                                <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                                    {{ cat.name }}
+                                </option>
+                            </select>
+
+                            <!-- Reset Filter -->
+                            <button
+                                v-if="(profitabilityPerformance && profitabilityPerformance !== 'all') || profitabilityCategoryId || profitabilitySearch || (datePreset && datePreset !== 'all_time')"
+                                @click="resetProfitabilityFilter"
+                                type="button"
+                                class="text-xs text-slate-500 hover:text-slate-800 underline transition cursor-pointer"
+                            >
+                                Reset
+                            </button>
+                        </div>
+
+                        <div class="text-xs text-slate-400 font-mono">
+                            Showing {{ profitabilityData?.items?.length || 0 }} product lines
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50/75 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                                <tr>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Product &amp; SKU</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Category</th>
+                                    <th class="px-5 py-3.5 text-center whitespace-nowrap">{{ t('Units Sold') }}</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">{{ t('Avg Selling Price') }}</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">{{ t('Revenue') }}</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">{{ t('COGS') }}</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">{{ t('Gross Profit') }}</th>
+                                    <th class="px-5 py-3.5 text-center whitespace-nowrap" style="min-width: 140px;">{{ t('Margin %') }}</th>
+                                    <th class="px-5 py-3.5 text-center whitespace-nowrap">{{ t('Performance') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr v-for="item in profitabilityData?.items || []" :key="item.id" class="hover:bg-slate-50 transition">
+                                    <td class="px-5 py-3.5 whitespace-nowrap">
+                                        <div class="font-bold text-slate-900 text-sm max-w-[200px] lg:max-w-[260px] truncate" :title="item.product_name">{{ item.product_name }}</div>
+                                        <div class="text-[10px] font-mono text-indigo-500">SKU: {{ item.sku }}</div>
+                                    </td>
+                                    <td class="px-5 py-3.5 text-slate-600 font-medium whitespace-nowrap">
+                                        {{ item.category_name }}
+                                    </td>
+                                    <td class="px-5 py-3.5 text-center font-bold text-slate-800 whitespace-nowrap">
+                                        {{ Number(item.units_sold).toLocaleString() }}
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono text-slate-500 whitespace-nowrap">
+                                        <CurrencyDisplay :amount="item.avg_selling_price" />
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
+                                        <CurrencyDisplay :amount="item.total_revenue" />
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono text-slate-500 whitespace-nowrap">
+                                        <CurrencyDisplay :amount="item.total_cogs" />
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono font-bold whitespace-nowrap" :class="item.gross_profit >= 0 ? 'text-emerald-600' : 'text-rose-600'">
+                                        <CurrencyDisplay :amount="item.gross_profit" />
+                                    </td>
+                                    <td class="px-5 py-3.5 text-center whitespace-nowrap">
+                                        <div class="flex items-center gap-2 justify-center">
+                                            <div class="w-16 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                                <div
+                                                    class="h-full rounded-full transition-all duration-300"
+                                                    :class="item.margin_percent >= 40 ? 'bg-emerald-500' : (item.margin_percent >= 20 ? 'bg-sky-500' : (item.margin_percent > 0 ? 'bg-amber-500' : 'bg-rose-500'))"
+                                                    :style="{ width: `${Math.min(100, Math.max(0, item.margin_percent))}%` }"
+                                                ></div>
+                                            </div>
+                                            <span class="font-mono font-bold text-xs" :class="item.margin_percent >= 40 ? 'text-emerald-700' : (item.margin_percent >= 20 ? 'text-sky-700' : (item.margin_percent > 0 ? 'text-amber-700' : 'text-rose-700'))">
+                                                {{ item.margin_percent }}%
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="px-5 py-3.5 text-center whitespace-nowrap">
+                                        <span
+                                            v-if="item.perf_key === 'high'"
+                                            class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                        >
+                                            High (&gt;= 40%)
+                                        </span>
+                                        <span
+                                            v-else-if="item.perf_key === 'healthy'"
+                                            class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-sky-50 text-sky-700 border border-sky-200"
+                                        >
+                                            Healthy (20-39%)
+                                        </span>
+                                        <span
+                                            v-else-if="item.perf_key === 'low'"
+                                            class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-50 text-amber-700 border border-amber-200"
+                                        >
+                                            Low (1-19%)
+                                        </span>
+                                        <span
+                                            v-else
+                                            class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-rose-50 text-rose-700 border border-rose-200"
+                                        >
+                                            Loss Making
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr v-if="!profitabilityData?.items?.length">
+                                    <td colspan="9" class="px-5 py-8 text-center text-slate-400">
+                                        No product sales records matching your selected date range and filters.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 
 // Initialize language from localStorage (consistent with welcome page)
-const storedLang = typeof window !== 'undefined' 
+const storedLang = typeof window !== 'undefined'
     ? (localStorage.getItem('dashboard_lang') || localStorage.getItem('welcome_lang') || 'en')
     : 'en';
 
@@ -19,6 +19,13 @@ export function toggleLang() {
     setLang(currentLang.value === 'bn' ? 'en' : 'bn');
 }
 
+const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+
+// Convert western digits to Bengali digits
+export function toBnDigits(value) {
+    return String(value).replace(/\d/g, (d) => bnDigits[d]);
+}
+
 export const dictionary = {
     // Top Bar & Global Layout
     'Workspace Overview': 'ওয়ার্কস্পেস ওভারভিউ',
@@ -26,12 +33,12 @@ export const dictionary = {
     'Super Admin Mode': 'সুপার অ্যাডমিন মোড',
     'Super Admin': 'সুপার অ্যাডমিন',
     'Inspecting Tenant': 'টেন্যান্ট পরিদর্শন',
-    'Exit Workspace': 'ওয়ার্কস্পেস থেকে প্রস্থান',
+    'Exit Workspace': 'ওয়ার্কস্পেস থেকে বের হন',
     'Exit Tenant Workspace': 'ওয়ার্কস্পেস থেকে বের হন',
     'Exit Impersonation': 'ইমপারসনেশন থেকে বের হন',
     'Current Organization': 'বর্তমান প্রতিষ্ঠান',
     'Switch Workspace': 'ওয়ার্কস্পেস পরিবর্তন',
-    'Signed in as': 'লগইন আছেন',
+    'Signed in as': 'লগইন করা আছে',
     'Profile Settings': 'প্রোফাইল সেটিংস',
     'Organization Settings': 'প্রতিষ্ঠান সেটিংস',
     'Team & Staff Roles': 'টিম ও স্টাফ পদবি',
@@ -40,12 +47,12 @@ export const dictionary = {
     'Notifications': 'নোটিফিকেশন',
     'Workspace Alerts': 'ওয়ার্কস্পেস অ্যালার্ট',
     'Manage Subscription & Billing': 'সাবস্ক্রিপশন ও বিলিং পরিচালনা',
-    'Keep Subscription (Renew Now)': 'সাবস্ক্রিপশন নবায়ন করুন',
+    'Keep Subscription (Renew Now)': 'সাবস্ক্রিপশন চালু রাখুন (এখনই নবায়ন করুন)',
     'All caught up!': 'সব ঠিক আছে!',
     'Your subscription is in good standing. No urgent alerts.': 'আপনার সাবস্ক্রিপশন সচল রয়েছে। কোনো জরুরি সতর্কতা নেই।',
     'POS': 'পিওএস',
     'Open Point of Sale Terminal': 'পিওএস বিক্রয় টার্মিনাল খুলুন',
-    'Collapse to icon sidebar (expand on hover)': 'সাইডবার ছোট করুন',
+    'Collapse to icon sidebar (expand on hover)': 'সাইডবার ছোট করুন (হোভারে বড় হবে)',
     'Pin sidebar open': 'সাইডবার পিন করে রাখুন',
     'Unpin sidebar (Auto-collapse on hover)': 'সাইডবার আনপিন করুন',
 
@@ -62,7 +69,7 @@ export const dictionary = {
     'Sales & CRM': 'বিক্রয় ও কাস্টমার',
     'POS Terminal': 'পিওএস টার্মিনাল',
     'Quotations & Estimates': 'কোটেশন ও এস্টিমেট',
-    'Sales & Dispatches': 'বিক্রয় ও চালান',
+    'Sales & Dispatches': 'বিক্রয় ও ডিসপ্যাচ',
     'Delivery Challans': 'ডেলিভারি চালান',
     'Customer Due Ledger': 'গ্রাহক বাকি লেজার',
     'Return Management': 'রিটার্ন ব্যবস্থাপনা',
@@ -87,7 +94,7 @@ export const dictionary = {
     'Accounting & Finance': 'হিসাব ও অর্থায়ন',
     'Bank & MFS Accounts': 'ব্যাংক ও মোবাইল ব্যাংকিং',
     'Chart of Accounts': 'চার্ট অব অ্যাকাউন্টস',
-    'Journal Entries': 'জাবেদা এন্ট্রি',
+    'Journal Entries': 'জাবেদা এন্ট্রি (Journal Entry)',
     'Trial Balance': 'রেওয়ামিল (Trial Balance)',
     'Profit & Loss': 'লাভ-ক্ষতি হিসাব',
     'Balance Sheet': 'উদ্বৃত্তপত্র (Balance Sheet)',
@@ -99,7 +106,7 @@ export const dictionary = {
     'Team & Roles': 'টিম ও ভূমিকা',
 
     // Super Admin Dashboard KPIs & Grid
-    'Platform Super-Admin Control Plane': 'প্ল্যাটফর্ম সুপার-অ্যাডমিন কন্ট্রোল প্লেন',
+    'Platform Super-Admin Control Plane': 'প্ল্যাটফর্ম সুপার-অ্যাডমিন কন্ট্রোল প্যানেল',
     'Tenant provisioning, lifecycle administration, cross-tenant isolation enforcement, and workspace switching': 'টেন্যান্ট ব্যবস্থাপনা, লাইফসাইকেল অ্যাডমিনিস্ট্রেশন ও ওয়ার্কস্পেস নিয়ন্ত্রণ',
     'Total Tenants': 'মোট টেন্যান্ট',
     'Active Tenants': 'সক্রিয় টেন্যান্ট',
@@ -116,9 +123,9 @@ export const dictionary = {
     'All Statuses': 'সকল অবস্থা',
     'Active Only': 'শুধুমাত্র সক্রিয়',
     'Suspended Only': 'শুধুমাত্র স্থগিত',
-    'Clear': 'রিসেট',
+    'Clear': 'পরিষ্কার করুন',
     'New Tenant': 'নতুন টেন্যান্ট',
-    'Individual SaaS Account': 'ব্যক্তিগত প্রতিষ্ঠান অ্যাকাউন্ট',
+    'Individual SaaS Account': 'ব্যক্তিগত SaaS অ্যাকাউন্ট',
     'Tenant / Business': 'টেন্যান্ট / প্রতিষ্ঠান',
     'Plan & Billing': 'প্ল্যান ও বিলিং',
     'Created': 'তৈরির তারিখ',
@@ -144,6 +151,7 @@ export const dictionary = {
     'Suspend': 'স্থগিত করুন',
     'Reactivate': 'সক্রিয় করুন',
     'left': 'বাকি',
+    '{n} left': '{n} বাকি',
 
     // Tenant Dashboard
     'Admin Dashboard': 'অ্যাডমিন ড্যাশবোর্ড',
@@ -155,17 +163,22 @@ export const dictionary = {
     'Total Inventory Value': 'মোট ইনভেন্টরি স্টক মূল্য',
     'Across': 'মোট',
     'active catalog products': 'টি সক্রিয় ক্যাটালগ পণ্য',
+    'Across {n} active catalog products': 'মোট {n}টি সক্রিয় ক্যাটালগ পণ্য',
     'Total Sales Dispatched': 'মোট বিক্রয় সম্পন্ন',
     'total confirmed client orders': 'টি নিশ্চিতকৃত গ্রাহক অর্ডার',
+    '{n} total confirmed client orders': '{n}টি নিশ্চিতকৃত গ্রাহক অর্ডার',
     'Inbound Purchases': 'ক্রয় ইনবাউন্ড',
     'Open POs': 'টি খোলা পিও',
+    '{n} Open POs': '{n}টি খোলা পিও',
     'Worth': 'মূল্য',
-    'Low Stock Threshold': 'স্বল্প স্টক সতর্কতা',
+    'Worth {amount}': 'মূল্য {amount}',
+    'Low Stock Threshold': 'স্বল্প স্টক সীমা',
     'Items Low': 'টি পণ্য স্বল্প স্টকে',
+    '{n} Items Low': '{n}টি পণ্য স্বল্প স্টকে',
     'Needs purchase replenishment': 'পুনরায় ক্রয় প্রয়োজন',
     'Revenue & Procurement Trends': 'আয় ও ক্রয় প্রবণতা',
     'Monthly sales turnover vs. inventory procurement outlay': 'মাসিক বিক্রয় বনাম ক্রয় ব্যয় বিশ্লেষণ',
-    'Sales Invoices': 'বিক্রয় চালান',
+    'Sales Invoices': 'বিক্রয় ইনভয়েস',
     'Purchase POs': 'ক্রয় অর্ডার (PO)',
     'Inventory Holding by Category': 'ক্যাটাগরি অনুযায়ী ইনভেন্টরি স্টক',
     'Portfolio distribution and capital allocation': 'পোর্টফোলিও বিভাজন ও মূলধন বণ্টন',
@@ -192,24 +205,24 @@ export const dictionary = {
     'Walk-in Customer': 'সাধারণ ক্রেতা',
     'Direct Vendor': 'সরাসরি ভেন্ডর',
     'Ledger entry': 'লেজার এন্ট্রি',
-    'After': 'পরবর্তী',
+    'After': 'পরে',
     'Total Stock Valuation': 'মোট স্টক মূল্যায়ন',
     'Active Catalog Products': 'সক্রিয় ক্যাটালগ পণ্য',
     'Total Sales Revenue': 'মোট বিক্রয় আয়',
-    'Completed Sales Invoices': 'সম্পন্ন বিক্রয় চালান',
+    'Completed Sales Invoices': 'সম্পন্ন বিক্রয় ইনভয়েস',
     'Low Stock Alerts': 'স্বল্প স্টক সতর্কতা',
     'Items requiring reorder': 'পুনরায় অর্ডারের প্রয়োজনীয় পণ্য',
     'Pending Purchase POs': 'অপেক্ষমাণ ক্রয় অর্ডার',
     'Awaiting warehouse receipt': 'পণ্য রিসিভের অপেক্ষায়',
     'Quick Actions': 'দ্রুত কার্যক্রম',
-    'New Sale Invoice': 'নতুন বিক্রয় চালান',
+    'New Sale Invoice': 'নতুন বিক্রয় ইনভয়েস',
     'New Purchase PO': 'নতুন ক্রয় অর্ডার',
     'Add New Product': 'নতুন পণ্য যোগ',
     'Point of Sale (POS)': 'পয়েন্ট অব সেল (পিওএস)',
-    'Recent Orders & Invoices': 'সাম্প্রতিক অর্ডার ও চালান',
+    'Recent Orders & Invoices': 'সাম্প্রতিক অর্ডার ও ইনভয়েস',
     'Sales Orders': 'বিক্রয় অর্ডার',
     'Stock Movements': 'স্টক লেনদেন',
-    'Invoice #': 'চালান নং',
+    'Invoice #': 'ইনভয়েস নং',
     'PO #': 'পিও নং',
     'Customer': 'গ্রাহক',
     'Supplier': 'সরবরাহকারী',
@@ -219,7 +232,7 @@ export const dictionary = {
     'Paid': 'পরিশোধিত',
     'Partial': 'আংশিক',
     'Unpaid': 'অপরিশোধিত',
-    'Received': 'গৃহীত',
+    'Received': 'প্রাপ্ত',
     'Stock Breakdown by Category': 'ক্যাটাগরি অনুযায়ী স্টক বিভাজন',
     'Revenue vs Procurement Trend': 'বিক্রয় বনাম ক্রয়ের প্রবণতা',
     'Low Stock Warning': 'স্বল্প স্টকের সতর্কতা',
@@ -240,18 +253,106 @@ export const dictionary = {
     'Edit': 'সম্পাদনা',
     'View': 'দেখুন',
     'Close': 'বন্ধ করুন',
-    'Export': 'রপ্তানি',
+    'Export': 'এক্সপোর্ট',
     'Print': 'প্রিন্ট',
     'Search': 'অনুসন্ধান',
     'Status': 'অবস্থা',
+    'Download PDF': 'পিডিএফ ডাউনলোড',
+    'Download Excel': 'এক্সেল ডাউনলোড',
+    'Export Excel': 'এক্সেল এক্সপোর্ট',
+    'Date Range': 'তারিখের পরিসীমা',
+    'All Time': 'সর্বকালীন',
+    'Today': 'আজ',
+    'This Week': 'এই সপ্তাহ',
+    'This Month': 'এই মাস',
+    'Last Month': 'গত মাস',
+    'This Year': 'এই বছর',
+    'Custom': 'কাস্টম',
+    'Custom Range': 'নির্দিষ্ট সময়কাল',
+    'From Date': 'শুরুর তারিখ',
+    'To Date': 'শেষ তারিখ',
+    'Apply': 'প্রয়োগ করুন',
+    'Batch & Expiry Radar': 'ব্যাচ ও মেয়াদোত্তীর্ণ রাডার',
+    'Stock Aging & Dead Stock': 'স্টক এজিং ও ডেড স্টক',
+    'Batch Expiry': 'ব্যাচ মেয়াদ',
+    'Stock Aging': 'স্টক এজিং',
+    'Expired Batches': 'মেয়াদোত্তীর্ণ ব্যাচ',
+    'Expiring (< 30 Days)': 'মেয়াদ শেষ (< ৩০ দিন)',
+    'Warning (< 90 Days)': 'সতর্কতা (< ৯০ দিন)',
+    'Capital at Risk': 'ঝুঁকিপূর্ণ মূলধন',
+    'Fresh (0-30 Days)': 'সতেজ (০-৩০ দিন)',
+    'Moderate (31-60 Days)': 'স্বাভাবিক (৩১-৬০ দিন)',
+    'Slow-Moving (61-90 Days)': 'ধীরগতির (৬১-৯০ দিন)',
+    'Dead Stock (90+ Days)': 'ডেড স্টক (৯০+ দিন)',
+    'Days Inactive': 'অচল দিন',
+    'Frozen Capital': 'স্থবির মূলধন',
+    'Aging Bracket': 'এজিং ধাপ',
+    'Batch #': 'ব্যাচ নং',
+    'Expiry Date': 'মেয়াদোত্তীর্ণ তারিখ',
+    'Mfg Date': 'উৎপাদন তারিখ',
+    'Days Remaining': 'বাকি দিন',
+    'Expiry Status': 'মেয়াদের অবস্থা',
+    'All Batches': 'সকল ব্যাচ',
+    'All Brackets': 'সকল ধাপ',
+    'Healthy': 'সন্তোষজনক',
+    'Urgent': 'জরুরি',
+    'Dead Stock': 'ডেড স্টক',
+    'Fresh': 'সতেজ',
+    'Moderate': 'স্বাভাবিক',
+    'Slow': 'ধীরগতি',
+    'Sales & Profit Margin': 'বিক্রয় ও মোট লাভ',
+    'Profitability': 'লাভজনকতা',
+    'Total Revenue': 'মোট বিক্রয় আয়',
+    'Total COGS': 'মোট পণ্য ব্যয় (COGS)',
+    'Gross Profit': 'মোট লাভ (গ্রস প্রফিট)',
+    'Gross Margin': 'গ্রস মার্জিন',
+    'Units Sold': 'বিক্রীত একক',
+    'Avg Selling Price': 'গড় বিক্রয় মূল্য',
+    'Margin %': 'মার্জিন %',
+    'Performance': 'পারফরম্যান্স',
+    'All Performance Levels': 'সকল পারফরম্যান্স স্তর',
+    'High Margin (>= 40%)': 'উচ্চ মার্জিন (>= ৪০%)',
+    'Healthy (20-39%)': 'সন্তোষজনক (২০-৩৯%)',
+    'Low (1-19%)': 'স্বল্প মার্জিন (১-১৯%)',
+    'Loss Making (<= 0%)': 'লোকসানজনক (<= ০%)',
+    'Revenue': 'বিক্রয় আয়',
+    'COGS': 'পণ্য ব্যয়',
 };
 
-export function t(key, fallback = null) {
+// Replace {placeholders}. In Bengali, numbers become Bengali digits.
+function interpolate(text, params, lang) {
+    if (!params) return text;
+    return text.replace(/\{(\w+)\}/g, (match, name) => {
+        if (!(name in params)) return match;
+        const value = params[name];
+        const isNumeric = typeof value === 'number' || (typeof value === 'string' && /^\d+$/.test(value));
+        return lang === 'bn' && isNumeric ? toBnDigits(value) : value;
+    });
+}
+
+// Usage:
+//   t('Save')
+//   t('Across {n} active catalog products', { n: 5 })
+//   t('Save', 'fallback text')
+//   t('Across {n} active catalog products', 'fallback {n}', { n: 5 })
+export function t(key, fallbackOrParams = null, maybeParams = null) {
     if (!key) return '';
-    if (currentLang.value === 'bn') {
-        return dictionary[key] || fallback || key;
+
+    let fallback = null;
+    let params = null;
+    if (fallbackOrParams && typeof fallbackOrParams === 'object') {
+        params = fallbackOrParams;
+    } else {
+        fallback = fallbackOrParams;
+        params = maybeParams;
     }
-    return fallback || key;
+
+    const lang = currentLang.value;
+    const text = lang === 'bn'
+        ? (dictionary[key] || fallback || key)
+        : (fallback || key);
+
+    return interpolate(text, params, lang);
 }
 
 export function useTranslation() {
@@ -260,6 +361,7 @@ export function useTranslation() {
         setLang,
         toggleLang,
         t,
+        toBnDigits,
         dictionary,
     };
 }
