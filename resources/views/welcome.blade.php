@@ -133,6 +133,20 @@
     </head>
 
     <body class="min-h-screen relative selection:bg-indigo-600 selection:text-white">
+        @if(request()->has('preview') || (auth()->check() && auth()->user()->isSuperAdmin()))
+            <!-- Super Admin Preview Notice Bar -->
+            <div class="bg-indigo-600/95 backdrop-blur border-b border-indigo-400/30 text-white text-xs font-semibold px-4 py-2 flex flex-wrap items-center justify-between gap-2 relative z-50 shadow-lg">
+                <div class="flex items-center gap-2">
+                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Landing Page Preview — You are viewing the live public site as Super Admin</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a href="{{ route('admin.site-settings') }}" class="text-indigo-100 hover:text-white underline transition-colors">Edit Settings</a>
+                    <a href="{{ route('admin.dashboard') }}" class="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white font-bold transition-colors">Back to Dashboard &rarr;</a>
+                </div>
+            </div>
+        @endif
+
         <!-- Ambient Glowing Aura -->
         <div class="ambient-glow glow-primary"></div>
         <div class="ambient-glow glow-secondary"></div>
@@ -200,11 +214,11 @@
                     @if (Route::has('login'))
                         @auth
                             <a 
-                                href="{{ url('/dashboard') }}" 
+                                href="{{ auth()->user()?->isSuperAdmin() ? route('admin.dashboard') : url('/dashboard') }}" 
                                 id="btn-nav-workspace"
                                 class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
                             >
-                                <span>Open Workspace</span>
+                                <span>{{ auth()->user()?->isSuperAdmin() ? 'Back to Admin' : 'Open Workspace' }}</span>
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                                 </svg>
@@ -282,7 +296,7 @@
                             'headline_prefix'    => 'The Operating System for',
                             'headline_highlight' => 'Modern Inventory & Supply Chains',
                             'subtext'            => 'Empower your organization with multi-warehouse tracking, atomic stock reservation, double-entry financial accounting, POS checkout, workshop service ticketing, and vectorized PDF invoicing — completely tenant-isolated.',
-                            'primary_cta_text'   => 'Start 14-Day Free Trial',
+                            'primary_cta_text'   => 'Start 3-Day Free Trial',
                             'primary_cta_url'    => route('register'),
                             'secondary_cta_text' => 'Explore Modules',
                             'secondary_cta_url'  => '#features',
@@ -347,7 +361,7 @@
                                                 href="{{ !empty($slide['primary_cta_url']) ? $slide['primary_cta_url'] : route('register') }}" 
                                                 class="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-[1.02]"
                                             >
-                                                <span>{{ !empty($slide['primary_cta_text']) ? $slide['primary_cta_text'] : 'Start 14-Day Free Trial' }}</span>
+                                                <span>{{ !empty($slide['primary_cta_text']) ? $slide['primary_cta_text'] : 'Start 3-Day Free Trial' }}</span>
                                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                                                 </svg>
@@ -1007,7 +1021,7 @@
                         <span class="gradient-accent">Growing Bangladeshi Enterprises</span>
                     </h2>
                     <p class="text-slate-400 mt-4 text-sm sm:text-base">
-                        Start with a full 14-day trial. Upgrade seamlessly with bKash, Nagad, or Bank Transfer. No hidden fees or per-user lock-in.
+                        Start with a full 3-day trial. Upgrade seamlessly with bKash, Nagad, or Bank Transfer. No hidden fees or per-user lock-in.
                     </p>
 
                     <!-- Billing Cycle Toggle -->
@@ -1766,7 +1780,7 @@
                 'Go to Dashboard': 'ড্যাশবোর্ডে যান',
 
                 // Hero & CTA Actions
-                'Start 14-Day Free Trial': '১৪ দিনের ফ্রি ট্রায়াল শুরু করুন',
+                'Start 3-Day Free Trial': '৩ দিনের ফ্রি ট্রায়াল শুরু করুন',
                 'Explore Modules': 'মডিউলগুলো দেখুন',
                 'Start Free POS Trial': 'ফ্রি পিওএস ট্রায়াল নিন',
                 'See POS Capabilities': 'পিওএস ফিচারগুলো দেখুন',

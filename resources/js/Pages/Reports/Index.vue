@@ -23,6 +23,7 @@ const props = defineProps({
     expiryData: Object,
     agingData: Object,
     profitabilityData: Object,
+    financialSummary: Object,
 });
 
 const currentTab = ref(props.filters?.tab || props.activeTab || 'valuation');
@@ -45,6 +46,9 @@ const agingSearch = ref(props.filters?.aging_search || '');
 const profitabilityPerformance = ref(props.filters?.profitability_performance || 'all');
 const profitabilityCategoryId = ref(props.filters?.profitability_category_id || '');
 const profitabilitySearch = ref(props.filters?.profitability_search || '');
+
+const financialScope = ref(props.filters?.financial_scope || 'all');
+const recentFinTab = ref('sales');
 
 const datePresets = [
     { id: 'all_time', label: 'All Time' },
@@ -89,6 +93,9 @@ function applyFilter() {
     if (profitabilityPerformance.value && profitabilityPerformance.value !== 'all') params.profitability_performance = profitabilityPerformance.value;
     if (profitabilityCategoryId.value) params.profitability_category_id = profitabilityCategoryId.value;
     if (profitabilitySearch.value) params.profitability_search = profitabilitySearch.value;
+    if (currentTab.value === 'financial_summary' && financialScope.value && financialScope.value !== 'all') {
+        params.financial_scope = financialScope.value;
+    }
 
     router.get(route('reports.index'), params, {
         preserveState: true,
@@ -131,6 +138,13 @@ function resetProfitabilityFilter() {
     applyFilter();
 }
 
+function resetFinancialFilter() {
+    datePreset.value = 'all_time';
+    startDate.value = '';
+    endDate.value = '';
+    applyFilter();
+}
+
 function buildExportParams() {
     const params = new URLSearchParams();
     params.append('tab', currentTab.value);
@@ -152,6 +166,9 @@ function buildExportParams() {
     if (profitabilityPerformance.value && profitabilityPerformance.value !== 'all') params.append('profitability_performance', profitabilityPerformance.value);
     if (profitabilityCategoryId.value) params.append('profitability_category_id', profitabilityCategoryId.value);
     if (profitabilitySearch.value) params.append('profitability_search', profitabilitySearch.value);
+    if (currentTab.value === 'financial_summary' && financialScope.value && financialScope.value !== 'all') {
+        params.append('financial_scope', financialScope.value);
+    }
     return params.toString();
 }
 
@@ -161,6 +178,14 @@ function downloadPdf() {
 
 function downloadExcel() {
     window.open(route('reports.excel') + '?' + buildExportParams(), '_blank');
+}
+
+function exportSingle(scope, format) {
+    const params = new URLSearchParams(buildExportParams());
+    params.set('tab', 'financial_summary');
+    params.set('financial_scope', scope);
+    const url = format === 'excel' ? route('reports.excel') : route('reports.pdf');
+    window.open(url + '?' + params.toString(), '_blank');
 }
 </script>
 
@@ -181,6 +206,18 @@ function downloadExcel() {
             <!-- Tab Selector Bar -->
             <div class="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
                 <div class="inline-flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+                    <button
+                        type="button"
+                        @click="setTab('financial_summary')"
+                        :class="currentTab === 'financial_summary' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                        class="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        <span>{{ t('Financial Summary') }}</span>
+                    </button>
+
                     <button
                         type="button"
                         @click="setTab('valuation')"
@@ -282,8 +319,8 @@ function downloadExcel() {
                 </div>
             </div>
 
-            <!-- Date Range Filter Toolbar (Visible when Movements or Profitability tab active) -->
-            <div v-if="currentTab === 'movements' || currentTab === 'profitability'" class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <!-- Date Range Filter Toolbar (Visible when Financial Summary, Movements or Profitability tab active) -->
+            <div v-if="currentTab === 'financial_summary' || currentTab === 'movements' || currentTab === 'profitability'" class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
                 <div class="flex flex-wrap items-center gap-1.5">
                     <span class="text-xs font-bold text-slate-500 mr-2 flex items-center gap-1.5">
                         <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -330,7 +367,1036 @@ function downloadExcel() {
                 </div>
             </div>
 
-            <!-- TAB 1: STOCK VALUATION -->
+            <!-- TAB 0: EXECUTIVE FINANCIAL SUMMARY (SALES, PURCHASES, EXPENSES & REVENUE) -->
+            <div v-if="currentTab === 'financial_summary'" class="space-y-6">
+                <!-- Individual Report Scope Selector Bar -->
+                <div class="bg-white border border-slate-200/80 rounded-2xl p-3 sm:p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="text-xs font-bold text-slate-500 mr-2 flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                            </svg>
+                            {{ t('Report Scope') }}:
+                        </span>
+
+                        <button
+                            type="button"
+                            @click="financialScope = 'all'; applyFilter()"
+                            :class="financialScope === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                            class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+                        >
+                            <span>{{ t('All Combined (Executive)') }}</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            @click="financialScope = 'sales'; applyFilter()"
+                            :class="financialScope === 'sales' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200/60'"
+                            class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+                        >
+                            <span>{{ t('Sales Report Only') }}</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            @click="financialScope = 'purchases'; applyFilter()"
+                            :class="financialScope === 'purchases' ? 'bg-amber-600 text-white shadow-xs' : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200/60'"
+                            class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+                        >
+                            <span>{{ t('Purchase Report Only') }}</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            @click="financialScope = 'expenses'; applyFilter()"
+                            :class="financialScope === 'expenses' ? 'bg-rose-600 text-white shadow-xs' : 'bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200/60'"
+                            class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+                        >
+                            <span>{{ t('Expense Report Only') }}</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            @click="financialScope = 'revenue'; applyFilter()"
+                            :class="financialScope === 'revenue' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-indigo-50 text-indigo-800 hover:bg-indigo-100 border border-indigo-200/60'"
+                            class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+                        >
+                            <span>{{ t('Revenue & Profit Only') }}</span>
+                        </button>
+                    </div>
+
+                    <!-- Individual Quick Exports -->
+                    <div class="flex items-center gap-2">
+                        <button
+                            type="button"
+                            @click="downloadPdf"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition cursor-pointer shadow-2xs"
+                        >
+                            <svg class="w-3.5 h-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>{{ t('Download PDF') }}</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            @click="downloadExcel"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition cursor-pointer shadow-2xs"
+                        >
+                            <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>{{ t('Download Excel') }}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4 Top Executive KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- 1. Total Sales Volume -->
+                    <div class="bg-white rounded-2xl p-5 border border-emerald-100 shadow-xs relative overflow-hidden transition hover:shadow-md">
+                        <div class="absolute -right-3 -top-3 w-16 h-16 bg-emerald-50 rounded-full opacity-60"></div>
+                        <div class="relative z-10 flex items-start justify-between">
+                            <div class="space-y-1">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">{{ t('Total Sales') }}</span>
+                                <div class="text-2xl font-black text-emerald-950">
+                                    <CurrencyDisplay :amount="financialSummary?.summary?.total_sales || 0" />
+                                </div>
+                                <div class="text-[11px] text-slate-500 font-medium">
+                                    {{ Number(financialSummary?.summary?.sales_count || 0).toLocaleString() }} {{ t('Orders') }}
+                                    <span v-if="(financialSummary?.summary?.sales_count || 0) > 0" class="text-slate-400">
+                                        (Avg: <CurrencyDisplay :amount="financialSummary?.summary?.avg_order_value || 0" />)
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-emerald-100 text-emerald-700 shrink-0">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                            <span class="text-slate-500">Collected: <strong class="text-emerald-700 font-mono"><CurrencyDisplay :amount="financialSummary?.summary?.sales_paid || 0" /></strong></span>
+                            <span class="text-slate-500">Due: <strong class="text-rose-600 font-mono"><CurrencyDisplay :amount="financialSummary?.summary?.sales_due || 0" /></strong></span>
+                        </div>
+                    </div>
+
+                    <!-- 2. Total Purchases Volume -->
+                    <div class="bg-white rounded-2xl p-5 border border-amber-100 shadow-xs relative overflow-hidden transition hover:shadow-md">
+                        <div class="absolute -right-3 -top-3 w-16 h-16 bg-amber-50 rounded-full opacity-60"></div>
+                        <div class="relative z-10 flex items-start justify-between">
+                            <div class="space-y-1">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-amber-700">{{ t('Total Purchases') }}</span>
+                                <div class="text-2xl font-black text-amber-950">
+                                    <CurrencyDisplay :amount="financialSummary?.summary?.total_purchases || 0" />
+                                </div>
+                                <div class="text-[11px] text-slate-500 font-medium">
+                                    {{ Number(financialSummary?.summary?.purchases_count || 0).toLocaleString() }} POs
+                                    <span v-if="(financialSummary?.summary?.purchases_count || 0) > 0" class="text-slate-400">
+                                        (Avg: <CurrencyDisplay :amount="financialSummary?.summary?.avg_purchase_value || 0" />)
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-amber-100 text-amber-700 shrink-0">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                            <span class="text-slate-500">Paid: <strong class="text-slate-800 font-mono"><CurrencyDisplay :amount="financialSummary?.summary?.purchases_paid || 0" /></strong></span>
+                            <span class="text-slate-500">Payable: <strong class="text-amber-700 font-mono"><CurrencyDisplay :amount="financialSummary?.summary?.purchases_due || 0" /></strong></span>
+                        </div>
+                    </div>
+
+                    <!-- 3. Operating Expenses -->
+                    <div class="bg-white rounded-2xl p-5 border border-rose-100 shadow-xs relative overflow-hidden transition hover:shadow-md">
+                        <div class="absolute -right-3 -top-3 w-16 h-16 bg-rose-50 rounded-full opacity-60"></div>
+                        <div class="relative z-10 flex items-start justify-between">
+                            <div class="space-y-1">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-rose-700">{{ t('Total Expenses') }}</span>
+                                <div class="text-2xl font-black text-rose-950">
+                                    <CurrencyDisplay :amount="financialSummary?.summary?.total_expenses || 0" />
+                                </div>
+                                <div class="text-[11px] text-slate-500 font-medium">
+                                    {{ Number(financialSummary?.summary?.expenses_count || 0).toLocaleString() }} vouchers recorded
+                                </div>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-rose-100 text-rose-700 shrink-0">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                            <span class="text-slate-500">Categories: <strong class="text-slate-800">{{ financialSummary?.by_category?.length || 0 }}</strong></span>
+                            <span class="text-slate-500">Overhead share: <strong class="text-rose-600">{{ (financialSummary?.summary?.total_sales || 0) > 0 ? Math.round(((financialSummary?.summary?.total_expenses || 0) / financialSummary?.summary?.total_sales) * 100) : 0 }}%</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- 4. Net Operating Profit -->
+                    <div
+                        class="bg-white rounded-2xl p-5 border shadow-xs relative overflow-hidden transition hover:shadow-md"
+                        :class="(financialSummary?.summary?.net_profit || 0) >= 0 ? 'border-indigo-100' : 'border-rose-200'"
+                    >
+                        <div
+                            class="absolute -right-3 -top-3 w-16 h-16 rounded-full opacity-60"
+                            :class="(financialSummary?.summary?.net_profit || 0) >= 0 ? 'bg-indigo-50' : 'bg-rose-50'"
+                        ></div>
+                        <div class="relative z-10 flex items-start justify-between">
+                            <div class="space-y-1">
+                                <span
+                                    class="text-[11px] font-bold uppercase tracking-wider"
+                                    :class="(financialSummary?.summary?.net_profit || 0) >= 0 ? 'text-indigo-700' : 'text-rose-700'"
+                                >
+                                    {{ t('Net Profit') }}
+                                </span>
+                                <div
+                                    class="text-2xl font-black"
+                                    :class="(financialSummary?.summary?.net_profit || 0) >= 0 ? 'text-indigo-950' : 'text-rose-950'"
+                                >
+                                    <CurrencyDisplay :amount="financialSummary?.summary?.net_profit || 0" />
+                                </div>
+                                <div class="text-[11px] text-slate-500 font-medium">
+                                    Net Margin: <strong :class="(financialSummary?.summary?.net_margin_percent || 0) >= 0 ? 'text-indigo-600' : 'text-rose-600'">{{ financialSummary?.summary?.net_margin_percent || 0 }}%</strong>
+                                    (Gross: {{ financialSummary?.summary?.gross_margin_percent || 0 }}%)
+                                </div>
+                            </div>
+                            <div
+                                class="p-2.5 rounded-xl shrink-0"
+                                :class="(financialSummary?.summary?.net_profit || 0) >= 0 ? 'bg-indigo-100 text-indigo-700' : 'bg-rose-100 text-rose-700'"
+                            >
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                            <span class="text-slate-500">Liquid Cash Flow:</span>
+                            <span
+                                class="font-mono font-bold"
+                                :class="(financialSummary?.summary?.net_cash_flow || 0) >= 0 ? 'text-emerald-700' : 'text-rose-600'"
+                            >
+                                <CurrencyDisplay :amount="financialSummary?.summary?.net_cash_flow || 0" />
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SCOPE 1: SALES REPORT ONLY -->
+                <div v-if="financialScope === 'sales'" class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden space-y-0">
+                    <div class="p-4 sm:p-5 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h2 class="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                {{ t('Sales Report Only') }}
+                            </h2>
+                            <p class="text-xs text-slate-500">Full list of sales invoices and receivables in the selected period ({{ datePresets.find(p => p.id === datePreset)?.label || 'Custom' }})</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button
+                                type="button"
+                                @click="exportSingle('sales', 'pdf')"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                            >
+                                <svg class="w-3.5 h-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span>PDF</span>
+                            </button>
+                            <button
+                                type="button"
+                                @click="exportSingle('sales', 'excel')"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                            >
+                                <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span>Excel</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                                <tr>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Order #</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Date</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Customer</th>
+                                    <th class="px-5 py-3.5 text-center whitespace-nowrap">Status</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Total</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Paid</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Due</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr v-for="order in financialSummary?.sales_list || []" :key="order.id" class="hover:bg-slate-50 transition">
+                                    <td class="px-5 py-3.5 font-mono font-bold text-indigo-600 whitespace-nowrap">{{ order.order_number }}</td>
+                                    <td class="px-5 py-3.5 text-slate-500 whitespace-nowrap">{{ formatDate(order.order_date) }}</td>
+                                    <td class="px-5 py-3.5 font-medium text-slate-800 whitespace-nowrap">{{ order.customer_name }}</td>
+                                    <td class="px-5 py-3.5 text-center whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-slate-100 text-slate-700">
+                                            {{ order.status }}
+                                        </span>
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
+                                        <CurrencyDisplay :amount="order.total_amount" />
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono font-bold text-emerald-600 whitespace-nowrap">
+                                        <CurrencyDisplay :amount="order.paid_amount" />
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono font-bold whitespace-nowrap" :class="Number(order.due_amount) > 0 ? 'text-rose-600' : 'text-slate-400'">
+                                        <CurrencyDisplay :amount="order.due_amount" />
+                                    </td>
+                                </tr>
+                                <tr v-if="!financialSummary?.sales_list?.length">
+                                    <td colspan="7" class="px-5 py-8 text-center text-slate-400">
+                                        No sales orders found for this period.
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot v-if="financialSummary?.sales_list?.length" class="bg-slate-50 font-bold border-t border-slate-200">
+                                <tr>
+                                    <td colspan="4" class="px-5 py-3 text-slate-700">TOTAL ({{ financialSummary?.summary?.sales_count }} Orders)</td>
+                                    <td class="px-5 py-3 text-right font-mono font-black text-slate-900">
+                                        <CurrencyDisplay :amount="financialSummary?.summary?.total_sales || 0" />
+                                    </td>
+                                    <td class="px-5 py-3 text-right font-mono font-black text-emerald-700">
+                                        <CurrencyDisplay :amount="financialSummary?.summary?.sales_paid || 0" />
+                                    </td>
+                                    <td class="px-5 py-3 text-right font-mono font-black text-rose-700">
+                                        <CurrencyDisplay :amount="financialSummary?.summary?.sales_due || 0" />
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SCOPE 2: PURCHASE REPORT ONLY -->
+                <div v-else-if="financialScope === 'purchases'" class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden space-y-0">
+                    <div class="p-4 sm:p-5 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h2 class="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                                {{ t('Purchase Report Only') }}
+                            </h2>
+                            <p class="text-xs text-slate-500">Full list of procurement orders and payables in the selected period ({{ datePresets.find(p => p.id === datePreset)?.label || 'Custom' }})</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button
+                                type="button"
+                                @click="exportSingle('purchases', 'pdf')"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                            >
+                                <svg class="w-3.5 h-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span>PDF</span>
+                            </button>
+                            <button
+                                type="button"
+                                @click="exportSingle('purchases', 'excel')"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                            >
+                                <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span>Excel</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                                <tr>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">PO #</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Date</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Supplier</th>
+                                    <th class="px-5 py-3.5 text-center whitespace-nowrap">Status</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Total</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Paid</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Due</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr v-for="purch in financialSummary?.purchases_list || []" :key="purch.id" class="hover:bg-slate-50 transition">
+                                    <td class="px-5 py-3.5 font-mono font-bold text-amber-600 whitespace-nowrap">{{ purch.order_number }}</td>
+                                    <td class="px-5 py-3.5 text-slate-500 whitespace-nowrap">{{ formatDate(purch.order_date) }}</td>
+                                    <td class="px-5 py-3.5 font-medium text-slate-800 whitespace-nowrap">{{ purch.supplier_name }}</td>
+                                    <td class="px-5 py-3.5 text-center whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-slate-100 text-slate-700">
+                                            {{ purch.status }}
+                                        </span>
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
+                                        <CurrencyDisplay :amount="purch.total_amount" />
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono font-bold text-slate-700 whitespace-nowrap">
+                                        <CurrencyDisplay :amount="purch.paid_amount" />
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono font-bold whitespace-nowrap" :class="Number(purch.due_amount) > 0 ? 'text-amber-700' : 'text-slate-400'">
+                                        <CurrencyDisplay :amount="purch.due_amount" />
+                                    </td>
+                                </tr>
+                                <tr v-if="!financialSummary?.purchases_list?.length">
+                                    <td colspan="7" class="px-5 py-8 text-center text-slate-400">
+                                        No purchase orders found for this period.
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot v-if="financialSummary?.purchases_list?.length" class="bg-slate-50 font-bold border-t border-slate-200">
+                                <tr>
+                                    <td colspan="4" class="px-5 py-3 text-slate-700">TOTAL ({{ financialSummary?.summary?.purchases_count }} Orders)</td>
+                                    <td class="px-5 py-3 text-right font-mono font-black text-slate-900">
+                                        <CurrencyDisplay :amount="financialSummary?.summary?.total_purchases || 0" />
+                                    </td>
+                                    <td class="px-5 py-3 text-right font-mono font-black text-slate-700">
+                                        <CurrencyDisplay :amount="financialSummary?.summary?.purchases_paid || 0" />
+                                    </td>
+                                    <td class="px-5 py-3 text-right font-mono font-black text-amber-700">
+                                        <CurrencyDisplay :amount="financialSummary?.summary?.purchases_due || 0" />
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SCOPE 3: EXPENSE REPORT ONLY -->
+                <div v-else-if="financialScope === 'expenses'" class="space-y-6">
+                    <!-- Category breakdown cards -->
+                    <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                            <div>
+                                <h2 class="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                                    {{ t('Expense Categories') }} ({{ financialSummary?.by_category?.length || 0 }})
+                                </h2>
+                                <p class="text-xs text-slate-500">Breakdown of operational expenses across categories in {{ datePresets.find(p => p.id === datePreset)?.label || 'Custom' }}</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    @click="exportSingle('expenses', 'pdf')"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                                >
+                                    <svg class="w-3.5 h-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span>PDF</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="exportSingle('expenses', 'excel')"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                                >
+                                    <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span>Excel</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            <div v-for="cat in financialSummary?.by_category || []" :key="cat.category_name" class="p-3.5 rounded-xl border border-slate-100 bg-slate-50/50 space-y-2">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="font-bold text-slate-800">{{ cat.category_name }}</span>
+                                    <span class="text-[10px] text-slate-400 font-mono">{{ cat.vouchers_count }} vouchers</span>
+                                </div>
+                                <div class="flex items-baseline justify-between">
+                                    <span class="font-mono font-black text-slate-900 text-sm"><CurrencyDisplay :amount="cat.total_amount" /></span>
+                                    <span class="font-mono text-xs font-bold text-rose-600">{{ cat.percentage }}%</span>
+                                </div>
+                                <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                    <div class="h-full bg-rose-500 rounded-full" :style="{ width: `${Math.min(100, Math.max(0, cat.percentage))}%` }"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Full Expenses Vouchers Table -->
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                        <div class="p-4 sm:p-5 border-b border-slate-100 bg-slate-50/50">
+                            <h3 class="text-sm font-bold text-slate-900">Detailed Expense Vouchers ({{ financialSummary?.expenses_list?.length || 0 }})</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                                    <tr>
+                                        <th class="px-5 py-3.5 whitespace-nowrap">Expense #</th>
+                                        <th class="px-5 py-3.5 whitespace-nowrap">Date</th>
+                                        <th class="px-5 py-3.5 whitespace-nowrap">Category</th>
+                                        <th class="px-5 py-3.5 whitespace-nowrap">Title / Payee</th>
+                                        <th class="px-5 py-3.5 text-center whitespace-nowrap">Method</th>
+                                        <th class="px-5 py-3.5 text-right whitespace-nowrap">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr v-for="exp in financialSummary?.expenses_list || []" :key="exp.id" class="hover:bg-slate-50 transition">
+                                        <td class="px-5 py-3.5 font-mono font-bold text-rose-600 whitespace-nowrap">{{ exp.expense_number }}</td>
+                                        <td class="px-5 py-3.5 text-slate-500 whitespace-nowrap">{{ formatDate(exp.expense_date) }}</td>
+                                        <td class="px-5 py-3.5 whitespace-nowrap">
+                                            <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+                                                {{ exp.category_name }}
+                                            </span>
+                                        </td>
+                                        <td class="px-5 py-3.5 whitespace-nowrap">
+                                            <div class="font-medium text-slate-800">{{ exp.title }}</div>
+                                            <div v-if="exp.vendor_or_payee" class="text-[10px] text-slate-400">Payee: {{ exp.vendor_or_payee }}</div>
+                                        </td>
+                                        <td class="px-5 py-3.5 text-center whitespace-nowrap font-mono text-[11px] text-slate-500">
+                                            {{ exp.payment_method || 'Cash' }}
+                                        </td>
+                                        <td class="px-5 py-3.5 text-right font-mono font-bold text-rose-700 whitespace-nowrap">
+                                            <CurrencyDisplay :amount="exp.amount" />
+                                        </td>
+                                    </tr>
+                                    <tr v-if="!financialSummary?.expenses_list?.length">
+                                        <td colspan="6" class="px-5 py-8 text-center text-slate-400">
+                                            No expense records found in this period.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tfoot v-if="financialSummary?.expenses_list?.length" class="bg-slate-50 font-bold border-t border-slate-200">
+                                    <tr>
+                                        <td colspan="5" class="px-5 py-3 text-slate-700">TOTAL ({{ financialSummary?.summary?.expenses_count }} Vouchers)</td>
+                                        <td class="px-5 py-3 text-right font-mono font-black text-rose-700">
+                                            <CurrencyDisplay :amount="financialSummary?.summary?.total_expenses || 0" />
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SCOPE 4: REVENUE & PROFIT REPORT ONLY -->
+                <div v-else-if="financialScope === 'revenue'" class="space-y-6">
+                    <div class="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-xs space-y-5">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                            <div>
+                                <h2 class="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
+                                    {{ t('Revenue & Profit Only') }}
+                                </h2>
+                                <p class="text-xs text-slate-500">Comprehensive income and operating profit statement for {{ datePresets.find(p => p.id === datePreset)?.label || 'Custom' }}</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    @click="exportSingle('revenue', 'pdf')"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                                >
+                                    <svg class="w-3.5 h-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span>PDF</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="exportSingle('revenue', 'excel')"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                                >
+                                    <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span>Excel</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Waterfall rows -->
+                        <div class="space-y-3 text-xs">
+                            <div class="flex items-center justify-between p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-100">
+                                <span class="font-bold text-slate-800">1. Total Invoiced Sales Revenue</span>
+                                <span class="font-mono font-black text-emerald-800 text-sm">
+                                    <CurrencyDisplay :amount="financialSummary?.summary?.total_sales || 0" />
+                                </span>
+                            </div>
+
+                            <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100 pl-6">
+                                <span class="text-slate-600 font-medium">Less: Sourcing &amp; Procurement Purchases</span>
+                                <span class="font-mono font-bold text-amber-700">
+                                    -<CurrencyDisplay :amount="financialSummary?.summary?.total_purchases || 0" />
+                                </span>
+                            </div>
+
+                            <div class="flex items-center justify-between p-3.5 rounded-xl bg-indigo-50/40 border border-indigo-100">
+                                <span class="font-bold text-indigo-950">2. Gross Operational Profit</span>
+                                <div class="text-right">
+                                    <span class="font-mono font-bold text-indigo-900 text-sm">
+                                        <CurrencyDisplay :amount="financialSummary?.summary?.gross_profit || 0" />
+                                    </span>
+                                    <span class="ml-2 text-xs font-mono font-bold text-indigo-600">
+                                        ({{ financialSummary?.summary?.gross_margin_percent || 0 }}%)
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100 pl-6">
+                                <span class="text-slate-600 font-medium">Less: General &amp; Operational Expenses</span>
+                                <span class="font-mono font-bold text-rose-700">
+                                    -<CurrencyDisplay :amount="financialSummary?.summary?.total_expenses || 0" />
+                                </span>
+                            </div>
+
+                            <div
+                                class="flex items-center justify-between p-4 rounded-xl border shadow-xs"
+                                :class="(financialSummary?.summary?.net_profit || 0) >= 0 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-rose-600 text-white border-rose-600'"
+                            >
+                                <span class="font-black text-sm uppercase tracking-wide">3. Net Operating Profit</span>
+                                <div class="text-right">
+                                    <span class="font-mono font-black text-base">
+                                        <CurrencyDisplay :amount="financialSummary?.summary?.net_profit || 0" />
+                                    </span>
+                                    <span class="ml-2 text-xs font-mono font-bold text-indigo-100">
+                                        ({{ financialSummary?.summary?.net_margin_percent || 0 }}% Net Margin)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Progress Distribution Bar -->
+                        <div v-if="(financialSummary?.summary?.total_sales || 0) > 0" class="pt-2">
+                            <div class="flex items-center justify-between text-xs text-slate-500 font-medium mb-1.5">
+                                <span>Revenue Distribution</span>
+                                <div class="flex items-center gap-3 text-[11px]">
+                                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Purchases</span>
+                                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span> Expenses</span>
+                                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> Net Profit</span>
+                                </div>
+                            </div>
+                            <div class="h-3 bg-slate-100 rounded-full flex overflow-hidden">
+                                <div
+                                    class="bg-amber-400 transition-all duration-300"
+                                    :style="{ width: `${Math.min(100, Math.max(0, ((financialSummary?.summary?.total_purchases || 0) / financialSummary?.summary?.total_sales) * 100))}%` }"
+                                    :title="`Purchases: ${Math.round(((financialSummary?.summary?.total_purchases || 0) / financialSummary?.summary?.total_sales) * 100)}%`"
+                                ></div>
+                                <div
+                                    class="bg-rose-400 transition-all duration-300"
+                                    :style="{ width: `${Math.min(100, Math.max(0, ((financialSummary?.summary?.total_expenses || 0) / financialSummary?.summary?.total_sales) * 100))}%` }"
+                                    :title="`Expenses: ${Math.round(((financialSummary?.summary?.total_expenses || 0) / financialSummary?.summary?.total_sales) * 100)}%`"
+                                ></div>
+                                <div
+                                    v-if="(financialSummary?.summary?.net_profit || 0) > 0"
+                                    class="bg-indigo-500 transition-all duration-300"
+                                    :style="{ width: `${Math.min(100, Math.max(0, ((financialSummary?.summary?.net_profit || 0) / financialSummary?.summary?.total_sales) * 100))}%` }"
+                                    :title="`Net Profit: ${financialSummary?.summary?.net_margin_percent}%`"
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SCOPE 0: ALL COMBINED (EXECUTIVE OVERVIEW) -->
+                <div v-else class="space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Left: Income Statement (2 cols) -->
+                        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-xs space-y-5">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                            <div>
+                                <h2 class="text-sm font-bold text-slate-900 tracking-tight">{{ t('Income Statement') }}</h2>
+                                <p class="text-xs text-slate-500">Summary of sales revenue minus procurement and operating overheads</p>
+                            </div>
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                {{ datePresets.find(p => p.id === datePreset)?.label || 'Custom' }}
+                            </span>
+                        </div>
+
+                        <!-- Waterfall statement rows -->
+                        <div class="space-y-3 text-xs">
+                            <!-- Revenue -->
+                            <div class="flex items-center justify-between p-3 rounded-xl bg-emerald-50/50 border border-emerald-100/60">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                                    <span class="font-bold text-slate-800">Total Sales Revenue (Invoiced)</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="font-mono font-black text-sm text-emerald-800">
+                                        <CurrencyDisplay :amount="financialSummary?.summary?.total_sales || 0" />
+                                    </span>
+                                    <span class="ml-2 text-[10px] text-slate-400 font-mono">100%</span>
+                                </div>
+                            </div>
+
+                            <!-- Less Purchases -->
+                            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                <div class="flex items-center gap-2.5 pl-4">
+                                    <span class="text-slate-400 font-mono text-sm">-</span>
+                                    <span class="text-slate-600 font-medium">Cost of Procurement &amp; Purchases</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="font-mono font-bold text-amber-700">
+                                        -<CurrencyDisplay :amount="financialSummary?.summary?.total_purchases || 0" />
+                                    </span>
+                                    <span class="ml-2 text-[10px] text-slate-400 font-mono">
+                                        {{ (financialSummary?.summary?.total_sales || 0) > 0 ? Math.round(((financialSummary?.summary?.total_purchases || 0) / financialSummary?.summary?.total_sales) * 100) : 0 }}%
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Gross Profit -->
+                            <div class="flex items-center justify-between p-3 rounded-xl bg-indigo-50/30 border border-indigo-100">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-2.5 h-2.5 rounded-full bg-indigo-500"></div>
+                                    <span class="font-bold text-indigo-950">Gross Trading Profit</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="font-mono font-bold text-sm text-indigo-900">
+                                        <CurrencyDisplay :amount="financialSummary?.summary?.gross_profit || 0" />
+                                    </span>
+                                    <span class="ml-2 text-[10px] text-indigo-600 font-mono font-bold">
+                                        {{ financialSummary?.summary?.gross_margin_percent || 0 }}%
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Less Expenses -->
+                            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                <div class="flex items-center gap-2.5 pl-4">
+                                    <span class="text-slate-400 font-mono text-sm">-</span>
+                                    <span class="text-slate-600 font-medium">Operating Overheads &amp; General Expenses</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="font-mono font-bold text-rose-700">
+                                        -<CurrencyDisplay :amount="financialSummary?.summary?.total_expenses || 0" />
+                                    </span>
+                                    <span class="ml-2 text-[10px] text-slate-400 font-mono">
+                                        {{ (financialSummary?.summary?.total_sales || 0) > 0 ? Math.round(((financialSummary?.summary?.total_expenses || 0) / financialSummary?.summary?.total_sales) * 100) : 0 }}%
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Net Profit -->
+                            <div
+                                class="flex items-center justify-between p-3.5 rounded-xl border"
+                                :class="(financialSummary?.summary?.net_profit || 0) >= 0 ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-rose-600 text-white border-rose-600 shadow-xs'"
+                            >
+                                <div class="flex items-center gap-2.5">
+                                    <span class="font-black text-sm uppercase tracking-wide">Net Operating Profit</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="font-mono font-black text-base text-white">
+                                        <CurrencyDisplay :amount="financialSummary?.summary?.net_profit || 0" />
+                                    </span>
+                                    <span class="ml-2 text-xs font-mono font-bold text-indigo-200">
+                                        ({{ financialSummary?.summary?.net_margin_percent || 0 }}% Margin)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar of Revenue Allocation -->
+                        <div v-if="(financialSummary?.summary?.total_sales || 0) > 0" class="pt-2">
+                            <div class="flex items-center justify-between text-[11px] text-slate-500 font-medium mb-1.5">
+                                <span>Revenue Distribution</span>
+                                <div class="flex items-center gap-3 text-[10px]">
+                                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Purchases</span>
+                                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-400"></span> Expenses</span>
+                                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-indigo-500"></span> Net Profit</span>
+                                </div>
+                            </div>
+                            <div class="h-2.5 bg-slate-100 rounded-full flex overflow-hidden">
+                                <div
+                                    class="bg-amber-400 transition-all duration-300"
+                                    :style="{ width: `${Math.min(100, Math.max(0, ((financialSummary?.summary?.total_purchases || 0) / financialSummary?.summary?.total_sales) * 100))}%` }"
+                                    :title="`Purchases: ${Math.round(((financialSummary?.summary?.total_purchases || 0) / financialSummary?.summary?.total_sales) * 100)}%`"
+                                ></div>
+                                <div
+                                    class="bg-rose-400 transition-all duration-300"
+                                    :style="{ width: `${Math.min(100, Math.max(0, ((financialSummary?.summary?.total_expenses || 0) / financialSummary?.summary?.total_sales) * 100))}%` }"
+                                    :title="`Expenses: ${Math.round(((financialSummary?.summary?.total_expenses || 0) / financialSummary?.summary?.total_sales) * 100)}%`"
+                                ></div>
+                                <div
+                                    v-if="(financialSummary?.summary?.net_profit || 0) > 0"
+                                    class="bg-indigo-500 transition-all duration-300"
+                                    :style="{ width: `${Math.min(100, Math.max(0, ((financialSummary?.summary?.net_profit || 0) / financialSummary?.summary?.total_sales) * 100))}%` }"
+                                    :title="`Net Profit: ${financialSummary?.summary?.net_margin_percent}%`"
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Liquid Cash Flow & Expense Categories (1 col) -->
+                    <div class="space-y-6">
+                        <!-- Liquid Cash Flow Card -->
+                        <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+                            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                                <div>
+                                    <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">{{ t('Operating Cash Flow') }}</h3>
+                                    <p class="text-[11px] text-slate-500">Realized cash in vs cash out</p>
+                                </div>
+                                <span
+                                    class="text-xs font-mono font-bold px-2 py-0.5 rounded-lg"
+                                    :class="(financialSummary?.summary?.net_cash_flow || 0) >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'"
+                                >
+                                    <CurrencyDisplay :amount="financialSummary?.summary?.net_cash_flow || 0" />
+                                </span>
+                            </div>
+
+                            <div class="space-y-2.5 text-xs">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-slate-600 flex items-center gap-1.5">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        Sales Collected
+                                    </span>
+                                    <span class="font-mono font-bold text-emerald-700">
+                                        +<CurrencyDisplay :amount="financialSummary?.summary?.cash_inflow || 0" />
+                                    </span>
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <span class="text-slate-600 flex items-center gap-1.5">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                        Supplier Payments
+                                    </span>
+                                    <span class="font-mono font-bold text-amber-700">
+                                        -<CurrencyDisplay :amount="financialSummary?.summary?.purchases_paid || 0" />
+                                    </span>
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <span class="text-slate-600 flex items-center gap-1.5">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                        Expense Disbursements
+                                    </span>
+                                    <span class="font-mono font-bold text-rose-700">
+                                        -<CurrencyDisplay :amount="financialSummary?.summary?.total_expenses || 0" />
+                                    </span>
+                                </div>
+
+                                <div class="pt-2 border-t border-slate-100 flex items-center justify-between font-bold">
+                                    <span class="text-slate-800">Net Liquid Position</span>
+                                    <span
+                                        class="font-mono text-sm"
+                                        :class="(financialSummary?.summary?.net_cash_flow || 0) >= 0 ? 'text-emerald-700' : 'text-rose-600'"
+                                    >
+                                        <CurrencyDisplay :amount="financialSummary?.summary?.net_cash_flow || 0" />
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Expenses by Category Card -->
+                        <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-3">
+                            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                                <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">{{ t('Expense Categories') }}</h3>
+                                <span class="text-[11px] text-slate-400 font-mono">{{ financialSummary?.by_category?.length || 0 }} categories</span>
+                            </div>
+
+                            <div v-if="financialSummary?.by_category?.length" class="space-y-3">
+                                <div v-for="cat in financialSummary.by_category" :key="cat.category_name" class="space-y-1">
+                                    <div class="flex items-center justify-between text-xs">
+                                        <span class="font-semibold text-slate-700 truncate max-w-[140px]">{{ cat.category_name }}</span>
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="font-mono font-bold text-slate-900"><CurrencyDisplay :amount="cat.total_amount" /></span>
+                                            <span class="text-[10px] text-slate-400 font-mono">({{ cat.percentage }}%)</span>
+                                        </div>
+                                    </div>
+                                    <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                        <div
+                                            class="h-full bg-rose-500 rounded-full transition-all duration-300"
+                                            :style="{ width: `${Math.min(100, Math.max(0, cat.percentage))}%` }"
+                                        ></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-else class="text-center py-4 text-xs text-slate-400">
+                                No expenses recorded in this period.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity Breakdown Tabs Card -->
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                    <div class="p-4 sm:p-5 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <button
+                                type="button"
+                                @click="recentFinTab = 'sales'"
+                                :class="recentFinTab === 'sales' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+                                class="px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
+                            >
+                                {{ t('Recent Sales') }} ({{ financialSummary?.recent_sales?.length || 0 }})
+                            </button>
+
+                            <button
+                                type="button"
+                                @click="recentFinTab = 'purchases'"
+                                :class="recentFinTab === 'purchases' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+                                class="px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
+                            >
+                                {{ t('Recent Purchases') }} ({{ financialSummary?.recent_purchases?.length || 0 }})
+                            </button>
+
+                            <button
+                                type="button"
+                                @click="recentFinTab = 'expenses'"
+                                :class="recentFinTab === 'expenses' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+                                class="px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
+                            >
+                                {{ t('Recent Expenses') }} ({{ financialSummary?.recent_expenses?.length || 0 }})
+                            </button>
+                        </div>
+
+                        <div class="text-xs text-slate-400 font-medium">
+                            Latest records in selected window
+                        </div>
+                    </div>
+
+                    <!-- 1. Recent Sales Orders Table -->
+                    <div v-if="recentFinTab === 'sales'" class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                                <tr>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Order #</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Date</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Customer</th>
+                                    <th class="px-5 py-3.5 text-center whitespace-nowrap">Status</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Total</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Paid</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Due</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr v-for="order in financialSummary?.recent_sales || []" :key="order.id" class="hover:bg-slate-50 transition">
+                                    <td class="px-5 py-3.5 font-mono font-bold text-indigo-600 whitespace-nowrap">
+                                        {{ order.order_number }}
+                                    </td>
+                                    <td class="px-5 py-3.5 text-slate-500 whitespace-nowrap">
+                                        {{ formatDate(order.order_date) }}
+                                    </td>
+                                    <td class="px-5 py-3.5 font-medium text-slate-800 whitespace-nowrap">
+                                        {{ order.customer_name }}
+                                    </td>
+                                    <td class="px-5 py-3.5 text-center whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-slate-100 text-slate-700">
+                                            {{ order.status }}
+                                        </span>
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
+                                        <CurrencyDisplay :amount="order.total_amount" />
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono font-bold text-emerald-600 whitespace-nowrap">
+                                        <CurrencyDisplay :amount="order.paid_amount" />
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono font-bold whitespace-nowrap" :class="Number(order.due_amount) > 0 ? 'text-rose-600' : 'text-slate-400'">
+                                        <CurrencyDisplay :amount="order.due_amount" />
+                                    </td>
+                                </tr>
+                                <tr v-if="!financialSummary?.recent_sales?.length">
+                                    <td colspan="7" class="px-5 py-8 text-center text-slate-400">
+                                        No sales orders found in this period.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 2. Recent Purchase Orders Table -->
+                    <div v-else-if="recentFinTab === 'purchases'" class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                                <tr>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">PO #</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Date</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Supplier</th>
+                                    <th class="px-5 py-3.5 text-center whitespace-nowrap">Status</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Total</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Paid</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Due</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr v-for="purch in financialSummary?.recent_purchases || []" :key="purch.id" class="hover:bg-slate-50 transition">
+                                    <td class="px-5 py-3.5 font-mono font-bold text-amber-600 whitespace-nowrap">
+                                        {{ purch.order_number }}
+                                    </td>
+                                    <td class="px-5 py-3.5 text-slate-500 whitespace-nowrap">
+                                        {{ formatDate(purch.order_date) }}
+                                    </td>
+                                    <td class="px-5 py-3.5 font-medium text-slate-800 whitespace-nowrap">
+                                        {{ purch.supplier_name }}
+                                    </td>
+                                    <td class="px-5 py-3.5 text-center whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-slate-100 text-slate-700">
+                                            {{ purch.status }}
+                                        </span>
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
+                                        <CurrencyDisplay :amount="purch.total_amount" />
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono font-bold text-slate-700 whitespace-nowrap">
+                                        <CurrencyDisplay :amount="purch.paid_amount" />
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono font-bold whitespace-nowrap" :class="Number(purch.due_amount) > 0 ? 'text-amber-700' : 'text-slate-400'">
+                                        <CurrencyDisplay :amount="purch.due_amount" />
+                                    </td>
+                                </tr>
+                                <tr v-if="!financialSummary?.recent_purchases?.length">
+                                    <td colspan="7" class="px-5 py-8 text-center text-slate-400">
+                                        No purchase orders found in this period.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 3. Recent Expenses Table -->
+                    <div v-else class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                                <tr>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Expense #</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Date</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Category</th>
+                                    <th class="px-5 py-3.5 whitespace-nowrap">Title / Payee</th>
+                                    <th class="px-5 py-3.5 text-center whitespace-nowrap">Method</th>
+                                    <th class="px-5 py-3.5 text-right whitespace-nowrap">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr v-for="exp in financialSummary?.recent_expenses || []" :key="exp.id" class="hover:bg-slate-50 transition">
+                                    <td class="px-5 py-3.5 font-mono font-bold text-rose-600 whitespace-nowrap">
+                                        {{ exp.expense_number }}
+                                    </td>
+                                    <td class="px-5 py-3.5 text-slate-500 whitespace-nowrap">
+                                        {{ formatDate(exp.expense_date) }}
+                                    </td>
+                                    <td class="px-5 py-3.5 whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+                                            {{ exp.category_name }}
+                                        </span>
+                                    </td>
+                                    <td class="px-5 py-3.5 whitespace-nowrap">
+                                        <div class="font-medium text-slate-800">{{ exp.title }}</div>
+                                        <div v-if="exp.vendor_or_payee" class="text-[10px] text-slate-400">Payee: {{ exp.vendor_or_payee }}</div>
+                                    </td>
+                                    <td class="px-5 py-3.5 text-center whitespace-nowrap font-mono text-[11px] text-slate-500">
+                                        {{ exp.payment_method || 'Cash' }}
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right font-mono font-bold text-rose-700 whitespace-nowrap">
+                                        <CurrencyDisplay :amount="exp.amount" />
+                                    </td>
+                                </tr>
+                                <tr v-if="!financialSummary?.recent_expenses?.length">
+                                    <td colspan="6" class="px-5 py-8 text-center text-slate-400">
+                                        No expense records found in this period.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 1: STOCK VALUATION -->
             <div v-if="currentTab === 'valuation'" class="space-y-6">
                 <!-- 4 Top KPI Cards -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

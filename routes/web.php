@@ -38,8 +38,8 @@ use App\Http\Controllers\SslCommerzPaymentController;
 use App\Http\Controllers\LegalPageController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    if (auth()->check()) {
+Route::get('/', function (\Illuminate\Http\Request $request) {
+    if (auth()->check() && ! $request->has('preview')) {
         return auth()->user()->isSuperAdmin() ? redirect()->route('admin.dashboard') : redirect()->route('dashboard');
     }
     
@@ -49,7 +49,7 @@ Route::get('/', function () {
     }
     
     return view('welcome', compact('plans'));
-});
+})->name('home');
 
 // Dynamic Public Legal Pages
 Route::get('/terms-and-conditions', [LegalPageController::class, 'terms'])->name('terms.show');

@@ -105,7 +105,7 @@ class AppServiceProvider extends ServiceProvider
                     'headline_prefix'    => 'The Operating System for',
                     'headline_highlight' => 'Modern Inventory & Supply Chains',
                     'subtext'            => 'Empower your organization with multi-warehouse tracking, atomic stock reservation, double-entry financial accounting, POS checkout, workshop service ticketing, and vectorized PDF invoicing — completely tenant-isolated.',
-                    'primary_cta_text'   => 'Start 14-Day Free Trial',
+                    'primary_cta_text'   => 'Start 3-Day Free Trial',
                     'primary_cta_url'    => '/register',
                     'secondary_cta_text' => 'Explore Modules',
                     'secondary_cta_url'  => '#features',

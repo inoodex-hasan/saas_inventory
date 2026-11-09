@@ -63,13 +63,13 @@ class BangladeshiSubscriptionAndBillingTest extends TestCase
         ]);
     }
 
-    public function test_new_tenant_assigned_14_day_trial(): void
+    public function test_new_tenant_assigned_3_day_trial(): void
     {
         $sub = $this->subscriptionService->ensureTenantSubscription($this->team);
 
         $this->assertEquals('trialing', $sub->status);
         $this->assertTrue($sub->isActive());
-        $this->assertEquals(14, $sub->days_remaining);
+        $this->assertEquals(3, $sub->days_remaining);
         $this->assertDatabaseHas('tenant_subscriptions', [
             'team_id' => $this->team->id,
             'status' => 'trialing',

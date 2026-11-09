@@ -247,5 +247,18 @@ class SuperAdminControlTest extends TestCase
 
         $this->assertDatabaseMissing('teams', ['id' => $this->clientTeam->id]);
     }
+
+    public function test_super_admin_landing_page_redirect_and_preview(): void
+    {
+        // 1. Visiting root redirects logged-in Super Admin to dashboard
+        $response = $this->actingAs($this->superAdmin)->get('/');
+        $response->assertRedirect(route('admin.dashboard'));
+
+        // 2. Visiting root with ?preview=1 allows Super Admin to preview public landing page
+        $previewResponse = $this->actingAs($this->superAdmin)->get('/?preview=1');
+        $previewResponse->assertStatus(200);
+        $previewResponse->assertViewIs('welcome');
+        $previewResponse->assertSee('Landing Page Preview');
+    }
 }
 

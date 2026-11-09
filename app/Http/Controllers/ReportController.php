@@ -3,6 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Exports\BatchExpiryExport;
+use App\Exports\FinancialSummaryExport;
+use App\Exports\FinancialSummaryExpenseSheet;
+use App\Exports\FinancialSummaryOverviewSheet;
+use App\Exports\FinancialSummaryPurchaseSheet;
+use App\Exports\FinancialSummarySalesSheet;
 use App\Exports\LowStockExport;
 use App\Exports\ProductProfitabilityExport;
 use App\Exports\StockAgingExport;
@@ -45,6 +50,7 @@ class ReportController extends Controller
         $profitabilityPerformance = $request->input('profitability_performance', 'all');
         $profitabilityCategoryId = $request->input('profitability_category_id', '');
         $profitabilitySearch = $request->input('profitability_search', '');
+        $financialScope = $request->input('financial_scope', 'all');
 
         [$startDate, $endDate, $datePreset, $formattedStart, $formattedEnd] = $this->resolveDateRange($request);
 
@@ -69,6 +75,9 @@ class ReportController extends Controller
         // 6. Product Sales & Gross Margin Profitability
         $profitabilityData = $this->getProfitabilityData($team->id, $startDate, $endDate, $profitabilityPerformance, $profitabilityCategoryId, $profitabilitySearch);
 
+        // 7. Executive Financial Summary (Sales, Purchases, Expenses & Revenue)
+        $financialSummary = $this->getFinancialSummaryData($team->id, $startDate, $endDate);
+
         return Inertia::render('Reports/Index', [
             'currencySymbol' => $currencySymbol,
             'activeTab' => $activeTab,
@@ -87,6 +96,7 @@ class ReportController extends Controller
                 'profitability_performance' => $profitabilityPerformance,
                 'profitability_category_id' => $profitabilityCategoryId,
                 'profitability_search' => $profitabilitySearch,
+                'financial_scope' => $financialScope,
                 'date_preset' => $datePreset,
                 'start_date' => $formattedStart,
                 'end_date' => $formattedEnd,
@@ -99,6 +109,7 @@ class ReportController extends Controller
             'expiryData' => $expiryData,
             'agingData' => $agingData,
             'profitabilityData' => $profitabilityData,
+            'financialSummary' => $financialSummary,
         ]);
     }
 
@@ -133,8 +144,29 @@ class ReportController extends Controller
         $expiryData = null;
         $agingData = null;
         $profitabilityData = null;
+        $financialSummary = null;
+        $financialScope = $request->input('financial_scope', '');
 
-        if ($tab === 'valuation') {
+        if ($tab === 'sales_report' || ($tab === 'financial_summary' && $financialScope === 'sales')) {
+            $tab = 'sales_report';
+            $financialSummary = $this->getFinancialSummaryData($team->id, $startDate, $endDate);
+            $reportTitle = 'Sales Performance & Invoicing Report';
+        } elseif ($tab === 'purchase_report' || ($tab === 'financial_summary' && $financialScope === 'purchases')) {
+            $tab = 'purchase_report';
+            $financialSummary = $this->getFinancialSummaryData($team->id, $startDate, $endDate);
+            $reportTitle = 'Purchase & Procurement Inflow Report';
+        } elseif ($tab === 'expense_report' || ($tab === 'financial_summary' && $financialScope === 'expenses')) {
+            $tab = 'expense_report';
+            $financialSummary = $this->getFinancialSummaryData($team->id, $startDate, $endDate);
+            $reportTitle = 'Operating Expenses & Overhead Audit Report';
+        } elseif ($tab === 'revenue_report' || ($tab === 'financial_summary' && $financialScope === 'revenue')) {
+            $tab = 'revenue_report';
+            $financialSummary = $this->getFinancialSummaryData($team->id, $startDate, $endDate);
+            $reportTitle = 'Revenue & Operating Profit Statement Report';
+        } elseif ($tab === 'financial_summary') {
+            $financialSummary = $this->getFinancialSummaryData($team->id, $startDate, $endDate);
+            $reportTitle = 'Executive Financial Summary (Sales, Purchases, Expenses & Revenue)';
+        } elseif ($tab === 'valuation') {
             $valuation = $this->getValuationData($team->id);
             $reportTitle = 'Stock Valuation & Inventory Assets Report';
         } elseif ($tab === 'low_stock') {
@@ -193,6 +225,7 @@ class ReportController extends Controller
             'expiryData' => $expiryData,
             'agingData' => $agingData,
             'profitabilityData' => $profitabilityData,
+            'financialSummary' => $financialSummary,
             'generatedAt' => now()->format('d M Y, h:i A'),
         ], [], [
             'title' => $reportTitle,
@@ -237,8 +270,24 @@ class ReportController extends Controller
 
         [$startDate, $endDate] = $this->resolveDateRange($request);
         $dateSuffix = now()->format('Y-m-d');
+        $financialScope = $request->input('financial_scope', '');
 
-        if ($tab === 'valuation') {
+        if ($tab === 'sales_report' || ($tab === 'financial_summary' && $financialScope === 'sales')) {
+            $filename = "sales-report-{$dateSuffix}.xlsx";
+            return Excel::download(new FinancialSummarySalesSheet($team->id, $startDate, $endDate), $filename);
+        } elseif ($tab === 'purchase_report' || ($tab === 'financial_summary' && $financialScope === 'purchases')) {
+            $filename = "purchase-report-{$dateSuffix}.xlsx";
+            return Excel::download(new FinancialSummaryPurchaseSheet($team->id, $startDate, $endDate), $filename);
+        } elseif ($tab === 'expense_report' || ($tab === 'financial_summary' && $financialScope === 'expenses')) {
+            $filename = "expense-report-{$dateSuffix}.xlsx";
+            return Excel::download(new FinancialSummaryExpenseSheet($team->id, $startDate, $endDate), $filename);
+        } elseif ($tab === 'revenue_report' || ($tab === 'financial_summary' && $financialScope === 'revenue')) {
+            $filename = "revenue-profit-report-{$dateSuffix}.xlsx";
+            return Excel::download(new FinancialSummaryOverviewSheet($team->id, $startDate, $endDate), $filename);
+        } elseif ($tab === 'financial_summary') {
+            $filename = "financial-summary-{$dateSuffix}.xlsx";
+            return Excel::download(new FinancialSummaryExport($team->id, $startDate, $endDate), $filename);
+        } elseif ($tab === 'valuation') {
             $filename = "stock-valuation-{$dateSuffix}.xlsx";
             return Excel::download(new StockValuationExport($team->id, $warehouseId, $categoryId), $filename);
         } elseif ($tab === 'low_stock') {
@@ -807,6 +856,179 @@ class ReportController extends Controller
                 'low_count' => $lowCount,
                 'loss_count' => $lossCount,
             ],
+        ];
+    }
+
+    protected function getFinancialSummaryData(int $teamId, ?Carbon $startDate = null, ?Carbon $endDate = null): array
+    {
+        // 1. Sales query
+        $salesQ = DB::table('sales_orders')
+            ->where('sales_orders.team_id', $teamId)
+            ->whereNotIn('sales_orders.status', ['cancelled'])
+            ->whereNull('sales_orders.deleted_at');
+
+        if ($startDate && $endDate) {
+            $salesQ->whereBetween('sales_orders.order_date', [$startDate->toDateString(), $endDate->toDateString()]);
+        }
+
+        $salesAgg = (clone $salesQ)->selectRaw("
+            COUNT(*) as orders_count,
+            COALESCE(SUM(total_amount), 0) as total_sales,
+            COALESCE(SUM(paid_amount), 0) as total_paid,
+            COALESCE(SUM(due_amount), 0) as total_due
+        ")->first();
+
+        $recentSales = (clone $salesQ)
+            ->leftJoin('customers', 'sales_orders.customer_id', '=', 'customers.id')
+            ->select(
+                'sales_orders.id',
+                'sales_orders.order_number',
+                'sales_orders.order_date',
+                'sales_orders.status',
+                'sales_orders.payment_status',
+                'sales_orders.total_amount',
+                'sales_orders.paid_amount',
+                'sales_orders.due_amount',
+                DB::raw("COALESCE(customers.name, 'Walk-in Customer') as customer_name")
+            )
+            ->orderByDesc('sales_orders.order_date')
+            ->orderByDesc('sales_orders.id')
+            ->limit(200)
+            ->get();
+
+        // 2. Purchases query
+        $purchQ = DB::table('purchase_orders')
+            ->where('purchase_orders.team_id', $teamId)
+            ->whereNotIn('purchase_orders.status', ['cancelled'])
+            ->whereNull('purchase_orders.deleted_at');
+
+        if ($startDate && $endDate) {
+            $purchQ->whereBetween('purchase_orders.order_date', [$startDate->toDateString(), $endDate->toDateString()]);
+        }
+
+        $purchAgg = (clone $purchQ)->selectRaw("
+            COUNT(*) as orders_count,
+            COALESCE(SUM(total_amount), 0) as total_purchases,
+            COALESCE(SUM(paid_amount), 0) as total_paid,
+            COALESCE(SUM(due_amount), 0) as total_due
+        ")->first();
+
+        $recentPurchases = (clone $purchQ)
+            ->leftJoin('suppliers', 'purchase_orders.supplier_id', '=', 'suppliers.id')
+            ->select(
+                'purchase_orders.id',
+                'purchase_orders.order_number',
+                'purchase_orders.order_date',
+                'purchase_orders.status',
+                'purchase_orders.payment_status',
+                'purchase_orders.total_amount',
+                'purchase_orders.paid_amount',
+                'purchase_orders.due_amount',
+                DB::raw("COALESCE(suppliers.name, 'N/A') as supplier_name")
+            )
+            ->orderByDesc('purchase_orders.order_date')
+            ->orderByDesc('purchase_orders.id')
+            ->limit(200)
+            ->get();
+
+        // 3. Expenses query
+        $expQ = DB::table('expenses')
+            ->where('expenses.team_id', $teamId);
+
+        if ($startDate && $endDate) {
+            $expQ->whereBetween('expenses.expense_date', [$startDate->toDateString(), $endDate->toDateString()]);
+        }
+
+        $expAgg = (clone $expQ)->selectRaw("
+            COUNT(*) as vouchers_count,
+            COALESCE(SUM(amount), 0) as total_expenses
+        ")->first();
+
+        $expensesByCategory = (clone $expQ)
+            ->leftJoin('expense_categories', 'expenses.expense_category_id', '=', 'expense_categories.id')
+            ->select(
+                DB::raw("COALESCE(expense_categories.name, 'Uncategorized') as category_name"),
+                DB::raw("COALESCE(SUM(expenses.amount), 0) as total_amount"),
+                DB::raw("COUNT(*) as vouchers_count")
+            )
+            ->groupBy(DB::raw("COALESCE(expense_categories.name, 'Uncategorized')"))
+            ->orderByDesc('total_amount')
+            ->get();
+
+        $recentExpenses = (clone $expQ)
+            ->leftJoin('expense_categories', 'expenses.expense_category_id', '=', 'expense_categories.id')
+            ->select(
+                'expenses.id',
+                'expenses.expense_number',
+                'expenses.expense_date',
+                'expenses.title',
+                'expenses.vendor_or_payee',
+                'expenses.payment_method',
+                'expenses.amount',
+                DB::raw("COALESCE(expense_categories.name, 'Uncategorized') as category_name")
+            )
+            ->orderByDesc('expenses.expense_date')
+            ->orderByDesc('expenses.id')
+            ->limit(200)
+            ->get();
+
+        $totalSales = (float) ($salesAgg->total_sales ?? 0);
+        $totalPurchases = (float) ($purchAgg->total_purchases ?? 0);
+        $totalExpenses = (float) ($expAgg->total_expenses ?? 0);
+
+        $grossProfit = round($totalSales - $totalPurchases, 2);
+        $grossMarginPercent = $totalSales > 0 ? round(($grossProfit / $totalSales) * 100, 2) : 0.0;
+        $netProfit = round($grossProfit - $totalExpenses, 2);
+        $netMarginPercent = $totalSales > 0 ? round(($netProfit / $totalSales) * 100, 2) : 0.0;
+
+        $cashInflow = (float) ($salesAgg->total_paid ?? 0);
+        $cashOutflow = (float) (($purchAgg->total_paid ?? 0) + $totalExpenses);
+        $netCashFlow = round($cashInflow - $cashOutflow, 2);
+
+        $byCategoryWithShare = $expensesByCategory->map(function ($cat) use ($totalExpenses) {
+            $catAmount = (float) $cat->total_amount;
+            $share = $totalExpenses > 0 ? round(($catAmount / $totalExpenses) * 100, 1) : 0.0;
+            return [
+                'category_name' => $cat->category_name,
+                'total_amount' => $catAmount,
+                'vouchers_count' => (int) $cat->vouchers_count,
+                'percentage' => $share,
+            ];
+        })->values()->all();
+
+        return [
+            'summary' => [
+                'total_sales' => $totalSales,
+                'sales_count' => (int) ($salesAgg->orders_count ?? 0),
+                'sales_paid' => (float) ($salesAgg->total_paid ?? 0),
+                'sales_due' => (float) ($salesAgg->total_due ?? 0),
+                'avg_order_value' => ($salesAgg->orders_count ?? 0) > 0 ? round($totalSales / $salesAgg->orders_count, 2) : 0.0,
+
+                'total_purchases' => $totalPurchases,
+                'purchases_count' => (int) ($purchAgg->orders_count ?? 0),
+                'purchases_paid' => (float) ($purchAgg->total_paid ?? 0),
+                'purchases_due' => (float) ($purchAgg->total_due ?? 0),
+                'avg_purchase_value' => ($purchAgg->orders_count ?? 0) > 0 ? round($totalPurchases / $purchAgg->orders_count, 2) : 0.0,
+
+                'total_expenses' => $totalExpenses,
+                'expenses_count' => (int) ($expAgg->vouchers_count ?? 0),
+
+                'gross_profit' => $grossProfit,
+                'gross_margin_percent' => $grossMarginPercent,
+                'net_profit' => $netProfit,
+                'net_margin_percent' => $netMarginPercent,
+
+                'cash_inflow' => $cashInflow,
+                'cash_outflow' => $cashOutflow,
+                'net_cash_flow' => $netCashFlow,
+            ],
+            'by_category' => $byCategoryWithShare,
+            'recent_sales' => $recentSales,
+            'recent_purchases' => $recentPurchases,
+            'recent_expenses' => $recentExpenses,
+            'sales_list' => $recentSales,
+            'purchases_list' => $recentPurchases,
+            'expenses_list' => $recentExpenses,
         ];
     }
 }

@@ -22,13 +22,13 @@ class SubscriptionService
         [
             'name' => 'Free Trial',
             'slug' => 'trial',
-            'description' => '14-day fully featured trial workspace for new businesses.',
+            'description' => '3-day fully featured trial workspace for new businesses.',
             'price_bdt' => 0.00,
             'annual_price_bdt' => 0.00,
             'max_products' => 100,
             'max_warehouses' => 1,
             'max_users' => 2,
-            'trial_days' => 14,
+            'trial_days' => 3,
             'is_active' => true,
             'sort_order' => 0,
             'features' => [
@@ -125,12 +125,8 @@ class SubscriptionService
      */
     public function ensureDefaultPlans(): void
     {
-        if (Plan::count() >= count(self::DEFAULT_PLANS)) {
-            return;
-        }
-
         foreach (self::DEFAULT_PLANS as $preset) {
-            Plan::firstOrCreate(
+            Plan::updateOrCreate(
                 ['slug' => $preset['slug']],
                 $preset
             );
@@ -138,7 +134,7 @@ class SubscriptionService
     }
 
     /**
-     * Ensure a tenant has a subscription (defaults to 14-day trial).
+     * Ensure a tenant has a subscription (defaults to 3-day trial).
      */
     public function ensureTenantSubscription(Team $team): TenantSubscription
     {
@@ -159,9 +155,9 @@ class SubscriptionService
             'plan_id' => $trialPlan->id,
             'status' => 'trialing',
             'billing_cycle' => 'monthly',
-            'trial_ends_at' => now()->addDays($trialPlan->trial_days ?: 14),
+            'trial_ends_at' => now()->addDays($trialPlan->trial_days ?: 3),
             'starts_at' => now(),
-            'ends_at' => now()->addDays($trialPlan->trial_days ?: 14),
+            'ends_at' => now()->addDays($trialPlan->trial_days ?: 3),
         ]);
     }
 
@@ -175,7 +171,7 @@ class SubscriptionService
 
         $productCount = Product::where('team_id', $team->id)->count();
         $warehouseCount = Warehouse::where('team_id', $team->id)->count();
-        $userCount = $team->users()->count() + 1; // Team members + Owner
+        $userCount = $team->users()->pluck('users.id')->push($team->user_id)->unique()->filter()->count();
 
         $maxProducts = $plan->max_products;
         $maxWarehouses = $plan->max_warehouses;

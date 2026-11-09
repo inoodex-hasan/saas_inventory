@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Customer;
+use App\Models\Expense;
+use App\Models\ExpenseCategory;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\PurchaseOrder;
@@ -547,5 +549,234 @@ class ReportInertiaTest extends TestCase
             ->where('profitabilityData.items.0.sku', 'LSR-999')
             ->where('profitabilityData.items.0.margin_percent', 80)
         );
+    }
+
+    public function test_financial_summary_tab_returns_accurate_metrics_and_props(): void
+    {
+        $customer = Customer::create([
+            'team_id' => $this->team->id,
+            'name' => 'Apex Retailers',
+            'email' => 'apex@example.com',
+            'phone' => '+8801700000001',
+        ]);
+
+        $supplier = Supplier::create([
+            'team_id' => $this->team->id,
+            'name' => 'Global Importers',
+            'contact_name' => 'John Importer',
+            'email' => 'supplier@example.com',
+            'phone' => '+8801700000002',
+        ]);
+
+        $category = ExpenseCategory::create([
+            'team_id' => $this->team->id,
+            'name' => 'Office Utilities',
+            'code' => 'EXP-UTL',
+        ]);
+
+        // 1. Sales Order: $1000 Total, $700 Paid, $300 Due
+        SalesOrder::create([
+            'team_id' => $this->team->id,
+            'customer_id' => $customer->id,
+            'warehouse_id' => $this->warehouse->id,
+            'order_number' => 'SO-TEST-001',
+            'status' => 'delivered',
+            'payment_status' => 'partial',
+            'order_date' => now()->toDateString(),
+            'subtotal' => 1000.00,
+            'total_amount' => 1000.00,
+            'paid_amount' => 700.00,
+            'due_amount' => 300.00,
+            'created_by' => $this->user->id,
+        ]);
+
+        // 2. Purchase Order: $400 Total, $300 Paid, $100 Due
+        PurchaseOrder::create([
+            'team_id' => $this->team->id,
+            'supplier_id' => $supplier->id,
+            'warehouse_id' => $this->warehouse->id,
+            'order_number' => 'PO-TEST-001',
+            'status' => 'received',
+            'payment_status' => 'partial',
+            'order_date' => now()->toDateString(),
+            'subtotal' => 400.00,
+            'total_amount' => 400.00,
+            'paid_amount' => 300.00,
+            'due_amount' => 100.00,
+            'created_by' => $this->user->id,
+        ]);
+
+        // 3. Expense: $150
+        Expense::create([
+            'team_id' => $this->team->id,
+            'expense_category_id' => $category->id,
+            'expense_number' => 'EXP-TEST-001',
+            'title' => 'Electricity Bill',
+            'amount' => 150.00,
+            'expense_date' => now()->toDateString(),
+            'payment_method' => 'bank_transfer',
+            'vendor_or_payee' => 'Power Grid',
+            'created_by' => $this->user->id,
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('reports.index', ['tab' => 'financial_summary']));
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Reports/Index')
+            ->where('activeTab', 'financial_summary')
+            ->has('financialSummary')
+            ->where('financialSummary.summary.total_sales', 1000)
+            ->where('financialSummary.summary.sales_count', 1)
+            ->where('financialSummary.summary.sales_paid', 700)
+            ->where('financialSummary.summary.sales_due', 300)
+            ->where('financialSummary.summary.total_purchases', 400)
+            ->where('financialSummary.summary.purchases_count', 1)
+            ->where('financialSummary.summary.purchases_paid', 300)
+            ->where('financialSummary.summary.purchases_due', 100)
+            ->where('financialSummary.summary.total_expenses', 150)
+            ->where('financialSummary.summary.expenses_count', 1)
+            ->where('financialSummary.summary.gross_profit', 600) // 1000 - 400
+            ->where('financialSummary.summary.gross_margin_percent', 60)
+            ->where('financialSummary.summary.net_profit', 450) // 600 - 150
+            ->where('financialSummary.summary.net_margin_percent', 45)
+            ->where('financialSummary.summary.net_cash_flow', 250) // 700 - 300 - 150
+            ->has('financialSummary.by_category', 1)
+            ->has('financialSummary.recent_sales', 1)
+            ->has('financialSummary.recent_purchases', 1)
+            ->has('financialSummary.recent_expenses', 1)
+        );
+    }
+
+    public function test_financial_summary_filters_by_all_requested_date_presets(): void
+    {
+        $customer = Customer::create([
+            'team_id' => $this->team->id,
+            'name' => 'Preset Tester',
+        ]);
+
+        // Sale Today: $500
+        SalesOrder::create([
+            'team_id' => $this->team->id,
+            'customer_id' => $customer->id,
+            'warehouse_id' => $this->warehouse->id,
+            'order_number' => 'SO-TODAY',
+            'status' => 'delivered',
+            'payment_status' => 'paid',
+            'order_date' => now()->toDateString(),
+            'subtotal' => 500.00,
+            'total_amount' => 500.00,
+            'paid_amount' => 500.00,
+            'due_amount' => 0.00,
+            'created_by' => $this->user->id,
+        ]);
+
+        // Sale Last Month: $300
+        SalesOrder::create([
+            'team_id' => $this->team->id,
+            'customer_id' => $customer->id,
+            'warehouse_id' => $this->warehouse->id,
+            'order_number' => 'SO-PAST',
+            'status' => 'delivered',
+            'payment_status' => 'paid',
+            'order_date' => now()->subMonth()->startOfMonth()->toDateString(),
+            'subtotal' => 300.00,
+            'total_amount' => 300.00,
+            'paid_amount' => 300.00,
+            'due_amount' => 0.00,
+            'created_by' => $this->user->id,
+        ]);
+
+        // 1. Preset: Today -> only $500
+        $resToday = $this->actingAs($this->user)->get(route('reports.index', [
+            'tab' => 'financial_summary',
+            'date_preset' => 'today',
+        ]));
+        $resToday->assertStatus(200);
+        $resToday->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('financialSummary.summary.total_sales', 500)
+            ->where('financialSummary.summary.sales_count', 1)
+        );
+
+        // 2. Preset: Last Month -> only $300
+        $resLastMonth = $this->actingAs($this->user)->get(route('reports.index', [
+            'tab' => 'financial_summary',
+            'date_preset' => 'last_month',
+        ]));
+        $resLastMonth->assertStatus(200);
+        $resLastMonth->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('financialSummary.summary.total_sales', 300)
+            ->where('financialSummary.summary.sales_count', 1)
+        );
+
+        // 3. Preset: All Time -> $800
+        $resAll = $this->actingAs($this->user)->get(route('reports.index', [
+            'tab' => 'financial_summary',
+            'date_preset' => 'all_time',
+        ]));
+        $resAll->assertStatus(200);
+        $resAll->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('financialSummary.summary.total_sales', 800)
+            ->where('financialSummary.summary.sales_count', 2)
+        );
+
+        // 4. Custom Date Range
+        $resCustom = $this->actingAs($this->user)->get(route('reports.index', [
+            'tab' => 'financial_summary',
+            'date_preset' => 'custom',
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->toDateString(),
+        ]));
+        $resCustom->assertStatus(200);
+        $resCustom->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('financialSummary.summary.total_sales', 500)
+            ->where('financialSummary.summary.sales_count', 1)
+        );
+    }
+
+    public function test_financial_summary_exports_pdf_and_excel(): void
+    {
+        $customer = Customer::create([
+            'team_id' => $this->team->id,
+            'name' => 'Export Co',
+        ]);
+
+        SalesOrder::create([
+            'team_id' => $this->team->id,
+            'customer_id' => $customer->id,
+            'warehouse_id' => $this->warehouse->id,
+            'order_number' => 'SO-EXP-1',
+            'status' => 'delivered',
+            'payment_status' => 'paid',
+            'order_date' => now()->toDateString(),
+            'subtotal' => 250.00,
+            'total_amount' => 250.00,
+            'paid_amount' => 250.00,
+            'due_amount' => 0.00,
+            'created_by' => $this->user->id,
+        ]);
+
+        $pdfResponse = $this->actingAs($this->user)->get(route('reports.pdf', ['tab' => 'financial_summary']));
+        $pdfResponse->assertStatus(200);
+        $pdfResponse->assertHeader('content-type', 'application/pdf');
+
+        $excelResponse = $this->actingAs($this->user)->get(route('reports.excel', ['tab' => 'financial_summary']));
+        $excelResponse->assertStatus(200);
+
+        // Individual report exports: Sales, Purchases, Expenses, Revenue
+        foreach (['sales', 'purchases', 'expenses', 'revenue'] as $scope) {
+            $pdf = $this->actingAs($this->user)->get(route('reports.pdf', [
+                'tab' => 'financial_summary',
+                'financial_scope' => $scope,
+            ]));
+            $pdf->assertStatus(200);
+            $pdf->assertHeader('content-type', 'application/pdf');
+
+            $excel = $this->actingAs($this->user)->get(route('reports.excel', [
+                'tab' => 'financial_summary',
+                'financial_scope' => $scope,
+            ]));
+            $excel->assertStatus(200);
+        }
     }
 }

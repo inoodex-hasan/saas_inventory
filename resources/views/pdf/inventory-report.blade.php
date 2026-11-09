@@ -650,6 +650,522 @@
         </table>
     @endif
 
+    {{-- TAB 7: EXECUTIVE FINANCIAL SUMMARY (SALES, PURCHASES, EXPENSES & REVENUE) --}}
+    @if($tab === 'financial_summary' && $financialSummary)
+        <table class="kpi-table">
+            <tr>
+                <td style="width: 25%; padding-right: 4px;">
+                    <div class="kpi-card" style="border-left: 3px solid #059669;">
+                        <div class="kpi-title" style="color: #059669;">Total Sales Volume</div>
+                        <div class="kpi-value" style="color: #065f46;">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['total_sales'], 2) }}</div>
+                        <div class="kpi-sub">{{ number_format($financialSummary['summary']['sales_count']) }} orders | Recv: {{ $currencySymbol }}{{ number_format($financialSummary['summary']['sales_due'], 2) }}</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-left: 4px; padding-right: 4px;">
+                    <div class="kpi-card" style="border-left: 3px solid #d97706;">
+                        <div class="kpi-title" style="color: #d97706;">Total Purchases</div>
+                        <div class="kpi-value" style="color: #92400e;">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['total_purchases'], 2) }}</div>
+                        <div class="kpi-sub">{{ number_format($financialSummary['summary']['purchases_count']) }} POs | Due: {{ $currencySymbol }}{{ number_format($financialSummary['summary']['purchases_due'], 2) }}</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-left: 4px; padding-right: 4px;">
+                    <div class="kpi-card" style="border-left: 3px solid #e11d48;">
+                        <div class="kpi-title" style="color: #e11d48;">Operating Expenses</div>
+                        <div class="kpi-value" style="color: #9f1239;">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['total_expenses'], 2) }}</div>
+                        <div class="kpi-sub">{{ number_format($financialSummary['summary']['expenses_count']) }} vouchers recorded</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-left: 4px;">
+                    <div class="kpi-card" style="border-left: 3px solid {{ $financialSummary['summary']['net_profit'] >= 0 ? '#4f46e5' : '#dc2626' }};">
+                        <div class="kpi-title" style="color: {{ $financialSummary['summary']['net_profit'] >= 0 ? '#4f46e5' : '#dc2626' }};">Net Operating Profit</div>
+                        <div class="kpi-value" style="color: {{ $financialSummary['summary']['net_profit'] >= 0 ? '#3730a3' : '#991b1b' }};">
+                            {{ $currencySymbol }}{{ number_format($financialSummary['summary']['net_profit'], 2) }}
+                        </div>
+                        <div class="kpi-sub">Net Margin: {{ $financialSummary['summary']['net_margin_percent'] }}%</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-header">Executive Income &amp; Cash Flow Statement</div>
+        <table class="data-table" style="margin-bottom: 14px;">
+            <thead>
+                <tr>
+                    <th style="width: 50%;">Financial Metric</th>
+                    <th style="width: 25%; text-align: right;">Amount ({{ $currencySymbol }})</th>
+                    <th style="width: 25%; text-align: right;">Operating Margin / Ratio</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="font-weight: bold; color: #0f172a;">Total Sales Revenue (Invoiced)</td>
+                    <td class="text-right font-mono font-bold" style="color: #059669;">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['total_sales'], 2) }}</td>
+                    <td class="text-right font-mono">100.0%</td>
+                </tr>
+                <tr>
+                    <td style="padding-left: 20px; color: #475569;">Less: Total Procurement &amp; Purchases</td>
+                    <td class="text-right font-mono" style="color: #d97706;">-{{ $currencySymbol }}{{ number_format($financialSummary['summary']['total_purchases'], 2) }}</td>
+                    <td class="text-right font-mono text-slate-500">
+                        {{ $financialSummary['summary']['total_sales'] > 0 ? round(($financialSummary['summary']['total_purchases'] / $financialSummary['summary']['total_sales']) * 100, 1) : 0 }}%
+                    </td>
+                </tr>
+                <tr style="background-color: #f1f5f9; font-weight: bold;">
+                    <td>Gross Operational Profit</td>
+                    <td class="text-right font-mono" style="color: {{ $financialSummary['summary']['gross_profit'] >= 0 ? '#059669' : '#dc2626' }};">
+                        {{ $currencySymbol }}{{ number_format($financialSummary['summary']['gross_profit'], 2) }}
+                    </td>
+                    <td class="text-right font-mono">{{ $financialSummary['summary']['gross_margin_percent'] }}%</td>
+                </tr>
+                <tr>
+                    <td style="padding-left: 20px; color: #475569;">Less: Total Operating Overheads &amp; Expenses</td>
+                    <td class="text-right font-mono" style="color: #e11d48;">-{{ $currencySymbol }}{{ number_format($financialSummary['summary']['total_expenses'], 2) }}</td>
+                    <td class="text-right font-mono text-slate-500">
+                        {{ $financialSummary['summary']['total_sales'] > 0 ? round(($financialSummary['summary']['total_expenses'] / $financialSummary['summary']['total_sales']) * 100, 1) : 0 }}%
+                    </td>
+                </tr>
+                <tr class="total-row">
+                    <td>NET OPERATING PROFIT (SALES - PURCHASES - EXPENSES)</td>
+                    <td class="text-right font-mono" style="color: {{ $financialSummary['summary']['net_profit'] >= 0 ? '#059669' : '#dc2626' }};">
+                        {{ $currencySymbol }}{{ number_format($financialSummary['summary']['net_profit'], 2) }}
+                    </td>
+                    <td class="text-right font-mono">{{ $financialSummary['summary']['net_margin_percent'] }}%</td>
+                </tr>
+                <tr>
+                    <td style="color: #334155; font-style: italic;">Net Liquid Cash Flow (Collected Sales - Paid Purchases - Expenses)</td>
+                    <td class="text-right font-mono font-bold" style="color: {{ $financialSummary['summary']['net_cash_flow'] >= 0 ? '#0284c7' : '#e11d48' }};">
+                        {{ $currencySymbol }}{{ number_format($financialSummary['summary']['net_cash_flow'], 2) }}
+                    </td>
+                    <td class="text-right font-mono text-slate-500">
+                        In: {{ $currencySymbol }}{{ number_format($financialSummary['summary']['cash_inflow'], 0) }} / Out: {{ $currencySymbol }}{{ number_format($financialSummary['summary']['cash_outflow'], 0) }}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        @if(count($financialSummary['by_category']) > 0)
+            <div class="section-header">Expenses Breakdown by Category</div>
+            <table class="data-table" style="margin-bottom: 14px;">
+                <thead>
+                    <tr>
+                        <th style="width: 45%;">Expense Category</th>
+                        <th style="width: 15%; text-align: center;">Vouchers</th>
+                        <th style="width: 20%; text-align: right;">Total Amount</th>
+                        <th style="width: 20%; text-align: right;">Share of Expenses</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($financialSummary['by_category'] as $cat)
+                        <tr>
+                            <td class="font-bold">{{ $cat['category_name'] }}</td>
+                            <td class="text-center font-mono">{{ $cat['vouchers_count'] }}</td>
+                            <td class="text-right font-mono font-bold">{{ $currencySymbol }}{{ number_format($cat['total_amount'], 2) }}</td>
+                            <td class="text-right font-mono">{{ $cat['percentage'] }}%</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+
+        <table style="width: 100%; margin-top: 10px;">
+            <tr>
+                <td style="width: 50%; vertical-align: top; padding-right: 6px;">
+                    <div class="section-header">Recent Sales Orders (Top 10)</div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 28%;">Order #</th>
+                                <th style="width: 42%;">Customer</th>
+                                <th style="width: 30%; text-align: right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($financialSummary['recent_sales'] as $sale)
+                                <tr>
+                                    <td class="font-mono font-bold">{{ $sale->order_number }}</td>
+                                    <td>{{ $sale->customer_name }}</td>
+                                    <td class="text-right font-mono font-bold">{{ $currencySymbol }}{{ number_format($sale->total_amount, 2) }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="text-center text-slate-500">No sales orders found.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </td>
+                <td style="width: 50%; vertical-align: top; padding-left: 6px;">
+                    <div class="section-header">Recent Purchase Orders (Top 10)</div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 28%;">PO #</th>
+                                <th style="width: 42%;">Supplier</th>
+                                <th style="width: 30%; text-align: right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($financialSummary['recent_purchases'] as $purch)
+                                <tr>
+                                    <td class="font-mono font-bold">{{ $purch->order_number }}</td>
+                                    <td>{{ $purch->supplier_name }}</td>
+                                    <td class="text-right font-mono font-bold">{{ $currencySymbol }}{{ number_format($purch->total_amount, 2) }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="text-center text-slate-500">No purchase orders found.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    @endif
+
+    {{-- INDIVIDUAL REPORT: SALES --}}
+    @if($tab === 'sales_report' && $financialSummary)
+        <table class="kpi-table">
+            <tr>
+                <td style="width: 25%; padding-right: 4px;">
+                    <div class="kpi-card" style="border-left: 3px solid #059669;">
+                        <div class="kpi-title" style="color: #059669;">Total Sales Volume</div>
+                        <div class="kpi-value" style="color: #065f46;">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['total_sales'], 2) }}</div>
+                        <div class="kpi-sub">{{ number_format($financialSummary['summary']['sales_count']) }} Invoiced Orders</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-left: 4px; padding-right: 4px;">
+                    <div class="kpi-card" style="border-left: 3px solid #0284c7;">
+                        <div class="kpi-title" style="color: #0284c7;">Cash Collections (Paid)</div>
+                        <div class="kpi-value" style="color: #0369a1;">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['sales_paid'], 2) }}</div>
+                        <div class="kpi-sub">Realized Sales Revenue</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-left: 4px; padding-right: 4px;">
+                    <div class="kpi-card" style="border-left: 3px solid #e11d48;">
+                        <div class="kpi-title" style="color: #e11d48;">Customer Receivables (Due)</div>
+                        <div class="kpi-value" style="color: #9f1239;">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['sales_due'], 2) }}</div>
+                        <div class="kpi-sub">Outstanding Balance</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-left: 4px;">
+                    <div class="kpi-card" style="border-left: 3px solid #6366f1;">
+                        <div class="kpi-title" style="color: #6366f1;">Average Order Value</div>
+                        <div class="kpi-value" style="color: #4338ca;">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['avg_order_value'], 2) }}</div>
+                        <div class="kpi-sub">Per Active Order</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-header">Sales Orders Ledger ({{ count($financialSummary['sales_list']) }} records)</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 16%;">Order #</th>
+                    <th style="width: 14%;">Date</th>
+                    <th style="width: 26%;">Customer</th>
+                    <th style="width: 12%; text-align: center;">Status</th>
+                    <th style="width: 11%; text-align: right;">Total Amount</th>
+                    <th style="width: 11%; text-align: right;">Paid Amount</th>
+                    <th style="width: 10%; text-align: right;">Due Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($financialSummary['sales_list'] as $sale)
+                    <tr>
+                        <td class="font-mono font-bold">{{ $sale->order_number }}</td>
+                        <td>{{ \Carbon\Carbon::parse($sale->order_date)->format('d M Y') }}</td>
+                        <td>{{ $sale->customer_name }}</td>
+                        <td class="text-center">{{ ucfirst($sale->status) }}</td>
+                        <td class="text-right font-mono font-bold">{{ $currencySymbol }}{{ number_format($sale->total_amount, 2) }}</td>
+                        <td class="text-right font-mono" style="color: #059669;">{{ $currencySymbol }}{{ number_format($sale->paid_amount, 2) }}</td>
+                        <td class="text-right font-mono" style="color: {{ $sale->due_amount > 0 ? '#e11d48' : '#64748b' }};">{{ $currencySymbol }}{{ number_format($sale->due_amount, 2) }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="7" class="text-center text-slate-500">No sales orders found for this period.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+            @if(count($financialSummary['sales_list']) > 0)
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="4">PERIOD TOTALS</td>
+                        <td class="text-right font-mono">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['total_sales'], 2) }}</td>
+                        <td class="text-right font-mono">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['sales_paid'], 2) }}</td>
+                        <td class="text-right font-mono">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['sales_due'], 2) }}</td>
+                    </tr>
+                </tfoot>
+            @endif
+        </table>
+    @endif
+
+    {{-- INDIVIDUAL REPORT: PURCHASES --}}
+    @if($tab === 'purchase_report' && $financialSummary)
+        <table class="kpi-table">
+            <tr>
+                <td style="width: 25%; padding-right: 4px;">
+                    <div class="kpi-card" style="border-left: 3px solid #d97706;">
+                        <div class="kpi-title" style="color: #d97706;">Total Purchases</div>
+                        <div class="kpi-value" style="color: #92400e;">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['total_purchases'], 2) }}</div>
+                        <div class="kpi-sub">{{ number_format($financialSummary['summary']['purchases_count']) }} Purchase Orders</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-left: 4px; padding-right: 4px;">
+                    <div class="kpi-card" style="border-left: 3px solid #0284c7;">
+                        <div class="kpi-title" style="color: #0284c7;">Supplier Payments (Paid)</div>
+                        <div class="kpi-value" style="color: #0369a1;">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['purchases_paid'], 2) }}</div>
+                        <div class="kpi-sub">Disbursed Funds</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-left: 4px; padding-right: 4px;">
+                    <div class="kpi-card" style="border-left: 3px solid #e11d48;">
+                        <div class="kpi-title" style="color: #e11d48;">Supplier Payables (Due)</div>
+                        <div class="kpi-value" style="color: #9f1239;">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['purchases_due'], 2) }}</div>
+                        <div class="kpi-sub">Pending Payables</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-left: 4px;">
+                    <div class="kpi-card" style="border-left: 3px solid #6366f1;">
+                        <div class="kpi-title" style="color: #6366f1;">Average PO Value</div>
+                        <div class="kpi-value" style="color: #4338ca;">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['avg_purchase_value'], 2) }}</div>
+                        <div class="kpi-sub">Per Procurement Order</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-header">Purchase Orders Ledger ({{ count($financialSummary['purchases_list']) }} records)</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 16%;">PO #</th>
+                    <th style="width: 14%;">Date</th>
+                    <th style="width: 26%;">Supplier</th>
+                    <th style="width: 12%; text-align: center;">Status</th>
+                    <th style="width: 11%; text-align: right;">Total Amount</th>
+                    <th style="width: 11%; text-align: right;">Paid Amount</th>
+                    <th style="width: 10%; text-align: right;">Due Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($financialSummary['purchases_list'] as $purch)
+                    <tr>
+                        <td class="font-mono font-bold">{{ $purch->order_number }}</td>
+                        <td>{{ \Carbon\Carbon::parse($purch->order_date)->format('d M Y') }}</td>
+                        <td>{{ $purch->supplier_name }}</td>
+                        <td class="text-center">{{ ucfirst($purch->status) }}</td>
+                        <td class="text-right font-mono font-bold">{{ $currencySymbol }}{{ number_format($purch->total_amount, 2) }}</td>
+                        <td class="text-right font-mono">{{ $currencySymbol }}{{ number_format($purch->paid_amount, 2) }}</td>
+                        <td class="text-right font-mono" style="color: {{ $purch->due_amount > 0 ? '#d97706' : '#64748b' }};">{{ $currencySymbol }}{{ number_format($purch->due_amount, 2) }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="7" class="text-center text-slate-500">No purchase orders found for this period.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+            @if(count($financialSummary['purchases_list']) > 0)
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="4">PERIOD TOTALS</td>
+                        <td class="text-right font-mono">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['total_purchases'], 2) }}</td>
+                        <td class="text-right font-mono">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['purchases_paid'], 2) }}</td>
+                        <td class="text-right font-mono">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['purchases_due'], 2) }}</td>
+                    </tr>
+                </tfoot>
+            @endif
+        </table>
+    @endif
+
+    {{-- INDIVIDUAL REPORT: EXPENSES --}}
+    @if($tab === 'expense_report' && $financialSummary)
+        <table class="kpi-table">
+            <tr>
+                <td style="width: 33.33%; padding-right: 4px;">
+                    <div class="kpi-card" style="border-left: 3px solid #e11d48;">
+                        <div class="kpi-title" style="color: #e11d48;">Total Operating Expenses</div>
+                        <div class="kpi-value" style="color: #9f1239;">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['total_expenses'], 2) }}</div>
+                        <div class="kpi-sub">{{ number_format($financialSummary['summary']['expenses_count']) }} Vouchers Recorded</div>
+                    </div>
+                </td>
+                <td style="width: 33.33%; padding-left: 4px; padding-right: 4px;">
+                    <div class="kpi-card" style="border-left: 3px solid #0284c7;">
+                        <div class="kpi-title" style="color: #0284c7;">Expense Categories</div>
+                        <div class="kpi-value" style="color: #0369a1;">{{ count($financialSummary['by_category']) }}</div>
+                        <div class="kpi-sub">Active Classification Buckets</div>
+                    </div>
+                </td>
+                <td style="width: 33.33%; padding-left: 4px;">
+                    <div class="kpi-card" style="border-left: 3px solid #6366f1;">
+                        <div class="kpi-title" style="color: #6366f1;">Top Expense Category</div>
+                        <div class="kpi-value" style="color: #4338ca; font-size: 10pt;">
+                            {{ $financialSummary['by_category'][0]['category_name'] ?? 'N/A' }}
+                        </div>
+                        <div class="kpi-sub">
+                            {{ isset($financialSummary['by_category'][0]) ? $currencySymbol . number_format($financialSummary['by_category'][0]['total_amount'], 2) . ' (' . $financialSummary['by_category'][0]['percentage'] . '%)' : '' }}
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        @if(count($financialSummary['by_category']) > 0)
+            <div class="section-header">Expense Category Distribution</div>
+            <table class="data-table" style="margin-bottom: 14px;">
+                <thead>
+                    <tr>
+                        <th style="width: 45%;">Expense Category</th>
+                        <th style="width: 15%; text-align: center;">Vouchers</th>
+                        <th style="width: 20%; text-align: right;">Total Amount</th>
+                        <th style="width: 20%; text-align: right;">Share of Expenses</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($financialSummary['by_category'] as $cat)
+                        <tr>
+                            <td class="font-bold">{{ $cat['category_name'] }}</td>
+                            <td class="text-center font-mono">{{ $cat['vouchers_count'] }}</td>
+                            <td class="text-right font-mono font-bold">{{ $currencySymbol }}{{ number_format($cat['total_amount'], 2) }}</td>
+                            <td class="text-right font-mono">{{ $cat['percentage'] }}%</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+
+        <div class="section-header">Detailed Expense Vouchers ({{ count($financialSummary['expenses_list']) }} records)</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 16%;">Voucher #</th>
+                    <th style="width: 14%;">Date</th>
+                    <th style="width: 20%;">Category</th>
+                    <th style="width: 25%;">Title / Payee</th>
+                    <th style="width: 12%; text-align: center;">Method</th>
+                    <th style="width: 13%; text-align: right;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($financialSummary['expenses_list'] as $exp)
+                    <tr>
+                        <td class="font-mono font-bold">{{ $exp->expense_number }}</td>
+                        <td>{{ \Carbon\Carbon::parse($exp->expense_date)->format('d M Y') }}</td>
+                        <td>{{ $exp->category_name }}</td>
+                        <td>{{ $exp->title }} {{ $exp->vendor_or_payee ? '(' . $exp->vendor_or_payee . ')' : '' }}</td>
+                        <td class="text-center">{{ ucfirst($exp->payment_method ?: 'cash') }}</td>
+                        <td class="text-right font-mono font-bold" style="color: #e11d48;">{{ $currencySymbol }}{{ number_format($exp->amount, 2) }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" class="text-center text-slate-500">No expense vouchers found for this period.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+            @if(count($financialSummary['expenses_list']) > 0)
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="5">PERIOD TOTALS</td>
+                        <td class="text-right font-mono">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['total_expenses'], 2) }}</td>
+                    </tr>
+                </tfoot>
+            @endif
+        </table>
+    @endif
+
+    {{-- INDIVIDUAL REPORT: REVENUE & PROFIT STATEMENT --}}
+    @if($tab === 'revenue_report' && $financialSummary)
+        <table class="kpi-table">
+            <tr>
+                <td style="width: 25%; padding-right: 4px;">
+                    <div class="kpi-card" style="border-left: 3px solid #059669;">
+                        <div class="kpi-title" style="color: #059669;">Total Sales Revenue</div>
+                        <div class="kpi-value" style="color: #065f46;">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['total_sales'], 2) }}</div>
+                        <div class="kpi-sub">Top Line Turnover</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-left: 4px; padding-right: 4px;">
+                    <div class="kpi-card" style="border-left: 3px solid #d97706;">
+                        <div class="kpi-title" style="color: #d97706;">Total Procurement</div>
+                        <div class="kpi-value" style="color: #92400e;">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['total_purchases'], 2) }}</div>
+                        <div class="kpi-sub">Purchases &amp; Sourcing</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-left: 4px; padding-right: 4px;">
+                    <div class="kpi-card" style="border-left: 3px solid #e11d48;">
+                        <div class="kpi-title" style="color: #e11d48;">Operating Overheads</div>
+                        <div class="kpi-value" style="color: #9f1239;">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['total_expenses'], 2) }}</div>
+                        <div class="kpi-sub">General &amp; Admin Expenses</div>
+                    </div>
+                </td>
+                <td style="width: 25%; padding-left: 4px;">
+                    <div class="kpi-card" style="border-left: 3px solid {{ $financialSummary['summary']['net_profit'] >= 0 ? '#4f46e5' : '#dc2626' }};">
+                        <div class="kpi-title" style="color: {{ $financialSummary['summary']['net_profit'] >= 0 ? '#4f46e5' : '#dc2626' }};">Net Operating Profit</div>
+                        <div class="kpi-value" style="color: {{ $financialSummary['summary']['net_profit'] >= 0 ? '#3730a3' : '#991b1b' }};">
+                            {{ $currencySymbol }}{{ number_format($financialSummary['summary']['net_profit'], 2) }}
+                        </div>
+                        <div class="kpi-sub">Net Margin: {{ $financialSummary['summary']['net_margin_percent'] }}%</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-header">Detailed Income &amp; Operating Profit Statement</div>
+        <table class="data-table" style="margin-bottom: 14px;">
+            <thead>
+                <tr>
+                    <th style="width: 50%;">Financial Metric</th>
+                    <th style="width: 25%; text-align: right;">Amount ({{ $currencySymbol }})</th>
+                    <th style="width: 25%; text-align: right;">Operating Margin / Ratio</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="font-weight: bold; color: #0f172a;">Total Sales Revenue (Invoiced)</td>
+                    <td class="text-right font-mono font-bold" style="color: #059669;">{{ $currencySymbol }}{{ number_format($financialSummary['summary']['total_sales'], 2) }}</td>
+                    <td class="text-right font-mono">100.0%</td>
+                </tr>
+                <tr>
+                    <td style="padding-left: 20px; color: #475569;">Less: Procurement &amp; Purchases</td>
+                    <td class="text-right font-mono" style="color: #d97706;">-{{ $currencySymbol }}{{ number_format($financialSummary['summary']['total_purchases'], 2) }}</td>
+                    <td class="text-right font-mono text-slate-500">
+                        {{ $financialSummary['summary']['total_sales'] > 0 ? round(($financialSummary['summary']['total_purchases'] / $financialSummary['summary']['total_sales']) * 100, 1) : 0 }}%
+                    </td>
+                </tr>
+                <tr style="background-color: #f1f5f9; font-weight: bold;">
+                    <td>Gross Operational Profit</td>
+                    <td class="text-right font-mono" style="color: {{ $financialSummary['summary']['gross_profit'] >= 0 ? '#059669' : '#dc2626' }};">
+                        {{ $currencySymbol }}{{ number_format($financialSummary['summary']['gross_profit'], 2) }}
+                    </td>
+                    <td class="text-right font-mono">{{ $financialSummary['summary']['gross_margin_percent'] }}%</td>
+                </tr>
+                <tr>
+                    <td style="padding-left: 20px; color: #475569;">Less: Operating Overheads &amp; General Expenses</td>
+                    <td class="text-right font-mono" style="color: #e11d48;">-{{ $currencySymbol }}{{ number_format($financialSummary['summary']['total_expenses'], 2) }}</td>
+                    <td class="text-right font-mono text-slate-500">
+                        {{ $financialSummary['summary']['total_sales'] > 0 ? round(($financialSummary['summary']['total_expenses'] / $financialSummary['summary']['total_sales']) * 100, 1) : 0 }}%
+                    </td>
+                </tr>
+                <tr class="total-row">
+                    <td>NET OPERATING PROFIT (SALES - PURCHASES - EXPENSES)</td>
+                    <td class="text-right font-mono" style="color: {{ $financialSummary['summary']['net_profit'] >= 0 ? '#059669' : '#dc2626' }};">
+                        {{ $currencySymbol }}{{ number_format($financialSummary['summary']['net_profit'], 2) }}
+                    </td>
+                    <td class="text-right font-mono">{{ $financialSummary['summary']['net_margin_percent'] }}%</td>
+                </tr>
+                <tr>
+                    <td style="color: #334155; font-style: italic;">Net Liquid Cash Flow (Collected Sales - Paid Purchases - Expenses)</td>
+                    <td class="text-right font-mono font-bold" style="color: {{ $financialSummary['summary']['net_cash_flow'] >= 0 ? '#0284c7' : '#e11d48' }};">
+                        {{ $currencySymbol }}{{ number_format($financialSummary['summary']['net_cash_flow'], 2) }}
+                    </td>
+                    <td class="text-right font-mono text-slate-500">
+                        In: {{ $currencySymbol }}{{ number_format($financialSummary['summary']['cash_inflow'], 0) }} / Out: {{ $currencySymbol }}{{ number_format($financialSummary['summary']['cash_outflow'], 0) }}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    @endif
+
 </body>
 </html>
 

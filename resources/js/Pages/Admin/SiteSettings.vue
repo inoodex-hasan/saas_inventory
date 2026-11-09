@@ -217,7 +217,7 @@ function submit() {
 
                 <div class="flex items-center gap-3">
                     <a 
-                        href="/" 
+                        href="/?preview=1" 
                         target="_blank" 
                         class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition shadow-sm"
                     >
