@@ -26,7 +26,10 @@ class UserAndTenantSeeder extends Seeder
                 'password' => Hash::make('hello@inoodex.com'),
             ]
         );
-        $superAdmin->forceFill(['is_super_admin' => true])->save();
+        $superAdmin->forceFill([
+            'is_super_admin' => true,
+            'phone_verified_at' => $superAdmin->phone_verified_at ?? now(),
+        ])->save();
 
         // 2. Demo Client / Tenant Owner
         $clientOwner = User::firstOrCreate(
@@ -36,7 +39,10 @@ class UserAndTenantSeeder extends Seeder
                 'password' => Hash::make('admin12345'),
             ]
         );
-        $clientOwner->forceFill(['is_super_admin' => false])->save();
+        $clientOwner->forceFill([
+            'is_super_admin' => false,
+            'phone_verified_at' => $clientOwner->phone_verified_at ?? now(),
+        ])->save();
 
     }
 }

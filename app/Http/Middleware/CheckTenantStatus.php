@@ -47,6 +47,10 @@ class CheckTenantStatus
                     'current-team.update',
                     'teams.create',
                     'teams.show',
+                    'phone.verify.notice',
+                    'phone.verify.confirm',
+                    'phone.verify.resend',
+                    'phone.verify.update',
                 ];
 
                 if (!$request->routeIs($whitelistedRoutes) && !$request->is('sslcommerz/*')) {
@@ -62,6 +66,32 @@ class CheckTenantStatus
                         'error',
                         'Your workspace subscription has expired. Please choose a plan or renew your subscription to continue.'
                     );
+                }
+            }
+
+            // 3. Phone OTP Verification Gate for Free-Trial Users
+            if ($subscription->status === 'trialing' && ! $user->hasVerifiedPhone()) {
+                $phoneWhitelistedRoutes = [
+                    'phone.verify.notice',
+                    'phone.verify.confirm',
+                    'phone.verify.resend',
+                    'phone.verify.update',
+                    'logout',
+                    'tenant.suspended',
+                    'terms.show',
+                    'policy.show',
+                ];
+
+                if (! $request->routeIs($phoneWhitelistedRoutes)) {
+                    if ($request->wantsJson() || $request->is('api/*')) {
+                        return response()->json([
+                            'message' => 'Please verify your phone number via OTP to access your dashboard.',
+                            'phone_verification_required' => true,
+                            'redirect' => route('phone.verify.notice'),
+                        ], 403);
+                    }
+
+                    return redirect()->route('phone.verify.notice');
                 }
             }
         }

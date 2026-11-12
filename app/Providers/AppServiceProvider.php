@@ -234,5 +234,60 @@ class AppServiceProvider extends ServiceProvider
                 }
             }
         });
+
+        View::composer(['layouts.landing', 'landing.*', 'welcome', 'privacy', 'terms'], function ($view) {
+            $hasTable = Schema::hasTable('site_settings');
+            $get = fn (string $key, $default = null) => $hasTable ? SiteSetting::get($key, $default) : $default;
+
+            $logoPath = $get('logo_path');
+            $faviconPath = $get('favicon_path');
+
+            $heroSlides = json_decode((string) $get('hero_slides', ''), true);
+            if (! is_array($heroSlides) || empty($heroSlides)) {
+                $heroSlides = [[
+                    'headline' => 'Intelligent Inventory &',
+                    'headline_highlight' => 'Cloud ERP Platform',
+                    'subtext' => 'Streamline procurement, multi-warehouse stock tracking, real-time analytics, and automated supply chains—built for modern high-velocity businesses.',
+                    'primary_cta_text' => 'Get Started Free',
+                    'primary_cta_url' => route('register'),
+                    'image_url' => asset('landing/images/inomanage-laptop-dashboard.png'),
+                ]];
+            } else {
+                foreach ($heroSlides as &$slide) {
+                    if (! empty($slide['image_path']) && Storage::disk('public')->exists($slide['image_path'])) {
+                        $slide['image_url'] = asset(Storage::url($slide['image_path']));
+                    } elseif (empty($slide['image_url'])) {
+                        $slide['image_url'] = asset('landing/images/inomanage-laptop-dashboard.png');
+                    }
+                }
+                unset($slide);
+            }
+
+            $testimonials = json_decode((string) $get('testimonials', ''), true);
+            if (! is_array($testimonials) || empty($testimonials)) {
+                $testimonials = [];
+            }
+
+            $faqs = json_decode((string) $get('faqs', ''), true);
+            if (! is_array($faqs) || empty($faqs)) {
+                $faqs = [];
+            }
+
+            $view->with('siteSettings', [
+                'brand_name' => $get('brand_name') ?: 'InoManage',
+                'brand_tagline' => $get('brand_tagline') ?: 'CLOUD INVENTORY PLATFORM',
+                'site_title' => $get('site_title') ?: 'InoManage ERP - Cloud Inventory Platform',
+                'meta_description' => $get('meta_description') ?: 'Cloud inventory, supply chain management, and double-entry accounting software designed for resilient enterprises.',
+                'support_email' => $get('support_email') ?: 'support@inomanage.com',
+                'contact_phone' => $get('contact_phone') ?: '+880 1957-890788',
+                'contact_address' => $get('contact_address') ?: 'House: E1, Road: 16, Pallabi (2nd Phase), Dhaka-1216',
+                'footer_copyright' => $get('footer_copyright') ?: 'InoManage. All rights reserved.',
+                'logo_url' => $logoPath && Storage::disk('public')->exists($logoPath) ? asset(Storage::url($logoPath)) : null,
+                'favicon_url' => $faviconPath && Storage::disk('public')->exists($faviconPath) ? asset(Storage::url($faviconPath)) : null,
+                'hero_slides' => $heroSlides,
+                'testimonials' => $testimonials,
+                'faqs' => $faqs,
+            ]);
+        });
     }
 }

@@ -90,7 +90,12 @@ class PurchaseOrderController extends Controller
 
     public function store(Request $request, PurchaseOrderService $service)
     {
-        $teamId = Auth::user()->current_team_id;
+        $user = Auth::user();
+        $teamId = $user->current_team_id;
+
+        if ($user->currentTeam && ! app(\App\Services\SubscriptionService::class)->canAddPurchaseOrder($user->currentTeam)) {
+            return redirect()->back()->with('error', 'You have reached the maximum purchase order limit for your subscription plan. Please upgrade your plan.');
+        }
 
         $rules = [
             'vendor_mode' => 'required|in:existing,new',

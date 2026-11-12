@@ -1,267 +1,110 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full scroll-smooth">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Terms and Conditions &bull; {{ $site['brand_name'] ?? 'InoManage' }}</title>
-        <meta name="description" content="Terms and Conditions and multi-tenant operating agreement for {{ $site['brand_name'] ?? 'InoManage' }}.">
-        @if(!empty($site['favicon_url']))
-        <link rel="icon" href="{{ $site['favicon_url'] }}">
-        @endif
+@extends('layouts.landing')
 
-        <!-- Google Fonts -->
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+@section('title', 'Terms & Conditions | InoManage')
 
-        <!-- Vite Asset Bundle -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-        <style>
-            :root {
-                --bg-deep: #050814;
-                --bg-surface: #0a0e22;
-                --bg-card: rgba(14, 20, 44, 0.75);
-                --border-subtle: rgba(255, 255, 255, 0.08);
-            }
-            body {
-                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-                background-color: var(--bg-deep);
-                color: #e2e8f0;
-                -webkit-font-smoothing: antialiased;
-            }
-            .font-heading {
-                font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
-            }
-            .ambient-glow {
-                position: fixed;
-                border-radius: 50%;
-                filter: blur(140px);
-                pointer-events: none;
-                z-index: 0;
-            }
-            .glow-primary {
-                width: 600px;
-                height: 600px;
-                background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 70%);
-                top: -150px;
-                left: -100px;
-            }
-            .glow-secondary {
-                width: 500px;
-                height: 500px;
-                background: radial-gradient(circle, rgba(168, 85, 247, 0.10) 0%, transparent 70%);
-                bottom: 10%;
-                right: -100px;
-            }
-            .glass-panel {
-                background: var(--bg-card);
-                backdrop-filter: blur(20px);
-                -webkit-backdrop-filter: blur(20px);
-                border: 1px solid var(--border-subtle);
-            }
-            .gradient-accent {
-                background: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f472b6 100%);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-            }
-
-            /* Reader Prose Styling */
-            .legal-content h1 {
-                font-family: 'Plus Jakarta Sans', sans-serif;
-                font-size: 2.25rem;
-                font-weight: 800;
-                color: #ffffff;
-                letter-spacing: -0.025em;
-                margin-top: 1rem;
-                margin-bottom: 1.5rem;
-                line-height: 1.15;
-            }
-            .legal-content h2 {
-                font-family: 'Plus Jakarta Sans', sans-serif;
-                font-size: 1.5rem;
-                font-weight: 700;
-                color: #f8fafc;
-                margin-top: 2.5rem;
-                margin-bottom: 1rem;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-                padding-bottom: 0.5rem;
-            }
-            .legal-content h3 {
-                font-family: 'Plus Jakarta Sans', sans-serif;
-                font-size: 1.15rem;
-                font-weight: 600;
-                color: #e2e8f0;
-                margin-top: 1.75rem;
-                margin-bottom: 0.75rem;
-            }
-            .legal-content p {
-                font-size: 0.95rem;
-                line-height: 1.75;
-                color: #94a3b8;
-                margin-bottom: 1.25rem;
-            }
-            .legal-content ul, .legal-content ol {
-                margin-bottom: 1.5rem;
-                padding-left: 1.5rem;
-                color: #94a3b8;
-                font-size: 0.95rem;
-                line-height: 1.75;
-            }
-            .legal-content ul {
-                list-style-type: disc;
-            }
-            .legal-content ol {
-                list-style-type: decimal;
-            }
-            .legal-content li {
-                margin-bottom: 0.5rem;
-            }
-            .legal-content strong {
-                color: #f1f5f9;
-                font-weight: 600;
-            }
-            .legal-content hr {
-                border-color: rgba(255, 255, 255, 0.08);
-                margin: 2rem 0;
-            }
-            .legal-content a {
-                color: #818cf8;
-                text-decoration: underline;
-                text-underline-offset: 3px;
-            }
-            .legal-content a:hover {
-                color: #a5b4fc;
-            }
-            .legal-content blockquote {
-                border-left: 3px solid #6366f1;
-                padding-left: 1rem;
-                color: #cbd5e1;
-                font-style: italic;
-                margin: 1.5rem 0;
-            }
-            .legal-content code {
-                font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-                font-size: 0.85em;
-                background-color: rgba(255, 255, 255, 0.06);
-                padding: 0.2rem 0.4rem;
-                border-radius: 0.375rem;
-                color: #cbd5e1;
-            }
-        </style>
-    </head>
-
-    <body class="min-h-screen relative selection:bg-indigo-600 selection:text-white">
-        <!-- Ambient Glowing Aura -->
-        <div class="ambient-glow glow-primary"></div>
-        <div class="ambient-glow glow-secondary"></div>
-
-        <!-- Sticky Navigation Header -->
-        <header class="sticky top-0 z-50 border-b border-white/[0.06] bg-[#050814]/85 backdrop-blur-xl">
-            <div class="w-full max-w-[96rem] mx-auto px-4 sm:px-6 lg:px-10 h-20 flex items-center justify-between">
-                <!-- Brand Logo -->
-                <a href="/" class="flex items-center gap-3 group">
-                    @if(!empty($site['logo_url']))
-                        <img src="{{ $site['logo_url'] }}" alt="{{ $site['brand_name'] }}" class="w-9 h-9 rounded-xl object-contain bg-white/10 p-1">
-                    @else
-                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white font-black text-lg">
-                            {{ strtoupper(substr($site['brand_name'], 0, 1)) }}
-                        </div>
-                    @endif
-                    <div>
-                        <span class="font-heading font-extrabold text-base text-white tracking-tight leading-tight block">{{ $site['brand_name'] }}</span>
-                        <span class="text-[10px] font-semibold tracking-wider text-slate-400 uppercase block">Enterprise ERP</span>
-                    </div>
-                </a>
-
-                <!-- Nav Action Links -->
-                <div class="flex items-center gap-4">
-                    <a href="/" class="text-xs font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5">
-                        <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                        <span>Back to Home</span>
-                    </a>
-                    <a href="{{ route('policy.show') }}" class="hidden sm:inline-block text-xs font-semibold text-slate-300 hover:text-white transition">
-                        Privacy Policy
-                    </a>
-                    @if (Route::has('login'))
-                        @auth
-                            <a href="{{ url('/dashboard') }}" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition shadow-sm">
-                                Open Workspace
-                            </a>
-                        @else
-                            <a href="{{ route('login') }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/[0.05] transition">
-                                Sign In
-                            </a>
-                            <a href="{{ route('register') }}" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition shadow-sm">
-                                Free Trial
-                            </a>
-                        @endauth
-                    @endif
-                </div>
+@section('content')
+<section class="legal-section" aria-labelledby="terms-title">
+      <div class="container">
+        <div class="legal-page-heading">
+          <div class="legal-heading-copy">
+            <div class="section-eyebrow d-inline-flex align-items-center gap-2 mb-3">
+              <span class="eyebrow-sparkle">✦</span>
+              <span data-bn="আইনি তথ্য">LEGAL INFORMATION</span>
+              <span class="eyebrow-dot"></span>
             </div>
-        </header>
+            <h1 class="legal-title" id="terms-title" data-bn="সেবার শর্তাবলি">Terms of Service</h1>
+            <p class="legal-lead" data-bn="ইনোম্যানেজ ক্লাউড ERP ব্যবহার ও অ্যাক্সেসের শর্তাবলি।">The terms that guide access to and use of InoManage Cloud ERP.</p>
+            <p class="legal-updated" data-bn="সর্বশেষ হালনাগাদ: ১২ নভেম্বর, ২০২৬">Last updated: November 12, 2026</p>
+          </div>
+          <aside class="legal-summary-card">
+            <span class="legal-summary-label" data-bn="সংক্ষেপে">THE SHORT VERSION</span>
+            <h2 data-bn="স্বচ্ছ ও পরিষ্কার সম্পর্কের জন্য তৈরি।">Built for a clear working relationship.</h2>
+            <p data-bn="প্ল্যাটফর্মটি দায়িত্বশীলভাবে ব্যবহার করুন, আপনার অ্যাকাউন্ট সুরক্ষিত রাখুন এবং পরিকল্পনা-নির্দিষ্ট তথ্যের জন্য অর্ডার বা পরিষেবা চুক্তি দেখুন।">Use the platform responsibly, protect your account, and refer to your order or service agreement for plan-specific details.</p>
+            <a href="{{ route('policy.show') }}" class="legal-related-link"><span data-bn="আমাদের গোপনীয়তা নীতি পড়ুন">Read our Privacy Policy</span> <span aria-hidden="true">&rarr;</span></a>
+          </aside>
+        </div>
 
-        <!-- Main Content -->
-        <main class="py-10 sm:py-16 relative z-10">
-            <div class="w-full max-w-[96rem] mx-auto px-4 sm:px-6 lg:px-10">
-                <!-- Page Header Banner -->
-                <div class="mb-10 text-center sm:text-left sm:flex sm:items-end sm:justify-between gap-6 border-b border-white/[0.06] pb-8">
-                    <div>
-                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-3 border border-indigo-500/20">
-                            Legal &amp; Compliance
-                        </div>
-                        <h1 class="font-heading font-extrabold text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-tight">
-                            Terms &amp; Conditions
-                        </h1>
-                        <p class="text-slate-400 mt-2 text-sm">
-                            Platform usage guidelines, multi-tenant isolation terms, and service agreements.
-                        </p>
-                    </div>
+        <div class="legal-document-layout">
+          <nav class="legal-toc" aria-label="Terms of Service contents" data-bn-aria-label="সেবার শর্তাবলির বিষয়সূচি">
+            <span class="legal-toc-title" data-bn="এই পাতায়">ON THIS PAGE</span>
+            <a href="#terms-agreement" data-bn="চুক্তি">Agreement</a>
+            <a href="#terms-account" data-bn="অ্যাকাউন্ট ও প্রবেশাধিকার">Accounts &amp; access</a>
+            <a href="#terms-subscriptions" data-bn="পরিকল্পনা ও বিলিং">Plans &amp; billing</a>
+            <a href="#terms-content" data-bn="আপনার কনটেন্ট">Your content</a>
+            <a href="#terms-use" data-bn="গ্রহণযোগ্য ব্যবহার">Acceptable use</a>
+            <a href="#terms-service" data-bn="পরিষেবা পরিবর্তন ও সমাপ্তি">Service &amp; termination</a>
+            <a href="#terms-contact" data-bn="যোগাযোগ">Contact</a>
+          </nav>
 
-                    <div class="mt-4 sm:mt-0 shrink-0">
-                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                            Active Legal Document
-                        </span>
-                    </div>
-                </div>
+          <div class="legal-document">
+            <article class="legal-article-section" id="terms-agreement">
+              <span class="legal-section-number">01</span>
+              <div>
+                <h2 data-bn="চুক্তি">Agreement</h2>
+                <p data-bn="ইনোম্যানেজ ক্লাউড ERP এবং সংশ্লিষ্ট পরিষেবা ব্যবহার বা অ্যাক্সেসের ক্ষেত্রে এই সেবার শর্তাবলি প্রযোজ্য। পরিষেবাটি ব্যবহার করলে আপনি এই শর্তগুলোতে সম্মত হচ্ছেন। কোনো প্রতিষ্ঠানের পক্ষে ইনোম্যানেজ ব্যবহার করলে, সেই প্রতিষ্ঠানের হয়ে এই শর্ত গ্রহণের অনুমতি আপনার আছে বলে নিশ্চিত করছেন।">These Terms of Service apply when you access or use InoManage Cloud ERP and related services. By using the service, you agree to these terms. If you use InoManage on behalf of a business, you confirm that you are authorized to accept these terms for that business.</p>
+                <p data-bn="আপনার সাবস্ক্রিপশনের জন্য স্বাক্ষরিত অর্ডার ফর্ম বা আলাদা পরিষেবা চুক্তি থাকলে, এই সাধারণ শর্তের সঙ্গে বিরোধ হলে সেই চুক্তিই প্রাধান্য পাবে।">If a signed order form or separate service agreement applies to your subscription, that agreement takes precedence where it conflicts with these general terms.</p>
+              </div>
+            </article>
 
-                <!-- Legal Content Card -->
-                <div class="glass-panel rounded-3xl p-6 sm:p-12 lg:p-16 shadow-2xl w-full">
-                    <article class="legal-content w-full max-w-none">
-                        {!! $terms !!}
-                    </article>
+            <article class="legal-article-section" id="terms-account">
+              <span class="legal-section-number">02</span>
+              <div>
+                <h2 data-bn="অ্যাকাউন্ট ও প্রবেশাধিকার">Accounts &amp; access</h2>
+                <p data-bn="আপনার অ্যাকাউন্টের তথ্য সঠিক রাখা, সাইন-ইন পরিচয়-তথ্য সুরক্ষিত রাখা এবং দলের সদস্যদের প্রবেশাধিকার পরিচালনার দায়িত্ব আপনার। অ্যাকাউন্টে অননুমোদিত ব্যবহার সন্দেহ হলে দ্রুত আমাদের জানান।">You are responsible for keeping your account details accurate, safeguarding your sign-in credentials, and managing access for your team. Please notify us promptly if you suspect unauthorized use of your account.</p>
+                <p data-bn="আপনার অ্যাকাউন্টের মাধ্যমে হওয়া কার্যকলাপের জন্য এবং প্রত্যেক ব্যবহারকারী এই শর্তগুলো মেনে চলছেন কি না তা নিশ্চিত করার জন্য আপনি দায়ী।">You are responsible for activity carried out through your account and for ensuring that each user follows these terms.</p>
+              </div>
+            </article>
 
-                    <!-- Back to top -->
-                    <div class="mt-12 pt-8 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400">
-                        <a href="{{ route('policy.show') }}" class="hover:text-indigo-400 transition flex items-center gap-1 font-semibold">
-                            <span>Read Privacy Policy</span> &rarr;
-                        </a>
-                        <button type="button" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="hover:text-white transition flex items-center gap-1">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                            </svg>
-                            <span>Back to top</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </main>
+            <article class="legal-article-section" id="terms-subscriptions">
+              <span class="legal-section-number">03</span>
+              <div>
+                <h2 data-bn="পরিকল্পনা ও বিলিং">Plans &amp; billing</h2>
+                <p data-bn="সাবস্ক্রিপশনের সুবিধা, ফি, বিলিংয়ের সময়কাল এবং ট্রায়ালের শর্ত—যদি থাকে—সাইন-আপের সময় বা প্রযোজ্য অর্ডার ফর্মে দেখানো হয়। পেমেন্ট ও বাতিলের শর্ত ওই তথ্য এবং আপনার সঙ্গে ইনোম্যানেজের পৃথক চুক্তি অনুযায়ী নির্ধারিত হবে।">Subscription features, fees, billing intervals, and any trial terms are shown at sign-up or in your applicable order form. Payment and cancellation terms are governed by those details and any separate agreement between you and InoManage.</p>
+                <p data-bn="প্রযোজ্য কর পরিশোধ এবং প্রয়োজন হলে বিলিংয়ের তথ্য হালনাগাদ রাখার দায়িত্ব আপনার।">You are responsible for applicable taxes and for keeping billing information current, where relevant.</p>
+              </div>
+            </article>
 
-        <!-- Footer -->
-        <footer class="border-t border-white/[0.06] bg-[#03060f] py-10 mt-20 relative z-10">
-            <div class="w-full max-w-[96rem] mx-auto px-4 sm:px-6 lg:px-10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-                <div>
-                    &copy; {{ date('Y') }} {{ $site['footer_copyright'] }}
-                </div>
-                <div class="flex items-center gap-6 text-slate-400">
-                    <a href="{{ route('terms.show') }}" class="text-white font-semibold">Terms and Conditions</a>
-                    <a href="{{ route('policy.show') }}" class="hover:text-white transition">Privacy Policy</a>
-                    <a href="/" class="hover:text-white transition">Home</a>
-                </div>
-            </div>
-        </footer>
-    </body>
-</html>
+            <article class="legal-article-section" id="terms-content">
+              <span class="legal-section-number">04</span>
+              <div>
+                <h2 data-bn="আপনার কনটেন্ট">Your content</h2>
+                <p data-bn="পরিষেবায় জমা দেওয়া ব্যবসায়িক তথ্য ও কনটেন্টের অধিকার আপনার কাছেই থাকবে। পরিষেবা প্রদান ও সহায়তার জন্য যতটুকু প্রয়োজন, অথবা আপনার সঙ্গে অন্যভাবে সম্মত হলে, সেই সীমার মধ্যে কনটেন্ট হোস্ট, প্রক্রিয়াকরণ ও প্রদর্শনের অনুমতি আপনি ইনোম্যানেজকে দিচ্ছেন।">You retain your rights to the business information and content you submit to the service. You give InoManage permission to host, process, and display that content only as needed to provide and support the service, or as otherwise agreed with you.</p>
+                <p data-bn="আপনার কনটেন্ট জমা দেওয়ার প্রয়োজনীয় অধিকার ও অনুমতি থাকা এবং আপনার রেকর্ডের উপযুক্ত কপি সংরক্ষণের দায়িত্ব আপনার।">You are responsible for having the rights and permissions needed to submit your content and for maintaining appropriate copies of your records.</p>
+              </div>
+            </article>
+
+            <article class="legal-article-section" id="terms-use">
+              <span class="legal-section-number">05</span>
+              <div>
+                <h2 data-bn="গ্রহণযোগ্য ব্যবহার">Acceptable use</h2>
+                <p data-bn="পরিষেবাটি বেআইনিভাবে ব্যবহার করবেন না, এর কার্যক্রমে বাধা দেবেন না, অননুমোদিত প্রবেশের চেষ্টা করবেন না বা অন্যের অধিকার লঙ্ঘনে ব্যবহার করবেন না। প্রযোজ্য আইন অনুমতি না দিলে বা আমরা লিখিত অনুমতি না দিলে পরিষেবাটি কপি, পুনর্বিক্রয় বা রিভার্স-ইঞ্জিনিয়ার করবেন না।">Do not use the service unlawfully, interfere with its operation, attempt unauthorized access, or use it to infringe another person’s rights. Do not copy, resell, or reverse engineer the service except where applicable law permits or we have given written permission.</p>
+              </div>
+            </article>
+
+            <article class="legal-article-section" id="terms-service">
+              <span class="legal-section-number">06</span>
+              <div>
+                <h2 data-bn="পরিষেবা পরিবর্তন ও সমাপ্তি">Service changes &amp; termination</h2>
+                <p data-bn="সময়ের সঙ্গে আমরা পরিষেবার রক্ষণাবেক্ষণ বা হালনাগাদ করতে পারি। প্রাপ্যতা-সংক্রান্ত প্রতিশ্রুতি থাকলে তা প্রযোজ্য পরিষেবা-স্তর চুক্তি বা অর্ডার ফর্মে উল্লেখ থাকবে। পরিষেবা সুরক্ষা, আইন মেনে চলা বা গুরুত্বপূর্ণ শর্তভঙ্গ মোকাবিলার যুক্তিসঙ্গত প্রয়োজনে আমরা প্রবেশাধিকার সীমিত বা স্থগিত করতে পারি; সম্ভব হলে আগে জানানো হবে।">We may maintain or update the service over time. Availability commitments, if any, are described in your applicable service-level agreement or order form. We may restrict or suspend access when reasonably needed to protect the service, comply with law, or address a material breach, with notice where practicable.</p>
+                <p data-bn="দায়বদ্ধতার সীমা বা অন্যান্য প্রতিকার আপনার প্রযোজ্য চুক্তি ও আইনের অধীন। আইনত যে দায় সীমিত করা যায় না, এই শর্তাবলি তা সীমিত করে না।">Any limits on liability or other remedies are subject to your applicable agreement and the laws that apply. Nothing in these terms limits liability that cannot legally be limited.</p>
+              </div>
+            </article>
+
+            <article class="legal-article-section legal-contact-section" id="terms-contact">
+              <span class="legal-section-number">07</span>
+              <div>
+                <h2 data-bn="এই শর্তাবলি নিয়ে প্রশ্ন আছে?">Questions about these terms?</h2>
+                <p data-bn="আপনার প্রতিষ্ঠানের নামসহ আমাদের সঙ্গে যোগাযোগ করুন, তাহলে আমরা আপনার প্রশ্নটি সঠিক দলের কাছে পাঠাতে পারব।">Contact our team and include your organization name so we can direct your question to the right person.</p>
+                <a class="legal-contact-link" href="mailto:support@inomanage.com">support@inomanage.com</a>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+@endsection
+
+@push('scripts')
+  <script src="{{ asset('landing/legal-language.js') }}"></script>
+@endpush

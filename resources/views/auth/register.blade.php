@@ -1,68 +1,69 @@
-<x-guest-layout>
-    <x-authentication-card>
-        <x-slot name="logo">
-            <x-authentication-card-logo />
-        </x-slot>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#050812" />
+  <title>Create your {{ config('app.name', 'InoManage') }} account</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ asset('landing/signup.css') }}" />
+</head>
+<body class="signup-page">
+  <main class="signup-layout">
+    <a class="signup-brand" href="{{ route('home') }}" aria-label="InoManage home">
+      <span class="signup-logo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+      <span class="signup-wordmark">InoManage</span>
+    </a>
 
-        <div class="mb-6 text-center">
-            <h1 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight">{{ __('Create your account') }}</h1>
-            <p class="text-xs sm:text-sm text-slate-400 mt-1">{{ __('Get started with a 14-day free trial, no credit card required') }}</p>
-        </div>
+    <section class="signup-card" aria-labelledby="signup-title">
+      <header class="signup-heading">
+        <h1 id="signup-title">Create your account</h1>
+        <p>Get started with a 3-day free trial, no credit card required</p>
+      </header>
 
-        <x-validation-errors class="mb-4" />
+      @if ($errors->any())
+        <p class="signup-error" role="alert" aria-live="polite" style="margin-bottom: 12px;">
+          {{ $errors->first() }}
+        </p>
+      @endif
 
-        <form method="POST" action="{{ route('register') }}" class="space-y-4">
-            @csrf
+      <form class="auth-form" method="POST" action="{{ route('register') }}">
+        @csrf
 
-            <div>
-                <label for="name" class="block font-medium text-xs sm:text-sm text-slate-300 mb-1.5">{{ __('Full Name') }}</label>
-                <input id="name" class="block w-full px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all" type="text" name="name" value="{{ old('name') }}" required autofocus autocomplete="name" placeholder="John Doe" />
-            </div>
+        <label for="name">Full Name</label>
+        <input id="name" name="name" type="text" value="{{ old('name') }}" placeholder="John Doe" autocomplete="name" required autofocus />
 
-            <div>
-                <label for="email" class="block font-medium text-xs sm:text-sm text-slate-300 mb-1.5">{{ __('Email Address') }}</label>
-                <input id="email" class="block w-full px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all" type="email" name="email" value="{{ old('email') }}" required autocomplete="username" placeholder="name@company.com" />
-            </div>
+        <label for="email">Email Address</label>
+        <input id="email" name="email" type="email" value="{{ old('email') }}" placeholder="name@company.com" autocomplete="username" required />
 
-            <div>
-                <label for="password" class="block font-medium text-xs sm:text-sm text-slate-300 mb-1.5">{{ __('Password') }}</label>
-                <input id="password" class="block w-full px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all" type="password" name="password" required autocomplete="new-password" placeholder="At least 8 characters" />
-            </div>
+        <label for="phone">Phone Number (OTP Verification)</label>
+        <input id="phone" name="phone" type="tel" value="{{ old('phone') }}" placeholder="017XXXXXXXX" autocomplete="tel" required />
 
-            <div>
-                <label for="password_confirmation" class="block font-medium text-xs sm:text-sm text-slate-300 mb-1.5">{{ __('Confirm Password') }}</label>
-                <input id="password_confirmation" class="block w-full px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all" type="password" name="password_confirmation" required autocomplete="new-password" placeholder="Re-enter password" />
-            </div>
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" placeholder="At least 8 characters" autocomplete="new-password" minlength="8" required />
 
-            @if (Laravel\Jetstream\Jetstream::hasTermsAndPrivacyPolicyFeature())
-                <div class="pt-1">
-                    <label for="terms" class="flex items-start cursor-pointer select-none">
-                        <input type="checkbox" name="terms" id="terms" required class="mt-0.5 w-4 h-4 rounded border-slate-700 bg-slate-900/90 text-indigo-600 focus:ring-indigo-500/40 focus:ring-offset-0 focus:ring-offset-slate-900 cursor-pointer" />
-                        <span class="ms-2.5 text-xs text-slate-300 leading-snug">
-                            {!! __('I agree to the :terms_of_service and :privacy_policy', [
-                                    'terms_of_service' => '<a target="_blank" href="'.route('terms.show').'" class="underline text-indigo-400 hover:text-indigo-300 font-medium">'.__('Terms of Service').'</a>',
-                                    'privacy_policy' => '<a target="_blank" href="'.route('policy.show').'" class="underline text-indigo-400 hover:text-indigo-300 font-medium">'.__('Privacy Policy').'</a>',
-                            ]) !!}
-                        </span>
-                    </label>
-                </div>
-            @endif
+        <label for="password_confirmation">Confirm Password</label>
+        <input id="password_confirmation" name="password_confirmation" type="password" placeholder="Re-enter password" autocomplete="new-password" minlength="8" required />
 
-            <div class="pt-2">
-                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-bold shadow-lg shadow-indigo-600/30 hover:scale-[1.01] active:scale-[0.99] transition-all">
-                    <span>{{ __('Create Free Account') }}</span>
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                </button>
-            </div>
+        @if (Laravel\Jetstream\Jetstream::hasTermsAndPrivacyPolicyFeature())
+          <div style="display:flex;align-items:flex-start;gap:8px;margin:12px 0 6px;font-size:12px;color:#475569;">
+            <input type="checkbox" name="terms" id="terms" required style="width:auto;height:auto;margin:2px 0 0;padding:0;flex-shrink:0;" />
+            <label for="terms" style="margin:0;font-weight:500;cursor:pointer;">
+              {!! __('I agree to the :terms_of_service and :privacy_policy', [
+                'terms_of_service' => '<a target="_blank" href="'.route('terms.show').'">'.__('Terms of Service').'</a>',
+                'privacy_policy' => '<a target="_blank" href="'.route('policy.show').'">'.__('Privacy Policy').'</a>',
+              ]) !!}
+            </label>
+          </div>
+        @endif
 
-            <div class="text-center pt-3 border-t border-white/[0.08]">
-                <span class="text-xs sm:text-sm text-slate-400">{{ __('Already have an account?') }}</span>
-                <a href="{{ route('login') }}" class="ms-1.5 text-xs sm:text-sm font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
-                    {{ __('Sign In') }} &rarr;
-                </a>
-            </div>
-        </form>
-    </x-authentication-card>
-</x-guest-layout>
+        <button type="submit" class="signup-submit">Create Free Account <span aria-hidden="true">&rarr;</span></button>
+      </form>
+
+      <div class="signup-signin">Already have an account? <a href="{{ route('login') }}">Sign In <span aria-hidden="true">&rarr;</span></a></div>
+    </section>
+  </main>
+</body>
+</html>

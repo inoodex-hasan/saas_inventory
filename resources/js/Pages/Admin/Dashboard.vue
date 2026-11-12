@@ -159,6 +159,17 @@ const subForm = useForm({
     custom_ends_at: '',
 });
 
+function tenantContactPhone(tenant) {
+    return tenant.owner?.phone || tenant.phone || '';
+}
+
+function whatsappUrl(phone) {
+    const digits = String(phone || '').replace(/\D+/g, '');
+    if (!digits) return '#';
+    const normalized = digits.startsWith('01') && digits.length === 11 ? `88${digits}` : digits;
+    return `https://wa.me/${normalized}`;
+}
+
 function openManageModal(tenant, defaultTab = 'profile') {
     managingTenant.value = tenant;
     activeTab.value = defaultTab;
@@ -398,18 +409,65 @@ function executeDeleteTenant() {
                         </div>
 
                         <!-- Owner Details -->
-                        <div class="text-xs text-slate-500 space-y-1 pt-1 border-t border-slate-100">
+                        <div class="text-xs text-slate-500 space-y-1.5 pt-1 border-t border-slate-100">
                             <div class="flex items-center justify-between">
                                 <span class="font-medium text-slate-500">{{ t('Owner:') }}</span>
                                 <span class="font-bold text-slate-800">{{ tenant.owner?.name }}</span>
                             </div>
-                            <div class="flex items-center justify-between">
+                            <div class="flex items-center justify-between gap-2">
                                 <span class="font-medium text-slate-500">{{ t('Email:') }}</span>
-                                <span class="font-mono text-slate-700 text-[11px]">{{ tenant.owner?.email }}</span>
+                                <a
+                                    v-if="tenant.owner?.email"
+                                    :href="`mailto:${tenant.owner.email}`"
+                                    class="font-mono text-indigo-600 hover:text-indigo-800 hover:underline text-[11px] truncate"
+                                >
+                                    {{ tenant.owner.email }}
+                                </a>
                             </div>
-                            <div v-if="tenant.phone" class="flex items-center justify-between">
+                            <div v-if="tenantContactPhone(tenant)" class="flex items-center justify-between gap-2">
                                 <span class="font-medium text-slate-500">{{ t('Phone:') }}</span>
-                                <span class="font-mono text-slate-700 text-[11px]">{{ tenant.phone }}</span>
+                                <div class="flex items-center gap-1.5">
+                                    <a
+                                        :href="`tel:${tenantContactPhone(tenant)}`"
+                                        class="font-mono text-indigo-600 hover:text-indigo-800 hover:underline text-[11px]"
+                                    >
+                                        {{ tenantContactPhone(tenant) }}
+                                    </a>
+                                    <span
+                                        v-if="tenant.owner?.phone_verified_at"
+                                        class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-bold uppercase"
+                                        title="OTP Verified"
+                                    >
+                                        {{ t('Verified') }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Quick Contact Actions -->
+                            <div v-if="tenantContactPhone(tenant) || tenant.owner?.email" class="flex items-center gap-1.5 pt-1">
+                                <a
+                                    v-if="tenantContactPhone(tenant)"
+                                    :href="`tel:${tenantContactPhone(tenant)}`"
+                                    class="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold transition"
+                                >
+                                    {{ t('Call') }}
+                                </a>
+                                <a
+                                    v-if="tenantContactPhone(tenant)"
+                                    :href="whatsappUrl(tenantContactPhone(tenant))"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition"
+                                >
+                                    WhatsApp
+                                </a>
+                                <a
+                                    v-if="tenant.owner?.email"
+                                    :href="`mailto:${tenant.owner.email}`"
+                                    class="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-[10px] font-bold transition"
+                                >
+                                    {{ t('Email') }}
+                                </a>
                             </div>
                         </div>
 

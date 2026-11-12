@@ -108,7 +108,12 @@ class ProjectController extends Controller
 
     public function store(Request $request, ProjectService $service)
     {
-        $teamId = Auth::user()->current_team_id;
+        $user = Auth::user();
+        $teamId = $user->current_team_id;
+
+        if ($user->currentTeam && ! app(\App\Services\SubscriptionService::class)->canAddProject($user->currentTeam)) {
+            return redirect()->back()->with('error', 'You have reached the maximum project limit for your subscription plan. Please upgrade your plan.');
+        }
 
         $rules = [
             'client_mode' => 'required|in:existing,new',

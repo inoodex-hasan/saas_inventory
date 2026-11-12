@@ -25,6 +25,11 @@ const form = useForm({
     max_products: 500,
     max_warehouses: 1,
     max_users: 3,
+    max_quotations: -1,
+    max_sales_orders: -1,
+    max_purchase_orders: -1,
+    max_projects: -1,
+    max_employees: -1,
     is_active: true,
     sort_order: 1,
 });
@@ -37,6 +42,11 @@ function openCreateModal() {
     form.max_products = 500;
     form.max_warehouses = 1;
     form.max_users = 3;
+    form.max_quotations = -1;
+    form.max_sales_orders = -1;
+    form.max_purchase_orders = -1;
+    form.max_projects = -1;
+    form.max_employees = -1;
     isModalOpen.value = true;
 }
 
@@ -50,6 +60,11 @@ function openEditModal(plan) {
     form.max_products = plan.max_products;
     form.max_warehouses = plan.max_warehouses;
     form.max_users = plan.max_users;
+    form.max_quotations = plan.max_quotations ?? -1;
+    form.max_sales_orders = plan.max_sales_orders ?? -1;
+    form.max_purchase_orders = plan.max_purchase_orders ?? -1;
+    form.max_projects = plan.max_projects ?? -1;
+    form.max_employees = plan.max_employees ?? -1;
     form.is_active = Boolean(plan.is_active);
     form.sort_order = plan.sort_order;
     form.clearErrors();
@@ -91,6 +106,19 @@ function executeDeletePlan() {
             deletingPlan.value = null;
         },
     });
+}
+
+function planLimits(plan) {
+    return [
+        { label: 'Products', value: plan.max_products ?? -1 },
+        { label: 'Hubs', value: plan.max_warehouses ?? -1 },
+        { label: 'Seats', value: plan.max_users ?? -1 },
+        { label: 'Quotes', value: plan.max_quotations ?? -1 },
+        { label: 'Sales', value: plan.max_sales_orders ?? -1 },
+        { label: 'POs', value: plan.max_purchase_orders ?? -1 },
+        { label: 'Projects', value: plan.max_projects ?? -1 },
+        { label: 'Employees', value: plan.max_employees ?? -1 },
+    ];
 }
 </script>
 
@@ -163,9 +191,7 @@ function executeDeletePlan() {
                                 <th class="py-3 px-4 whitespace-nowrap">Slug Identifier</th>
                                 <th class="py-3 px-4 whitespace-nowrap">Monthly Rate</th>
                                 <th class="py-3 px-4 whitespace-nowrap">Annual Rate</th>
-                                <th class="py-3 px-4 text-center whitespace-nowrap">Products Quota</th>
-                                <th class="py-3 px-4 text-center whitespace-nowrap">Warehouses</th>
-                                <th class="py-3 px-4 text-center whitespace-nowrap">User Seats</th>
+                                <th class="py-3 px-4 whitespace-nowrap">Plan Quotas &amp; Limits</th>
                                 <th class="py-3 px-4 text-center whitespace-nowrap">Active Tenants</th>
                                 <th class="py-3 px-4 text-center whitespace-nowrap">Status</th>
                                 <th class="py-3 px-4 text-right whitespace-nowrap">Actions</th>
@@ -190,14 +216,20 @@ function executeDeletePlan() {
                                 <td class="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
                                     <CurrencyDisplay :amount="plan.annual_price_bdt" />
                                 </td>
-                                <td class="py-3 px-4 text-center font-mono font-semibold text-slate-700 whitespace-nowrap">
-                                    {{ plan.max_products === -1 ? 'Unlimited' : plan.max_products }}
-                                </td>
-                                <td class="py-3 px-4 text-center font-mono font-semibold text-slate-700 whitespace-nowrap">
-                                    {{ plan.max_warehouses === -1 ? 'Unlimited' : plan.max_warehouses }}
-                                </td>
-                                <td class="py-3 px-4 text-center font-mono font-semibold text-slate-700 whitespace-nowrap">
-                                    {{ plan.max_users === -1 ? 'Unlimited' : plan.max_users }}
+                                <td class="py-3 px-4">
+                                    <div class="flex flex-wrap gap-1.5 min-w-[260px] max-w-[380px]">
+                                        <span
+                                            v-for="limit in planLimits(plan)"
+                                            :key="limit.label"
+                                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-medium"
+                                            :class="limit.value === -1
+                                                ? 'bg-emerald-50/70 border-emerald-200/80 text-emerald-700'
+                                                : 'bg-slate-50 border-slate-200 text-slate-700'"
+                                        >
+                                            <span class="text-slate-500">{{ limit.label }}:</span>
+                                            <strong class="font-mono font-bold">{{ limit.value === -1 ? '∞' : limit.value.toLocaleString() }}</strong>
+                                        </span>
+                                    </div>
                                 </td>
                                 <td class="py-3 px-4 text-center font-mono font-bold text-indigo-600 whitespace-nowrap">
                                     {{ plan.subscriptions_count }}
@@ -331,6 +363,61 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                                 class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
                                 required
                             />
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-100">
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Resource &amp; Module Limits (-1 = Unlimited)</p>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Max Quotations</label>
+                                <input
+                                    v-model.number="form.max_quotations"
+                                    type="number"
+                                    min="-1"
+                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Max Sales / Invoices</label>
+                                <input
+                                    v-model.number="form.max_sales_orders"
+                                    type="number"
+                                    min="-1"
+                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Max Purchase Orders</label>
+                                <input
+                                    v-model.number="form.max_purchase_orders"
+                                    type="number"
+                                    min="-1"
+                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Max Projects</label>
+                                <input
+                                    v-model.number="form.max_projects"
+                                    type="number"
+                                    min="-1"
+                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Max Employees</label>
+                                <input
+                                    v-model.number="form.max_employees"
+                                    type="number"
+                                    min="-1"
+                                    class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
+                                />
+                            </div>
                         </div>
                     </div>
 

@@ -2,8 +2,13 @@
 
 namespace App\Services;
 
+use App\Models\Employee;
 use App\Models\Plan;
 use App\Models\Product;
+use App\Models\Project;
+use App\Models\PurchaseOrder;
+use App\Models\Quotation;
+use App\Models\SalesOrder;
 use App\Models\SubscriptionPayment;
 use App\Models\Team;
 use App\Models\TenantSubscription;
@@ -28,6 +33,11 @@ class SubscriptionService
             'max_products' => 100,
             'max_warehouses' => 1,
             'max_users' => 2,
+            'max_quotations' => 20,
+            'max_sales_orders' => 50,
+            'max_purchase_orders' => 20,
+            'max_projects' => 3,
+            'max_employees' => 5,
             'trial_days' => 3,
             'is_active' => true,
             'sort_order' => 0,
@@ -51,6 +61,11 @@ class SubscriptionService
             'max_products' => 500,
             'max_warehouses' => 1,
             'max_users' => 3,
+            'max_quotations' => 100,
+            'max_sales_orders' => 500,
+            'max_purchase_orders' => 200,
+            'max_projects' => 5,
+            'max_employees' => 10,
             'trial_days' => 0,
             'is_active' => true,
             'sort_order' => 1,
@@ -75,6 +90,11 @@ class SubscriptionService
             'max_products' => 5000,
             'max_warehouses' => 3,
             'max_users' => 10,
+            'max_quotations' => 1000,
+            'max_sales_orders' => 5000,
+            'max_purchase_orders' => 2000,
+            'max_projects' => 50,
+            'max_employees' => 50,
             'trial_days' => 0,
             'is_active' => true,
             'sort_order' => 2,
@@ -100,6 +120,11 @@ class SubscriptionService
             'max_products' => -1, // Unlimited
             'max_warehouses' => -1, // Unlimited
             'max_users' => -1, // Unlimited
+            'max_quotations' => -1,
+            'max_sales_orders' => -1,
+            'max_purchase_orders' => -1,
+            'max_projects' => -1,
+            'max_employees' => -1,
             'trial_days' => 0,
             'is_active' => true,
             'sort_order' => 3,
@@ -172,59 +197,92 @@ class SubscriptionService
         $productCount = Product::where('team_id', $team->id)->count();
         $warehouseCount = Warehouse::where('team_id', $team->id)->count();
         $userCount = $team->users()->pluck('users.id')->push($team->user_id)->unique()->filter()->count();
-
-        $maxProducts = $plan->max_products;
-        $maxWarehouses = $plan->max_warehouses;
-        $maxUsers = $plan->max_users;
+        $quotationCount = Quotation::where('team_id', $team->id)->count();
+        $salesOrderCount = SalesOrder::where('team_id', $team->id)->count();
+        $purchaseOrderCount = PurchaseOrder::where('team_id', $team->id)->count();
+        $projectCount = Project::where('team_id', $team->id)->count();
+        $employeeCount = Employee::where('team_id', $team->id)->count();
 
         return [
             'subscription' => $sub,
             'plan' => $plan,
             'days_remaining' => $sub->days_remaining,
             'is_active' => $sub->isActive(),
-            'products' => [
-                'current' => $productCount,
-                'limit' => $maxProducts,
-                'is_unlimited' => $maxProducts === -1,
-                'percent' => $maxProducts > 0 ? min(100, round(($productCount / $maxProducts) * 100)) : 0,
-                'can_add' => $maxProducts === -1 || $productCount < $maxProducts,
-            ],
-            'warehouses' => [
-                'current' => $warehouseCount,
-                'limit' => $maxWarehouses,
-                'is_unlimited' => $maxWarehouses === -1,
-                'percent' => $maxWarehouses > 0 ? min(100, round(($warehouseCount / $maxWarehouses) * 100)) : 0,
-                'can_add' => $maxWarehouses === -1 || $warehouseCount < $maxWarehouses,
-            ],
-            'users' => [
-                'current' => $userCount,
-                'limit' => $maxUsers,
-                'is_unlimited' => $maxUsers === -1,
-                'percent' => $maxUsers > 0 ? min(100, round(($userCount / $maxUsers) * 100)) : 0,
-                'can_add' => $maxUsers === -1 || $userCount < $maxUsers,
-            ],
+            'products' => $this->buildQuotaMetric($productCount, (int) ($plan->max_products ?? -1)),
+            'warehouses' => $this->buildQuotaMetric($warehouseCount, (int) ($plan->max_warehouses ?? -1)),
+            'users' => $this->buildQuotaMetric($userCount, (int) ($plan->max_users ?? -1)),
+            'quotations' => $this->buildQuotaMetric($quotationCount, (int) ($plan->max_quotations ?? -1)),
+            'sales_orders' => $this->buildQuotaMetric($salesOrderCount, (int) ($plan->max_sales_orders ?? -1)),
+            'purchase_orders' => $this->buildQuotaMetric($purchaseOrderCount, (int) ($plan->max_purchase_orders ?? -1)),
+            'projects' => $this->buildQuotaMetric($projectCount, (int) ($plan->max_projects ?? -1)),
+            'employees' => $this->buildQuotaMetric($employeeCount, (int) ($plan->max_employees ?? -1)),
+        ];
+    }
+
+    /**
+     * Build normalized quota usage metric array.
+     */
+    protected function buildQuotaMetric(int $current, int $limit): array
+    {
+        $isUnlimited = $limit === -1;
+
+        return [
+            'current' => $current,
+            'limit' => $limit,
+            'is_unlimited' => $isUnlimited,
+            'percent' => $limit > 0 ? min(100, round(($current / $limit) * 100)) : 0,
+            'can_add' => $isUnlimited || $current < $limit,
         ];
     }
 
     /**
      * Check quota limits before resource creation.
      */
-    public function canAddProduct(Team $team): bool
+    public function canAddResource(Team $team, string $resource): bool
     {
         $usage = $this->getUsage($team);
-        return $usage['is_active'] && $usage['products']['can_add'];
+
+        return $usage['is_active'] && (bool) ($usage[$resource]['can_add'] ?? true);
+    }
+
+    public function canAddProduct(Team $team): bool
+    {
+        return $this->canAddResource($team, 'products');
     }
 
     public function canAddWarehouse(Team $team): bool
     {
-        $usage = $this->getUsage($team);
-        return $usage['is_active'] && $usage['warehouses']['can_add'];
+        return $this->canAddResource($team, 'warehouses');
     }
 
     public function canAddUser(Team $team): bool
     {
-        $usage = $this->getUsage($team);
-        return $usage['is_active'] && $usage['users']['can_add'];
+        return $this->canAddResource($team, 'users');
+    }
+
+    public function canAddQuotation(Team $team): bool
+    {
+        return $this->canAddResource($team, 'quotations');
+    }
+
+    public function canAddSalesOrder(Team $team): bool
+    {
+        return $this->canAddResource($team, 'sales_orders');
+    }
+
+    public function canAddPurchaseOrder(Team $team): bool
+    {
+        return $this->canAddResource($team, 'purchase_orders');
+    }
+
+    public function canAddProject(Team $team): bool
+    {
+        return $this->canAddResource($team, 'projects');
+    }
+
+    public function canAddEmployee(Team $team): bool
+    {
+        return $this->canAddResource($team, 'employees');
     }
 
     /**

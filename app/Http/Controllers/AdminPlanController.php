@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Plan;
 use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -42,9 +43,14 @@ class AdminPlanController extends Controller
             'description' => 'nullable|string|max:500',
             'price_bdt' => 'required|numeric|min:0',
             'annual_price_bdt' => 'required|numeric|min:0',
-            'max_products' => 'required|integer',
-            'max_warehouses' => 'required|integer',
-            'max_users' => 'required|integer',
+            'max_products' => 'required|integer|min:-1',
+            'max_warehouses' => 'required|integer|min:-1',
+            'max_users' => 'required|integer|min:-1',
+            'max_quotations' => 'nullable|integer|min:-1',
+            'max_sales_orders' => 'nullable|integer|min:-1',
+            'max_purchase_orders' => 'nullable|integer|min:-1',
+            'max_projects' => 'nullable|integer|min:-1',
+            'max_employees' => 'nullable|integer|min:-1',
             'is_active' => 'required|boolean',
             'sort_order' => 'nullable|integer',
             'features' => 'nullable|array',
@@ -62,6 +68,7 @@ class AdminPlanController extends Controller
         }
 
         $plan = Plan::create($validated);
+        Cache::forget('superadmin_active_plans');
 
         return back()->with('success', "Plan '{$plan->name}' created successfully.");
     }
@@ -76,15 +83,21 @@ class AdminPlanController extends Controller
             'description' => 'nullable|string|max:500',
             'price_bdt' => 'required|numeric|min:0',
             'annual_price_bdt' => 'required|numeric|min:0',
-            'max_products' => 'required|integer',
-            'max_warehouses' => 'required|integer',
-            'max_users' => 'required|integer',
+            'max_products' => 'required|integer|min:-1',
+            'max_warehouses' => 'required|integer|min:-1',
+            'max_users' => 'required|integer|min:-1',
+            'max_quotations' => 'nullable|integer|min:-1',
+            'max_sales_orders' => 'nullable|integer|min:-1',
+            'max_purchase_orders' => 'nullable|integer|min:-1',
+            'max_projects' => 'nullable|integer|min:-1',
+            'max_employees' => 'nullable|integer|min:-1',
             'is_active' => 'required|boolean',
             'sort_order' => 'nullable|integer',
             'features' => 'nullable|array',
         ]);
 
         $plan->update($validated);
+        Cache::forget('superadmin_active_plans');
 
         return back()->with('success', "Plan '{$plan->name}' updated.");
     }
@@ -100,6 +113,7 @@ class AdminPlanController extends Controller
 
         $name = $plan->name;
         $plan->delete();
+        Cache::forget('superadmin_active_plans');
 
         return back()->with('success', "Plan '{$name}' deleted.");
     }

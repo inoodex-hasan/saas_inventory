@@ -423,7 +423,7 @@ class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-
                                         </button>
                                         <input 
                                             type="number" 
-                                            step="1" 
+                                            step="any" 
                                             min="0.01"
                                             v-model.number="it.quantity_ordered" 
                                             required

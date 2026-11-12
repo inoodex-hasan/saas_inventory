@@ -397,6 +397,34 @@ function paymentStatusBadge(status) {
                         </div>
                     </div>
                 </div>
+
+                <!-- Module & Transaction Quotas -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                    <div
+                        v-for="item in [
+                            { key: 'quotations', label: 'Quotations' },
+                            { key: 'sales_orders', label: 'Sales / Invoices' },
+                            { key: 'purchase_orders', label: 'Purchase Orders' },
+                            { key: 'projects', label: 'Projects' },
+                            { key: 'employees', label: 'Employees' },
+                        ]"
+                        :key="item.key"
+                        class="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs space-y-2"
+                    >
+                        <div class="flex items-center justify-between text-[11px]">
+                            <span class="font-bold text-slate-700">{{ item.label }}</span>
+                            <span
+                                class="px-1.5 py-0.5 rounded text-[9px] font-bold"
+                                :class="usage[item.key]?.is_unlimited ? 'bg-emerald-50 text-emerald-700' : (usage[item.key]?.can_add ? 'bg-slate-100 text-slate-600' : 'bg-rose-50 text-rose-700')"
+                            >
+                                {{ usage[item.key]?.is_unlimited ? '∞' : `${usage[item.key]?.percent ?? 0}%` }}
+                            </span>
+                        </div>
+                        <div class="font-mono text-xs font-bold text-slate-900">
+                            {{ usage[item.key]?.current ?? 0 }} / {{ usage[item.key]?.is_unlimited ? '∞' : (usage[item.key]?.limit ?? '∞') }}
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Available Plans & Upgrade Checkout -->
@@ -509,6 +537,22 @@ function paymentStatusBadge(status) {
                                         </svg>
                                     </div>
                                     <span><strong>{{ plan.max_users === -1 ? 'Unlimited' : plan.max_users }}</strong> Staff User Accounts</span>
+                                </div>
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                                        <svg class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                    <span><strong>{{ (plan.max_quotations ?? -1) === -1 ? 'Unlimited' : plan.max_quotations }}</strong> Quotations &amp; <strong>{{ (plan.max_sales_orders ?? -1) === -1 ? 'Unlimited' : plan.max_sales_orders }}</strong> Sales/Invoices</span>
+                                </div>
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                                        <svg class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                    <span><strong>{{ (plan.max_purchase_orders ?? -1) === -1 ? 'Unlimited' : plan.max_purchase_orders }}</strong> POs · <strong>{{ (plan.max_projects ?? -1) === -1 ? 'Unlimited' : plan.max_projects }}</strong> Projects · <strong>{{ (plan.max_employees ?? -1) === -1 ? 'Unlimited' : plan.max_employees }}</strong> Staff</span>
                                 </div>
                                 <div class="flex items-center gap-2.5">
                                     <div class="w-4 h-4 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">

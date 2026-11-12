@@ -198,6 +198,15 @@ class PosController extends Controller
     public function store(Request $request, SalesOrderService $salesService)
     {
         $teamId = $this->resolveTeamId();
+        $team = Auth::user()?->currentTeam;
+
+        if ($team && ! app(\App\Services\SubscriptionService::class)->canAddSalesOrder($team)) {
+            $message = 'You have reached the maximum sales/invoice limit for your subscription plan. Please upgrade your plan.';
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 403);
+            }
+            return redirect()->back()->with('error', $message);
+        }
 
         $validated = $request->validate([
             'warehouse_id' => ['nullable', Rule::exists('warehouses', 'id')->where('team_id', $teamId)],

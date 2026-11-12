@@ -369,7 +369,7 @@ function submit() {
                                         </button>
                                         <input 
                                             type="number" 
-                                            step="1" 
+                                            step="any" 
                                             :min="it.received_quantity || 0.01"
                                             v-model.number="it.quantity_ordered" 
                                             required

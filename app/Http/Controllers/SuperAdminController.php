@@ -48,7 +48,8 @@ class SuperAdminController extends Controller
                   ->orWhere('phone', 'like', "%{$search}%")
                   ->orWhereHas('owner', function ($oq) use ($search) {
                       $oq->where('name', 'like', "%{$search}%")
-                         ->orWhere('email', 'like', "%{$search}%");
+                         ->orWhere('email', 'like', "%{$search}%")
+                         ->orWhere('phone', 'like', "%{$search}%");
                   });
             });
         }

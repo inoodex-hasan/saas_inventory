@@ -108,7 +108,12 @@ class QuotationController extends Controller
 
     public function store(Request $request)
     {
-        $teamId = Auth::user()->current_team_id;
+        $user = Auth::user();
+        $teamId = $user->current_team_id;
+
+        if ($user->currentTeam && ! app(\App\Services\SubscriptionService::class)->canAddQuotation($user->currentTeam)) {
+            return redirect()->back()->with('error', 'You have reached the maximum quotation limit for your subscription plan. Please upgrade your plan.');
+        }
 
         $rules = [
             'customer_mode' => 'required|in:existing,new',

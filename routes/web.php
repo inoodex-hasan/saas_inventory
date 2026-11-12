@@ -15,6 +15,7 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\PdfDocumentController;
+use App\Http\Controllers\PhoneVerificationController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
@@ -51,6 +52,23 @@ Route::get('/', function (\Illuminate\Http\Request $request) {
     return view('welcome', compact('plans'));
 })->name('home');
 
+Route::get('/features', function () {
+    return view('landing.features');
+})->name('features');
+
+Route::get('/pricing', function () {
+    $plans = collect();
+    if (\Illuminate\Support\Facades\Schema::hasTable('plans')) {
+        $plans = \App\Models\Plan::where('is_active', true)->orderBy('sort_order')->get();
+    }
+
+    return view('landing.pricing', compact('plans'));
+})->name('pricing');
+
+Route::get('/reviews', function () {
+    return view('landing.reviews');
+})->name('reviews');
+
 // Dynamic Public Legal Pages
 Route::get('/terms-and-conditions', [LegalPageController::class, 'terms'])->name('terms.show');
 Route::get('/terms', [LegalPageController::class, 'terms']);
@@ -60,6 +78,16 @@ Route::get('/privacy', [LegalPageController::class, 'privacy']);
 Route::get('/suspended', function () {
     return view('errors.tenant-suspended');
 })->name('tenant.suspended');
+
+Route::middleware([
+    'auth:sanctum',
+    config('jetstream.auth_session'),
+])->group(function () {
+    Route::get('/verify-phone', [PhoneVerificationController::class, 'show'])->name('phone.verify.notice');
+    Route::post('/verify-phone', [PhoneVerificationController::class, 'verify'])->name('phone.verify.confirm');
+    Route::post('/verify-phone/resend', [PhoneVerificationController::class, 'resend'])->middleware('throttle:3,1')->name('phone.verify.resend');
+    Route::put('/verify-phone/number', [PhoneVerificationController::class, 'updatePhone'])->name('phone.verify.update');
+});
 
 Route::middleware([
     'auth:sanctum',

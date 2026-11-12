@@ -22,6 +22,11 @@ return new class extends Migration
             $table->integer('max_products')->default(100); // -1 for unlimited
             $table->integer('max_warehouses')->default(1);
             $table->integer('max_users')->default(2);
+            $table->integer('max_quotations')->default(-1);
+            $table->integer('max_sales_orders')->default(-1);
+            $table->integer('max_purchase_orders')->default(-1);
+            $table->integer('max_projects')->default(-1);
+            $table->integer('max_employees')->default(-1);
             $table->json('features')->nullable();
             $table->integer('trial_days')->default(14);
             $table->boolean('is_active')->default(true);

@@ -58,6 +58,11 @@ class EmployeeController extends Controller
 
     public function store(Request $request, HrService $service)
     {
+        $team = $request->user()?->currentTeam;
+        if ($team && ! app(\App\Services\SubscriptionService::class)->canAddEmployee($team)) {
+            return redirect()->back()->with('error', 'You have reached the maximum employee limit for your subscription plan. Please upgrade your plan.');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'employee_code' => 'nullable|string|max:50',

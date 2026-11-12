@@ -135,6 +135,11 @@ class SalesOrderController extends Controller
     public function store(Request $request, SalesOrderService $service)
     {
         $teamId = $this->resolveTeamId();
+        $team = Auth::user()?->currentTeam;
+
+        if ($team && ! app(\App\Services\SubscriptionService::class)->canAddSalesOrder($team)) {
+            return redirect()->back()->with('error', 'You have reached the maximum sales/invoice limit for your subscription plan. Please upgrade your plan.');
+        }
 
         $rules = [
             'customer_mode' => 'required|in:existing,new',

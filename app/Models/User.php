@@ -34,6 +34,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'phone',
         'password',
         'warehouse_id',
     ];
@@ -84,6 +85,7 @@ class User extends Authenticatable
         'remember_token',
         'two_factor_recovery_codes',
         'two_factor_secret',
+        'phone_otp_code',
     ];
 
     /**
@@ -104,9 +106,19 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'phone_verified_at' => 'datetime',
+            'phone_otp_expires_at' => 'datetime',
             'is_super_admin' => 'boolean',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Determine if the user has verified their phone number via OTP.
+     */
+    public function hasVerifiedPhone(): bool
+    {
+        return ! is_null($this->phone_verified_at);
     }
 
     /**
