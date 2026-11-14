@@ -84,7 +84,7 @@ class SmsOtpService
         ])->save();
 
         $appName = config('app.name', 'Inoodex Inventory');
-        $message = "Your {$appName} verification code is {$otp}. Valid for ".self::OTP_EXPIRY_MINUTES.' minutes.';
+        $message = "Your InoManage verification code is {$otp}. Valid for ".self::OTP_EXPIRY_MINUTES.' minutes.';
 
         return $this->dispatchSms($user->phone, $message, $otp);
     }

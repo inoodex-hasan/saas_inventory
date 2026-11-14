@@ -37,6 +37,7 @@ use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarrantyController;
 use App\Http\Controllers\SslCommerzPaymentController;
 use App\Http\Controllers\LegalPageController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function (\Illuminate\Http\Request $request) {
@@ -74,6 +75,13 @@ Route::get('/terms-and-conditions', [LegalPageController::class, 'terms'])->name
 Route::get('/terms', [LegalPageController::class, 'terms']);
 Route::get('/privacy-policy', [LegalPageController::class, 'privacy'])->name('policy.show');
 Route::get('/privacy', [LegalPageController::class, 'privacy']);
+
+// Password Reset via Phone SMS OTP (and Email)
+Route::get('/forgot-password', [ForgotPasswordController::class, 'showRequestForm'])->middleware('guest')->name('password.request');
+Route::post('/forgot-password/phone', [ForgotPasswordController::class, 'sendOtp'])->middleware(['guest', 'throttle:5,1'])->name('password.phone');
+Route::get('/verify-reset-otp', [ForgotPasswordController::class, 'showResetPhoneForm'])->middleware('guest')->name('password.reset.phone');
+Route::post('/verify-reset-otp', [ForgotPasswordController::class, 'resetWithPhone'])->middleware('guest')->name('password.update.phone');
+Route::post('/verify-reset-otp/resend', [ForgotPasswordController::class, 'resendResetOtp'])->middleware(['guest', 'throttle:3,1'])->name('password.reset.phone.resend');
 
 Route::get('/suspended', function () {
     return view('errors.tenant-suspended');

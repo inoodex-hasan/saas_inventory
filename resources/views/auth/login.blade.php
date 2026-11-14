@@ -33,8 +33,8 @@
       <form class="auth-form" method="POST" action="{{ route('login') }}">
         @csrf
 
-        <label for="email">Email Address</label>
-        <input id="email" name="email" type="email" value="{{ old('email') }}" placeholder="Enter your email address" autocomplete="username" required autofocus />
+        <label for="email">Email or Mobile Number</label>
+        <input id="email" name="email" type="text" value="{{ old('email') }}" placeholder="name@company.com or 017XXXXXXXX" autocomplete="username" required autofocus />
 
         <label for="password">Password</label>
         <input id="password" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" required />
