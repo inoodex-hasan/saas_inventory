@@ -118,7 +118,7 @@ body {
   width: 42px;
   height: 42px;
   border-radius: 10px;
-  box-shadow: 0 4px 14px rgba(6, 111, 88, 0.16);
+  /* box-shadow: 0 4px 14px rgba(6, 111, 88, 0.16); */
   transition: box-shadow 0.3s ease;
 }
 
@@ -1736,8 +1736,10 @@ body {
   border-radius: 14px;
   background: #FFFFFF;
   box-shadow: 0 8px 24px rgba(18, 38, 63, 0.045);
-  scrollbar-width: none; /* Hidden on PC / Firefox by default */
-  -ms-overflow-style: none; /* IE / Edge */
+  scrollbar-width: none;
+  /* Hidden on PC / Firefox by default */
+  -ms-overflow-style: none;
+  /* IE / Edge */
 }
 
 /* Hide scrollbar on desktop Chrome / Safari / Opera */
@@ -2896,7 +2898,8 @@ body {
   .pricing-comparison-wrap {
     border-radius: 12px;
     margin: 0 -4px;
-    scrollbar-width: thin; /* Show normal scrollbar on mobile */
+    scrollbar-width: thin;
+    /* Show normal scrollbar on mobile */
     scrollbar-color: #0A7D65 #E8F3EE;
     -ms-overflow-style: auto;
   }
@@ -2957,5 +2960,117 @@ body {
   .social-icon-btn,
   .faq-q-icon {
     transition: none !important;
+  }
+}
+
+/* ==========================================================================
+   Floating Facebook Messenger Widget
+   ========================================================================== */
+
+.floating-messenger-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1040;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.floating-messenger-btn:hover {
+  transform: scale(1.1) translateY(-2px);
+}
+
+.floating-messenger-btn:active {
+  transform: scale(0.96);
+}
+
+.floating-messenger-btn .messenger-icon-img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 16px rgba(0, 132, 255, 0.4)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.15));
+  transition: filter 0.25s ease;
+}
+
+.floating-messenger-btn:hover .messenger-icon-img {
+  filter: drop-shadow(0 8px 22px rgba(0, 132, 255, 0.55)) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.2));
+}
+
+.floating-messenger-btn .messenger-pulse-ring {
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 132, 255, 0.55);
+  opacity: 0;
+  animation: messengerPulse 2.8s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes messengerPulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+
+  65% {
+    transform: scale(1.28);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1.28);
+    opacity: 0;
+  }
+}
+
+.floating-messenger-btn .messenger-tooltip {
+  position: absolute;
+  right: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%) translateX(6px);
+  background: #1E293B;
+  color: #FFFFFF;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  padding: 6px 12px;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.floating-messenger-btn:hover .messenger-tooltip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+@media (max-width: 576px) {
+  .floating-messenger-btn {
+    bottom: 18px;
+    right: 18px;
+    width: 52px;
+    height: 52px;
+  }
+
+  .floating-messenger-btn .messenger-icon-img {
+    width: 52px;
+    height: 52px;
+  }
+
+  .floating-messenger-btn .messenger-tooltip {
+    display: none;
   }
 }

@@ -265,6 +265,21 @@ class AppServiceProvider extends ServiceProvider
                 $faqs = [];
             }
 
+            $waRaw = $get('whatsapp_number') ?: $get('contact_phone') ?: '+880 1957-890788';
+            $waDigits = preg_replace('/\D+/', '', $waRaw);
+            if (str_starts_with($waDigits, '01') && strlen($waDigits) === 11) {
+                $waDigits = '88' . $waDigits;
+            }
+
+            $fbPage = $get('facebook_page');
+            if (empty($fbPage) && $get('facebook_url')) {
+                $fbPath = parse_url($get('facebook_url'), PHP_URL_PATH);
+                $fbPage = trim((string) $fbPath, '/');
+            }
+            if (empty($fbPage)) {
+                $fbPage = 'inomanage';
+            }
+
             $view->with('siteSettings', [
                 'brand_name' => $get('brand_name') ?: 'InoManage',
                 'brand_tagline' => $get('brand_tagline') ?: 'CLOUD INVENTORY PLATFORM',
@@ -276,6 +291,14 @@ class AppServiceProvider extends ServiceProvider
                 'footer_copyright' => $get('footer_copyright') ?: 'InoManage. All rights reserved.',
                 'logo_url' => $logoUrl,
                 'favicon_url' => $faviconPath && Storage::disk('public')->exists($faviconPath) ? asset(Storage::url($faviconPath)) : $defaultLogo,
+                'facebook_url' => $get('facebook_url') ?: 'https://facebook.com/inomanage',
+                'facebook_page' => $fbPage,
+                'whatsapp_number' => $waRaw,
+                'whatsapp_digits' => $waDigits,
+                'whatsapp_url' => 'https://wa.me/' . $waDigits,
+                'linkedin_url' => $get('linkedin_url') ?: 'https://linkedin.com',
+                'youtube_url' => $get('youtube_url') ?: 'https://youtube.com',
+                'twitter_url' => $get('twitter_url') ?: '',
                 'hero_slides' => $heroSlides,
                 'testimonials' => $testimonials,
                 'faqs' => $faqs,

@@ -25,6 +25,12 @@ const form = useForm({
     contact_phone: props.settings.contact_phone || '',
     contact_address: props.settings.contact_address || '',
     footer_copyright: props.settings.footer_copyright || '',
+    facebook_url: props.settings.facebook_url || '',
+    facebook_page: props.settings.facebook_page || '',
+    whatsapp_number: props.settings.whatsapp_number || '',
+    linkedin_url: props.settings.linkedin_url || '',
+    youtube_url: props.settings.youtube_url || '',
+    twitter_url: props.settings.twitter_url || '',
     hero_headline: props.settings.hero_headline || '',
     hero_subtext: props.settings.hero_subtext || '',
     hero_chip_text: props.settings.hero_chip_text || '',
@@ -571,7 +577,133 @@ function submit() {
                     </div>
                 </div>
 
-                <!-- Section 4B: Footer Copyright Statement -->
+                <!-- Section 4B: Social Media & Live Chat Support -->
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                    <div class="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50">
+                        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                            Social Media &amp; Live Chat
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Configure your WhatsApp, Facebook Messenger floating widgets, and footer social links.</p>
+                    </div>
+
+                    <div class="p-5 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                        <!-- WhatsApp Support Number -->
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                WhatsApp Support Number
+                            </label>
+                            <input 
+                                v-model="form.whatsapp_number" 
+                                type="text" 
+                                maxlength="50"
+                                placeholder="+880 1957-890788"
+                                class="w-full text-xs sm:text-sm rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 transition shadow-sm"
+                            />
+                            <p class="text-[11px] text-slate-400">
+                                Powers the floating WhatsApp chat widget and hotline chat link (e.g. wa.me).
+                            </p>
+                            <div v-if="form.errors.whatsapp_number" class="text-xs text-rose-600 font-medium">
+                                {{ form.errors.whatsapp_number }}
+                            </div>
+                        </div>
+
+                        <!-- Facebook Messenger Username / ID -->
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                Messenger Page Username / ID
+                            </label>
+                            <div class="flex rounded-xl shadow-sm">
+                                <span class="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-slate-300 bg-slate-50 text-slate-500 text-xs">
+                                    m.me/
+                                </span>
+                                <input 
+                                    v-model="form.facebook_page" 
+                                    type="text" 
+                                    maxlength="100"
+                                    placeholder="inomanage"
+                                    class="w-full text-xs sm:text-sm rounded-r-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 transition shadow-sm"
+                                />
+                            </div>
+                            <p class="text-[11px] text-slate-400">
+                                Page username used for the floating Facebook Messenger button.
+                            </p>
+                            <div v-if="form.errors.facebook_page" class="text-xs text-rose-600 font-medium">
+                                {{ form.errors.facebook_page }}
+                            </div>
+                        </div>
+
+                        <!-- Facebook Page URL -->
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                Facebook Page URL
+                            </label>
+                            <input 
+                                v-model="form.facebook_url" 
+                                type="text" 
+                                maxlength="255"
+                                placeholder="https://facebook.com/inomanage"
+                                class="w-full text-xs sm:text-sm rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 transition shadow-sm"
+                            />
+                            <div v-if="form.errors.facebook_url" class="text-xs text-rose-600 font-medium">
+                                {{ form.errors.facebook_url }}
+                            </div>
+                        </div>
+
+                        <!-- LinkedIn URL -->
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                LinkedIn Profile / Company URL
+                            </label>
+                            <input 
+                                v-model="form.linkedin_url" 
+                                type="text" 
+                                maxlength="255"
+                                placeholder="https://linkedin.com/company/inomanage"
+                                class="w-full text-xs sm:text-sm rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 transition shadow-sm"
+                            />
+                            <div v-if="form.errors.linkedin_url" class="text-xs text-rose-600 font-medium">
+                                {{ form.errors.linkedin_url }}
+                            </div>
+                        </div>
+
+                        <!-- YouTube URL -->
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                YouTube Channel URL
+                            </label>
+                            <input 
+                                v-model="form.youtube_url" 
+                                type="text" 
+                                maxlength="255"
+                                placeholder="https://youtube.com/@inomanage"
+                                class="w-full text-xs sm:text-sm rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 transition shadow-sm"
+                            />
+                            <div v-if="form.errors.youtube_url" class="text-xs text-rose-600 font-medium">
+                                {{ form.errors.youtube_url }}
+                            </div>
+                        </div>
+
+                        <!-- Twitter / X URL -->
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                X (Twitter) URL <span class="text-slate-400 font-normal lowercase">(optional)</span>
+                            </label>
+                            <input 
+                                v-model="form.twitter_url" 
+                                type="text" 
+                                maxlength="255"
+                                placeholder="https://x.com/inomanage"
+                                class="w-full text-xs sm:text-sm rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 transition shadow-sm"
+                            />
+                            <div v-if="form.errors.twitter_url" class="text-xs text-rose-600 font-medium">
+                                {{ form.errors.twitter_url }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 4C: Footer Copyright Statement -->
                 <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
                     <div class="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50">
                         <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">

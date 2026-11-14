@@ -119,6 +119,31 @@
     </div>
   </div>
 
+  <!-- Floating Facebook Messenger Widget -->
+  @php
+    $fbPage = $siteSettings['facebook_page'] ?? 'inomanage';
+    $messengerUrl = 'https://m.me/' . ltrim($fbPage, '@');
+  @endphp
+  <a
+    href="{{ $messengerUrl }}"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="floating-messenger-btn"
+    aria-label="Chat with us on Facebook Messenger"
+    title="Chat with us on Facebook Messenger"
+  >
+    <img
+      src="{{ asset('assets/images/messenger_logo.png') }}"
+      alt="Facebook Messenger"
+      class="messenger-icon-img"
+      width="60"
+      height="60"
+      loading="lazy"
+    />
+    <span class="messenger-pulse-ring" aria-hidden="true"></span>
+    <span class="messenger-tooltip" aria-hidden="true">Chat with us</span>
+  </a>
+
   <!-- Bootstrap 5.3.3 JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <!-- Custom JS -->
