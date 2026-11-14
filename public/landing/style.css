@@ -163,17 +163,6 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
-.brand-name::after {
-  position: absolute;
-  right: 4%;
-  bottom: 0;
-  left: 4%;
-  height: 2px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #0A7D65, #8ADFC0);
-  content: "";
-}
-
 .brand-name-in {
   color: #14233F;
   font-weight: 750;
@@ -188,17 +177,6 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 800;
-}
-
-.brand-name-manage::after {
-  position: absolute;
-  right: 4%;
-  bottom: 0;
-  left: 4%;
-  height: 2px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #0A7D65, #8ADFC0);
-  content: "";
 }
 
 .badge-erp {
@@ -2592,10 +2570,6 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 } */
-
-.footer-brand .brand-name::after {
-  background: linear-gradient(90deg, #34D399, #D1FAE5);
-}
 
 .footer-brand .brand-name-in {
   color: #BDF5DC;
