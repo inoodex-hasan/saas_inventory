@@ -12,7 +12,7 @@
         <div class="row footer-main-grid g-4 g-lg-5">
           <div class="col-lg-5 col-md-6 text-start footer-brand-column">
             <div class="footer-brand d-flex align-items-center gap-2 mb-3">
-              <span class="brand-dots" aria-hidden="true"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
+              <img src="{{ $siteSettings['logo_url'] ?? asset('assets/images/inomanage.png') }}" alt="{{ $siteSettings['brand_name'] ?? 'InoManage' }}" class="footer-brand-logo" width="30" height="30" style="width: 30px; height: 30px; object-fit: contain; border-radius: 8px;">
               <span class="brand-name text-white">{{ $siteSettings['brand_name'] ?? 'InoManage' }}</span>
             </div>
             <p class="footer-brand-desc mb-3">{{ $siteSettings['meta_description'] ?? 'Cloud inventory, supply chain management, and double-entry accounting software designed for resilient enterprises.' }}</p>

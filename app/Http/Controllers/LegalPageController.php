@@ -24,8 +24,9 @@ class LegalPageController extends Controller
         $contactAddress = $raw['contact_address'] ?? 'Dhaka, Bangladesh';
 
         $terms = $raw['terms_and_conditions'] ?? null;
+        $hasCustomTerms = !empty(trim($terms ?? ''));
 
-        if (empty(trim($terms ?? ''))) {
+        if (! $hasCustomTerms) {
             $terms = <<<MARKDOWN
 # Terms and Conditions
 
@@ -114,8 +115,12 @@ MARKDOWN;
             : Str::markdown($terms);
 
         return view('terms', [
-            'terms'     => $htmlContent,
-            'brandName' => $brandName,
+            'terms'          => $htmlContent,
+            'hasCustomTerms' => $hasCustomTerms,
+            'brandName'      => $brandName,
+            'supportEmail'   => $supportEmail,
+            'contactPhone'   => $contactPhone,
+            'contactAddress' => $contactAddress,
         ]);
     }
 
@@ -135,8 +140,9 @@ MARKDOWN;
         $contactAddress = $raw['contact_address'] ?? 'Dhaka, Bangladesh';
 
         $policy = $raw['privacy_policy'] ?? null;
+        $hasCustomPolicy = !empty(trim($policy ?? ''));
 
-        if (empty(trim($policy ?? ''))) {
+        if (! $hasCustomPolicy) {
             $policy = <<<MARKDOWN
 # Privacy Policy
 
@@ -235,9 +241,13 @@ MARKDOWN;
             ? $policy
             : Str::markdown($policy);
 
-        return view('policy', [
-            'policy'    => $htmlContent,
-            'brandName' => $brandName,
+        return view('privacy', [
+            'policy'          => $htmlContent,
+            'hasCustomPolicy' => $hasCustomPolicy,
+            'brandName'       => $brandName,
+            'supportEmail'    => $supportEmail,
+            'contactPhone'    => $contactPhone,
+            'contactAddress'  => $contactAddress,
         ]);
     }
 }

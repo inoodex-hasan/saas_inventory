@@ -1,6 +1,6 @@
 @extends('layouts.landing')
 
-@section('title', 'Terms & Conditions | InoManage')
+@section('title', 'Terms & Conditions | ' . ($brandName ?? 'InoManage'))
 
 @section('content')
 <section class="legal-section" aria-labelledby="terms-title">
@@ -13,7 +13,7 @@
               <span class="eyebrow-dot"></span>
             </div>
             <h1 class="legal-title" id="terms-title" data-bn="সেবার শর্তাবলি">Terms of Service</h1>
-            <p class="legal-lead" data-bn="ইনোম্যানেজ ক্লাউড ERP ব্যবহার ও অ্যাক্সেসের শর্তাবলি।">The terms that guide access to and use of InoManage Cloud ERP.</p>
+            <p class="legal-lead" data-bn="ইনোম্যানেজ ক্লাউড ERP ব্যবহার ও অ্যাক্সেসের শর্তাবলি।">The terms that guide access to and use of {{ $brandName ?? 'InoManage' }} Cloud ERP.</p>
             <p class="legal-updated" data-bn="সর্বশেষ হালনাগাদ: ১২ নভেম্বর, ২০২৬">Last updated: November 12, 2026</p>
           </div>
           <aside class="legal-summary-card">
@@ -25,6 +25,7 @@
         </div>
 
         <div class="legal-document-layout">
+          @if(empty($hasCustomTerms))
           <nav class="legal-toc" aria-label="Terms of Service contents" data-bn-aria-label="সেবার শর্তাবলির বিষয়সূচি">
             <span class="legal-toc-title" data-bn="এই পাতায়">ON THIS PAGE</span>
             <a href="#terms-agreement" data-bn="চুক্তি">Agreement</a>
@@ -35,13 +36,21 @@
             <a href="#terms-service" data-bn="পরিষেবা পরিবর্তন ও সমাপ্তি">Service &amp; termination</a>
             <a href="#terms-contact" data-bn="যোগাযোগ">Contact</a>
           </nav>
+          @endif
 
-          <div class="legal-document">
+          <div class="legal-document" @if(!empty($hasCustomTerms)) style="width: 100%; max-width: 100%;" @endif>
+            @if(!empty($hasCustomTerms))
+              <article class="legal-article-section">
+                <div class="legal-custom-body" style="line-height: 1.8; color: #cbd5e1;">
+                  {!! $terms !!}
+                </div>
+              </article>
+            @else
             <article class="legal-article-section" id="terms-agreement">
               <span class="legal-section-number">01</span>
               <div>
                 <h2 data-bn="চুক্তি">Agreement</h2>
-                <p data-bn="ইনোম্যানেজ ক্লাউড ERP এবং সংশ্লিষ্ট পরিষেবা ব্যবহার বা অ্যাক্সেসের ক্ষেত্রে এই সেবার শর্তাবলি প্রযোজ্য। পরিষেবাটি ব্যবহার করলে আপনি এই শর্তগুলোতে সম্মত হচ্ছেন। কোনো প্রতিষ্ঠানের পক্ষে ইনোম্যানেজ ব্যবহার করলে, সেই প্রতিষ্ঠানের হয়ে এই শর্ত গ্রহণের অনুমতি আপনার আছে বলে নিশ্চিত করছেন।">These Terms of Service apply when you access or use InoManage Cloud ERP and related services. By using the service, you agree to these terms. If you use InoManage on behalf of a business, you confirm that you are authorized to accept these terms for that business.</p>
+                <p data-bn="ইনোম্যানেজ ক্লাউড ERP এবং সংশ্লিষ্ট পরিষেবা ব্যবহার বা অ্যাক্সেসের ক্ষেত্রে এই সেবার শর্তাবলি প্রযোজ্য। পরিষেবাটি ব্যবহার করলে আপনি এই শর্তগুলোতে সম্মত হচ্ছেন। কোনো প্রতিষ্ঠানের পক্ষে ইনোম্যানেজ ব্যবহার করলে, সেই প্রতিষ্ঠানের হয়ে এই শর্ত গ্রহণের অনুমতি আপনার আছে বলে নিশ্চিত করছেন।">These Terms of Service apply when you access or use {{ $brandName ?? 'InoManage' }} Cloud ERP and related services. By using the service, you agree to these terms. If you use {{ $brandName ?? 'InoManage' }} on behalf of a business, you confirm that you are authorized to accept these terms for that business.</p>
                 <p data-bn="আপনার সাবস্ক্রিপশনের জন্য স্বাক্ষরিত অর্ডার ফর্ম বা আলাদা পরিষেবা চুক্তি থাকলে, এই সাধারণ শর্তের সঙ্গে বিরোধ হলে সেই চুক্তিই প্রাধান্য পাবে।">If a signed order form or separate service agreement applies to your subscription, that agreement takes precedence where it conflicts with these general terms.</p>
               </div>
             </article>
@@ -59,7 +68,7 @@
               <span class="legal-section-number">03</span>
               <div>
                 <h2 data-bn="পরিকল্পনা ও বিলিং">Plans &amp; billing</h2>
-                <p data-bn="সাবস্ক্রিপশনের সুবিধা, ফি, বিলিংয়ের সময়কাল এবং ট্রায়ালের শর্ত—যদি থাকে—সাইন-আপের সময় বা প্রযোজ্য অর্ডার ফর্মে দেখানো হয়। পেমেন্ট ও বাতিলের শর্ত ওই তথ্য এবং আপনার সঙ্গে ইনোম্যানেজের পৃথক চুক্তি অনুযায়ী নির্ধারিত হবে।">Subscription features, fees, billing intervals, and any trial terms are shown at sign-up or in your applicable order form. Payment and cancellation terms are governed by those details and any separate agreement between you and InoManage.</p>
+                <p data-bn="সাবস্ক্রিপশনের সুবিধা, ফি, বিলিংয়ের সময়কাল এবং ট্রায়ালের শর্ত—যদি থাকে—সাইন-আপের সময় বা প্রযোজ্য অর্ডার ফর্মে দেখানো হয়। পেমেন্ট ও বাতিলের শর্ত ওই তথ্য এবং আপনার সঙ্গে ইনোম্যানেজের পৃথক চুক্তি অনুযায়ী নির্ধারিত হবে।">Subscription features, fees, billing intervals, and any trial terms are shown at sign-up or in your applicable order form. Payment and cancellation terms are governed by those details and any separate agreement between you and {{ $brandName ?? 'InoManage' }}.</p>
                 <p data-bn="প্রযোজ্য কর পরিশোধ এবং প্রয়োজন হলে বিলিংয়ের তথ্য হালনাগাদ রাখার দায়িত্ব আপনার।">You are responsible for applicable taxes and for keeping billing information current, where relevant.</p>
               </div>
             </article>
@@ -68,7 +77,7 @@
               <span class="legal-section-number">04</span>
               <div>
                 <h2 data-bn="আপনার কনটেন্ট">Your content</h2>
-                <p data-bn="পরিষেবায় জমা দেওয়া ব্যবসায়িক তথ্য ও কনটেন্টের অধিকার আপনার কাছেই থাকবে। পরিষেবা প্রদান ও সহায়তার জন্য যতটুকু প্রয়োজন, অথবা আপনার সঙ্গে অন্যভাবে সম্মত হলে, সেই সীমার মধ্যে কনটেন্ট হোস্ট, প্রক্রিয়াকরণ ও প্রদর্শনের অনুমতি আপনি ইনোম্যানেজকে দিচ্ছেন।">You retain your rights to the business information and content you submit to the service. You give InoManage permission to host, process, and display that content only as needed to provide and support the service, or as otherwise agreed with you.</p>
+                <p data-bn="পরিষেবায় জমা দেওয়া ব্যবসায়িক তথ্য ও কনটেন্টের অধিকার আপনার কাছেই থাকবে। পরিষেবা প্রদান ও সহায়তার জন্য যতটুকু প্রয়োজন, অথবা আপনার সঙ্গে অন্যভাবে সম্মত হলে, সেই সীমার মধ্যে কনটেন্ট হোস্ট, প্রক্রিয়াকরণ ও প্রদর্শনের অনুমতি আপনি ইনোম্যানেজকে দিচ্ছেন।">You retain your rights to the business information and content you submit to the service. You give {{ $brandName ?? 'InoManage' }} permission to host, process, and display that content only as needed to provide and support the service, or as otherwise agreed with you.</p>
                 <p data-bn="আপনার কনটেন্ট জমা দেওয়ার প্রয়োজনীয় অধিকার ও অনুমতি থাকা এবং আপনার রেকর্ডের উপযুক্ত কপি সংরক্ষণের দায়িত্ব আপনার।">You are responsible for having the rights and permissions needed to submit your content and for maintaining appropriate copies of your records.</p>
               </div>
             </article>
@@ -95,9 +104,10 @@
               <div>
                 <h2 data-bn="এই শর্তাবলি নিয়ে প্রশ্ন আছে?">Questions about these terms?</h2>
                 <p data-bn="আপনার প্রতিষ্ঠানের নামসহ আমাদের সঙ্গে যোগাযোগ করুন, তাহলে আমরা আপনার প্রশ্নটি সঠিক দলের কাছে পাঠাতে পারব।">Contact our team and include your organization name so we can direct your question to the right person.</p>
-                <a class="legal-contact-link" href="mailto:support@inomanage.com">support@inomanage.com</a>
+                <a class="legal-contact-link" href="mailto:{{ $supportEmail ?? 'support@inomanage.com' }}">{{ $supportEmail ?? 'support@inomanage.com' }}</a>
               </div>
             </article>
+            @endif
           </div>
         </div>
       </div>

@@ -35,9 +35,11 @@ class PurchaseOrderFlowTest extends TestCase
         $this->user = $creator->create([
             'name' => 'Purchasing Manager',
             'email' => 'purchasing@company.test',
+            'phone' => '01711000003',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
+        $this->user->forceFill(['phone_verified_at' => now()])->save();
         $this->actingAs($this->user);
 
         $this->warehouse = Warehouse::create(['name' => 'Main Receiving Warehouse', 'code' => 'WH-MAIN', 'is_default' => true]);

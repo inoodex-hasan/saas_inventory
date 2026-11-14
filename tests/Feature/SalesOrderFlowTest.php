@@ -38,6 +38,7 @@ class SalesOrderFlowTest extends TestCase
         $this->user = $creator->create([
             'name' => 'Sales Lead',
             'email' => 'sales@company.test',
+            'phone' => '01711000004',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);

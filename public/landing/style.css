@@ -133,7 +133,7 @@ body {
   line-height: 1.15;
 }
 
-.brand-name {
+/* .brand-name {
   position: relative;
   display: inline-block;
   padding-bottom: 3px;
@@ -144,6 +144,20 @@ body {
   white-space: nowrap;
   color: #066F58;
   background: linear-gradient(105deg, #066F58 0%, #0A8A66 55%, #18A77C 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+} */
+
+.brand-name {
+  display: inline-block;
+  font-size: 1.46rem;
+  font-weight: 800;
+  letter-spacing: -0.055em;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: #0B62D6;
+  background: linear-gradient(105deg, #0B62D6 0%, #087FAE 55%, #07876F 100%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -417,7 +431,7 @@ body {
   align-items: center;
 }
 
-.hero-section > .container-fluid {
+.hero-section>.container-fluid {
   max-width: 1200px;
 }
 
@@ -702,10 +716,6 @@ body {
     height: 38px;
   }
 
-  .brand-name {
-    font-size: 1.2rem;
-  }
-
   .brand-sub {
     font-size: .52rem;
     letter-spacing: 1.3px;
@@ -742,8 +752,6 @@ body {
   .stat-divider {
     display: none;
   }
-
-  .btn-hero-primary,
 }
 
 /* ==========================================================================
@@ -1136,7 +1144,7 @@ body {
   min-height: 270px;
   overflow: hidden;
   transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ref-feature-card:hover {
@@ -1257,7 +1265,9 @@ body {
     gap: 18px;
   }
 
-  .ref-feature-card { padding: 24px 20px 20px; }
+  .ref-feature-card {
+    padding: 24px 20px 20px;
+  }
 }
 
 @media (max-width: 991.98px) {
@@ -1305,6 +1315,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .ref-feature-card,
   .ref-icon-box,
   .features-showcase-img {
@@ -1375,7 +1386,8 @@ body {
   box-shadow: 0 4px 12px rgba(10, 125, 101, 0.05);
 }
 
-.eyebrow-sparkle, .stars-gold {
+.eyebrow-sparkle,
+.stars-gold {
   color: #CFA775;
 }
 
@@ -1387,7 +1399,9 @@ body {
   box-shadow: 0 0 0 3px rgba(10, 125, 101, 0.18);
 }
 
-.pricing-main-heading, .reviews-main-heading, .faq-main-heading {
+.pricing-main-heading,
+.reviews-main-heading,
+.faq-main-heading {
   color: #162544;
   font-size: clamp(2.2rem, 4.3vw, 3.4rem);
   font-weight: 800;
@@ -1430,7 +1444,9 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
-.pricing-main-desc, .reviews-main-desc, .faq-main-desc {
+.pricing-main-desc,
+.reviews-main-desc,
+.faq-main-desc {
   color: #64748B;
   font-size: 1rem;
   line-height: 1.72;
@@ -1735,15 +1751,76 @@ body {
 }
 
 .pricing-comparison-wrap {
-  overflow: hidden;
+  overflow-x: auto !important;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid #E1E8E4;
   border-radius: 14px;
   background: #FFFFFF;
   box-shadow: 0 8px 24px rgba(18, 38, 63, 0.045);
 }
 
+.pricing-comparison-wrap::-webkit-scrollbar {
+  height: 9px !important;
+  display: block !important;
+}
+
+.pricing-comparison-wrap::-webkit-scrollbar-track {
+  background: #E8F3EE !important;
+  border-bottom-left-radius: 13px;
+  border-bottom-right-radius: 13px;
+}
+
+.pricing-comparison-wrap::-webkit-scrollbar-thumb {
+  background: #0A7D65 !important;
+  border-radius: 999px !important;
+  border: 2px solid #E8F3EE !important;
+}
+
+.pricing-comparison-wrap::-webkit-scrollbar-thumb:hover {
+  background: #065F46 !important;
+}
+
+/* Persistent bottom scrollbar track */
+.pricing-scroll-track-wrapper {
+  max-width: 100%;
+  margin: 12px auto 0;
+  padding: 0 4px;
+}
+
+.pricing-scroll-track {
+  width: 100%;
+  height: 8px;
+  background: #E2EBE6;
+  border-radius: 999px;
+  position: relative;
+  cursor: pointer;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  touch-action: none;
+}
+
+.pricing-scroll-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 35%;
+  min-width: 48px;
+  background: linear-gradient(90deg, #0A7D65 0%, #10B981 100%);
+  border-radius: 999px;
+  box-shadow: 0 1px 4px rgba(10, 125, 101, 0.35);
+  cursor: grab;
+  user-select: none;
+}
+
+.pricing-scroll-bar:active {
+  cursor: grabbing;
+}
+
 .pricing-comparison-table {
   width: 100%;
+  min-width: 680px;
   border-collapse: collapse;
   color: #475569;
   font-size: 0.83rem;
@@ -1751,7 +1828,7 @@ body {
 
 .pricing-comparison-table th,
 .pricing-comparison-table td {
-  min-width: 145px;
+  min-width: 130px;
   padding: 14px 18px;
   border-bottom: 1px solid #EEF1EF;
   text-align: left;
@@ -1762,14 +1839,16 @@ body {
   color: #173D30;
   font-size: 0.76rem;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .pricing-comparison-table tbody th {
   color: #334155;
   font-weight: 700;
+  white-space: nowrap;
 }
 
-.pricing-comparison-table tr:last-child > * {
+.pricing-comparison-table tr:last-child>* {
   border-bottom: 0;
 }
 
@@ -1778,7 +1857,7 @@ body {
   text-align: center;
 }
 
-.pricing-guarantee-ribbon > div {
+.pricing-guarantee-ribbon>div {
   background: #FFFFFF;
   border: 1px solid #E3E9E5;
   color: #475569;
@@ -2496,6 +2575,14 @@ body {
 }
 
 .footer-brand .brand-name {
+  color: #55A0FF !important;
+  background: linear-gradient(105deg, #55A0FF 0%, #35BDD0 55%, #35D9AC 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* .footer-brand .brand-name {
   font-size: 1.1rem;
   font-weight: 800;
   letter-spacing: -0.05em;
@@ -2504,7 +2591,7 @@ body {
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-}
+} */
 
 .footer-brand .brand-name::after {
   background: linear-gradient(90deg, #34D399, #D1FAE5);
@@ -2692,6 +2779,7 @@ body {
 
 /* Responsive Rules for Pricing, Reviews, FAQ & Footer */
 @media (max-width: 991.98px) {
+
   .pricing-cards-grid,
   .reviews-cards-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2731,8 +2819,6 @@ body {
 
   .card-tier-featured {
     transform: none;
-    order: -1;
-    grid-column: 1 / -1;
   }
 
   .card-tier-featured:hover {
@@ -2741,6 +2827,7 @@ body {
 }
 
 @media (max-width: 575.98px) {
+
   .pricing-cards-grid,
   .reviews-cards-grid {
     grid-template-columns: 1fr;
@@ -2876,7 +2963,50 @@ body {
   }
 }
 
+@media (max-width: 767.98px) {
+  .pricing-comparison-section {
+    padding: 38px 0 46px;
+  }
+
+  .pricing-comparison-wrap {
+    border-radius: 12px;
+    margin: 0 -4px;
+  }
+
+  .pricing-comparison-table {
+    min-width: 520px;
+    font-size: 0.78rem;
+  }
+
+  .pricing-comparison-table th,
+  .pricing-comparison-table td {
+    min-width: 110px;
+    padding: 10px 12px;
+  }
+
+  .pricing-comparison-table thead th:first-child,
+  .pricing-comparison-table tbody th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #FFFFFF;
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.05);
+  }
+
+  .pricing-comparison-table thead th:first-child {
+    background: #F2F8F5;
+    z-index: 3;
+  }
+
+  .pricing-guarantee-ribbon>div {
+    font-size: 0.72rem;
+    padding: 8px 12px !important;
+    gap: 6px 12px !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+
   .pricing-tier-card,
   .review-card,
   .btn-cta-primary,

@@ -1,21 +1,18 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#FFFFFF" />
-  <title>Verify your phone — {{ config('app.name', 'InoManage') }}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="{{ asset('landing/signup.css') }}" />
-</head>
-<body class="signup-page">
-  <main class="signup-layout signin-layout">
-    <a class="signup-brand" href="{{ route('home') }}" aria-label="InoManage home">
-      <span class="signup-logo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
-      <span class="signup-wordmark">InoManage</span>
-    </a>
+@extends('layouts.landing')
+
+@section('title', 'Verify your phone — ' . ($siteSettings['brand_name'] ?? config('app.name', 'InoManage')))
+
+@push('styles')
+  <link rel="stylesheet" href="{{ asset('landing/signup.css') }}?v={{ @filemtime(public_path('landing/signup.css')) }}" />
+@endpush
+
+@section('content')
+<div class="signup-page-wrapper">
+  <div class="signup-layout signin-layout">
+    <!-- <a class="signup-brand" href="{{ route('home') }}" aria-label="{{ $siteSettings['brand_name'] ?? 'InoManage' }} home">
+      <img src="{{ $siteSettings['logo_url'] ?? asset('assets/images/inomanage.png') }}" alt="{{ $siteSettings['brand_name'] ?? 'InoManage' }}" class="signup-logo-img" width="34" height="34" style="width: 34px; height: 34px; max-width: 34px; max-height: 34px; object-fit: contain; border-radius: 9px;" />
+      <span class="signup-wordmark">{{ $siteSettings['brand_name'] ?? 'InoManage' }}</span>
+    </a> -->
 
     <section class="signup-card" aria-labelledby="verify-title">
       <header class="signup-heading">
@@ -103,8 +100,11 @@
         </form>
       </div>
     </section>
-  </main>
+  </div>
+</div>
+@endsection
 
+@push('scripts')
   @if ($cooldown > 0)
     <script>
       (function () {
@@ -126,5 +126,4 @@
       })();
     </script>
   @endif
-</body>
-</html>
+@endpush

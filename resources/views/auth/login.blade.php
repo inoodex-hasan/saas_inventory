@@ -1,26 +1,23 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#FFFFFF" />
-  <title>Sign in to {{ config('app.name', 'InoManage') }}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="{{ asset('landing/signup.css') }}" />
-</head>
-<body class="signup-page">
-  <main class="signup-layout signin-layout">
-    <a class="signup-brand" href="{{ route('home') }}" aria-label="InoManage home">
-      <span class="signup-logo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
-      <span class="signup-wordmark">InoManage</span>
-    </a>
+@extends('layouts.landing')
+
+@section('title', 'Sign In | ' . ($siteSettings['brand_name'] ?? config('app.name', 'InoManage')))
+
+@push('styles')
+  <link rel="stylesheet" href="{{ asset('landing/signup.css') }}?v={{ @filemtime(public_path('landing/signup.css')) }}" />
+@endpush
+
+@section('content')
+<div class="signup-page-wrapper">
+  <div class="signup-layout signin-layout">
+    <!-- <a class="signup-brand" href="{{ route('home') }}" aria-label="{{ $siteSettings['brand_name'] ?? 'InoManage' }} home">
+      <img src="{{ $siteSettings['logo_url'] ?? asset('assets/images/inomanage.png') }}" alt="{{ $siteSettings['brand_name'] ?? 'InoManage' }}" class="signup-logo-img" width="34" height="34" style="width: 34px; height: 34px; max-width: 34px; max-height: 34px; object-fit: contain; border-radius: 9px;" />
+      <span class="signup-wordmark">{{ $siteSettings['brand_name'] ?? 'InoManage' }}</span>
+    </a> -->
 
     <section class="signup-card" aria-labelledby="signin-title">
       <header class="signup-heading">
         <h1 id="signin-title">Welcome back</h1>
-        <p>Sign in to your InoManage account</p>
+        <p>Sign in to your {{ $siteSettings['brand_name'] ?? 'InoManage' }} account</p>
       </header>
 
       @if (session('status'))
@@ -37,7 +34,7 @@
         @csrf
 
         <label for="email">Email Address</label>
-        <input id="email" name="email" type="email" value="{{ old('email') }}" placeholder="name@company.com" autocomplete="username" required autofocus />
+        <input id="email" name="email" type="email" value="{{ old('email') }}" placeholder="Enter your email address" autocomplete="username" required autofocus />
 
         <label for="password">Password</label>
         <input id="password" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" required />
@@ -50,9 +47,9 @@
       </form>
 
       @if (Route::has('register'))
-        <div class="signup-signin">New to InoManage? <a href="{{ route('register') }}">Create an account <span aria-hidden="true">&rarr;</span></a></div>
+        <div class="signup-signin">New to {{ $siteSettings['brand_name'] ?? 'InoManage' }}? <a href="{{ route('register') }}">Create an account <span aria-hidden="true">&rarr;</span></a></div>
       @endif
     </section>
-  </main>
-</body>
-</html>
+  </div>
+</div>
+@endsection

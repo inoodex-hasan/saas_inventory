@@ -11,23 +11,32 @@ body.signup-page {
   font-family: "Plus Jakarta Sans", sans-serif;
 }
 
+.signup-page-wrapper {
+  background-color: var(--bg-main, #faf8f5);
+  min-height: calc(100vh - 420px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px 72px;
+}
+
 .signup-layout {
-  width: min(100% - 32px, 448px);
-  min-height: 100vh;
+  width: min(100%, 460px);
   display: flex;
   flex-direction: column;
   justify-content: center;
   margin: 0 auto;
-  padding: 24px 0;
+  padding: 0;
 }
 
 .signup-brand {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
+  flex-direction: row;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 10px;
   width: fit-content;
-  margin: 0 auto 24px;
+  margin: 0 auto 20px;
   padding-top: 0;
   color: #142033;
   font-size: 1.25rem;
@@ -73,6 +82,27 @@ body.signup-page {
   border-radius: 12px;
   background: #FFFFFF;
   box-shadow: 0 3px 12px rgba(22, 37, 68, 0.12);
+}
+
+.signup-logo-img {
+  width: 34px;
+  height: 34px;
+  max-width: 34px;
+  max-height: 34px;
+  padding: 3px;
+  border: 1px solid #E1E7EF;
+  border-radius: 9px;
+  background: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(22, 37, 68, 0.08);
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.signup-brand:hover .signup-logo-img {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22, 37, 68, 0.14);
 }
 
 .signup-logo i {

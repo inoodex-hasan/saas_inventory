@@ -80,6 +80,10 @@ class CheckTenantStatus
                     'tenant.suspended',
                     'terms.show',
                     'policy.show',
+                    'home',
+                    'features',
+                    'pricing',
+                    'reviews',
                 ];
 
                 if (! $request->routeIs($phoneWhitelistedRoutes)) {

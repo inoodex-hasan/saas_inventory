@@ -37,6 +37,16 @@ class AppServiceProvider extends ServiceProvider
 
             $logoPath    = $raw['logo_path'] ?? null;
             $faviconPath = $raw['favicon_path'] ?? null;
+            $defaultLogo = asset('assets/images/inomanage.png');
+            $logoUrl = null;
+            if ($logoPath) {
+                if (Storage::disk('public')->exists($logoPath)) {
+                    $logoUrl = asset(Storage::url($logoPath));
+                } elseif (file_exists(public_path('storage/' . $logoPath))) {
+                    $logoUrl = asset('storage/' . $logoPath);
+                }
+            }
+            $logoUrl = $logoUrl ?: $defaultLogo;
 
             $brandName = $raw['brand_name'] ?? 'InoManage';
 
@@ -171,10 +181,9 @@ class AppServiceProvider extends ServiceProvider
             }
 
             $view->with('site', [
-                'logo_url'          => $logoPath && Storage::disk('public')->exists($logoPath)
-                                         ? asset(Storage::url($logoPath)) : null,
+                'logo_url'          => $logoUrl,
                 'favicon_url'       => $faviconPath && Storage::disk('public')->exists($faviconPath)
-                                         ? asset(Storage::url($faviconPath)) : null,
+                                         ? asset(Storage::url($faviconPath)) : $defaultLogo,
                 'brand_name'        => $brandName,
                 'brand_tagline'     => $raw['brand_tagline']     ?? 'Cloud Inventory Platform',
                 'site_title'        => $raw['site_title']        ?? 'InoManage Cloud Inventory Management Software',
@@ -235,12 +244,22 @@ class AppServiceProvider extends ServiceProvider
             }
         });
 
-        View::composer(['layouts.landing', 'landing.*', 'welcome', 'privacy', 'terms'], function ($view) {
+        View::composer(['layouts.landing', 'landing.*', 'welcome', 'privacy', 'terms', 'auth.*'], function ($view) {
             $hasTable = Schema::hasTable('site_settings');
             $get = fn (string $key, $default = null) => $hasTable ? SiteSetting::get($key, $default) : $default;
 
             $logoPath = $get('logo_path');
             $faviconPath = $get('favicon_path');
+            $defaultLogo = asset('assets/images/inomanage.png');
+            $logoUrl = null;
+            if ($logoPath) {
+                if (Storage::disk('public')->exists($logoPath)) {
+                    $logoUrl = asset(Storage::url($logoPath));
+                } elseif (file_exists(public_path('storage/' . $logoPath))) {
+                    $logoUrl = asset('storage/' . $logoPath);
+                }
+            }
+            $logoUrl = $logoUrl ?: $defaultLogo;
 
             $heroSlides = json_decode((string) $get('hero_slides', ''), true);
             if (! is_array($heroSlides) || empty($heroSlides)) {
@@ -282,8 +301,8 @@ class AppServiceProvider extends ServiceProvider
                 'contact_phone' => $get('contact_phone') ?: '+880 1957-890788',
                 'contact_address' => $get('contact_address') ?: 'House: E1, Road: 16, Pallabi (2nd Phase), Dhaka-1216',
                 'footer_copyright' => $get('footer_copyright') ?: 'InoManage. All rights reserved.',
-                'logo_url' => $logoPath && Storage::disk('public')->exists($logoPath) ? asset(Storage::url($logoPath)) : null,
-                'favicon_url' => $faviconPath && Storage::disk('public')->exists($faviconPath) ? asset(Storage::url($faviconPath)) : null,
+                'logo_url' => $logoUrl,
+                'favicon_url' => $faviconPath && Storage::disk('public')->exists($faviconPath) ? asset(Storage::url($faviconPath)) : $defaultLogo,
                 'hero_slides' => $heroSlides,
                 'testimonials' => $testimonials,
                 'faqs' => $faqs,

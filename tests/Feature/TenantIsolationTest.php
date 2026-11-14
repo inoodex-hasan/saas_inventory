@@ -55,6 +55,7 @@ class TenantIsolationTest extends TestCase
         $user = $creator->create([
             'name' => 'Alice Tenant',
             'email' => 'alice@tenant.test',
+            'phone' => '01711000006',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
@@ -73,6 +74,7 @@ class TenantIsolationTest extends TestCase
         $userA = $creator->create([
             'name' => 'User A',
             'email' => 'userA@test.com',
+            'phone' => '01711000007',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
@@ -82,6 +84,7 @@ class TenantIsolationTest extends TestCase
         $userB = $creator->create([
             'name' => 'User B',
             'email' => 'userB@test.com',
+            'phone' => '01711000008',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);

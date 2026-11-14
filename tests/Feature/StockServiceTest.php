@@ -36,6 +36,7 @@ class StockServiceTest extends TestCase
         $this->user = $creator->create([
             'name' => 'Stock Manager',
             'email' => 'manager@stock.test',
+            'phone' => '01711000005',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);

@@ -5,21 +5,7 @@
         <!-- Logo & Brand -->
         <a class="navbar-brand d-flex align-items-center gap-3" href="{{ route('home') }}" id="brandLogo">
           <div class="logo-icon-wrapper">
-            <svg class="logo-icon-svg" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="44" height="44" rx="11" fill="white" />
-              <rect x="9.5" y="11" width="6.5" height="10" rx="3" fill="url(#cyanGrad)" />
-              <rect x="18.75" y="11" width="6.5" height="10" rx="3" fill="url(#cyanGrad)" />
-              <rect x="28" y="11" width="6.5" height="10" rx="3" fill="url(#cyanGrad)" />
-              <rect x="9.5" y="23.5" width="6.5" height="9.5" rx="3" fill="url(#cyanGrad)" />
-              <rect x="18.75" y="23.5" width="6.5" height="9.5" rx="3" fill="url(#cyanGrad)" />
-              <rect x="28" y="23.5" width="6.5" height="9.5" rx="3" fill="url(#cyanGrad)" />
-              <defs>
-                <linearGradient id="cyanGrad" x1="9.5" y1="11" x2="34.5" y2="33" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#0284c7" />
-                  <stop offset="1" stop-color="#00d2ff" />
-                </linearGradient>
-              </defs>
-            </svg>
+            <img src="{{ $siteSettings['logo_url'] ?? asset('assets/images/inomanage.png') }}" alt="{{ $siteSettings['brand_name'] ?? 'InoManage' }}" class="logo-icon-svg">
           </div>
 
           <div class="brand-text-group">
@@ -94,10 +80,20 @@
 
           <!-- Right Actions (Sign In + Free Trial) -->
           <div class="nav-right-actions d-flex align-items-center gap-3">
-            <a href="{{ route('login') }}" class="btn btn-signin">Sign In</a>
-            <a href="{{ route('register') }}" class="btn btn-free-trial d-inline-flex align-items-center gap-2">
-              <span>Free Trial</span>
-            </a>
+            @auth
+              <a href="{{ auth()->user()->isSuperAdmin() ? route('admin.dashboard') : route('dashboard') }}" class="btn btn-free-trial d-inline-flex align-items-center gap-2">
+                <span>Dashboard &rarr;</span>
+              </a>
+            @else
+              @if(!request()->routeIs('login'))
+                <a href="{{ route('login') }}" class="btn btn-signin">Sign In</a>
+              @endif
+              @if(!request()->routeIs('register'))
+                <a href="{{ route('register') }}" class="btn btn-free-trial d-inline-flex align-items-center gap-2">
+                  <span>Free Trial</span>
+                </a>
+              @endif
+            @endauth
           </div>
         </div>
       </div>

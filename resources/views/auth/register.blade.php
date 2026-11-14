@@ -1,21 +1,18 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#050812" />
-  <title>Create your {{ config('app.name', 'InoManage') }} account</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="{{ asset('landing/signup.css') }}" />
-</head>
-<body class="signup-page">
-  <main class="signup-layout">
-    <a class="signup-brand" href="{{ route('home') }}" aria-label="InoManage home">
-      <span class="signup-logo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
-      <span class="signup-wordmark">InoManage</span>
-    </a>
+@extends('layouts.landing')
+
+@section('title', 'Create your ' . ($siteSettings['brand_name'] ?? config('app.name', 'InoManage')) . ' account')
+
+@push('styles')
+  <link rel="stylesheet" href="{{ asset('landing/signup.css') }}?v={{ @filemtime(public_path('landing/signup.css')) }}" />
+@endpush
+
+@section('content')
+<div class="signup-page-wrapper">
+  <div class="signup-layout">
+    <!-- <a class="signup-brand" href="{{ route('home') }}" aria-label="{{ $siteSettings['brand_name'] ?? 'InoManage' }} home">
+      <img src="{{ $siteSettings['logo_url'] ?? asset('assets/images/inomanage.png') }}" alt="{{ $siteSettings['brand_name'] ?? 'InoManage' }}" class="signup-logo-img" width="34" height="34" style="width: 34px; height: 34px; max-width: 34px; max-height: 34px; object-fit: contain; border-radius: 9px;" />
+      <span class="signup-wordmark">{{ $siteSettings['brand_name'] ?? 'InoManage' }}</span>
+    </a> -->
 
     <section class="signup-card" aria-labelledby="signup-title">
       <header class="signup-heading">
@@ -33,13 +30,13 @@
         @csrf
 
         <label for="name">Full Name</label>
-        <input id="name" name="name" type="text" value="{{ old('name') }}" placeholder="John Doe" autocomplete="name" required autofocus />
+        <input id="name" name="name" type="text" value="{{ old('name') }}" placeholder="Enter your full name" autocomplete="name" required autofocus />
 
         <label for="email">Email Address</label>
-        <input id="email" name="email" type="email" value="{{ old('email') }}" placeholder="name@company.com" autocomplete="username" required />
+        <input id="email" name="email" type="email" value="{{ old('email') }}" placeholder="Enter your email address" autocomplete="username" required />
 
         <label for="phone">Phone Number (OTP Verification)</label>
-        <input id="phone" name="phone" type="tel" value="{{ old('phone') }}" placeholder="017XXXXXXXX" autocomplete="tel" required />
+        <input id="phone" name="phone" type="tel" value="{{ old('phone') }}" placeholder="01XXXXXXXXX" autocomplete="tel" required />
 
         <label for="password">Password</label>
         <input id="password" name="password" type="password" placeholder="At least 8 characters" autocomplete="new-password" minlength="8" required />
@@ -64,6 +61,6 @@
 
       <div class="signup-signin">Already have an account? <a href="{{ route('login') }}">Sign In <span aria-hidden="true">&rarr;</span></a></div>
     </section>
-  </main>
-</body>
-</html>
+  </div>
+</div>
+@endsection

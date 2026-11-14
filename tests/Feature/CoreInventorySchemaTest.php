@@ -33,6 +33,7 @@ class CoreInventorySchemaTest extends TestCase
         $userA = $creator->create([
             'name' => 'Alice Tenant',
             'email' => 'alice@inventory.test',
+            'phone' => '01711000001',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
@@ -106,6 +107,7 @@ class CoreInventorySchemaTest extends TestCase
         $userB = $creator->create([
             'name' => 'Bob Tenant',
             'email' => 'bob@inventory.test',
+            'phone' => '01711000002',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
