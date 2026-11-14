@@ -1729,71 +1729,22 @@ body {
 }
 
 .pricing-comparison-wrap {
-  overflow-x: auto !important;
+  overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   border: 1px solid #E1E8E4;
   border-radius: 14px;
   background: #FFFFFF;
   box-shadow: 0 8px 24px rgba(18, 38, 63, 0.045);
+  scrollbar-width: none; /* Hidden on PC / Firefox by default */
+  -ms-overflow-style: none; /* IE / Edge */
 }
 
+/* Hide scrollbar on desktop Chrome / Safari / Opera */
 .pricing-comparison-wrap::-webkit-scrollbar {
-  height: 9px !important;
-  display: block !important;
-}
-
-.pricing-comparison-wrap::-webkit-scrollbar-track {
-  background: #E8F3EE !important;
-  border-bottom-left-radius: 13px;
-  border-bottom-right-radius: 13px;
-}
-
-.pricing-comparison-wrap::-webkit-scrollbar-thumb {
-  background: #0A7D65 !important;
-  border-radius: 999px !important;
-  border: 2px solid #E8F3EE !important;
-}
-
-.pricing-comparison-wrap::-webkit-scrollbar-thumb:hover {
-  background: #065F46 !important;
-}
-
-/* Persistent bottom scrollbar track */
-.pricing-scroll-track-wrapper {
-  max-width: 100%;
-  margin: 12px auto 0;
-  padding: 0 4px;
-}
-
-.pricing-scroll-track {
-  width: 100%;
-  height: 8px;
-  background: #E2EBE6;
-  border-radius: 999px;
-  position: relative;
-  cursor: pointer;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-  touch-action: none;
-}
-
-.pricing-scroll-bar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 35%;
-  min-width: 48px;
-  background: linear-gradient(90deg, #0A7D65 0%, #10B981 100%);
-  border-radius: 999px;
-  box-shadow: 0 1px 4px rgba(10, 125, 101, 0.35);
-  cursor: grab;
-  user-select: none;
-}
-
-.pricing-scroll-bar:active {
-  cursor: grabbing;
+  display: none;
+  height: 0;
+  width: 0;
 }
 
 .pricing-comparison-table {
@@ -2945,6 +2896,24 @@ body {
   .pricing-comparison-wrap {
     border-radius: 12px;
     margin: 0 -4px;
+    scrollbar-width: thin; /* Show normal scrollbar on mobile */
+    scrollbar-color: #0A7D65 #E8F3EE;
+    -ms-overflow-style: auto;
+  }
+
+  .pricing-comparison-wrap::-webkit-scrollbar {
+    display: block;
+    height: 5px;
+  }
+
+  .pricing-comparison-wrap::-webkit-scrollbar-track {
+    background: #E8F3EE;
+    border-radius: 999px;
+  }
+
+  .pricing-comparison-wrap::-webkit-scrollbar-thumb {
+    background: #0A7D65;
+    border-radius: 999px;
   }
 
   .pricing-comparison-table {

@@ -53,16 +53,14 @@ function setTab(tab) {
 
 function addHeroSlide() {
     form.hero_slides.push({
-        chip: 'Enterprise SaaS • 99.99% Uptime SLA',
-        headline_prefix: 'Scale Operations With',
-        headline_highlight: 'Modern Cloud Inventory',
+        headline: 'Intelligent Inventory &',
+        headline_highlight: 'Cloud ERP Platform',
         subtext: 'Manage multi-warehouse stock, point-of-sale checkout, and double-entry accounting in one unified platform.',
-        primary_cta_text: 'Start Free Trial',
+        primary_cta_text: 'Get Started Free',
         primary_cta_url: '/register',
-        secondary_cta_text: 'Explore Modules',
-        secondary_cta_url: '#features',
-        mockup_type: 'inventory',
-        trust_badges: ['No Credit Card Required', 'Instant Setup & Seeding', 'Real-Time Sync'],
+        image_url: '/landing/images/inomanage-laptop-dashboard.png',
+        image_path: null,
+        image_preview: null,
     });
 }
 
@@ -85,19 +83,6 @@ function moveHeroSlideDown(index) {
     if (index < form.hero_slides.length - 1) {
         const item = form.hero_slides.splice(index, 1)[0];
         form.hero_slides.splice(index + 1, 0, item);
-    }
-}
-
-function addTrustBadge(slide) {
-    if (!Array.isArray(slide.trust_badges)) {
-        slide.trust_badges = [];
-    }
-    slide.trust_badges.push('Advantage Feature');
-}
-
-function removeTrustBadge(slide, badgeIdx) {
-    if (Array.isArray(slide.trust_badges)) {
-        slide.trust_badges.splice(badgeIdx, 1);
     }
 }
 
@@ -671,7 +656,7 @@ function submit() {
                                         {{ sIdx + 1 }}
                                     </span>
                                     <span class="text-xs font-bold text-slate-800">
-                                        Slide #{{ sIdx + 1 }}: {{ slide.headline_highlight || 'Untitled Slide' }}
+                                        Slide #{{ sIdx + 1 }}: {{ slide.headline ? (slide.headline + ' ' + (slide.headline_highlight || '')) : (slide.headline_highlight || 'Untitled Slide') }}
                                     </span>
                                 </div>
 
@@ -712,49 +697,36 @@ function submit() {
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <!-- Chip Text -->
-                                <div class="md:col-span-2 space-y-1">
+                                <!-- Headline (Dark text) -->
+                                <div class="space-y-1">
                                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                                        Announcement Chip / Pill Text
+                                        Headline (Main Title)
                                     </label>
                                     <input 
-                                        v-model="slide.chip" 
+                                        v-model="slide.headline" 
                                         type="text" 
-                                        placeholder="e.g. Enterprise Multi-Tenant SaaS • 99.99% Uptime SLA"
+                                        placeholder="e.g. Intelligent Inventory &"
                                         class="w-full text-xs sm:text-sm rounded-xl border-slate-300 focus:border-cyan-500 focus:ring-cyan-500 transition shadow-sm bg-white"
                                     />
                                 </div>
 
-                                <!-- Headline Prefix -->
+                                <!-- Headline Highlight (Emerald / Accent text) -->
                                 <div class="space-y-1">
                                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                                        Headline Prefix
-                                    </label>
-                                    <input 
-                                        v-model="slide.headline_prefix" 
-                                        type="text" 
-                                        placeholder="e.g. The Operating System for"
-                                        class="w-full text-xs sm:text-sm rounded-xl border-slate-300 focus:border-cyan-500 focus:ring-cyan-500 transition shadow-sm bg-white"
-                                    />
-                                </div>
-
-                                <!-- Headline Gradient Accent -->
-                                <div class="space-y-1">
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                                        Gradient Highlight Text
+                                        Headline Highlight (Emerald Accent)
                                     </label>
                                     <input 
                                         v-model="slide.headline_highlight" 
                                         type="text" 
-                                        placeholder="e.g. Modern Inventory & Supply Chains"
-                                        class="w-full text-xs sm:text-sm rounded-xl border-slate-300 focus:border-cyan-500 focus:ring-cyan-500 transition shadow-sm bg-white font-semibold text-indigo-600"
+                                        placeholder="e.g. Cloud ERP Platform"
+                                        class="w-full text-xs sm:text-sm rounded-xl border-slate-300 focus:border-cyan-500 focus:ring-cyan-500 transition shadow-sm bg-white font-semibold text-emerald-700"
                                     />
                                 </div>
 
-                                <!-- Subtext -->
+                                <!-- Subtext / Description -->
                                 <div class="md:col-span-2 space-y-1">
                                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                                        Subheadline / Description
+                                        Subtitle / Description
                                     </label>
                                     <textarea 
                                         v-model="slide.subtext" 
@@ -772,13 +744,13 @@ function submit() {
                                     <input 
                                         v-model="slide.primary_cta_text" 
                                         type="text" 
-                                        placeholder="e.g. Start 14-Day Free Trial"
+                                        placeholder="e.g. Get Started Free"
                                         class="w-full text-xs sm:text-sm rounded-xl border-slate-300 focus:border-cyan-500 focus:ring-cyan-500 transition shadow-sm bg-white"
                                     />
                                 </div>
                                 <div class="space-y-1">
                                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                                        Primary Button URL
+                                        Primary Button Link / URL
                                     </label>
                                     <input 
                                         v-model="slide.primary_cta_url" 
@@ -788,40 +760,16 @@ function submit() {
                                     />
                                 </div>
 
-                                <!-- Secondary CTA Text & URL -->
-                                <div class="space-y-1">
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                                        Secondary Button Text
-                                    </label>
-                                    <input 
-                                        v-model="slide.secondary_cta_text" 
-                                        type="text" 
-                                        placeholder="e.g. Explore Modules"
-                                        class="w-full text-xs sm:text-sm rounded-xl border-slate-300 focus:border-cyan-500 focus:ring-cyan-500 transition shadow-sm bg-white"
-                                    />
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                                        Secondary Button URL
-                                    </label>
-                                    <input 
-                                        v-model="slide.secondary_cta_url" 
-                                        type="text" 
-                                        placeholder="e.g. #features"
-                                        class="w-full text-xs sm:text-sm rounded-xl border-slate-300 focus:border-cyan-500 focus:ring-cyan-500 transition shadow-sm bg-white"
-                                    />
-                                </div>
-
-                                <!-- Custom Slide Image Field -->
+                                <!-- Slide Image Field -->
                                 <div class="md:col-span-2 space-y-2 p-3.5 rounded-xl bg-white border border-slate-200">
                                     <div class="flex items-center justify-between">
                                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
                                             <svg class="w-4 h-4 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                             </svg>
-                                            <span>Slide Custom Image / Banner (Optional)</span>
+                                            <span>Slide Image (Dashboard Visual)</span>
                                         </label>
-                                        <span class="text-[11px] text-slate-400">Replaces mockup preset when provided</span>
+                                        <span class="text-[11px] text-slate-400">Recommended: PNG / WebP dashboard mockup</span>
                                     </div>
 
                                     <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-1">
@@ -837,7 +785,7 @@ function submit() {
                                                 <svg class="w-6 h-6 mx-auto mb-1 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                 </svg>
-                                                <span>Using Mockup</span>
+                                                <span>Default Image</span>
                                             </div>
                                         </div>
 
@@ -858,7 +806,7 @@ function submit() {
                                                 <input 
                                                     v-model="slide.image_url" 
                                                     type="text" 
-                                                    placeholder="https://example.com/banner.png"
+                                                    placeholder="/landing/images/inomanage-laptop-dashboard.png"
                                                     class="flex-1 text-xs rounded-lg border-slate-200 focus:border-cyan-500 focus:ring-cyan-500 py-1"
                                                 />
                                                 <button 
@@ -870,59 +818,6 @@ function submit() {
                                                     Remove
                                                 </button>
                                             </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Mockup Screen Preset -->
-                                <div class="md:col-span-2 space-y-1">
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                                        Mockup Screen Design
-                                    </label>
-                                    <select 
-                                        v-model="slide.mockup_type" 
-                                        class="w-full text-xs sm:text-sm rounded-xl border-slate-300 focus:border-cyan-500 focus:ring-cyan-500 transition shadow-sm bg-white"
-                                    >
-                                        <option value="inventory">Warehouse Inventory Distribution & Low-Stock Radar</option>
-                                        <option value="pos">High-Speed Point of Sale (POS) & Retail Checkout Terminal</option>
-                                        <option value="accounting">Double-Entry Financial Accounting, General Ledger & Profit Analysis</option>
-                                    </select>
-                                </div>
-
-                                <!-- Trust Badges -->
-                                <div class="md:col-span-2 space-y-2">
-                                    <div class="flex items-center justify-between">
-                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                                            Feature / Trust Badges
-                                        </label>
-                                        <button 
-                                            type="button" 
-                                            @click="addTrustBadge(slide)" 
-                                            class="text-[11px] font-bold text-cyan-600 hover:text-cyan-700"
-                                        >
-                                            + Add Badge
-                                        </button>
-                                    </div>
-
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
-                                        <div 
-                                            v-for="(badge, bIdx) in slide.trust_badges" 
-                                            :key="bIdx" 
-                                            class="flex items-center gap-1.5 p-1.5 rounded-lg bg-white border border-slate-200"
-                                        >
-                                            <input 
-                                                v-model="slide.trust_badges[bIdx]" 
-                                                type="text" 
-                                                class="flex-1 text-xs border-0 p-0 focus:ring-0 text-slate-700 font-medium"
-                                                placeholder="Badge text"
-                                            />
-                                            <button 
-                                                type="button" 
-                                                @click="removeTrustBadge(slide, bIdx)" 
-                                                class="text-slate-400 hover:text-rose-500 p-0.5"
-                                            >
-                                                &times;
-                                            </button>
                                         </div>
                                     </div>
                                 </div>
