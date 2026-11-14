@@ -147,11 +147,12 @@ class SubscriptionService
 
     /**
      * Ensure default Bangladeshi BDT plans are provisioned.
+     * Uses firstOrCreate so custom prices, quotas, and edits made by the admin are never overwritten on deploy or signup.
      */
     public function ensureDefaultPlans(): void
     {
         foreach (self::DEFAULT_PLANS as $preset) {
-            Plan::updateOrCreate(
+            Plan::firstOrCreate(
                 ['slug' => $preset['slug']],
                 $preset
             );

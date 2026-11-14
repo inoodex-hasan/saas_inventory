@@ -112,14 +112,15 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-shadow: none !important;
 }
 
 .logo-icon-svg {
   width: 42px;
   height: 42px;
   border-radius: 10px;
-  /* box-shadow: 0 4px 14px rgba(6, 111, 88, 0.16); */
-  transition: box-shadow 0.3s ease;
+  box-shadow: none !important;
+  filter: none !important;
 }
 
 .brand-text-group {
