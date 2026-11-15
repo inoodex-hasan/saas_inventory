@@ -266,7 +266,6 @@ function submitAddCustomer() {
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Customer Receivables & Dues Ledger</h1>
-                    <p class="text-xs text-slate-500 font-medium">Track outstanding customer balances, payment recovery, and credit aging</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <button

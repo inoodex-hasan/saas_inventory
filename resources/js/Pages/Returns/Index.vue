@@ -180,7 +180,6 @@ function submitReject() {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Product Returns & RMA Workflows</h1>
-                    <p class="text-xs text-slate-500 font-medium">Process customer return merchandise authorizations, restock depot inventory, and issue credit notes</p>
                 </div>
             </div>
         </template>

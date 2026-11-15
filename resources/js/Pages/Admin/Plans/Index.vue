@@ -128,7 +128,6 @@ function planLimits(plan) {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h2 class="text-xl font-bold text-slate-900 tracking-tight">SaaS Subscription Plans Manager</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Control dynamic Bangladeshi Taka (৳) subscription tiers, quotas, and packaging</p>
                 </div>
             </div>
         </template>

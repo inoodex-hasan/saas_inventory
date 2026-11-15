@@ -215,7 +215,6 @@ function submit() {
                     </Link>
                     <div>
                         <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Add New Product</h1>
-                        <p class="text-xs text-slate-500 font-medium">Create a catalog item with dynamic SKU, profit margins, and opening stock</p>
                     </div>
                 </div>
             </div>

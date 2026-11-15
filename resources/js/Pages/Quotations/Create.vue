@@ -186,7 +186,6 @@ function submit(statusValue = 'draft') {
                     </Link>
                     <div>
                         <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Create Formal Quotation</h1>
-                        <p class="text-xs text-slate-500 font-medium">Issue branded estimate or commercial proposal with pricing terms</p>
                     </div>
                 </div>
             </div>

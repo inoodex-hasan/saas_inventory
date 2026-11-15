@@ -269,7 +269,6 @@ function submit() {
                     </Link>
                     <div>
                         <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">New Outbound Sales Order & Invoice</h1>
-                        <p class="text-xs text-slate-500 font-medium">Issue customer invoice, POS sales docket, and allocate warehouse inventory</p>
                     </div>
                 </div>
                 <Link

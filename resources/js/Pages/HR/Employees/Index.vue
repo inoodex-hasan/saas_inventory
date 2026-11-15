@@ -130,7 +130,6 @@ function resetFilters() {
                 <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">
                     {{ page_title }}
                 </h1>
-                <p class="text-xs text-slate-500 font-medium">Manage staff profiles, designations, salary baselines, and bank credentials</p>
             </div>
         </template>
 

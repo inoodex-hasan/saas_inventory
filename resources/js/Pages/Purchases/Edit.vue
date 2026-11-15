@@ -185,7 +185,6 @@ function submit() {
                             </span>
                             <StatusBadge :status="order.status" />
                         </div>
-                        <p class="text-xs text-slate-500 font-medium">Update vendor information, warehouse allocation, or item quantities</p>
                     </div>
                 </div>
 

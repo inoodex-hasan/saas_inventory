@@ -106,7 +106,6 @@ function executeDeleteBrand() {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Product Brands</h1>
-                    <p class="text-xs text-slate-500 font-medium">Manufacturer labels, trademarks & brand associations across your catalog</p>
                 </div>
             </div>
         </template>

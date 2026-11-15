@@ -120,7 +120,6 @@ const availableParentOptions = computed(() => {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Product Categories</h1>
-                    <p class="text-xs text-slate-500 font-medium">Organize products into hierarchical groups, taxonomy & departments</p>
                 </div>
             </div>
         </template>

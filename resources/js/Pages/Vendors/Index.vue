@@ -137,7 +137,6 @@ function executeDeleteVendor() {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Vendors & Suppliers Directory</h1>
-                    <p class="text-xs text-slate-500 font-medium">Manage procurement sources, contact persons, and trade credentials</p>
                 </div>
             </div>
         </template>

@@ -75,7 +75,6 @@ function submit() {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h2 class="text-xl font-bold text-slate-900 tracking-tight">Post Manual Journal Entry</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Strict double-entry transaction voucher recorder.</p>
                 </div>
             </div>
         </template>

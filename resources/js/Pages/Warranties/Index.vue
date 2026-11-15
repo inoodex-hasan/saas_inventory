@@ -67,7 +67,6 @@ function submitDefective() {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Serial Numbers & Warranty Center</h1>
-                    <p class="text-xs text-slate-500 font-medium">Audit individual item serials, customer warranty periods, and RMA dispositions</p>
                 </div>
             </div>
         </template>

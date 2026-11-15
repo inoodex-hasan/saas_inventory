@@ -257,7 +257,6 @@ function executeDeleteTenant() {
                             {{ t('Super Admin') }}
                         </span>
                     </div>
-                    <p class="text-xs text-slate-500 font-medium">{{ t('Tenant provisioning, lifecycle administration, cross-tenant isolation enforcement, and workspace switching') }}</p>
                 </div>
 
                 <div class="flex items-center gap-2">

@@ -104,7 +104,6 @@ function executeDeleteQuotation() {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Quotations & Estimates</h1>
-                    <p class="text-xs text-slate-500 font-medium">Generate formal customer quotations, proposals, and convert them to Sales Orders</p>
                 </div>
             </div>
         </template>

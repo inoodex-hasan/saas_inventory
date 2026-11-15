@@ -201,9 +201,6 @@ function submit() {
                         </span>
                         <span>Site Settings & Branding</span>
                     </h1>
-                    <p class="text-xs sm:text-sm text-slate-500 mt-1">
-                        Configure public landing page branding, hero carousel, FAQs, and legal policies.
-                    </p>
                 </div>
 
                 <div class="flex items-center gap-3">

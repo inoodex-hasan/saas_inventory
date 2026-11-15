@@ -176,7 +176,6 @@ function resetFilters() {
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">
                         {{ page_title }}
                     </h1>
-                    <p class="text-xs text-slate-500 font-medium">Track operational overheads, office rent, utilities, petty cash, and vendor disbursements</p>
                 </div>
             </div>
         </template>

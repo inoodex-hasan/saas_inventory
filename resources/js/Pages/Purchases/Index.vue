@@ -300,7 +300,6 @@ function submitReceive() {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Procurement & Purchase Orders</h1>
-                    <p class="text-xs text-slate-500 font-medium">Inbound shipment tracking, supplier procurement sheets & stock receiving</p>
                 </div>
             </div>
         </template>

@@ -255,7 +255,6 @@ const totalOrdersInStatus = computed(() => {
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
                         <span>{{ t('Admin Dashboard') }}</span>
                     </h1>
-                    <p class="text-xs text-slate-500 font-medium">{{ t('Real-time inventory valuation, trends, analytics & operations') }}</p>
                 </div>
             </div>
         </template>

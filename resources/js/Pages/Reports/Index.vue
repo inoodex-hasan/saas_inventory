@@ -197,7 +197,6 @@ function exportSingle(scope, format) {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Inventory Analytics &amp; Reports</h1>
-                    <p class="text-xs text-slate-500 font-medium">Real-time asset valuation, low-stock reorder alerts, and comprehensive movement audit trails</p>
                 </div>
             </div>
         </template>

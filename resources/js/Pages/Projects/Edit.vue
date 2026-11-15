@@ -38,7 +38,6 @@ function submit() {
                         </Link>
                     </div>
                     <h2 class="text-xl font-bold text-slate-900 tracking-tight mt-1">Edit Project #{{ project.project_code }}</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Modify project parameters, contract budget, timeline, and customer assignment</p>
                 </div>
             </div>
         </template>

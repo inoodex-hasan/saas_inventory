@@ -142,7 +142,6 @@ function submit() {
                     </Link>
                     <div>
                         <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Create New Project</h1>
-                        <p class="text-xs text-slate-500 font-medium">Initiate contract, assign materials, and configure client billing</p>
                     </div>
                 </div>
 

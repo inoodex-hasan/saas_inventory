@@ -140,7 +140,6 @@ function executeDeleteTicket() {
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
                         <span>{{ page_title }}</span>
                     </h1>
-                    <p class="text-xs text-slate-500 font-medium">Manage workshop repairs, equipment drop-offs, parts consumption, and customer invoices</p>
                 </div>
             </div>
         </template>

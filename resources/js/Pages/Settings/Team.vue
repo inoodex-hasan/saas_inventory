@@ -118,7 +118,6 @@ function executeRemoveMember() {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Team Members & Access Roles</h1>
-                    <p class="text-xs text-slate-500 font-medium">Manage organization members, assign module permissions, and manage collaborator seats</p>
                 </div>
             </div>
         </template>

@@ -137,7 +137,6 @@ function executeDeleteProject() {
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
                         <span>{{ page_title }}</span>
                     </h1>
-                    <p class="text-xs text-slate-500 font-medium">Track contract budgets, inventory bills of materials, direct expenses, and milestone billings</p>
                 </div>
             </div>
         </template>

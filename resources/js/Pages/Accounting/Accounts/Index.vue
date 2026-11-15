@@ -142,7 +142,6 @@ function typeBadgeClass(type) {
         <template #header>
             <div>
                 <h2 class="text-xl font-bold text-slate-900 tracking-tight">Chart of Accounts (COA)</h2>
-                <p class="text-xs text-slate-500 mt-0.5">Manage master general ledger structure and normal balance rules.</p>
             </div>
         </template>
 

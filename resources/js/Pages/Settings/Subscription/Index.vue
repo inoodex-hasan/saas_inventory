@@ -164,7 +164,6 @@ function paymentStatusBadge(status) {
                             Workspace Tier
                         </span>
                     </div>
-                    <p class="text-xs text-slate-500 mt-0.5">Manage resource quotas, subscription tiers, and local Bangladeshi merchant payments.</p>
                 </div>
 
                 <div class="flex items-center gap-2">

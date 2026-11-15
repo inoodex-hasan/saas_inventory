@@ -88,7 +88,6 @@ function paymentStatusClass(status) {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h2 class="text-xl font-bold text-slate-900 tracking-tight">Payment Verification Hub</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Audit bKash, Nagad, Rocket, and Bank TrxIDs to activate tenant subscriptions</p>
                 </div>
             </div>
         </template>

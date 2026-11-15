@@ -117,7 +117,6 @@ function submit() {
                     </Link>
                     <div>
                         <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Issue Delivery Challan & Gate Pass</h1>
-                        <p class="text-xs text-slate-500 font-medium">Generate shipping manifest and authorization for warehouse goods release</p>
                     </div>
                 </div>
             </div>

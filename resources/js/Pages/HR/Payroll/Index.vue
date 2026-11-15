@@ -147,7 +147,6 @@ function resetFilters() {
                 <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">
                     {{ page_title }}
                 </h1>
-                <p class="text-xs text-slate-500 font-medium">Generate monthly salary statements, consolidate approved field TA/DA claims, and issue pay slips</p>
             </div>
         </template>
 

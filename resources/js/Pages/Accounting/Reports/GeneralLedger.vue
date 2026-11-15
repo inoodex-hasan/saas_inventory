@@ -35,7 +35,6 @@ function applyFilters() {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h2 class="text-xl font-bold text-slate-900 tracking-tight">General Ledger Statement</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Detailed transaction drill-down and running balance ledger</p>
                 </div>
             </div>
         </template>

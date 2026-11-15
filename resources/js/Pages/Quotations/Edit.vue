@@ -190,7 +190,6 @@ function submit() {
                             </span>
                             <StatusBadge :status="quotation.status" />
                         </div>
-                        <p class="text-xs text-slate-500 font-medium">Update items, pricing, validity dates, or client terms</p>
                     </div>
                 </div>
 

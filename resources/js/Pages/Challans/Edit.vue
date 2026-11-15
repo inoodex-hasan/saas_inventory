@@ -73,7 +73,6 @@ function submit() {
                             </span>
                             <StatusBadge :status="form.status" />
                         </div>
-                        <p class="text-xs text-slate-500 font-medium">Update transport logistics, driver credentials, and packing quantities</p>
                     </div>
                 </div>
 

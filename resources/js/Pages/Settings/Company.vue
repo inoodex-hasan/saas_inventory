@@ -147,7 +147,6 @@ function previewReportBg() {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Company Settings & Branding</h1>
-                    <p class="text-xs text-slate-500 font-medium">Configure tenant workspace identity, tax compliance, pre-printed letterheads, and print margins</p>
                 </div>
             </div>
         </template>

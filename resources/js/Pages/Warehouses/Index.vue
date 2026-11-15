@@ -142,7 +142,6 @@ async function inspectStock(wh) {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Branches & Fulfillment Locations</h1>
-                    <p class="text-xs text-slate-500 font-medium">Manage retail shops (POS counters) and central storage godowns</p>
                 </div>
             </div>
         </template>

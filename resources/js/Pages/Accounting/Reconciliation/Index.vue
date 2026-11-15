@@ -78,7 +78,6 @@ const filteredHistory = computed(() => {
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">
                         {{ page_title || 'Bank & Cash Reconciliation' }}
                     </h1>
-                    <p class="text-xs text-slate-500 font-medium">Audit external bank and cash statements against internal general ledger balances</p>
                 </div>
             </div>
         </template>

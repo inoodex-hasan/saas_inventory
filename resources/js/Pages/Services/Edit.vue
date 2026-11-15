@@ -45,7 +45,6 @@ function submitForm() {
                     <h2 class="text-xl font-bold text-slate-900 tracking-tight mt-1">
                         Edit Service Ticket #{{ ticket.ticket_number }}
                     </h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Update equipment information, technician assignment, and charges</p>
                 </div>
             </div>
         </template>

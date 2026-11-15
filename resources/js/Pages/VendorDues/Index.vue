@@ -215,7 +215,6 @@ function submitPay() {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Vendor Due Ledger</h1>
-                    <p class="text-xs text-slate-500 font-medium">Track procurement liabilities, view purchase orders, and record partial/full disbursements</p>
                 </div>
             </div>
         </template>

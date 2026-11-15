@@ -102,9 +102,6 @@ function getPasswordError(field) {
                             {{ page.props.auth.team.name }}
                         </span>
                     </div>
-                    <p class="text-xs text-slate-500 font-medium mt-0.5">
-                        Update your personal identity credentials, platform email, and secure access passwords
-                    </p>
                 </div>
             </div>
         </template>

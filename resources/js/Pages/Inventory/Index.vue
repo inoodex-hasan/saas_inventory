@@ -324,7 +324,6 @@ const productOptions = computed(() => {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Stock & Inventory Balances</h1>
-                    <p class="text-xs text-slate-500 font-medium">Real-time warehouse stock tracking, holding valuation & inventory audit reconciliation</p>
                 </div>
             </div>
         </template>

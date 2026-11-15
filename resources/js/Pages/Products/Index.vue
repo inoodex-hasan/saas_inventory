@@ -294,7 +294,6 @@ function submitImport() {
             <div class="flex items-center justify-between w-full">
                 <div>
                     <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Products & Catalog</h1>
-                    <p class="text-xs text-slate-500 font-medium">Manage SKUs, categories, brands, price margins, and warehouse distribution</p>
                 </div>
             </div>
         </template>

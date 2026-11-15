@@ -183,7 +183,6 @@ function getProviderBadge(acc) {
         <template #header>
             <div>
                 <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Bank & MFS Financial Accounts</h1>
-                <p class="text-xs text-slate-500 font-medium">Manage corporate bank accounts, mobile financial services (bKash/Nagad), and cash registers</p>
             </div>
         </template>
 

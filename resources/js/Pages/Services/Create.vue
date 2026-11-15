@@ -119,7 +119,6 @@ function submitForm() {
                     </Link>
                     <div>
                         <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Intake Service Ticket</h1>
-                        <p class="text-xs text-slate-500 font-medium">Record device drop-off, initial diagnosis, and preliminary service estimates</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">

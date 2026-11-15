@@ -186,7 +186,6 @@ function submit() {
                     </Link>
                     <div>
                         <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Create Inbound Purchase Order</h1>
-                        <p class="text-xs text-slate-500 font-medium">Issue procurement sheets, track vendor batches, and schedule warehouse intake</p>
                     </div>
                 </div>
             </div>
