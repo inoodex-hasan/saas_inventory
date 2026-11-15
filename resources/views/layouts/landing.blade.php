@@ -24,6 +24,14 @@
   <!-- Custom CSS -->
   <link rel="stylesheet" href="{{ asset('landing/style.css') }}?v={{ @filemtime(public_path('landing/style.css')) }}" />
   @stack('styles')
+  
+  <meta name="google-site-verification" content="8nO-7JbCmpFlLbZMocO0kpHpcg833HWqnWvjsZ0bt8U" />
+  <script async src="https://www.googletagmanager.com/gtm.js?id=GTM-N2XZN7T8"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+</script>
 </head>
 
 <body>
@@ -152,4 +160,3 @@
 </body>
 
 </html>
-

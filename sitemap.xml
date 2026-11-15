@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <url>
+       <loc>https://www.inomanage.com/</loc>
+       <lastmod>2026-11-14T11:12:32+00:00</lastmod>
+       <priority>1.0000</priority>
+  </url>
+  <url>
+       <loc>https://www.inomanage.com/features</loc>
+       <lastmod>2026-11-14T11:12:32+00:00</lastmod>
+       <priority>0.8000</priority>
+  </url>
+  <url>
+       <loc>https://www.inomanage.com/pricing</loc>
+       <lastmod>2026-11-14T11:12:32+00:00</lastmod>
+       <priority>0.8000</priority>
+  </url>
+  <url>
+       <loc>https://www.inomanage.com/reviews</loc>
+       <lastmod>2026-11-14T11:12:32+00:00</lastmod>
+       <priority>0.8000</priority>
+  </url>
+  <url>
+       <loc>https://www.inomanage.com/login</loc>
+       <lastmod>2026-11-14T11:12:32+00:00</lastmod>
+       <priority>0.8000</priority>
+  </url>
+  <url>
+       <loc>https://www.inomanage.com/register</loc>
+       <lastmod>2026-11-14T11:12:32+00:00</lastmod>
+       <priority>0.8000</priority>
+  </url>
+  <url>
+       <loc>https://www.inomanage.com/terms-and-conditions</loc>
+       <lastmod>2026-11-14T11:12:32+00:00</lastmod>
+       <priority>0.8000</priority>
+  </url>
+  <url>
+       <loc>https://www.inomanage.com/privacy-policy</loc>
+       <lastmod>2026-11-14T11:12:32+00:00</lastmod>
+       <priority>0.8000</priority>
+  </url>
+  <url>
+       <loc>https://www.inomanage.com/forgot-password</loc>
+       <lastmod>2026-11-14T11:12:32+00:00</lastmod>
+       <priority>0.6400</priority>
+  </url>
+</urlset>

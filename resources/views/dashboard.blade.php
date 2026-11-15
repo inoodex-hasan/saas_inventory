@@ -8,9 +8,7 @@
                     <h1 class="text-2xl font-bold tracking-tight text-slate-900">
                         Operational Dashboard
                     </h1>
-                    <p class="text-sm text-slate-500 mt-0.5">
-                        Real-time overview of inventory valuation, pending dispatches, stock alerts, and fulfillment hubs.
-                    </p>
+                    
                 </div>
                 <div class="flex items-center gap-2.5">
                     <a href="{{ route('products.index') }}" 

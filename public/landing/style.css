@@ -2970,12 +2970,12 @@ body {
 
 .floating-messenger-btn {
   position: fixed;
-  bottom: 24px;
+  bottom: 70px;
   right: 24px;
   z-index: 1040;
   width: 60px;
   height: 60px;
-  border-radius: 50%;
+  border-radius: 60%;
   background: transparent;
   display: flex;
   align-items: center;
@@ -3061,6 +3061,7 @@ body {
 @media (max-width: 576px) {
   .floating-messenger-btn {
     bottom: 18px;
+    bottom: 30px;
     right: 18px;
     width: 52px;
     height: 52px;
