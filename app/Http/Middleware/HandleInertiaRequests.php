@@ -37,6 +37,28 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
+        if ($user) {
+            $user->loadMissing([
+                'currentTeam.subscription.plan',
+                'ownedTeams',
+                'teams',
+            ]);
+        }
+
+        $roles = [];
+        $permissions = [];
+        if ($user && $user->currentTeam) {
+            $cacheKey = "user_auth_rp_{$user->id}_{$user->current_team_id}";
+            $cached = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($user) {
+                return [
+                    'roles' => $user->roles()->pluck('name')->toArray(),
+                    'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
+                ];
+            });
+            $roles = $cached['roles'] ?? [];
+            $permissions = $cached['permissions'] ?? [];
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
@@ -64,8 +86,8 @@ class HandleInertiaRequests extends Middleware
                     'company_address' => $user->currentTeam->company_address,
                     'logo_path' => $user->currentTeam->logo_path,
                 ] : null,
-                'roles' => ($user && $user->currentTeam) ? $user->roles()->pluck('name')->toArray() : [],
-                'permissions' => ($user && $user->currentTeam) ? $user->getAllPermissions()->pluck('name')->toArray() : [],
+                'roles' => $roles,
+                'permissions' => $permissions,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
