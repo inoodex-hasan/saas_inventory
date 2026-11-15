@@ -981,57 +981,63 @@ onMounted(() => {
             class="flex-1 flex flex-col min-h-screen min-w-0 w-full transition-[padding] duration-300"
             :class="isSidebarPinned ? 'md:pl-64' : 'md:pl-[72px]'"
         >
-            <!-- Sticky Impersonation Alert Banner for Super Admin -->
+            <!-- Impersonation Alert Banner for Super Admin -->
             <div 
                 v-if="isImpersonating" 
-                class="bg-amber-600 text-white px-4 md:px-8 py-2.5 text-xs font-semibold flex items-center justify-between sticky top-0 z-50 shadow-sm border-b border-amber-500"
+                class="bg-amber-600 text-white px-3 sm:px-4 md:px-8 py-2 text-xs font-semibold flex items-center justify-between relative z-30 shrink-0 shadow-sm border-b border-amber-500 gap-2"
             >
-                <div class="flex items-center gap-2 truncate">
+                <div class="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 truncate">
                     <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/20 text-white shrink-0">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
                     </span>
-                    <span class="truncate">
-                        Super Admin Mode: Viewing tenant workspace <strong class="underline decoration-white/40">{{ currentTeam?.name }}</strong>. All actions operate on this tenant.
+                    <span class="text-[11px] sm:text-xs truncate">
+                        <span class="sm:hidden">Viewing <strong>{{ currentTeam?.name }}</strong></span>
+                        <span class="hidden sm:inline">Super Admin Mode: Viewing tenant workspace <strong class="underline decoration-white/40">{{ currentTeam?.name }}</strong>. All actions operate on this tenant.</span>
                     </span>
                 </div>
                 <Link 
                     :href="route('admin.exit-tenant')" 
                     method="post"
                     as="button"
-                    class="ml-4 shrink-0 px-3 py-1 rounded-md bg-white text-amber-900 font-bold hover:bg-amber-50 text-[11px] shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                    class="shrink-0 px-2 sm:px-3 py-1 rounded-md bg-white text-amber-900 font-bold hover:bg-amber-50 text-[10px] sm:text-[11px] shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
                 >
-                    <span>Exit Workspace</span>
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <span>Exit</span>
+                    <span class="hidden sm:inline">Workspace</span>
+                    <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
                 </Link>
             </div>
 
             <!-- Top App Bar -->
-            <header class="h-16 bg-white border-b border-slate-200 px-4 md:px-8 flex items-center justify-between sticky top-0 z-40 shadow-xs">
-                <div class="flex items-center gap-3 min-w-0 flex-1 mr-4">
+            <header class="bg-white border-b border-slate-200 px-3 sm:px-4 md:px-8 py-2 md:py-0 md:h-16 flex flex-wrap md:flex-nowrap items-center justify-between gap-y-2 gap-x-2 sm:gap-x-4 sticky top-0 z-40 shadow-xs">
+                <!-- Left Block: Triggers & Mobile Brand Logo (Order 1 on mobile & desktop) -->
+                <div class="flex items-center gap-2 sm:gap-3 shrink-0 order-1">
                     <!-- Mobile Hamburger -->
                     <button 
                         @click="sidebarOpen = true" 
-                        class="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 shrink-0"
+                        class="md:hidden p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 shrink-0"
                     >
                         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                     </button>
                     <!-- Mobile Brand Logo -->
-                    <Link :href="isSuperAdmin && !isImpersonating ? route('admin.dashboard') : route('dashboard')" class="md:hidden flex items-center gap-2 shrink-0">
+                    <Link :href="isSuperAdmin && !isImpersonating ? route('admin.dashboard') : route('dashboard')" class="md:hidden flex items-center gap-1.5 shrink-0">
                         <img 
                             v-if="siteSettings?.logo_url" 
                             :src="siteSettings.logo_url" 
                             :alt="siteSettings.brand_name || 'Logo'" 
-                            class="w-8 h-8 rounded-lg object-contain bg-slate-900 p-1 shadow-xs"
+                            class="w-7 h-7 rounded-lg object-contain bg-slate-900 p-0.5 shadow-xs"
                         />
-                        <div v-else class="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-black text-xs">
+                        <div v-else class="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-black text-xs">
                             {{ (siteSettings?.brand_name || 'I').charAt(0).toUpperCase() }}
                         </div>
+                        <span class="hidden min-[400px]:inline font-bold text-slate-900 text-xs tracking-tight truncate max-w-[90px] sm:max-w-[140px]">
+                            {{ siteSettings?.brand_name || 'InoManage' }}
+                        </span>
                     </Link>
                     <!-- Desktop Sidebar Toggle -->
                     <button 
@@ -1044,6 +1050,10 @@ onMounted(() => {
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
                         </svg>
                     </button>
+                </div>
+
+                <!-- Page Header Slot (Order 3 on mobile full width; Order 2 on desktop in-navbar) -->
+                <div class="order-3 md:order-2 w-full md:w-auto md:flex-1 min-w-0 pt-1 md:pt-0 border-t md:border-t-0 border-slate-100 md:border-transparent">
                     <slot name="header">
                         <div class="min-w-0">
                             <h1 class="text-base md:text-lg font-bold text-slate-900 tracking-tight leading-tight truncate">
@@ -1056,12 +1066,13 @@ onMounted(() => {
                     </slot>
                 </div>
 
-                <div class="flex items-center gap-2.5 sm:gap-3 shrink-0">
+                <!-- Right Action Buttons (Order 2 on mobile, Order 3 on desktop) -->
+                <div class="flex items-center gap-1.5 sm:gap-2.5 md:gap-3 shrink-0 order-2 md:order-3 ml-auto md:ml-0">
                     <!-- POS Quick Launch Button -->
                     <Link
                         v-if="showTenantSidebar"
                         :href="route('pos.index')"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold text-xs shadow-sm shadow-indigo-600/30 transition-all hover:scale-[1.03] active:scale-[0.98]"
+                        class="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold text-xs shadow-sm shadow-indigo-600/30 transition-all hover:scale-[1.03] active:scale-[0.98]"
                         title="Open Point of Sale Terminal"
                     >
                         <svg class="w-4 h-4 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1080,7 +1091,7 @@ onMounted(() => {
                     <button 
                         type="button"
                         @click="toggleLang"
-                        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200/90 bg-slate-50 hover:bg-slate-100/90 text-slate-700 text-xs font-bold transition-all shadow-2xs hover:border-slate-300 active:scale-95 cursor-pointer"
+                        class="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl border border-slate-200/90 bg-slate-50 hover:bg-slate-100/90 text-slate-700 text-xs font-bold transition-all shadow-2xs hover:border-slate-300 active:scale-95 cursor-pointer"
                         :title="currentLang === 'bn' ? 'Switch to English' : 'বাংলা ভাষায় দেখুন'"
                         aria-label="Toggle language"
                     >

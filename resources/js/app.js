@@ -42,3 +42,19 @@ createInertiaApp({
         showSpinner: true,
     },
 });
+
+// Enable smooth horizontal wheel scrolling on table overflow containers
+if (typeof window !== 'undefined') {
+    window.addEventListener('wheel', (e) => {
+        if (e.ctrlKey || e.altKey) return;
+        const target = e.target;
+        if (!target) return;
+        const container = target.closest('.overflow-x-auto');
+        if (!container) return;
+        if (container.scrollWidth > container.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+            if (container.scrollHeight <= container.clientHeight + 10) {
+                container.scrollLeft += e.deltaY;
+            }
+        }
+    }, { passive: true });
+}

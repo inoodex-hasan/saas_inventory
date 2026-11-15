@@ -435,22 +435,22 @@ function paymentStatusBadge(status) {
                     </div>
 
                     <!-- Monthly / Yearly Billing Cycle Segment Toggle -->
-                    <div class="inline-flex items-center p-1 bg-slate-100 rounded-2xl border border-slate-200 self-start sm:self-auto">
+                    <div class="inline-flex items-center p-1 bg-slate-100 rounded-2xl border border-slate-200 self-start sm:self-auto max-w-full overflow-x-auto">
                         <button
                             @click="billingCycle = 'monthly'"
-                            class="px-4 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                            class="px-3 sm:px-4 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer shrink-0"
                             :class="billingCycle === 'monthly' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'"
                         >
-                            Monthly Billing
+                            <span>Monthly</span><span class="hidden sm:inline"> Billing</span>
                         </button>
                         <button
                             @click="billingCycle = 'yearly'"
-                            class="px-4 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer"
+                            class="px-3 sm:px-4 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0"
                             :class="billingCycle === 'yearly' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'"
                         >
-                            <span>Annual Billing</span>
+                            <span>Annual</span><span class="hidden sm:inline"> Billing</span>
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold" :class="billingCycle === 'yearly' ? 'bg-emerald-400 text-emerald-950' : 'bg-emerald-100 text-emerald-700'">
-                                Save 17% (2 Mo Free)
+                                Save 17%<span class="hidden sm:inline"> (2 Mo Free)</span>
                             </span>
                         </button>
                     </div>
@@ -688,8 +688,9 @@ function paymentStatusBadge(status) {
                     </span>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-xs">
+                <!-- Payment & Verification Table (Single View with Native Horizontal Scroll) -->
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs min-w-[750px]">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200/80 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                                 <th class="py-3 px-4 whitespace-nowrap">Receipt #</th>
@@ -765,7 +766,7 @@ function paymentStatusBadge(status) {
 
         <!-- Bangladeshi Merchant Payment Checkout Modal -->
         <Modal :show="isPayModalOpen" @close="isPayModalOpen = false" max-width="lg">
-            <div class="p-6 md:p-8 space-y-5">
+            <div class="p-4 sm:p-6 md:p-8 space-y-5 max-h-[85vh] overflow-y-auto">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div>
                         <div class="flex items-center gap-2">
@@ -786,7 +787,7 @@ function paymentStatusBadge(status) {
                 </div>
 
                 <!-- Order Summary Breakdown Pill -->
-                <div class="p-4 rounded-2xl bg-slate-900 text-white flex items-center justify-between">
+                <div class="p-4 rounded-2xl bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                         <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Payable Amount</span>
                         <div class="text-2xl font-black font-mono text-white mt-0.5">
@@ -934,18 +935,18 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                         ></textarea>
                     </div>
 
-                    <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                    <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2 pt-3 border-t border-slate-100">
                         <button
                             type="button"
                             @click="isPayModalOpen = false"
-                            class="px-4 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition cursor-pointer"
+                            class="w-full sm:w-auto px-4 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition cursor-pointer text-center"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             :disabled="payForm.processing"
-                            class="px-5 py-2.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm shadow-indigo-600/30 transition disabled:opacity-50 cursor-pointer"
+                            class="w-full sm:w-auto px-5 py-2.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm shadow-indigo-600/30 transition disabled:opacity-50 cursor-pointer text-center"
                         >
                             {{ payForm.processing ? 'Submitting...' : 'Submit Payment for Verification' }}
                         </button>

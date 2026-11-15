@@ -143,49 +143,51 @@ function resetFilters() {
         <Head :title="page_title" />
 
         <template #header>
-            <div>
-                <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">
-                    {{ page_title }}
-                </h1>
+            <div class="flex items-center justify-between gap-2 w-full">
+                <div class="min-w-0">
+                    <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">
+                        {{ page_title }}
+                    </h1>
+                </div>
             </div>
         </template>
 
-        <div class="space-y-6">
-
-            <!-- Metric Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-                    <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Payrolls Generated</div>
-                    <div class="text-2xl font-bold text-slate-900 mt-1">{{ metrics.total_payrolls }} Records</div>
-                    <div class="text-[10px] text-slate-400 mt-0.5">Cycle: {{ monthYear }}</div>
+        <div class="space-y-4 sm:space-y-6">
+            <!-- Metric Cards (3-col compact) -->
+            <div class="grid grid-cols-3 gap-2 sm:gap-4">
+                <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <div class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Payrolls</div>
+                    <div class="text-base sm:text-2xl font-bold text-slate-900 mt-1">{{ metrics.total_payrolls }}</div>
+                    <div class="text-[9px] sm:text-[10px] text-slate-400 mt-0.5 hidden xs:block truncate">Cycle: {{ monthYear }}</div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-                    <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Disbursed</div>
-                    <div class="text-2xl font-bold text-emerald-600 mt-1">
+                <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <div class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Disbursed</div>
+                    <div class="text-base sm:text-2xl font-bold text-emerald-600 mt-1">
                         <CurrencyDisplay :amount="metrics.total_disbursed" />
                     </div>
-                    <div class="text-[10px] text-slate-400 mt-0.5">Marked as paid</div>
+                    <div class="text-[9px] sm:text-[10px] text-slate-400 mt-0.5 hidden xs:block">Marked as paid</div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-                    <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Pending Disbursement</div>
-                    <div class="text-2xl font-bold text-amber-600 mt-1">
+                <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <div class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Pending</div>
+                    <div class="text-base sm:text-2xl font-bold text-amber-600 mt-1">
                         <CurrencyDisplay :amount="metrics.total_pending" />
                     </div>
-                    <div class="text-[10px] text-slate-400 mt-0.5">Draft or approved claims</div>
+                    <div class="text-[9px] sm:text-[10px] text-slate-400 mt-0.5 hidden xs:block">Unpaid claims</div>
                 </div>
             </div>
 
             <!-- Filters -->
-            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-2 items-center justify-between">
-                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto flex-1">
-                    <div class="relative w-full md:w-64">
+            <div class="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row gap-2.5 items-stretch md:items-center justify-between">
+                <div class="flex flex-wrap items-center gap-2 flex-1">
+                    <div class="relative flex-1 min-w-[130px] max-w-sm">
                         <input
                             v-model="search"
                             @keyup.enter="applyFilters"
                             type="text"
-                            class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
+                            placeholder="Search staff, payroll #..."
+                            class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400"
                         />
                         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -196,13 +198,13 @@ function resetFilters() {
                         v-model="monthYear"
                         @change="applyFilters"
                         type="month"
-                        class="text-xs rounded-xl border border-slate-200 py-2 px-3 font-semibold text-slate-700"
+                        class="text-xs rounded-xl border border-slate-200 py-2 px-2.5 font-semibold text-slate-700"
                     />
 
                     <select
                         v-model="status"
                         @change="applyFilters"
-                        class="text-xs rounded-xl border border-slate-200 py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 min-w-[130px]"
+                        class="text-xs rounded-xl border border-slate-200 py-2 pl-2.5 pr-8 focus:outline-none focus:ring-1 focus:ring-indigo-500 min-w-[110px]"
                     >
                         <option value="">All Statuses</option>
                         <option value="draft">Draft</option>
@@ -211,7 +213,7 @@ function resetFilters() {
 
                     <button
                         @click="applyFilters"
-                        class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold transition"
+                        class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold transition"
                     >
                         Filter
                     </button>
@@ -219,16 +221,16 @@ function resetFilters() {
                     <button
                         v-if="search || status || monthYear !== new Date().toISOString().slice(0, 7)"
                         @click="resetFilters"
-                        class="px-3 py-2 text-slate-500 hover:text-slate-800 text-xs font-semibold transition"
+                        class="px-2 py-2 text-slate-500 hover:text-slate-800 text-xs font-semibold transition"
                     >
                         Reset
                     </button>
                 </div>
 
-                <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+                <div class="flex items-center gap-2 shrink-0">
                     <button
                         @click="openGenerateModal"
-                        class="inline-flex items-center gap-2 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-indigo-600/30 transition-all hover:scale-[1.02] shrink-0"
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95"
                     >
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -238,10 +240,10 @@ function resetFilters() {
                 </div>
             </div>
 
-            <!-- Table -->
-            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-xs">
+            <!-- Table Container -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs min-w-[750px]">
                         <thead>
                             <tr class="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-bold text-[10px]">
                                 <th class="py-3 px-4 whitespace-nowrap">Payroll #</th>

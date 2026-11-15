@@ -124,7 +124,7 @@ function executeRemoveMember() {
 
         <div class="space-y-6">
             <!-- Summary Metric Cards -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
                     <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Members</div>
                     <div class="text-xl font-extrabold text-slate-800 mt-1">{{ totalCount }}</div>
@@ -168,7 +168,7 @@ function executeRemoveMember() {
                     <button
                         v-if="canManage"
                         @click="openAddModal"
-                        class="px-4 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm transition inline-flex items-center gap-1.5"
+                        class="w-full md:w-auto justify-center px-4 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm transition inline-flex items-center gap-1.5"
                     >
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -180,8 +180,8 @@ function executeRemoveMember() {
 
             <!-- Team Members Table Card -->
             <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs text-slate-600">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs text-slate-600 min-w-[700px]">
                         <thead class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100">
                             <tr>
                                 <th class="py-3 px-4">Member Name & Account</th>
@@ -313,13 +313,13 @@ function executeRemoveMember() {
 
         <!-- Add Member Modal -->
         <Modal :show="isAddModalOpen" @close="isAddModalOpen = false" max-width="lg">
-            <div class="p-6 space-y-4">
+            <div class="p-4 sm:p-6 space-y-4 max-h-[85vh] overflow-y-auto">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div>
                         <h3 class="text-base font-extrabold text-slate-900">Add New Team Member</h3>
                         <p class="text-xs text-slate-500 mt-0.5">Invite a staff member or colleague to collaborate in this workspace</p>
                     </div>
-                    <button @click="isAddModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1 text-lg leading-none">&times;</button>
+                    <button @click="isAddModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1 text-lg leading-none cursor-pointer">&times;</button>
                 </div>
 
                 <form @submit.prevent="submitAddMember" class="space-y-4 text-xs">
@@ -382,18 +382,18 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                    <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2 pt-3 border-t border-slate-100">
                         <button
                             type="button"
                             @click="isAddModalOpen = false"
-                            class="px-4 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition"
+                            class="w-full sm:w-auto px-4 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition text-center cursor-pointer"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             :disabled="addForm.processing"
-                            class="px-4 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm transition disabled:opacity-50"
+                            class="w-full sm:w-auto px-4 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm transition disabled:opacity-50 text-center cursor-pointer"
                         >
                             {{ addForm.processing ? 'Adding...' : 'Confirm & Add Member' }}
                         </button>
@@ -404,7 +404,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
 
         <!-- Edit Role & Branch Modal -->
         <Modal :show="isRoleModalOpen" @close="isRoleModalOpen = false" max-width="md">
-            <div class="p-6 space-y-4">
+            <div class="p-4 sm:p-6 space-y-4 max-h-[85vh] overflow-y-auto">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div>
                         <h3 class="text-base font-extrabold text-slate-900">
@@ -412,7 +412,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                         </h3>
                         <p class="text-xs text-slate-500 mt-0.5">Update access privileges and branch routing for {{ editingMember?.name }}</p>
                     </div>
-                    <button @click="isRoleModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1 text-lg leading-none">&times;</button>
+                    <button @click="isRoleModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1 text-lg leading-none cursor-pointer">&times;</button>
                 </div>
 
                 <form @submit.prevent="submitRoleUpdate" class="space-y-4 text-xs">
@@ -456,18 +456,18 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                    <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2 pt-3 border-t border-slate-100">
                         <button
                             type="button"
                             @click="isRoleModalOpen = false"
-                            class="px-4 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition"
+                            class="w-full sm:w-auto px-4 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition text-center cursor-pointer"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             :disabled="roleForm.processing"
-                            class="px-4 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm transition disabled:opacity-50"
+                            class="w-full sm:w-auto px-4 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm transition disabled:opacity-50 text-center cursor-pointer"
                         >
                             {{ roleForm.processing ? 'Saving...' : 'Update Settings' }}
                         </button>

@@ -47,28 +47,28 @@ function resetFilters() {
 
         <div class="space-y-6">
             <!-- Metric Highlights -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+            <div class="grid grid-cols-2 gap-2.5 sm:gap-4">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Posted Entries</p>
-                        <p class="text-3xl font-extrabold text-slate-900 mt-1">{{ metrics.total_entries }}</p>
+                        <p class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Total Posted</p>
+                        <p class="text-xl sm:text-3xl font-extrabold text-slate-900 mt-1">{{ metrics.total_entries }}</p>
                     </div>
-                    <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div class="w-9 sm:w-12 h-9 sm:h-12 rounded-xl sm:rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                        <svg class="w-4 sm:w-6 h-4 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Cumulative Volume (Debit)</p>
-                        <p class="text-3xl font-extrabold text-emerald-600 mt-1">
+                        <p class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Volume (Debit)</p>
+                        <p class="text-xl sm:text-3xl font-extrabold text-emerald-600 mt-1 truncate">
                             <CurrencyDisplay :amount="metrics.total_debit_volume" />
                         </p>
                     </div>
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div class="w-9 sm:w-12 h-9 sm:h-12 rounded-xl sm:rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                        <svg class="w-4 sm:w-6 h-4 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
@@ -132,8 +132,8 @@ function resetFilters() {
 
             <!-- Entries Table -->
             <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-xs">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs min-w-[700px]">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                                 <th class="py-3 px-4 whitespace-nowrap">Entry Number</th>

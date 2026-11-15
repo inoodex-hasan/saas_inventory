@@ -11,10 +11,14 @@ const props = defineProps({
         type: Number,
         default: 2,
     },
+    symbol: {
+        type: String,
+        default: null,
+    },
 });
 
 const page = usePage();
-const currencySymbol = computed(() => page.props.auth?.team?.currency_symbol || '৳');
+const currencySymbol = computed(() => props.symbol || page.props.auth?.team?.currency_symbol || '৳');
 
 const formattedAmount = computed(() => {
     const val = Number(props.amount) || 0;

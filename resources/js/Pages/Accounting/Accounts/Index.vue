@@ -147,35 +147,35 @@ function typeBadgeClass(type) {
 
         <div class="space-y-6">
             <!-- Metric Highlights -->
-            <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
-                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Accounts</p>
-                    <p class="text-2xl font-bold text-slate-900 mt-1">{{ metrics.total_accounts }}</p>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
+                <div class="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+                    <p class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Accounts</p>
+                    <p class="text-lg sm:text-2xl font-bold text-slate-900 mt-1">{{ metrics.total_accounts }}</p>
                 </div>
-                <div class="bg-white p-4 rounded-2xl border border-sky-100 shadow-xs">
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-sky-600">Assets (1000s)</p>
-                    <p class="text-2xl font-bold text-sky-900 mt-1">{{ metrics.assets }}</p>
+                <div class="bg-white p-3 sm:p-4 rounded-2xl border border-sky-100 shadow-xs">
+                    <p class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-sky-600 truncate">Assets (1000s)</p>
+                    <p class="text-lg sm:text-2xl font-bold text-sky-900 mt-1">{{ metrics.assets }}</p>
                 </div>
-                <div class="bg-white p-4 rounded-2xl border border-amber-100 shadow-xs">
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-amber-600">Liabilities (2000s)</p>
-                    <p class="text-2xl font-bold text-amber-900 mt-1">{{ metrics.liabilities }}</p>
+                <div class="bg-white p-3 sm:p-4 rounded-2xl border border-amber-100 shadow-xs">
+                    <p class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-amber-600 truncate">Liabilities (2000s)</p>
+                    <p class="text-lg sm:text-2xl font-bold text-amber-900 mt-1">{{ metrics.liabilities }}</p>
                 </div>
-                <div class="bg-white p-4 rounded-2xl border border-purple-100 shadow-xs">
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-purple-600">Equity (3000s)</p>
-                    <p class="text-2xl font-bold text-purple-900 mt-1">{{ metrics.equity }}</p>
+                <div class="bg-white p-3 sm:p-4 rounded-2xl border border-purple-100 shadow-xs">
+                    <p class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-purple-600 truncate">Equity (3000s)</p>
+                    <p class="text-lg sm:text-2xl font-bold text-purple-900 mt-1">{{ metrics.equity }}</p>
                 </div>
-                <div class="bg-white p-4 rounded-2xl border border-emerald-100 shadow-xs">
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-600">Revenue (4000s)</p>
-                    <p class="text-2xl font-bold text-emerald-900 mt-1">{{ metrics.revenue }}</p>
+                <div class="bg-white p-3 sm:p-4 rounded-2xl border border-emerald-100 shadow-xs">
+                    <p class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-emerald-600 truncate">Revenue (4000s)</p>
+                    <p class="text-lg sm:text-2xl font-bold text-emerald-900 mt-1">{{ metrics.revenue }}</p>
                 </div>
-                <div class="bg-white p-4 rounded-2xl border border-rose-100 shadow-xs">
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-rose-600">Expenses (5000s)</p>
-                    <p class="text-2xl font-bold text-rose-900 mt-1">{{ metrics.expense }}</p>
+                <div class="bg-white p-3 sm:p-4 rounded-2xl border border-rose-100 shadow-xs">
+                    <p class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-rose-600 truncate">Expenses (5000s)</p>
+                    <p class="text-lg sm:text-2xl font-bold text-rose-900 mt-1">{{ metrics.expense }}</p>
                 </div>
             </div>
 
             <!-- Filter Controls -->
-            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row gap-2 items-stretch md:items-center justify-between">
+            <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row gap-2.5 items-stretch md:items-center justify-between">
                 <div class="flex-1 flex flex-col sm:flex-row gap-2">
                     <div class="relative flex-1">
                         <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -185,13 +185,14 @@ function typeBadgeClass(type) {
                             v-model="search"
                             @keyup.enter="applyFilters"
                             type="text"
-                            class="w-full pl-10 pr-4 py-2 text-xs bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 transition-all"
+                            placeholder="Search by code, account name..."
+                            class="w-full pl-10 pr-4 py-2 text-xs bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs transition-all"
                         />
                     </div>
                     <select
                         v-model="typeFilter"
                         @change="applyFilters"
-                        class="text-xs bg-slate-50/70 border border-slate-200 rounded-xl pl-3 pr-8 min-w-[150px] py-2 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                        class="text-xs bg-slate-50/70 border border-slate-200 rounded-xl pl-3 pr-8 w-full sm:w-auto min-w-[150px] py-2 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-semibold"
                     >
                         <option value="">All Account Types</option>
                         <option value="asset">Assets</option>
@@ -202,17 +203,17 @@ function typeBadgeClass(type) {
                     </select>
                 </div>
 
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 pt-1 sm:pt-0">
                     <button
                         @click="applyFilters"
-                        class="px-4 py-2 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-all"
+                        class="flex-1 sm:flex-none px-4 py-2 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-all text-center justify-center cursor-pointer"
                     >
                         Filter
                     </button>
                     <button
                         v-if="search || typeFilter"
                         @click="resetFilters"
-                        class="px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 transition-all"
+                        class="px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 transition-all text-center cursor-pointer"
                     >
                         Clear
                     </button>
@@ -220,7 +221,7 @@ function typeBadgeClass(type) {
                         v-if="metrics.total_accounts === 0"
                         @click="initializeTemplate"
                         :disabled="isInitializing"
-                        class="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-all shrink-0 disabled:opacity-50"
+                        class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-all disabled:opacity-50 cursor-pointer"
                     >
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -229,7 +230,7 @@ function typeBadgeClass(type) {
                     </button>
                     <button
                         @click="openCreateModal"
-                        class="inline-flex items-center gap-2 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm shadow-indigo-600/30 transition-all shrink-0"
+                        class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm shadow-indigo-600/30 transition-all whitespace-nowrap cursor-pointer"
                     >
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -241,8 +242,8 @@ function typeBadgeClass(type) {
 
             <!-- Accounts Table -->
             <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-xs">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs min-w-[750px]">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                                 <th class="py-3 px-4 whitespace-nowrap">Code</th>
@@ -381,7 +382,7 @@ function typeBadgeClass(type) {
 
         <!-- Create Account Modal -->
         <Modal :show="isCreateModalOpen" @close="isCreateModalOpen = false" max-width="lg">
-            <div class="p-6">
+            <div class="p-4 sm:p-6">
                 <h3 class="text-base font-bold text-slate-900">Add General Ledger Account</h3>
                 <p class="text-xs text-slate-500 mt-1">Add a new account to your chart of accounts ledger.</p>
 
@@ -391,7 +392,7 @@ function typeBadgeClass(type) {
                         <input
                             v-model="createForm.account_code"
                             type="text"
-class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             required
                         />
                         <p v-if="createForm.errors.account_code" class="text-rose-500 text-[11px] mt-1">{{ createForm.errors.account_code }}</p>
@@ -402,13 +403,13 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                         <input
                             v-model="createForm.name"
                             type="text"
-class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             required
                         />
                         <p v-if="createForm.errors.name" class="text-rose-500 text-[11px] mt-1">{{ createForm.errors.name }}</p>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Type *</label>
                             <select
@@ -465,7 +466,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
 
         <!-- Edit Account Modal -->
         <Modal :show="isEditModalOpen" @close="isEditModalOpen = false" max-width="lg">
-            <div class="p-6">
+            <div class="p-4 sm:p-6">
                 <h3 class="text-base font-bold text-slate-900">Edit Account: {{ editingAccount?.account_code }}</h3>
                 <p class="text-xs text-slate-500 mt-1">Classification and code are protected to maintain ledger consistency.</p>
 

@@ -188,65 +188,65 @@ function getProviderBadge(acc) {
 
         <div class="space-y-6">
             <!-- Metrics Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Liquid Assets</span>
-                        <div class="p-2 rounded-xl bg-indigo-50 text-indigo-600">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Total Liquid</span>
+                        <div class="p-1.5 sm:p-2 rounded-xl bg-indigo-50 text-indigo-600">
+                            <svg class="w-3.5 sm:w-4 h-3.5 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
                     </div>
-                    <div class="text-2xl font-black text-slate-900 mt-2">
+                    <div class="text-lg sm:text-2xl font-black text-slate-900 mt-1 sm:mt-2 truncate">
                         <CurrencyDisplay :amount="metrics?.total_liquidity || 0" />
                     </div>
-                    <div class="text-[11px] text-slate-400 mt-1">Across {{ metrics?.active_accounts_count || 0 }} active accounts</div>
+                    <div class="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 sm:mt-1 truncate">{{ metrics?.active_accounts_count || 0 }} accounts</div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Bank Accounts</span>
-                        <div class="p-2 rounded-xl bg-blue-50 text-blue-600">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Banks</span>
+                        <div class="p-1.5 sm:p-2 rounded-xl bg-blue-50 text-blue-600">
+                            <svg class="w-3.5 sm:w-4 h-3.5 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
                             </svg>
                         </div>
                     </div>
-                    <div class="text-2xl font-black text-blue-600 mt-2">
+                    <div class="text-lg sm:text-2xl font-black text-blue-600 mt-1 sm:mt-2 truncate">
                         <CurrencyDisplay :amount="metrics?.bank_balance || 0" />
                     </div>
-                    <div class="text-[11px] text-slate-400 mt-1">Current & savings deposits</div>
+                    <div class="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 sm:mt-1 truncate">Current & savings</div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">MFS Wallets</span>
-                        <div class="p-2 rounded-xl bg-pink-50 text-pink-600">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">MFS Wallets</span>
+                        <div class="p-1.5 sm:p-2 rounded-xl bg-pink-50 text-pink-600">
+                            <svg class="w-3.5 sm:w-4 h-3.5 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                             </svg>
                         </div>
                     </div>
-                    <div class="text-2xl font-black text-pink-600 mt-2">
+                    <div class="text-lg sm:text-2xl font-black text-pink-600 mt-1 sm:mt-2 truncate">
                         <CurrencyDisplay :amount="metrics?.mfs_balance || 0" />
                     </div>
-                    <div class="text-[11px] text-slate-400 mt-1">bKash, Nagad & Rocket</div>
+                    <div class="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 sm:mt-1 truncate">bKash, Nagad, etc</div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Cash in Hand</span>
-                        <div class="p-2 rounded-xl bg-emerald-50 text-emerald-600">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Cash in Hand</span>
+                        <div class="p-1.5 sm:p-2 rounded-xl bg-emerald-50 text-emerald-600">
+                            <svg class="w-3.5 sm:w-4 h-3.5 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                             </svg>
                         </div>
                     </div>
-                    <div class="text-2xl font-black text-emerald-600 mt-2">
+                    <div class="text-lg sm:text-2xl font-black text-emerald-600 mt-1 sm:mt-2 truncate">
                         <CurrencyDisplay :amount="metrics?.cash_balance || 0" />
                     </div>
-                    <div class="text-[11px] text-slate-400 mt-1">Physical cash drawer</div>
+                    <div class="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 sm:mt-1 truncate">Physical cash drawer</div>
                 </div>
             </div>
 
@@ -331,8 +331,8 @@ function getProviderBadge(acc) {
 
             <!-- Accounts Table -->
             <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-sm min-w-[700px]">
                         <thead class="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                             <tr>
                                 <th class="py-3.5 px-4 whitespace-nowrap">Account Name & Channel</th>

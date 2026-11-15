@@ -181,52 +181,64 @@ function submitPayment() {
         <Head title="Sales Orders & Terminal" />
 
         <template #header>
-            <div class="flex items-center justify-between w-full">
-                <div>
-                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Sales Orders & Commercial Invoices</h1>
+            <div class="flex items-center justify-between gap-2 sm:gap-4 w-full">
+                <div class="min-w-0">
+                    <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">Sales Orders & Commercial Invoices</h1>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <Link
+                        :href="route('sales.create')"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs shadow-indigo-600/30 transition-all shrink-0 cursor-pointer"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span>New<span class="hidden xs:inline"> Sale</span></span>
+                    </Link>
                 </div>
             </div>
         </template>
 
-        <div class="space-y-6">
-            <!-- Metric Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Sales Invoiced</span>
-                    <div class="text-2xl font-black text-slate-900 mt-2">
+        <div class="space-y-4 sm:space-y-6">
+            <!-- Metric Cards (2x2 Grid on Mobile, 4-col on Desktop) -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Total Sales Invoiced</span>
+                    <div class="text-base sm:text-2xl font-black text-slate-900 mt-1 sm:mt-2">
                         <CurrencyDisplay :amount="metrics?.total_sales || 0" />
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Receivables (Due)</span>
-                    <div class="text-2xl font-black text-amber-600 mt-2">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Total Receivables (Due)</span>
+                    <div class="text-base sm:text-2xl font-black text-amber-600 mt-1 sm:mt-2">
                         <CurrencyDisplay :amount="metrics?.total_receivables || 0" />
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Pending Fulfillment</span>
-                    <div class="text-2xl font-black text-blue-600 mt-2">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Pending Fulfillment</span>
+                    <div class="text-base sm:text-2xl font-black text-blue-600 mt-1 sm:mt-2">
                         {{ metrics?.pending_dispatch || 0 }}
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Orders Logged</span>
-                    <div class="text-2xl font-black text-slate-900 mt-2">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Total Orders Logged</span>
+                    <div class="text-base sm:text-2xl font-black text-slate-900 mt-1 sm:mt-2">
                         {{ metrics?.total_orders || 0 }}
                     </div>
                 </div>
             </div>
 
             <!-- Filters Bar -->
-            <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-center gap-2">
+            <div class="bg-white p-3 sm:p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5">
                 <div class="relative flex-1 w-full">
                     <input
                         v-model="search"
                         @keyup.enter="applyFilter"
                         type="text"
+                        placeholder="Search sales by invoice #, customer..."
                         class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
                     />
                     <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -234,11 +246,11 @@ function submitPayment() {
                     </svg>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full lg:w-auto">
                     <select
                         v-model="status"
                         @change="applyFilter"
-                        class="py-2 pl-3 pr-8 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 min-w-[130px]"
+                        class="w-full sm:w-auto py-2 pl-3 pr-8 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                     >
                         <option value="">All Statuses</option>
                         <option value="draft">Draft</option>
@@ -251,7 +263,7 @@ function submitPayment() {
                     <select
                         v-model="paymentStatus"
                         @change="applyFilter"
-                        class="py-2 pl-3 pr-8 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 min-w-[125px]"
+                        class="w-full sm:w-auto py-2 pl-3 pr-8 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                     >
                         <option value="">All Payments</option>
                         <option value="paid">Fully Paid</option>
@@ -262,7 +274,7 @@ function submitPayment() {
                     <select
                         v-model="customerId"
                         @change="applyFilter"
-                        class="py-2 pl-3 pr-8 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 min-w-[135px] max-w-xs"
+                        class="w-full sm:w-auto py-2 pl-3 pr-8 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                     >
                         <option value="">All Customers</option>
                         <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
@@ -270,27 +282,17 @@ function submitPayment() {
 
                     <button
                         @click="resetFilter"
-                        class="px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
+                        class="px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition text-center"
                     >
                         Clear
                     </button>
-
-                    <Link
-                        :href="route('sales.create')"
-                        class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs shadow-indigo-600/30 transition-all whitespace-nowrap"
-                    >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                        <span>New Sale</span>
-                    </Link>
                 </div>
             </div>
 
             <!-- Orders Table -->
-            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-sm min-w-[750px]">
                         <thead class="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                             <tr>
                                 <th class="py-3.5 px-4 whitespace-nowrap">Order / Invoice #</th>
@@ -423,15 +425,15 @@ function submitPayment() {
                 </div>
 
                 <!-- Pagination -->
-                <div v-if="orders.links && orders.links.length > 3" class="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <div v-if="orders.links && orders.links.length > 3" class="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
                     <div>Showing {{ orders.from || 0 }} to {{ orders.to || 0 }} of {{ orders.total }} orders</div>
-                    <div class="flex items-center gap-1">
+                    <div class="flex items-center gap-1 overflow-x-auto no-scrollbar">
                         <Link
                             v-for="(link, idx) in orders.links"
                             :key="idx"
                             :href="link.url || '#'"
                             :class="[
-                                'px-3 py-1.5 rounded-lg transition',
+                                'px-3 py-1.5 rounded-lg transition whitespace-nowrap',
                                 link.active ? 'bg-emerald-600 text-white font-bold' : 'hover:bg-slate-100 text-slate-700',
                                 !link.url ? 'opacity-40 cursor-not-allowed' : ''
                             ]"

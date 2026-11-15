@@ -321,118 +321,115 @@ const productOptions = computed(() => {
         <Head title="Stock & Inventory Balances" />
 
         <template #header>
-            <div class="flex items-center justify-between w-full">
-                <div>
-                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Stock & Inventory Balances</h1>
+            <div class="flex items-center justify-between gap-2 w-full">
+                <div class="min-w-0">
+                    <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">Stock & Inventory Balances</h1>
                 </div>
             </div>
         </template>
 
-        <div class="space-y-6">
-            <!-- 1. KPI Metrics Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Stock On Hand</span>
-                    <div class="text-2xl font-black text-slate-900 mt-2">
-                        {{ Number(metrics?.total_units || 0).toLocaleString() }} <span class="text-xs font-normal text-slate-500">units</span>
+        <div class="space-y-4 sm:space-y-6">
+            <!-- 1. KPI Metrics Cards (2x2 Grid on Mobile, 4-col on Desktop) -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Total Stock On Hand</span>
+                    <div class="text-base sm:text-2xl font-black text-slate-900 mt-1 sm:mt-2">
+                        {{ Number(metrics?.total_units || 0).toLocaleString() }} <span class="text-[11px] font-normal text-slate-500">units</span>
                     </div>
-                    <div v-if="metrics?.total_incoming_units > 0" class="mt-1 flex items-center gap-1 text-[11px] font-semibold text-amber-600">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                        </svg>
-                        <span>+{{ Number(metrics.total_incoming_units).toLocaleString() }} on order (incoming)</span>
+                    <div v-if="metrics?.total_incoming_units > 0" class="mt-1 flex items-center gap-1 text-[10px] font-semibold text-amber-600 truncate">
+                        <span>+{{ Number(metrics.total_incoming_units).toLocaleString() }} incoming</span>
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Inventory Holding Valuation</span>
-                    <div class="text-2xl font-black text-indigo-600 mt-2">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Holding Valuation</span>
+                    <div class="text-base sm:text-2xl font-black text-indigo-600 mt-1 sm:mt-2">
                         <CurrencyDisplay :amount="metrics?.total_valuation || 0" />
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Low Stock Warnings</span>
-                    <div class="text-2xl font-black text-amber-600 mt-2">
-                        {{ metrics?.low_stock_count || 0 }} <span class="text-xs font-normal text-slate-500">items</span>
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Low Stock</span>
+                    <div class="text-base sm:text-2xl font-black text-amber-600 mt-1 sm:mt-2">
+                        {{ metrics?.low_stock_count || 0 }} <span class="text-[11px] font-normal text-slate-500">items</span>
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Out of Stock Depleted</span>
-                    <div class="text-2xl font-black text-rose-600 mt-2">
-                        {{ metrics?.out_of_stock_count || 0 }} <span class="text-xs font-normal text-slate-500">items</span>
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Out of Stock</span>
+                    <div class="text-base sm:text-2xl font-black text-rose-600 mt-1 sm:mt-2">
+                        {{ metrics?.out_of_stock_count || 0 }} <span class="text-[11px] font-normal text-slate-500">items</span>
                     </div>
                 </div>
             </div>
 
             <!-- 2. Tabs & Toolbar Header -->
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <!-- Navigation Tabs -->
-                <div class="inline-flex p-1 bg-slate-200/70 rounded-xl text-xs font-bold">
+                <div class="inline-flex p-1 bg-slate-200/70 rounded-xl text-xs font-bold overflow-x-auto no-scrollbar shrink-0">
                     <button
                         type="button"
                         @click="setTab('stock')"
-                        class="px-4 py-2 rounded-lg transition-all"
-                        :class="currentTab === 'stock' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                        class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all whitespace-nowrap"
+                        :class="currentTab === 'stock' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
                     >
-                        Stock Balances & Valuation
+                        Stock Balances
                     </button>
                     <button
                         type="button"
                         @click="setTab('ledger')"
-                        class="px-4 py-2 rounded-lg transition-all"
-                        :class="currentTab === 'ledger' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                        class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all whitespace-nowrap"
+                        :class="currentTab === 'ledger' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
                     >
-                        Movement Audit Ledger
+                        Audit Ledger
                     </button>
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-0.5 sm:pb-0">
                     <button
                         @click="openAuditModal()"
-                        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold shadow-sm shadow-emerald-500/20 transition-all"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold shadow-xs transition-all whitespace-nowrap active:scale-95"
                         title="Open physical stock audit cycle count scanner"
                     >
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                         </svg>
-                        <span>Stock Audit Scan</span>
+                        <span>Audit Scan</span>
                     </button>
 
                     <button
                         @click="openTransferModal()"
-                        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-all"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-all whitespace-nowrap active:scale-95"
                     >
                         <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                         </svg>
-                        <span>Transfer Stock</span>
+                        <span>Transfer</span>
                     </button>
 
                     <button
                         @click="openAdjustModal()"
-                        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm shadow-indigo-600/30 transition-all"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-all whitespace-nowrap active:scale-95"
                     >
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
-                        <span>Adjust Stock</span>
+                        <span>Adjust</span>
                     </button>
                 </div>
             </div>
 
             <!-- 3. Search & Filter Bar -->
-            <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="bg-white rounded-2xl border border-slate-200/80 p-3 sm:p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
                 <div class="flex flex-1 flex-wrap items-center gap-2">
-                    <div class="relative flex-1 min-w-[200px] max-w-sm">
+                    <div class="relative flex-1 min-w-[140px] max-w-sm">
                         <input
                             type="text"
                             v-model="search"
                             @keyup.enter="handleFilter"
-                            placeholder="Search by name, SKU or scan barcode..."
-                            class="w-full pl-9 pr-9 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
+                            placeholder="Search name, SKU or barcode..."
+                            class="w-full pl-9 pr-9 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 transition"
                         />
                         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -453,7 +450,7 @@ const productOptions = computed(() => {
                     <select
                         v-model="warehouseFilter"
                         @change="handleFilter"
-                        class="pl-3 pr-8 py-2 rounded-xl border border-slate-200 text-xs text-slate-700 focus:border-indigo-500 transition"
+                        class="pl-2.5 pr-8 py-2 rounded-xl border border-slate-200 text-xs text-slate-700 focus:border-indigo-500 transition min-w-[110px]"
                     >
                         <option value="">All Warehouses</option>
                         <option v-for="w in warehouses" :key="w.id" :value="String(w.id)">
@@ -465,7 +462,7 @@ const productOptions = computed(() => {
                         v-if="currentTab === 'stock'"
                         v-model="categoryFilter"
                         @change="handleFilter"
-                        class="pl-3 pr-8 py-2 rounded-xl border border-slate-200 text-xs text-slate-700 focus:border-indigo-500 transition"
+                        class="pl-2.5 pr-8 py-2 rounded-xl border border-slate-200 text-xs text-slate-700 focus:border-indigo-500 transition min-w-[110px]"
                     >
                         <option value="">All Categories</option>
                         <option v-for="cat in categories" :key="cat.id" :value="String(cat.id)">
@@ -476,17 +473,17 @@ const productOptions = computed(() => {
                     <button
                         v-if="search || warehouseFilter || categoryFilter"
                         @click="clearFilters"
-                        class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium transition"
+                        class="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium transition"
                     >
                         Reset
                     </button>
                 </div>
             </div>
 
-            <!-- 4. TAB 1: Stock Balances & Valuation Table -->
-            <div v-if="currentTab === 'stock'" class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
+            <!-- 4. TAB 1: Stock Balances & Valuation Container -->
+            <div v-if="currentTab === 'stock'" class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs min-w-[750px]">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-bold">
                                 <th class="py-3 px-4 whitespace-nowrap">Item & Catalog</th>
@@ -613,10 +610,10 @@ const productOptions = computed(() => {
                 </div>
             </div>
 
-            <!-- 5. TAB 2: Movement Audit Ledger Table -->
-            <div v-else class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
+            <!-- 5. TAB 2: Movement Audit Ledger Container -->
+            <div v-else class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs min-w-[650px]">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-bold">
                                 <th class="py-3 px-4 whitespace-nowrap">Timestamp</th>

@@ -296,73 +296,73 @@ const totalOrdersInStatus = computed(() => {
             </div>
 
             <!-- KPI Metric Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                 <!-- Holding Valuation -->
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-indigo-400 hover:shadow-md transition-all">
-                    <div class="absolute -right-3 -top-3 w-20 h-20 bg-indigo-50/50 rounded-full blur-xl group-hover:bg-indigo-100/60 transition-colors"></div>
-                    <div class="flex items-center justify-between mb-3 relative">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ t('Total Inventory Value') }}</span>
-                        <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm shadow-xs font-mono">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-indigo-400 hover:shadow-md transition-all">
+                    <div class="absolute -right-3 -top-3 w-16 sm:w-20 h-16 sm:h-20 bg-indigo-50/50 rounded-full blur-xl group-hover:bg-indigo-100/60 transition-colors"></div>
+                    <div class="flex items-center justify-between mb-2 sm:mb-3 relative">
+                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">{{ t('Total Inventory Value') }}</span>
+                        <div class="w-7 sm:w-9 h-7 sm:h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs sm:text-sm shadow-xs font-mono">
                             ৳
                         </div>
                     </div>
-                    <div class="text-2xl font-black text-slate-900 tracking-tight relative">
+                    <div class="text-lg sm:text-2xl font-black text-slate-900 tracking-tight relative truncate">
                         <CurrencyDisplay :amount="totalValuation" />
                     </div>
-                    <p class="text-xs text-slate-500 mt-1 font-medium relative">
-                        {{ t('Across') }} <strong class="text-slate-800">{{ totalProducts }}</strong> {{ t('active catalog products') }}
+                    <p class="text-[10px] sm:text-xs text-slate-500 mt-1 font-medium relative truncate">
+                        {{ t('Across') }} <strong class="text-slate-800">{{ totalProducts }}</strong> {{ t('products') }}
                     </p>
                 </div>
 
                 <!-- Monthly Sales Volume -->
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-emerald-400 hover:shadow-md transition-all">
-                    <div class="absolute -right-3 -top-3 w-20 h-20 bg-emerald-50/50 rounded-full blur-xl group-hover:bg-emerald-100/60 transition-colors"></div>
-                    <div class="flex items-center justify-between mb-3 relative">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ t('Total Sales Dispatched') }}</span>
-                        <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm shadow-xs">
-                            <TrendingUp class="w-5 h-5 text-emerald-600" />
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-emerald-400 hover:shadow-md transition-all">
+                    <div class="absolute -right-3 -top-3 w-16 sm:w-20 h-16 sm:h-20 bg-emerald-50/50 rounded-full blur-xl group-hover:bg-emerald-100/60 transition-colors"></div>
+                    <div class="flex items-center justify-between mb-2 sm:mb-3 relative">
+                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">{{ t('Sales Dispatched') }}</span>
+                        <div class="w-7 sm:w-9 h-7 sm:h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs sm:text-sm shadow-xs">
+                            <TrendingUp class="w-4 sm:w-5 h-4 sm:h-5 text-emerald-600" />
                         </div>
                     </div>
-                    <div class="text-2xl font-black text-slate-900 tracking-tight relative">
+                    <div class="text-lg sm:text-2xl font-black text-slate-900 tracking-tight relative truncate">
                         <CurrencyDisplay :amount="totalSalesVolume" />
                     </div>
-                    <p class="text-xs text-slate-500 mt-1 font-medium relative">
-                        <strong class="text-slate-800">{{ totalSalesOrders }}</strong> {{ t('total confirmed client orders') }}
+                    <p class="text-[10px] sm:text-xs text-slate-500 mt-1 font-medium relative truncate">
+                        <strong class="text-slate-800">{{ totalSalesOrders }}</strong> {{ t('confirmed orders') }}
                     </p>
                 </div>
 
                 <!-- Inbound Procurement -->
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-amber-400 hover:shadow-md transition-all">
-                    <div class="absolute -right-3 -top-3 w-20 h-20 bg-amber-50/50 rounded-full blur-xl group-hover:bg-amber-100/60 transition-colors"></div>
-                    <div class="flex items-center justify-between mb-3 relative">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ t('Inbound Purchases') }}</span>
-                        <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-sm shadow-xs">
-                            <Truck class="w-5 h-5 text-amber-600" />
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-amber-400 hover:shadow-md transition-all">
+                    <div class="absolute -right-3 -top-3 w-16 sm:w-20 h-16 sm:h-20 bg-amber-50/50 rounded-full blur-xl group-hover:bg-amber-100/60 transition-colors"></div>
+                    <div class="flex items-center justify-between mb-2 sm:mb-3 relative">
+                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">{{ t('Inbound Purchases') }}</span>
+                        <div class="w-7 sm:w-9 h-7 sm:h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xs sm:text-sm shadow-xs">
+                            <Truck class="w-4 sm:w-5 h-4 sm:h-5 text-amber-600" />
                         </div>
                     </div>
-                    <div class="text-2xl font-black text-slate-900 tracking-tight relative">
+                    <div class="text-lg sm:text-2xl font-black text-slate-900 tracking-tight relative">
                         {{ pendingPurchasesCount }}
-                        <span class="text-sm font-semibold text-slate-400">{{ t('Open POs') }}</span>
+                        <span class="text-xs sm:text-sm font-semibold text-slate-400">{{ t('Open POs') }}</span>
                     </div>
-                    <p class="text-xs text-slate-500 mt-1 font-medium relative">
+                    <p class="text-[10px] sm:text-xs text-slate-500 mt-1 font-medium relative truncate">
                         {{ t('Worth') }} <strong class="text-slate-800"><CurrencyDisplay :amount="openPurchaseOrders" /></strong>
                     </p>
                 </div>
 
                 <!-- Low Stock Alert Radar -->
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-rose-400 hover:shadow-md transition-all">
-                    <div class="absolute -right-3 -top-3 w-20 h-20 bg-rose-50/50 rounded-full blur-xl group-hover:bg-rose-100/60 transition-colors"></div>
-                    <div class="flex items-center justify-between mb-3 relative">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ t('Low Stock Threshold') }}</span>
-                        <div class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-sm shadow-xs">
-                            <AlertTriangle class="w-5 h-5 text-rose-600" />
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-rose-400 hover:shadow-md transition-all">
+                    <div class="absolute -right-3 -top-3 w-16 sm:w-20 h-16 sm:h-20 bg-rose-50/50 rounded-full blur-xl group-hover:bg-rose-100/60 transition-colors"></div>
+                    <div class="flex items-center justify-between mb-2 sm:mb-3 relative">
+                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">{{ t('Low Stock Threshold') }}</span>
+                        <div class="w-7 sm:w-9 h-7 sm:h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-xs sm:text-sm shadow-xs">
+                            <AlertTriangle class="w-4 sm:w-5 h-4 sm:h-5 text-rose-600" />
                         </div>
                     </div>
-                    <div class="text-2xl font-black relative" :class="lowStockCount > 0 ? 'text-rose-600' : 'text-slate-900'">
+                    <div class="text-lg sm:text-2xl font-black relative" :class="lowStockCount > 0 ? 'text-rose-600' : 'text-slate-900'">
                         {{ lowStockCount }}
-                        <span class="text-sm font-semibold text-slate-400">{{ t('Items Low') }}</span>
+                        <span class="text-xs sm:text-sm font-semibold text-slate-400">{{ t('Items Low') }}</span>
                     </div>
-                    <p class="text-xs text-slate-500 mt-1 font-medium relative">
+                    <p class="text-[10px] sm:text-xs text-slate-500 mt-1 font-medium relative truncate">
                         {{ t('Needs purchase replenishment') }}
                     </p>
                 </div>
@@ -543,7 +543,7 @@ const totalOrdersInStatus = computed(() => {
                             </Link>
                         </div>
 
-                        <div v-if="lowStockProducts && lowStockProducts.length > 0" class="overflow-x-auto">
+                        <div v-if="lowStockProducts && lowStockProducts.length > 0" class="overflow-x-auto custom-scrollbar">
                             <table class="w-full text-left text-xs">
                                 <thead>
                                     <tr class="border-b border-slate-200 text-slate-400 font-bold uppercase text-[10px]">

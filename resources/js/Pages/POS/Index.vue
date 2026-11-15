@@ -58,6 +58,7 @@ const selectedCategory = ref('all');
 const selectedBrand = ref('all');
 const searchQuery = ref('');
 const searchInput = ref(null);
+const mobileActiveTab = ref('catalog'); // 'catalog' | 'cart'
 
 // Toast / Alert Notification System
 const toast = ref({
@@ -628,6 +629,7 @@ function startNewSale() {
     lastCompletedOrder.value = null;
     isAddingCustomer.value = false;
     customerPhoneInput.value = '';
+    mobileActiveTab.value = 'catalog';
     nextTick(() => {
         searchInput.value?.focus();
     });
@@ -654,6 +656,7 @@ function printStandardInvoice(url) {
 function handleGlobalKeydown(e) {
     if (e.key === 'F2') {
         e.preventDefault();
+        mobileActiveTab.value = 'catalog';
         searchInput.value?.focus();
     } else if (e.key === 'F3') {
         e.preventDefault();
@@ -702,7 +705,7 @@ onUnmounted(() => {
 <template>
     <Head title="Point of Sale (POS) Terminal" />
 
-    <div class="h-screen w-screen bg-slate-100 text-slate-800 flex flex-col overflow-hidden font-sans select-none relative">
+    <div class="h-[100dvh] max-h-[100dvh] w-full max-w-full bg-slate-100 text-slate-800 flex flex-col overflow-hidden font-sans select-none relative">
         <!-- Floating Alert / Toast Notification -->
         <transition
             enter-active-class="transition duration-200 ease-out"
@@ -747,11 +750,11 @@ onUnmounted(() => {
         <!-- ============================================== -->
         <!-- TOP APP BAR (LIGHT & CLEAN THEME)              -->
         <!-- ============================================== -->
-        <header class="h-14 bg-white border-b border-slate-200/90 px-4 flex items-center justify-between shrink-0 z-30 shadow-xs">
-            <div class="flex items-center gap-3">
+        <header class="h-14 bg-white border-b border-slate-200/90 px-2.5 sm:px-4 flex items-center justify-between shrink-0 z-30 shadow-xs gap-2">
+            <div class="flex items-center gap-2 sm:gap-3 min-w-0">
                 <Link
                     :href="route('dashboard')"
-                    class="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 transition flex items-center gap-1.5 text-xs font-semibold"
+                    class="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 transition flex items-center gap-1.5 text-xs font-semibold shrink-0 cursor-pointer"
                     title="Exit POS & Return to Dashboard"
                 >
                     <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -760,23 +763,23 @@ onUnmounted(() => {
                     <span class="hidden sm:inline">Exit POS</span>
                 </Link>
 
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center font-black text-white text-xs shadow-md shadow-indigo-600/25">
+                <div class="flex items-center gap-2 min-w-0">
+                    <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center font-black text-white text-xs shadow-md shadow-indigo-600/25 shrink-0">
                         POS
                     </div>
-                    <div>
-                        <div class="text-xs font-extrabold text-slate-900 flex items-center gap-1.5 leading-none">
-                            <span>Counter Terminal</span>
-                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <div class="hidden sm:block min-w-0">
+                        <div class="text-xs font-extrabold text-slate-900 flex items-center gap-1.5 leading-none truncate">
+                            <span class="truncate">Counter Terminal</span>
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
                         </div>
-                        <div class="text-[10px] text-slate-500 font-mono mt-0.5">
+                        <div class="text-[10px] text-slate-500 font-mono mt-0.5 truncate">
                             Seq: <strong class="text-indigo-600">{{ nextOrderNumber }}</strong>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Header Middle: Keyboard Shortcuts Legend -->
+            <!-- Header Middle: Keyboard Shortcuts Legend (Desktop) -->
             <div class="hidden lg:flex items-center gap-2 text-[11px] text-slate-500">
                 <span class="px-2 py-0.5 bg-slate-50 rounded border border-slate-200 font-mono font-bold text-slate-700 shadow-2xs">[F2] Search</span>
                 <span class="px-2 py-0.5 bg-indigo-50 rounded border border-indigo-200 font-mono font-bold text-indigo-700 shadow-2xs">[F3] Camera</span>
@@ -784,9 +787,35 @@ onUnmounted(() => {
                 <span class="px-2 py-0.5 bg-emerald-50 rounded border border-emerald-200 font-mono font-bold text-emerald-700 shadow-2xs">[F8] Pay</span>
             </div>
 
+            <!-- Mobile View Switcher (Catalog vs Cart) on < lg screens -->
+            <div class="lg:hidden inline-flex items-center p-0.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold shrink-0">
+                <button
+                    type="button"
+                    @click="mobileActiveTab = 'catalog'"
+                    class="px-2.5 py-1 rounded-lg transition cursor-pointer"
+                    :class="mobileActiveTab === 'catalog' ? 'bg-white shadow-xs text-indigo-600' : 'text-slate-600 hover:text-slate-900'"
+                >
+                    Items
+                </button>
+                <button
+                    type="button"
+                    @click="mobileActiveTab = 'cart'"
+                    class="px-2.5 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer"
+                    :class="mobileActiveTab === 'cart' ? 'bg-white shadow-xs text-indigo-600' : 'text-slate-600 hover:text-slate-900'"
+                >
+                    <span>Cart</span>
+                    <span
+                        v-if="cart.length > 0"
+                        class="px-1.5 py-0.2 rounded-full text-[9px] bg-indigo-600 text-white font-extrabold"
+                    >
+                        {{ cart.length }}
+                    </span>
+                </button>
+            </div>
+
             <!-- Header Right: Clock & Triggers -->
-            <div class="flex items-center gap-2 sm:gap-3">
-                <div class="hidden sm:block text-right">
+            <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
+                <div class="hidden xl:block text-right">
                     <div class="font-mono text-xs font-bold text-indigo-700 tracking-wider">{{ currentTime }}</div>
                     <div class="text-[9px] text-slate-400 uppercase tracking-widest font-semibold">Terminal Clock</div>
                 </div>
@@ -794,7 +823,7 @@ onUnmounted(() => {
                 <!-- Parked Carts Trigger -->
                 <button
                     @click="isParkedModalOpen = true"
-                    class="relative p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-amber-700 border border-slate-200 transition flex items-center gap-1.5 text-xs font-semibold"
+                    class="relative p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-amber-700 border border-slate-200 transition flex items-center gap-1.5 text-xs font-semibold shrink-0 cursor-pointer"
                     title="Parked / Held Carts"
                 >
                     <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -812,7 +841,7 @@ onUnmounted(() => {
                 <!-- Recent Orders Trigger -->
                 <button
                     @click="isRecentModalOpen = true"
-                    class="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 transition flex items-center gap-1.5 text-xs font-semibold"
+                    class="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 transition flex items-center gap-1.5 text-xs font-semibold shrink-0 cursor-pointer"
                     title="Recent Sales & Receipts"
                 >
                     <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -824,24 +853,27 @@ onUnmounted(() => {
         </header>
 
         <!-- MAIN LAYOUT: LEFT CATALOG + RIGHT CART -->
-        <div class="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0 bg-slate-100">
+        <div class="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0 bg-slate-100 relative">
             <!-- ==================================================== -->
             <!-- LEFT PANEL: SEARCH & PRODUCT CATALOG WITH IMAGES     -->
             <!-- ==================================================== -->
-            <div class="flex-1 flex flex-col overflow-hidden border-r border-slate-200 bg-slate-100">
+            <div
+                :class="mobileActiveTab === 'catalog' ? 'flex' : 'hidden lg:flex'"
+                class="flex-1 flex-col overflow-hidden border-r border-slate-200 bg-slate-100 min-h-0"
+            >
                 <!-- Search & Filters Toolbar -->
-                <div class="p-3 bg-white border-b border-slate-200 space-y-2.5 shrink-0 shadow-2xs">
-                    <div class="flex items-center gap-2">
+                <div class="p-2.5 sm:p-3 bg-white border-b border-slate-200 space-y-2 shrink-0 shadow-2xs">
+                    <div class="flex items-center gap-1.5 sm:gap-2">
                         <!-- Barcode & Search Input -->
-                        <div class="relative flex-1">
+                        <div class="relative flex-1 min-w-0">
                             <input
                                 ref="searchInput"
                                 v-model="searchQuery"
                                 type="text"
-                                placeholder="Search products by title, SKU, or scan barcode (USB Gun or F3 Camera)..."
-                                class="w-full bg-slate-50 border border-slate-200 focus:border-indigo-500 rounded-xl pl-10 pr-9 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-1 focus:ring-indigo-500 font-medium"
+                                placeholder="Search products, SKU or barcode..."
+                                class="w-full bg-slate-50 border border-slate-200 focus:border-indigo-500 rounded-xl pl-9 pr-8 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-1 focus:ring-indigo-500 font-medium"
                             />
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
@@ -849,7 +881,7 @@ onUnmounted(() => {
                             <button
                                 v-if="searchQuery"
                                 @click="searchQuery = ''; searchInput.focus()"
-                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                                class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
                             >
                                 &times;
                             </button>
@@ -859,21 +891,21 @@ onUnmounted(() => {
                         <button
                             type="button"
                             @click="isCameraModalOpen = true"
-                            class="px-2.5 py-2 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-slate-700 hover:text-indigo-600 font-semibold text-xs flex items-center gap-1.5 transition shrink-0 shadow-2xs"
+                            class="p-2 sm:px-2.5 sm:py-2 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-slate-700 hover:text-indigo-600 font-semibold text-xs flex items-center gap-1.5 transition shrink-0 shadow-2xs cursor-pointer"
                             title="Scan Barcode with Camera (F3)"
                         >
                             <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
-                            <span class="hidden sm:inline">Camera (F3)</span>
+                            <span class="hidden sm:inline">Camera</span>
                         </button>
 
                         <!-- Brand Filter -->
                         <select
                             v-if="brands.length > 0"
                             v-model="selectedBrand"
-                            class="bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs py-2 px-3 focus:border-indigo-500 focus:ring-0 max-w-[130px] shrink-0 font-medium"
+                            class="bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs py-2 px-2 sm:px-3 focus:border-indigo-500 focus:ring-0 max-w-[100px] sm:max-w-[130px] shrink-0 font-medium truncate"
                         >
                             <option value="all">All Brands</option>
                             <option v-for="b in brands" :key="b.id" :value="b.name">{{ b.name }}</option>
@@ -884,7 +916,7 @@ onUnmounted(() => {
                     <div class="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar text-xs">
                         <button
                             @click="selectedCategory = 'all'"
-                            class="px-3 py-1.5 rounded-lg font-bold shrink-0 transition-all text-xs"
+                            class="px-2.5 sm:px-3 py-1.5 rounded-lg font-bold shrink-0 transition-all text-xs whitespace-nowrap cursor-pointer"
                             :class="selectedCategory === 'all' ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'bg-slate-50 text-slate-600 hover:bg-slate-200 border border-slate-200'"
                         >
                             All Categories ({{ products.length }})
@@ -893,7 +925,7 @@ onUnmounted(() => {
                             v-for="cat in categories"
                             :key="cat.id"
                             @click="selectedCategory = cat.id"
-                            class="px-3 py-1.5 rounded-lg font-semibold shrink-0 transition-all text-xs"
+                            class="px-2.5 sm:px-3 py-1.5 rounded-lg font-semibold shrink-0 transition-all text-xs whitespace-nowrap cursor-pointer"
                             :class="selectedCategory === cat.id ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'bg-slate-50 text-slate-600 hover:bg-slate-200 border border-slate-200'"
                         >
                             {{ cat.name }}
@@ -902,20 +934,20 @@ onUnmounted(() => {
                 </div>
 
                 <!-- Product Catalog Grid with Images -->
-                <div class="flex-1 overflow-y-auto p-3 custom-scrollbar">
+                <div class="flex-1 overflow-y-auto p-2.5 sm:p-3 custom-scrollbar">
                     <div
                         v-if="filteredProducts.length > 0"
-                        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3"
+                        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3"
                     >
                         <div
                             v-for="p in filteredProducts"
                             :key="p.id"
                             @click="handleProductClick(p)"
-                            class="group relative bg-white hover:bg-slate-50/80 border border-slate-200/90 hover:border-indigo-400 rounded-2xl p-2.5 flex flex-col justify-between transition-all duration-150 cursor-pointer shadow-xs hover:shadow-md hover:shadow-indigo-500/10 active:scale-[0.98]"
+                            class="group relative bg-white hover:bg-slate-50/80 border border-slate-200/90 hover:border-indigo-400 rounded-xl sm:rounded-2xl p-2 sm:p-2.5 flex flex-col justify-between transition-all duration-150 cursor-pointer shadow-xs hover:shadow-md hover:shadow-indigo-500/10 active:scale-[0.98]"
                         >
                             <div>
                                 <!-- Product Image Container -->
-                                <div class="relative w-full h-28 mb-2 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden group-hover:scale-[1.02] transition-transform">
+                                <div class="relative w-full h-24 sm:h-28 mb-1.5 sm:mb-2 rounded-lg sm:rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden group-hover:scale-[1.02] transition-transform">
                                     <img
                                         v-if="hasValidImage(p)"
                                         :src="p.image_url"
@@ -925,10 +957,10 @@ onUnmounted(() => {
                                     />
                                     <!-- Fallback Placeholder when no image -->
                                     <div v-else class="flex flex-col items-center justify-center text-slate-300">
-                                        <svg class="w-8 h-8 text-slate-300 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg class="w-7 h-7 sm:w-8 sm:h-8 text-slate-300 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                         </svg>
-                                        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">{{ p.category_name }}</span>
+                                        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 truncate max-w-full px-1">{{ p.category_name }}</span>
                                     </div>
 
                                     <!-- In-Stock Badge Overlay -->
@@ -959,19 +991,19 @@ onUnmounted(() => {
                             </div>
 
                             <!-- Bottom Price & Variant / Add Button -->
-                            <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between">
-                                <div class="text-sm font-black text-emerald-700 font-mono">
+                            <div class="mt-2 pt-1.5 sm:mt-2.5 sm:pt-2 border-t border-slate-100 flex items-center justify-between">
+                                <div class="text-xs sm:text-sm font-black text-emerald-700 font-mono">
                                     <CurrencyDisplay :amount="p.unit_price" />
                                 </div>
                                 <span
                                     v-if="p.has_variants"
-                                    class="text-[9px] font-bold px-2 py-0.5 rounded-lg bg-violet-50 text-violet-700 border border-violet-200 shrink-0"
+                                    class="text-[9px] font-bold px-1.5 py-0.5 rounded-lg bg-violet-50 text-violet-700 border border-violet-200 shrink-0"
                                 >
                                     Variants
                                 </span>
                                 <span
                                     v-else
-                                    class="w-6 h-6 rounded-lg bg-slate-100 group-hover:bg-indigo-600 text-slate-600 group-hover:text-white flex items-center justify-center transition-colors font-bold text-sm shadow-2xs"
+                                    class="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-slate-100 group-hover:bg-indigo-600 text-slate-600 group-hover:text-white flex items-center justify-center transition-colors font-bold text-xs sm:text-sm shadow-2xs"
                                 >
                                     +
                                 </span>
@@ -990,12 +1022,59 @@ onUnmounted(() => {
                         <p class="text-xs text-slate-500 mt-1">Try searching a different keyword or scan a barcode</p>
                     </div>
                 </div>
+
+                <!-- Sticky Mobile Cart Bar (Visible on mobile when in catalog view and cart has items) -->
+                <div
+                    v-if="cart.length > 0"
+                    class="lg:hidden p-2.5 bg-white border-t border-slate-200 shadow-lg flex items-center justify-between gap-2 shrink-0 z-20"
+                >
+                    <div class="flex items-center gap-2 min-w-0">
+                        <div class="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 font-extrabold text-xs flex items-center justify-center shrink-0">
+                            {{ cart.length }}
+                        </div>
+                        <div class="truncate">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Payable Total</div>
+                            <div class="text-sm font-black text-emerald-600 font-mono leading-none">
+                                <CurrencyDisplay :amount="calculatedTotal" />
+                            </div>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        @click="mobileActiveTab = 'cart'"
+                        class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm shadow-indigo-600/30 shrink-0 cursor-pointer"
+                    >
+                        <span>View Cart &amp; Pay</span>
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <!-- ============================================== -->
             <!-- RIGHT PANEL: CART & CHECKOUT LANE (CLEAN WHITE) -->
             <!-- ============================================== -->
-            <div class="w-full lg:w-[460px] xl:w-[480px] flex flex-col bg-white shrink-0 border-l border-slate-200 shadow-sm">
+            <div
+                :class="mobileActiveTab === 'cart' ? 'flex' : 'hidden lg:flex'"
+                class="w-full lg:w-[460px] xl:w-[480px] flex-col bg-white shrink-0 border-l border-slate-200 shadow-sm min-h-0 flex-1 lg:flex-initial overflow-hidden"
+            >
+                <!-- Mobile Return to Catalog Bar -->
+                <div class="lg:hidden px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-2 shrink-0">
+                    <button
+                        type="button"
+                        @click="mobileActiveTab = 'catalog'"
+                        class="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        <span>Add More Products</span>
+                    </button>
+                    <span class="text-xs font-mono font-bold text-slate-700">
+                        {{ cart.length }} item(s) in cart
+                    </span>
+                </div>
                 <!-- Customer Selection / Quick Mobile Bar -->
                 <div class="p-3 bg-white border-b border-slate-200 relative z-20">
                     <div class="flex items-center justify-between gap-2">
@@ -1098,7 +1177,7 @@ onUnmounted(() => {
                 </div>
 
                 <!-- Cart Items Scrollable List -->
-                <div class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-slate-50/50">
+                <div class="flex-1 overflow-y-auto p-2.5 sm:p-3 space-y-2 custom-scrollbar bg-slate-50/50 min-h-0">
                     <div
                         v-for="(item, idx) in cart"
                         :key="item.key"
@@ -1130,7 +1209,7 @@ onUnmounted(() => {
                             <button
                                 @click="updateQuantity(item, -1)"
                                 type="button"
-                                class="w-6 h-6 rounded flex items-center justify-center text-slate-600 hover:bg-slate-200 font-bold transition"
+                                class="w-6 h-6 rounded flex items-center justify-center text-slate-600 hover:bg-slate-200 font-bold transition cursor-pointer"
                                 title="Decrease quantity"
                             >
                                 -
@@ -1149,7 +1228,7 @@ onUnmounted(() => {
                                 @click="updateQuantity(item, 1)"
                                 :disabled="item.stock !== undefined && item.quantity >= item.stock"
                                 type="button"
-                                class="w-6 h-6 rounded flex items-center justify-center text-slate-600 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed font-bold transition"
+                                class="w-6 h-6 rounded flex items-center justify-center text-slate-600 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed font-bold transition cursor-pointer"
                                 :title="item.stock !== undefined && item.quantity >= item.stock ? `Stock limit of ${item.stock} reached` : 'Increase quantity'"
                             >
                                 +
@@ -1164,7 +1243,7 @@ onUnmounted(() => {
                             <button
                                 @click="removeCartItem(idx)"
                                 type="button"
-                                class="text-[10px] text-rose-500 hover:text-rose-700 font-semibold mt-0.5"
+                                class="text-[10px] text-rose-500 hover:text-rose-700 font-semibold mt-0.5 cursor-pointer"
                             >
                                 Remove
                             </button>
@@ -1184,7 +1263,7 @@ onUnmounted(() => {
                 </div>
 
                 <!-- Financial Breakdown & Fast Checkout Area -->
-                <div class="p-3 bg-white border-t border-slate-200 space-y-2 text-xs shadow-sm">
+                <div class="p-2.5 sm:p-3 bg-white border-t border-slate-200 space-y-2 text-xs shadow-sm shrink-0 overflow-y-auto max-h-[50vh] lg:max-h-none">
                     <!-- Discount & VAT Row -->
                     <div class="grid grid-cols-2 gap-2 pb-2 border-b border-slate-100">
                         <div>
@@ -1193,12 +1272,12 @@ onUnmounted(() => {
                                 <div class="flex items-center gap-1 font-bold">
                                     <button
                                         @click="discountType = 'fixed'"
-                                        class="px-1.5 py-0.2 rounded text-[10px]"
+                                        class="px-1.5 py-0.2 rounded text-[10px] cursor-pointer"
                                         :class="discountType === 'fixed' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'"
                                     >৳</button>
                                     <button
                                         @click="discountType = 'percent'"
-                                        class="px-1.5 py-0.2 rounded text-[10px]"
+                                        class="px-1.5 py-0.2 rounded text-[10px] cursor-pointer"
                                         :class="discountType === 'percent' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'"
                                     >%</button>
                                 </div>
@@ -1243,12 +1322,12 @@ onUnmounted(() => {
                     </div>
 
                     <!-- Grand Total Banner -->
-                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                    <div class="p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                         <div>
                             <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">Net Payable Total</span>
                             <span class="text-[10px] text-indigo-600 font-semibold">{{ cart.length }} items on ticket</span>
                         </div>
-                        <div class="text-2xl font-black text-emerald-600 font-mono">
+                        <div class="text-xl sm:text-2xl font-black text-emerald-600 font-mono">
                             <CurrencyDisplay :amount="calculatedTotal" />
                         </div>
                     </div>
@@ -1270,7 +1349,7 @@ onUnmounted(() => {
                         <div>
                             <div class="flex items-center justify-between text-[10px] uppercase font-bold text-slate-500 mb-1">
                                 <span>Cash Tendered</span>
-                                <button @click="setTendered('exact')" class="text-indigo-600 hover:text-indigo-800 font-bold lowercase">exact</button>
+                                <button @click="setTendered('exact')" class="text-indigo-600 hover:text-indigo-800 font-bold lowercase cursor-pointer">exact</button>
                             </div>
                             <input
                                 v-model.number="tenderedAmount"
@@ -1283,30 +1362,30 @@ onUnmounted(() => {
 
                     <!-- Quick Cash Amounts & Return Change -->
                     <div class="flex items-center justify-between gap-1 pt-1 text-[11px]">
-                        <div class="flex items-center gap-1">
+                        <div class="flex items-center gap-1 flex-wrap">
                             <button
                                 v-for="amt in [500, 1000, 2000]"
                                 :key="amt"
                                 @click="setTendered(amt)"
                                 type="button"
-                                class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold border border-slate-200 transition"
+                                class="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold border border-slate-200 transition cursor-pointer"
                             >
                                 {{ amt }}
                             </button>
                         </div>
-                        <div v-if="changeToReturn > 0" class="text-right">
-                            <span class="text-[10px] text-slate-500 mr-1">Return Change:</span>
+                        <div v-if="changeToReturn > 0" class="text-right shrink-0">
+                            <span class="text-[10px] text-slate-500 mr-1">Change:</span>
                             <span class="font-extrabold text-emerald-600 text-xs font-mono"><CurrencyDisplay :amount="changeToReturn" /></span>
                         </div>
                     </div>
 
                     <!-- Action Buttons -->
-                    <div class="grid grid-cols-4 gap-2 pt-2">
+                    <div class="grid grid-cols-4 gap-1.5 sm:gap-2 pt-1.5 sm:pt-2">
                         <button
                             @click="clearCart"
                             type="button"
                             :disabled="cart.length === 0"
-                            class="col-span-1 py-2.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-bold text-xs border border-slate-200 transition disabled:opacity-40"
+                            class="col-span-1 py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-bold text-xs border border-slate-200 transition disabled:opacity-40 cursor-pointer"
                         >
                             Clear
                         </button>
@@ -1315,23 +1394,23 @@ onUnmounted(() => {
                             @click="parkCurrentCart"
                             type="button"
                             :disabled="cart.length === 0"
-                            class="col-span-1 py-2.5 rounded-xl bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-700 font-bold text-xs border border-slate-200 transition disabled:opacity-40"
+                            class="col-span-1 py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-700 font-bold text-xs border border-slate-200 transition disabled:opacity-40 cursor-pointer truncate"
                             title="Hold Cart [F4]"
                         >
-                            Hold [F4]
+                            Hold<span class="hidden sm:inline"> [F4]</span>
                         </button>
 
                         <button
                             @click="completeSale"
                             type="button"
                             :disabled="cart.length === 0 || isProcessingSale"
-                            class="col-span-2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm shadow-md shadow-emerald-600/30 transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
+                            class="col-span-2 py-2 sm:py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-emerald-600/30 transition-all disabled:opacity-40 flex items-center justify-center gap-1.5 cursor-pointer"
                         >
                             <svg v-if="isProcessingSale" class="w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                             </svg>
-                            <span v-else>Pay & Print [F8]</span>
+                            <span v-else>Pay &amp; Print<span class="hidden sm:inline"> [F8]</span></span>
                         </button>
                     </div>
                 </div>
@@ -1342,7 +1421,7 @@ onUnmounted(() => {
         <!-- MODAL: VARIANT SELECTOR MODAL         -->
         <!-- ===================================== -->
         <Modal :show="isVariantModalOpen" @close="isVariantModalOpen = false" max-width="lg">
-            <div class="p-6 bg-white text-slate-900 rounded-2xl border border-slate-200 shadow-xl">
+            <div class="p-4 sm:p-6 bg-white text-slate-900 rounded-2xl border border-slate-200 shadow-xl">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div>
                         <h3 class="text-base font-bold text-slate-900">{{ activeProductForVariant?.name }}</h3>
@@ -1368,7 +1447,7 @@ onUnmounted(() => {
                             <div class="text-[10px] text-slate-400 font-mono mt-0.5">SKU: {{ v.sku }}</div>
                         </div>
                         <div class="text-right">
-                            <div class="font-bold text-emerald-600 text-xs">
+                            <div class="font-bold text-emerald-600 text-xs font-mono">
                                 <CurrencyDisplay :amount="v.unit_price" />
                             </div>
                             <div class="text-[10px] mt-0.5" :class="(v.stock ?? 0) > 0 ? 'text-slate-500 font-semibold' : 'text-rose-600 font-bold'">
@@ -1386,7 +1465,7 @@ onUnmounted(() => {
         <!-- MODAL: PARKED / HELD CARTS MODAL      -->
         <!-- ===================================== -->
         <Modal :show="isParkedModalOpen" @close="isParkedModalOpen = false" max-width="lg">
-            <div class="p-6 bg-white text-slate-900 rounded-2xl border border-slate-200 shadow-xl">
+            <div class="p-4 sm:p-6 bg-white text-slate-900 rounded-2xl border border-slate-200 shadow-xl">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div>
                         <h3 class="text-base font-bold text-slate-900">Parked / Held Customer Carts</h3>
@@ -1413,13 +1492,13 @@ onUnmounted(() => {
                             </div>
                             <button
                                 @click="restoreParkedCart(p)"
-                                class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition"
+                                class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition cursor-pointer"
                             >
                                 Resume
                             </button>
                             <button
                                 @click="deleteParkedCart(p.id)"
-                                class="px-2 py-1.5 rounded-lg bg-slate-200 hover:bg-rose-100 hover:text-rose-600 text-slate-600 font-bold transition"
+                                class="px-2 py-1.5 rounded-lg bg-slate-200 hover:bg-rose-100 hover:text-rose-600 text-slate-600 font-bold transition cursor-pointer"
                             >
                                 &times;
                             </button>
@@ -1437,20 +1516,20 @@ onUnmounted(() => {
         <!-- MODAL: RECENT POS SALES MODAL         -->
         <!-- ===================================== -->
         <Modal :show="isRecentModalOpen" @close="isRecentModalOpen = false" max-width="xl">
-            <div class="p-6 bg-white text-slate-900 rounded-2xl border border-slate-200 shadow-xl">
+            <div class="p-4 sm:p-6 bg-white text-slate-900 rounded-2xl border border-slate-200 shadow-xl">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div>
                         <h3 class="text-base font-bold text-slate-900">Recent POS Transactions</h3>
                         <p class="text-xs text-slate-500 mt-0.5">Recent counter orders and print receipts</p>
                     </div>
-                    <button @click="isRecentModalOpen = false" class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+                    <button @click="isRecentModalOpen = false" class="text-slate-400 hover:text-slate-600 text-xl leading-none cursor-pointer">&times;</button>
                 </div>
 
                 <div class="mt-4 space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
                     <div
                         v-for="o in recentOrders"
                         :key="o.id"
-                        class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-3 text-xs"
+                        class="p-2.5 sm:p-3 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 text-xs"
                     >
                         <div class="min-w-0 flex-1">
                             <div class="flex items-center gap-2">
@@ -1465,28 +1544,30 @@ onUnmounted(() => {
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-2 shrink-0">
-                            <div class="text-right mr-1">
+                        <div class="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/60">
+                            <div class="text-left sm:text-right mr-1">
                                 <div class="font-bold text-slate-900 font-mono"><CurrencyDisplay :amount="o.total_amount" /></div>
                                 <div class="text-[9px] uppercase font-extrabold" :class="o.payment_status === 'paid' ? 'text-emerald-600' : 'text-amber-600'">
                                     {{ o.payment_status }}
                                 </div>
                             </div>
 
-                            <button
-                                @click="printThermalReceipt(o.pos_url)"
-                                class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-[11px] transition shadow-2xs"
-                                title="Print Thermal Slip"
-                            >
-                                Thermal
-                            </button>
-                            <button
-                                @click="printStandardInvoice(o.invoice_url)"
-                                class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-[11px] transition shadow-2xs"
-                                title="Print A4 Invoice"
-                            >
-                                A4
-                            </button>
+                            <div class="flex items-center gap-1.5">
+                                <button
+                                    @click="printThermalReceipt(o.pos_url)"
+                                    class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-[11px] transition shadow-2xs cursor-pointer"
+                                    title="Print Thermal Slip"
+                                >
+                                    Thermal
+                                </button>
+                                <button
+                                    @click="printStandardInvoice(o.invoice_url)"
+                                    class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-[11px] transition shadow-2xs cursor-pointer"
+                                    title="Print A4 Invoice"
+                                >
+                                    A4
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -1501,7 +1582,7 @@ onUnmounted(() => {
         <!-- MODAL: CHECKOUT SUCCESS POPUP         -->
         <!-- ===================================== -->
         <Modal :show="isSuccessModalOpen" @close="startNewSale" max-width="md">
-            <div class="p-6 bg-white text-slate-900 rounded-2xl border border-slate-200 text-center shadow-2xl">
+            <div class="p-4 sm:p-6 bg-white text-slate-900 rounded-2xl border border-slate-200 text-center shadow-2xl">
                 <!-- Checkmark Icon -->
                 <div class="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-3 shadow-md shadow-emerald-500/20">
                     <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1513,7 +1594,7 @@ onUnmounted(() => {
                 <p class="text-xs text-slate-500 mt-1 font-mono">Invoice #{{ lastCompletedOrder?.order_number }}</p>
 
                 <!-- Amount Breakdown Card -->
-                <div class="my-5 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
+                <div class="my-5 p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
                     <div class="flex justify-between text-slate-500">
                         <span>Total Bill:</span>
                         <span class="font-bold text-slate-900 font-mono"><CurrencyDisplay :amount="lastCompletedOrder?.total_amount || 0" /></span>
@@ -1537,10 +1618,10 @@ onUnmounted(() => {
                 </div>
 
                 <!-- Print Options -->
-                <div class="grid grid-cols-2 gap-2 mb-2">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
                     <button
                         @click="printThermalReceipt(lastCompletedOrder?.pos_slip_url)"
-                        class="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm"
+                        class="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer"
                     >
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -1550,7 +1631,7 @@ onUnmounted(() => {
 
                     <button
                         @click="printStandardInvoice(lastCompletedOrder?.invoice_url)"
-                        class="py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm"
+                        class="py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer"
                     >
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -1563,7 +1644,7 @@ onUnmounted(() => {
                     v-if="lastCompletedOrder?.pos_invoice_page_url"
                     @click="printStandardInvoice(lastCompletedOrder?.pos_invoice_page_url)"
                     type="button"
-                    class="w-full py-2 px-3 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-xs border border-teal-200 flex items-center justify-center gap-1.5 transition mb-3"
+                    class="w-full py-2 px-3 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-xs border border-teal-200 flex items-center justify-center gap-1.5 transition mb-3 cursor-pointer"
                 >
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1576,7 +1657,7 @@ onUnmounted(() => {
                 <button
                     @click="startNewSale"
                     type="button"
-                    class="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition border border-slate-200"
+                    class="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition border border-slate-200 cursor-pointer"
                 >
                     Start Next Sale [Enter]
                 </button>

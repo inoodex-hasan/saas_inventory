@@ -165,14 +165,14 @@ function planLimits(plan) {
             </div>
 
             <!-- Action Toolbar -->
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-2 p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
                 <div>
                     <h3 class="text-sm font-bold text-slate-900">Available Subscription Packages</h3>
                     <p class="text-xs text-slate-500">Configure feature limits, quotas, and monthly/annual pricing</p>
                 </div>
                 <button
                     @click="openCreateModal"
-                    class="inline-flex items-center gap-2 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-all hover:scale-[1.02] shrink-0"
+                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-all hover:scale-[1.02] shrink-0"
                 >
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -181,9 +181,10 @@ function planLimits(plan) {
                 </button>
             </div>
 
+            <!-- Plans Table -->
             <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-xs">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs min-w-[700px]">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                                 <th class="py-3 px-4 whitespace-nowrap">Plan Name</th>
@@ -281,10 +282,13 @@ function planLimits(plan) {
 
         <!-- Plan Create/Edit Modal -->
         <Modal :show="isModalOpen" @close="isModalOpen = false" max-width="lg">
-            <div class="p-6 md:p-8 space-y-4">
-                <h3 class="text-base font-bold text-slate-900">
-                    {{ editingPlan ? `Edit Plan: ${editingPlan.name}` : 'Create Subscription Plan' }}
-                </h3>
+            <div class="p-4 sm:p-6 md:p-8 space-y-4 max-h-[85vh] overflow-y-auto">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <h3 class="text-base font-bold text-slate-900 truncate max-w-[240px] sm:max-w-none">
+                        {{ editingPlan ? `Edit Plan: ${editingPlan.name}` : 'Create Subscription Plan' }}
+                    </h3>
+                    <button @click="isModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1 text-lg leading-none cursor-pointer">&times;</button>
+                </div>
 
                 <form @submit.prevent="submit" class="space-y-4 text-xs">
                     <div>
@@ -292,7 +296,7 @@ function planLimits(plan) {
                         <input
                             v-model="form.name"
                             type="text"
-class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-amber-500 placeholder:text-slate-400 placeholder:text-xs"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-amber-500 placeholder:text-slate-400 placeholder:text-xs"
                             required
                         />
                         <p v-if="form.errors.name" class="text-rose-500 text-[11px] mt-1">{{ form.errors.name }}</p>
@@ -303,11 +307,11 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                         <input
                             v-model="form.slug"
                             type="text"
-class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:bg-white focus:border-amber-500 placeholder:text-slate-400 placeholder:text-xs"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:bg-white focus:border-amber-500 placeholder:text-slate-400 placeholder:text-xs"
                         />
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Monthly Rate (BDT ৳) *</label>
                             <input
@@ -333,7 +337,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Max Products (-1 = ∞)</label>
                             <input
@@ -367,7 +371,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
 
                     <div class="pt-2 border-t border-slate-100">
                         <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Resource &amp; Module Limits (-1 = Unlimited)</p>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             <div>
                                 <label class="block font-semibold text-slate-700 mb-1">Max Quotations</label>
                                 <input
@@ -439,18 +443,18 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                         <label for="plan_is_active" class="font-semibold text-slate-700">Plan is Active & Available for Tenants</label>
                     </div>
 
-                    <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                    <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-3 border-t border-slate-100">
                         <button
                             type="button"
                             @click="isModalOpen = false"
-                            class="px-4 py-2 font-medium text-slate-600 hover:text-slate-800"
+                            class="w-full sm:w-auto px-4 py-2 font-medium text-slate-600 hover:text-slate-800 text-center rounded-xl transition cursor-pointer"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             :disabled="form.processing"
-                            class="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl transition-all shadow-sm"
+                            class="w-full sm:w-auto px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl transition-all shadow-sm text-center cursor-pointer disabled:opacity-50"
                         >
                             {{ form.processing ? 'Saving...' : (editingPlan ? 'Update Plan Tier' : 'Create Plan Tier') }}
                         </button>

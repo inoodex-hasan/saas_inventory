@@ -203,13 +203,13 @@ function submit() {
                     </h1>
                 </div>
 
-                <div class="flex items-center gap-3">
+                <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
                     <a 
                         href="/?preview=1" 
                         target="_blank" 
-                        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition shadow-sm"
+                        class="flex-1 sm:flex-none justify-center inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition shadow-sm text-center"
                     >
-                        <span>Preview Landing Page</span>
+                        <span>Preview Landing</span>
                         <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                         </svg>
@@ -218,7 +218,7 @@ function submit() {
                         type="button"
                         @click="submit"
                         :disabled="form.processing"
-                        class="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 transition shadow-sm"
+                        class="flex-1 sm:flex-none justify-center inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 transition shadow-sm text-center cursor-pointer"
                     >
                         <LoadingSpinner v-if="form.processing" size="sm" color="text-white" />
                         <span>{{ form.processing ? 'Saving Changes...' : 'Save Settings' }}</span>
@@ -227,11 +227,11 @@ function submit() {
             </div>
 
             <!-- Tab Navigation Bar -->
-            <div class="bg-white p-1.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <div class="bg-white p-1.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth">
                 <button
                     type="button"
                     @click="setTab('branding')"
-                    class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer"
+                    class="flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer shrink-0"
                     :class="activeTab === 'branding' 
                         ? 'bg-indigo-600 text-white shadow-xs shadow-indigo-600/30' 
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
@@ -245,7 +245,7 @@ function submit() {
                 <button
                     type="button"
                     @click="setTab('slider')"
-                    class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer"
+                    class="flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer shrink-0"
                     :class="activeTab === 'slider' 
                         ? 'bg-indigo-600 text-white shadow-xs shadow-indigo-600/30' 
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
@@ -264,7 +264,7 @@ function submit() {
                 <button
                     type="button"
                     @click="setTab('content')"
-                    class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer"
+                    class="flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer shrink-0"
                     :class="activeTab === 'content' 
                         ? 'bg-indigo-600 text-white shadow-xs shadow-indigo-600/30' 
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
@@ -283,7 +283,7 @@ function submit() {
                 <button
                     type="button"
                     @click="setTab('legal')"
-                    class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer"
+                    class="flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer shrink-0"
                     :class="activeTab === 'legal' 
                         ? 'bg-indigo-600 text-white shadow-xs shadow-indigo-600/30' 
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
@@ -316,7 +316,7 @@ function submit() {
                                 Site Logo
                             </label>
                             
-                            <div class="flex items-start gap-4">
+                            <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">
                                 <div class="w-20 h-20 rounded-2xl border border-slate-200 bg-slate-900 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
                                     <img 
                                         v-if="logoPreview" 
@@ -332,7 +332,7 @@ function submit() {
                                     </div>
                                 </div>
 
-                                <div class="flex-1 space-y-2">
+                                <div class="flex-1 space-y-2 w-full text-center sm:text-left">
                                     <input 
                                         type="file" 
                                         accept="image/jpeg,image/png,image/webp,image/gif"
@@ -367,7 +367,7 @@ function submit() {
                                 Browser Tab Favicon
                             </label>
                             
-                            <div class="flex items-start gap-4">
+                            <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">
                                 <div class="w-16 h-16 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
                                     <img 
                                         v-if="faviconPreview" 
@@ -383,7 +383,7 @@ function submit() {
                                     </div>
                                 </div>
 
-                                <div class="flex-1 space-y-2">
+                                <div class="flex-1 space-y-2 w-full text-center sm:text-left">
                                     <input 
                                         type="file" 
                                         accept=".ico,image/png"
@@ -733,12 +733,12 @@ function submit() {
                 </div>
 
                 <!-- Bottom Save Bar for Tab 1 -->
-                <div class="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
-                    <span class="text-xs text-slate-500 font-medium">Visual branding, contact information, and footer copyright statement.</span>
+                <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+                    <span class="text-xs text-slate-500 font-medium text-center sm:text-left">Visual branding, contact information, and footer copyright statement.</span>
                     <button
                         type="submit"
                         :disabled="form.processing"
-                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 transition shadow-xs"
+                        class="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 transition shadow-xs text-center cursor-pointer shrink-0"
                     >
                         <LoadingSpinner v-if="form.processing" size="sm" color="text-white" />
                         <span>{{ form.processing ? 'Saving...' : 'Save Branding & Footer' }}</span>
@@ -956,12 +956,12 @@ function submit() {
                 </div>
 
                 <!-- Bottom Save Bar for Tab 2 -->
-                <div class="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
-                    <span class="text-xs text-slate-500 font-medium">Hero carousel slides, CTAs, trust badges, and software mockups.</span>
+                <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+                    <span class="text-xs text-slate-500 font-medium text-center sm:text-left">Hero carousel slides, CTAs, trust badges, and software mockups.</span>
                     <button
                         type="submit"
                         :disabled="form.processing"
-                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 transition shadow-xs"
+                        class="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 transition shadow-xs text-center cursor-pointer shrink-0"
                     >
                         <LoadingSpinner v-if="form.processing" size="sm" color="text-white" />
                         <span>{{ form.processing ? 'Saving...' : 'Save Hero Slides' }}</span>
@@ -973,7 +973,7 @@ function submit() {
             <div v-show="activeTab === 'content'" class="space-y-6">
                 <!-- Section 5: Customer Reviews & Carousel Testimonials -->
                 <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                    <div class="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <div class="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div>
                             <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
                                 <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
@@ -984,7 +984,7 @@ function submit() {
                         <button 
                             type="button" 
                             @click="addTestimonial"
-                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition border border-indigo-200"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition border border-indigo-200 self-start sm:self-auto cursor-pointer"
                         >
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
@@ -1092,7 +1092,7 @@ function submit() {
 
                 <!-- Section 6: Frequently Asked Questions (FAQ) -->
                 <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                    <div class="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <div class="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div>
                             <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
                                 <span class="w-2.5 h-2.5 rounded-full bg-violet-600"></span>
@@ -1103,7 +1103,7 @@ function submit() {
                         <button 
                             type="button" 
                             @click="addFaq"
-                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-violet-600 bg-violet-50 hover:bg-violet-100 transition border border-violet-200"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-violet-600 bg-violet-50 hover:bg-violet-100 transition border border-violet-200 self-start sm:self-auto cursor-pointer"
                         >
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
@@ -1166,12 +1166,12 @@ function submit() {
                 </div>
 
                 <!-- Bottom Save Bar for Tab 3 -->
-                <div class="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
-                    <span class="text-xs text-slate-500 font-medium">Customer reviews carousel and frequently asked questions accordion.</span>
+                <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+                    <span class="text-xs text-slate-500 font-medium text-center sm:text-left">Customer reviews carousel and frequently asked questions accordion.</span>
                     <button
                         type="submit"
                         :disabled="form.processing"
-                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 transition shadow-xs"
+                        class="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 transition shadow-xs text-center cursor-pointer shrink-0"
                     >
                         <LoadingSpinner v-if="form.processing" size="sm" color="text-white" />
                         <span>{{ form.processing ? 'Saving...' : 'Save FAQs & Reviews' }}</span>
@@ -1191,11 +1191,11 @@ function submit() {
                             </h2>
                             <p class="text-xs text-slate-500 mt-0.5">Customize the public Terms and Conditions and Privacy Policy pages. Supports Markdown.</p>
                         </div>
-                        <div class="flex items-center gap-2 shrink-0">
+                        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
                             <a 
                                 href="/terms-and-conditions" 
                                 target="_blank" 
-                                class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition shadow-sm"
+                                class="flex-1 sm:flex-none justify-center inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition shadow-sm text-center"
                             >
                                 <span>Terms Page</span>
                                 <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1205,7 +1205,7 @@ function submit() {
                             <a 
                                 href="/privacy-policy" 
                                 target="_blank" 
-                                class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition shadow-sm"
+                                class="flex-1 sm:flex-none justify-center inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition shadow-sm text-center"
                             >
                                 <span>Privacy Page</span>
                                 <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1261,12 +1261,12 @@ function submit() {
                 </div>
 
                 <!-- Bottom Save Bar for Tab 4 -->
-                <div class="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
-                    <span class="text-xs text-slate-500 font-medium">Public legal policy documents formatted with Rich Text Editor.</span>
+                <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+                    <span class="text-xs text-slate-500 font-medium text-center sm:text-left">Public legal policy documents formatted with Rich Text Editor.</span>
                     <button
                         type="submit"
                         :disabled="form.processing"
-                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 transition shadow-xs"
+                        class="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 transition shadow-xs text-center cursor-pointer shrink-0"
                     >
                         <LoadingSpinner v-if="form.processing" size="sm" color="text-white" />
                         <span>{{ form.processing ? 'Saving...' : 'Save Legal Documents' }}</span>

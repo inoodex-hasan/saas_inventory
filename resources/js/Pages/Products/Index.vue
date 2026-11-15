@@ -298,33 +298,33 @@ function submitImport() {
             </div>
         </template>
 
-        <div class="space-y-6">
+        <div class="space-y-4 sm:space-y-6">
             <!-- Metrics Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Products</span>
-                    <div class="text-2xl font-black text-slate-900 mt-2">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Total Products</span>
+                    <div class="text-lg sm:text-2xl font-black text-slate-900 mt-1 sm:mt-2">
                         {{ metrics?.total_products || 0 }}
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Stock On-Hand</span>
-                    <div class="text-2xl font-black text-indigo-600 mt-2">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Total Stock</span>
+                    <div class="text-lg sm:text-2xl font-black text-indigo-600 mt-1 sm:mt-2">
                         {{ Number(metrics?.total_units || 0).toLocaleString() }}
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Low & Out of Stock Alerts</span>
-                    <div class="text-2xl font-black text-amber-600 mt-2">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Low Stock</span>
+                    <div class="text-lg sm:text-2xl font-black text-amber-600 mt-1 sm:mt-2">
                         {{ metrics?.low_stock_count || 0 }}
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Catalog Valuation</span>
-                    <div class="text-2xl font-black text-emerald-600 mt-2">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Catalog Valuation</span>
+                    <div class="text-lg sm:text-2xl font-black text-emerald-600 mt-1 sm:mt-2 truncate">
                         <CurrencyDisplay :amount="metrics?.total_valuation || 0" />
                     </div>
                 </div>
@@ -466,8 +466,8 @@ function submitImport() {
 
             <!-- Products Table -->
             <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs min-w-[750px]">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-bold">
                                 <th class="py-3 px-4 whitespace-nowrap">Product & SKU</th>

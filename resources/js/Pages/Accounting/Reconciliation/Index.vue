@@ -84,29 +84,29 @@ const filteredHistory = computed(() => {
 
         <div class="space-y-6">
             <!-- KPI Summary Metric Cards -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-                    <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Audits</div>
-                    <div class="text-xl font-extrabold text-slate-800 mt-1">{{ totalAudits }}</div>
-                    <div class="text-[10px] text-slate-400 mt-0.5">Historical verification records</div>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+                <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+                    <div class="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Audits</div>
+                    <div class="text-lg sm:text-xl font-extrabold text-slate-800 mt-1">{{ totalAudits }}</div>
+                    <div class="text-[10px] text-slate-400 mt-0.5 truncate">Verification records</div>
                 </div>
 
-                <div class="bg-white p-4 rounded-2xl border border-emerald-100 shadow-xs">
-                    <div class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Clean / Reconciled</div>
-                    <div class="text-xl font-extrabold text-emerald-700 mt-1">{{ reconciledCount }}</div>
-                    <div class="text-[10px] text-emerald-600/70 mt-0.5">Zero variance balance matches</div>
+                <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-emerald-100 shadow-xs">
+                    <div class="text-[10px] sm:text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Clean / Reconciled</div>
+                    <div class="text-lg sm:text-xl font-extrabold text-emerald-700 mt-1">{{ reconciledCount }}</div>
+                    <div class="text-[10px] text-emerald-600/70 mt-0.5 truncate">Zero variance matches</div>
                 </div>
 
-                <div class="bg-white p-4 rounded-2xl border border-rose-100 shadow-xs">
-                    <div class="text-[11px] font-bold text-rose-600 uppercase tracking-wider">Discrepancies</div>
-                    <div class="text-xl font-extrabold text-rose-700 mt-1">{{ discrepancyCount }}</div>
-                    <div class="text-[10px] text-rose-600/70 mt-0.5">Detected ledger variance flags</div>
+                <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-rose-100 shadow-xs">
+                    <div class="text-[10px] sm:text-[11px] font-bold text-rose-600 uppercase tracking-wider">Discrepancies</div>
+                    <div class="text-lg sm:text-xl font-extrabold text-rose-700 mt-1">{{ discrepancyCount }}</div>
+                    <div class="text-[10px] text-rose-600/70 mt-0.5 truncate">Variance flags</div>
                 </div>
 
-                <div class="bg-white p-4 rounded-2xl border border-indigo-100 shadow-xs">
-                    <div class="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">Bank & Cash Accounts</div>
-                    <div class="text-xl font-extrabold text-indigo-700 mt-1">{{ bankAccounts?.length || 0 }} Hubs</div>
-                    <div class="text-[10px] text-indigo-600/70 mt-0.5">Monitored ledger accounts</div>
+                <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-indigo-100 shadow-xs">
+                    <div class="text-[10px] sm:text-[11px] font-bold text-indigo-600 uppercase tracking-wider">Bank Accounts</div>
+                    <div class="text-lg sm:text-xl font-extrabold text-indigo-700 mt-1">{{ bankAccounts?.length || 0 }} Hubs</div>
+                    <div class="text-[10px] text-indigo-600/70 mt-0.5 truncate">Monitored accounts</div>
                 </div>
             </div>
 
@@ -168,8 +168,8 @@ const filteredHistory = computed(() => {
                     </span>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-xs">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs min-w-[750px]">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200/80 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                                 <th class="py-3 px-4 whitespace-nowrap">Statement Date</th>

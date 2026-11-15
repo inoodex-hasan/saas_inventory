@@ -139,75 +139,75 @@ async function inspectStock(wh) {
         <Head title="Branches & Outlets" />
 
         <template #header>
-            <div class="flex items-center justify-between w-full">
-                <div>
-                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Branches & Fulfillment Locations</h1>
+            <div class="flex items-center justify-between gap-2 w-full">
+                <div class="min-w-0">
+                    <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">Branches & Fulfillment Locations</h1>
                 </div>
             </div>
         </template>
 
-        <div class="space-y-6">
-            <!-- Metrics Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Locations</span>
-                    <div class="text-2xl font-black text-slate-900 mt-2">
+        <div class="space-y-4 sm:space-y-6">
+            <!-- Metrics Cards (2x2 Grid on Mobile, 4-col on Desktop) -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Total Locations</span>
+                    <div class="text-base sm:text-2xl font-black text-slate-900 mt-1 sm:mt-2">
                         {{ metrics?.total_warehouses || 0 }}
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-500">Retail Outlets (POS)</span>
-                    <div class="text-2xl font-black text-indigo-600 mt-2">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-indigo-500">Retail Outlets</span>
+                    <div class="text-base sm:text-2xl font-black text-indigo-600 mt-1 sm:mt-2">
                         {{ metrics?.total_outlets || 0 }}
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-amber-500">Central Godowns</span>
-                    <div class="text-2xl font-black text-amber-600 mt-2">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-amber-500">Godowns</span>
+                    <div class="text-base sm:text-2xl font-black text-amber-600 mt-1 sm:mt-2">
                         {{ metrics?.total_godowns || 0 }}
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Inventory Holding Value</span>
-                    <div class="text-2xl font-black text-slate-900 mt-2">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Holding Value</span>
+                    <div class="text-base sm:text-2xl font-black text-slate-900 mt-1 sm:mt-2">
                         <CurrencyDisplay :amount="metrics?.total_valuation || 0" />
                     </div>
                 </div>
             </div>
 
             <!-- Header Action & Search Bar -->
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 p-3 sm:p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
                 <div class="relative w-full sm:w-80">
                     <input 
                         type="text" 
                         v-model="search" 
                         @keyup.enter="handleSearch"
                         placeholder="Search branches or godowns..."
-                        class="w-full pl-9 pr-4 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all placeholder:text-slate-400"
+                        class="w-full pl-9 pr-4 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 transition-all placeholder:text-slate-400"
                     />
                     <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                 </div>
 
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 shrink-0">
                     <button 
                         @click="handleSearch" 
-                        class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all"
+                        class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all"
                     >
                         Search
                     </button>
                     <button 
                         @click="openCreateModal" 
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm shadow-indigo-600/30 transition-all"
+                        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-all active:scale-95"
                     >
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
-                        <span>Add Branch / Godown</span>
+                        <span>Add Location</span>
                     </button>
                 </div>
             </div>

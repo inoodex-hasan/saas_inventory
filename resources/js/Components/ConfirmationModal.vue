@@ -108,29 +108,29 @@ const themeConfig = computed(() => {
 
 <template>
     <Modal :show="show" :max-width="maxWidth" :closeable="!processing" @close="handleClose">
-        <div class="p-6">
+        <div class="p-4 sm:p-6">
             <!-- Icon + Content Header -->
-            <div class="flex items-start gap-4">
+            <div class="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                 <div 
-                    class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 border shadow-sm transition-transform"
+                    class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 border shadow-sm transition-transform"
                     :class="themeConfig.iconBg"
                 >
                     <!-- Danger / Trash Icon -->
-                    <svg v-if="variant === 'danger'" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg v-if="variant === 'danger'" class="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                     <!-- Warning / Exclamation Icon -->
-                    <svg v-else-if="variant === 'warning'" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg v-else-if="variant === 'warning'" class="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                     <!-- Info Icon -->
-                    <svg v-else class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg v-else class="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
 
-                <div class="flex-1 min-w-0">
-                    <h3 class="text-lg font-black text-slate-900 tracking-tight leading-snug">
+                <div class="flex-1 min-w-0 w-full">
+                    <h3 class="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug">
                         {{ title }}
                     </h3>
 
@@ -163,10 +163,10 @@ const themeConfig = computed(() => {
             </div>
 
             <!-- Modal Action Buttons Footer -->
-            <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
+            <div class="mt-6 pt-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5">
                 <button
                     type="button"
-                    class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-sm disabled:opacity-50"
+                    class="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-sm disabled:opacity-50 text-center"
                     :disabled="processing"
                     @click="handleClose"
                 >
@@ -175,7 +175,7 @@ const themeConfig = computed(() => {
 
                 <button
                     type="button"
-                    class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-white text-xs font-bold transition shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-white text-xs font-bold transition shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-center"
                     :class="themeConfig.buttonBg"
                     :disabled="!isConfirmed || processing"
                     @click="handleConfirm"

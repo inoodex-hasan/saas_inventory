@@ -297,47 +297,48 @@ function submitReceive() {
         <Head title="Purchases & Inbound" />
 
         <template #header>
-            <div class="flex items-center justify-between w-full">
-                <div>
-                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Procurement & Purchase Orders</h1>
+            <div class="flex items-center justify-between gap-2 w-full">
+                <div class="min-w-0">
+                    <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">Procurement & Purchase Orders</h1>
                 </div>
             </div>
         </template>
 
-        <div class="space-y-6">
-            <!-- Metrics Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Purchase Orders</span>
-                    <div class="text-2xl font-black text-slate-900 mt-2">
+        <div class="space-y-4 sm:space-y-6">
+            <!-- Metrics Cards (3-col compact on mobile & desktop) -->
+            <div class="grid grid-cols-3 gap-2 sm:gap-4">
+                <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Total Orders</span>
+                    <div class="text-base sm:text-2xl font-black text-slate-900 mt-1 sm:mt-2">
                         {{ metrics?.total_inbound || 0 }}
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Inbound Orders Pending</span>
-                    <div class="text-2xl font-black text-amber-600 mt-2">
+                <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Pending</span>
+                    <div class="text-base sm:text-2xl font-black text-amber-600 mt-1 sm:mt-2">
                         {{ metrics?.pending_orders || 0 }}
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Outstanding Payables</span>
-                    <div class="text-2xl font-black text-rose-600 mt-2">
+                <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Due Payables</span>
+                    <div class="text-base sm:text-2xl font-black text-rose-600 mt-1 sm:mt-2">
                         <CurrencyDisplay :amount="metrics?.total_payables || 0" />
                     </div>
                 </div>
             </div>
 
             <!-- Filter & Action Header -->
-            <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="bg-white rounded-2xl border border-slate-200/80 p-3 sm:p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4">
                 <div class="flex flex-wrap items-center gap-2 flex-1">
-                    <div class="relative flex-1 min-w-[200px] max-w-sm">
+                    <div class="relative flex-1 min-w-[140px] max-w-sm">
                         <input 
                             type="text" 
                             v-model="search" 
                             @keyup.enter="applyFilters"
-                            class="w-full pl-9 pr-4 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                            placeholder="Search PO #, vendor..."
+                            class="w-full pl-9 pr-4 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100"
                         />
                         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -347,7 +348,7 @@ function submitReceive() {
                     <select 
                         v-model="status" 
                         @change="applyFilters"
-                        class="pl-3 pr-8 py-2 rounded-xl border border-slate-200 text-xs text-slate-700 focus:border-indigo-500 min-w-[130px]"
+                        class="pl-2.5 pr-8 py-2 rounded-xl border border-slate-200 text-xs text-slate-700 focus:border-indigo-500 min-w-[110px]"
                     >
                         <option value="">All Statuses</option>
                         <option value="draft">Draft</option>
@@ -360,7 +361,7 @@ function submitReceive() {
                     <select 
                         v-model="supplierId" 
                         @change="applyFilters"
-                        class="pl-3 pr-8 py-2 rounded-xl border border-slate-200 text-xs text-slate-700 focus:border-indigo-500 min-w-[130px]"
+                        class="pl-2.5 pr-8 py-2 rounded-xl border border-slate-200 text-xs text-slate-700 focus:border-indigo-500 min-w-[110px]"
                     >
                         <option value="">All Vendors</option>
                         <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
@@ -369,16 +370,16 @@ function submitReceive() {
                     <button 
                         v-if="search || status || supplierId" 
                         @click="resetFilters" 
-                        class="px-2.5 py-2 text-xs text-indigo-600 hover:text-indigo-800 font-semibold transition"
+                        class="px-2 py-2 text-xs text-indigo-600 hover:text-indigo-800 font-semibold transition"
                     >
                         Reset
                     </button>
                 </div>
 
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 shrink-0">
                     <Link 
                         :href="route('purchases.create')" 
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm shadow-indigo-600/30 transition-all"
+                        class="w-full sm:w-auto justify-center inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-all active:scale-95"
                     >
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -388,10 +389,10 @@ function submitReceive() {
                 </div>
             </div>
 
-            <!-- Orders Table -->
-            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
+            <!-- Orders Container -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs min-w-[750px]">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-bold">
                                 <th class="py-3 px-4 whitespace-nowrap">PO Number</th>

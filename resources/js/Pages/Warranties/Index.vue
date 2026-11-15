@@ -64,54 +64,54 @@ function submitDefective() {
         <Head title="Serial Numbers & Warranty Center" />
 
         <template #header>
-            <div class="flex items-center justify-between w-full">
-                <div>
-                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Serial Numbers & Warranty Center</h1>
+            <div class="flex items-center justify-between gap-2 w-full">
+                <div class="min-w-0">
+                    <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">Serial Numbers & Warranty Center</h1>
                 </div>
             </div>
         </template>
 
-        <div class="space-y-6">
-
-            <!-- Metrics -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Active Warranty</span>
-                    <div class="text-2xl font-black text-emerald-600 mt-2">
+        <div class="space-y-4 sm:space-y-6">
+            <!-- Metrics (2x2 Grid on Mobile, 4-col on Desktop) -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Active Warranty</span>
+                    <div class="text-base sm:text-2xl font-black text-emerald-600 mt-1 sm:mt-2">
                         {{ metrics?.active_warranties || 0 }}
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Expiring Soon (30d)</span>
-                    <div class="text-2xl font-black text-amber-600 mt-2">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Expiring (30d)</span>
+                    <div class="text-base sm:text-2xl font-black text-amber-600 mt-1 sm:mt-2">
                         {{ metrics?.expiring_soon || 0 }}
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Serials In Stock</span>
-                    <div class="text-2xl font-black text-blue-600 mt-2">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Serials In Stock</span>
+                    <div class="text-base sm:text-2xl font-black text-blue-600 mt-1 sm:mt-2">
                         {{ metrics?.in_stock_count || 0 }}
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Defective RMA Units</span>
-                    <div class="text-2xl font-black text-rose-600 mt-2">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Defective Units</span>
+                    <div class="text-base sm:text-2xl font-black text-rose-600 mt-1 sm:mt-2">
                         {{ metrics?.defective_count || 0 }}
                     </div>
                 </div>
             </div>
 
             <!-- Filters -->
-            <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-center gap-2">
+            <div class="bg-white p-3 sm:p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-stretch md:items-center gap-2">
                 <div class="relative flex-1 w-full">
                     <input
                         v-model="search"
                         @keyup.enter="applyFilter"
                         type="text"
-                        class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 placeholder:text-slate-400 placeholder:text-xs transition"
+                        placeholder="Search serial #, product, customer..."
+                        class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400 placeholder:text-xs transition"
                     />
                     <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -122,7 +122,7 @@ function submitDefective() {
                     <select
                         v-model="status"
                         @change="applyFilter"
-                        class="py-2 pl-3 pr-8 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 min-w-[140px]"
+                        class="py-2 pl-2.5 pr-8 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500 min-w-[120px]"
                     >
                         <option value="all">All Serials</option>
                         <option value="active">Active Warranty</option>
@@ -135,7 +135,7 @@ function submitDefective() {
                     <select
                         v-model="warehouseId"
                         @change="applyFilter"
-                        class="py-2 pl-3 pr-8 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 min-w-[135px] max-w-xs"
+                        class="py-2 pl-2.5 pr-8 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500 min-w-[120px] max-w-xs"
                     >
                         <option value="">All Warehouses</option>
                         <option v-for="w in warehouses" :key="w.id" :value="w.id">{{ w.name }}</option>
@@ -150,10 +150,10 @@ function submitDefective() {
                 </div>
             </div>
 
-            <!-- Table -->
-            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
+            <!-- Table Container -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-sm min-w-[700px]">
                         <thead class="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                             <tr>
                                 <th class="py-3.5 px-4 whitespace-nowrap">Serial Number</th>

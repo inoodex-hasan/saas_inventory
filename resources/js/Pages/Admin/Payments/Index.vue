@@ -135,7 +135,7 @@ function paymentStatusClass(status) {
             </div>
 
             <!-- Filters -->
-            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between">
+            <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
                 <div class="flex-1 flex flex-col sm:flex-row gap-2">
                     <div class="relative flex-1">
                         <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -152,7 +152,7 @@ function paymentStatusClass(status) {
                     <select
                         v-model="statusFilter"
                         @change="applyFilters"
-                        class="text-xs bg-slate-50/70 border border-slate-200 rounded-xl pl-3 pr-8 min-w-[150px] py-2 font-semibold"
+                        class="text-xs bg-slate-50/70 border border-slate-200 rounded-xl pl-3 pr-8 w-full sm:w-auto sm:min-w-[150px] py-2 font-semibold"
                     >
                         <option value="pending">Pending Approvals</option>
                         <option value="approved">Approved</option>
@@ -163,16 +163,16 @@ function paymentStatusClass(status) {
 
                 <button
                     @click="applyFilters"
-                    class="px-4 py-2 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-all shrink-0"
+                    class="w-full sm:w-auto px-4 py-2 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-all shrink-0 text-center cursor-pointer"
                 >
                     Filter
                 </button>
             </div>
 
-            <!-- Payments Table -->
+            <!-- Payments Table (Single View with Native Horizontal Scroll) -->
             <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-xs">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs min-w-[850px]">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                                 <th class="py-3 px-4 whitespace-nowrap">Receipt #</th>
@@ -273,10 +273,13 @@ function paymentStatusClass(status) {
 
         <!-- Reject Modal -->
         <Modal :show="isRejectModalOpen" @close="isRejectModalOpen = false" max-width="md">
-            <div class="p-6 space-y-4 text-xs">
-                <h3 class="text-base font-bold text-slate-900">
-                    Reject Payment: {{ rejectingPayment?.payment_number }}
-                </h3>
+            <div class="p-4 sm:p-6 space-y-4 text-xs max-h-[85vh] overflow-y-auto">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <h3 class="text-base font-bold text-slate-900 truncate">
+                        Reject Payment: {{ rejectingPayment?.payment_number }}
+                    </h3>
+                    <button @click="isRejectModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1 text-lg leading-none cursor-pointer">&times;</button>
+                </div>
                 <p class="text-slate-500">Provide an explanation for rejecting this payment (e.g. invalid TrxID, incorrect amount).</p>
 
                 <form @submit.prevent="submitReject" class="space-y-4">
@@ -285,24 +288,24 @@ function paymentStatusClass(status) {
                         <textarea
                             v-model="rejectForm.rejection_reason"
                             rows="3"
-class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-rose-500 placeholder:text-slate-400 placeholder:text-xs"
+                            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-rose-500 placeholder:text-slate-400 placeholder:text-xs"
                             required
                         ></textarea>
                         <p v-if="rejectForm.errors.rejection_reason" class="text-rose-500 text-[11px] mt-1">{{ rejectForm.errors.rejection_reason }}</p>
                     </div>
 
-                    <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                    <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-2 border-t border-slate-100">
                         <button
                             type="button"
                             @click="isRejectModalOpen = false"
-                            class="px-4 py-2 font-medium text-slate-600 hover:text-slate-800"
+                            class="w-full sm:w-auto px-4 py-2 font-medium text-slate-600 hover:text-slate-800 text-center rounded-xl transition cursor-pointer"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             :disabled="rejectForm.processing"
-                            class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition-all shadow-sm"
+                            class="w-full sm:w-auto px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition-all shadow-sm text-center cursor-pointer disabled:opacity-50"
                         >
                             Confirm Rejection
                         </button>

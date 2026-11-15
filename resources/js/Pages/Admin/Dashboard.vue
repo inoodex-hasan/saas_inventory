@@ -252,21 +252,20 @@ function executeDeleteTenant() {
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
                 <div>
                     <div class="flex items-center gap-2">
-                        <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">{{ t('Platform Control Panel') }}</h1>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                        <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">{{ t('Platform Control Panel') }}</h1>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
                             {{ t('Super Admin') }}
                         </span>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2">
-
-                    <div v-if="$page.props.auth?.user?.current_team_id">
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <div v-if="$page.props.auth?.user?.current_team_id" class="w-full sm:w-auto">
                         <Link
                             :href="route('admin.exit-tenant')"
                             method="post"
                             as="button"
-                            class="px-3.5 py-2 text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition shadow-xs inline-flex items-center gap-1.5 cursor-pointer"
+                            class="w-full sm:w-auto px-3.5 py-2 text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition shadow-xs inline-flex items-center justify-center gap-1.5 cursor-pointer"
                         >
                             <span>{{ t('Exit Impersonation') }}</span>
                             <span class="text-amber-600">&rarr;</span>
@@ -311,7 +310,7 @@ function executeDeleteTenant() {
             </div>
 
             <!-- Filters Bar -->
-            <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center gap-2.5">
+            <div class="bg-white p-3 sm:p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5">
                 <div class="relative flex-1 w-full">
                     <input
                         v-model="search"
@@ -325,11 +324,11 @@ function executeDeleteTenant() {
                     </svg>
                 </div>
 
-                <div class="flex items-center gap-2 w-full sm:w-auto">
+                <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full lg:w-auto">
                     <select
                         v-model="status"
                         @change="applyFilter"
-                        class="py-2 pl-3 pr-8 text-xs bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 min-w-[130px]"
+                        class="w-full sm:w-auto py-2 pl-3 pr-8 text-xs bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                     >
                         <option value="">{{ t('All Statuses') }}</option>
                         <option value="active">{{ t('Active Only') }}</option>
@@ -339,7 +338,7 @@ function executeDeleteTenant() {
                     <select
                         v-model="planFilter"
                         @change="applyFilter"
-                        class="py-2 pl-3 pr-8 text-xs bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 min-w-[130px]"
+                        class="w-full sm:w-auto py-2 pl-3 pr-8 text-xs bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                     >
                         <option value="">{{ t('All Plans') }}</option>
                         <option v-for="p in plans" :key="p.id" :value="String(p.id)">{{ p.name }}</option>
@@ -347,7 +346,7 @@ function executeDeleteTenant() {
 
                     <button
                         @click="resetFilter"
-                        class="px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer"
+                        class="w-full sm:w-auto px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer text-center"
                     >
                         {{ t('Clear') }}
                     </button>
@@ -355,9 +354,9 @@ function executeDeleteTenant() {
                     <button
                         type="button"
                         @click="openCreateModal"
-                        class="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-600/30 transition cursor-pointer"
+                        class="col-span-2 sm:col-span-1 w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-600/30 transition cursor-pointer shrink-0"
                     >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                         </svg>
                         <span>{{ t('New Tenant') }}</span>
@@ -443,11 +442,11 @@ function executeDeleteTenant() {
                             </div>
 
                             <!-- Quick Contact Actions -->
-                            <div v-if="tenantContactPhone(tenant) || tenant.owner?.email" class="flex items-center gap-1.5 pt-1">
+                            <div v-if="tenantContactPhone(tenant) || tenant.owner?.email" class="grid grid-cols-3 gap-1.5 pt-1">
                                 <a
                                     v-if="tenantContactPhone(tenant)"
                                     :href="`tel:${tenantContactPhone(tenant)}`"
-                                    class="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold transition"
+                                    class="inline-flex items-center justify-center gap-1 px-1.5 sm:px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold transition truncate text-center"
                                 >
                                     {{ t('Call') }}
                                 </a>
@@ -456,14 +455,14 @@ function executeDeleteTenant() {
                                     :href="whatsappUrl(tenantContactPhone(tenant))"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    class="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition"
+                                    class="inline-flex items-center justify-center gap-1 px-1.5 sm:px-2 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition truncate text-center"
                                 >
                                     WhatsApp
                                 </a>
                                 <a
                                     v-if="tenant.owner?.email"
                                     :href="`mailto:${tenant.owner.email}`"
-                                    class="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-[10px] font-bold transition"
+                                    class="inline-flex items-center justify-center gap-1 px-1.5 sm:px-2 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-[10px] font-bold transition truncate text-center"
                                 >
                                     {{ t('Email') }}
                                 </a>
@@ -472,38 +471,38 @@ function executeDeleteTenant() {
 
                         <!-- Live Resource Counts -->
                         <div class="grid grid-cols-4 gap-1.5 pt-2 text-center text-xs">
-                            <div class="bg-slate-50/80 p-2 rounded-xl border border-slate-100">
-                                <span class="font-bold font-mono text-slate-900 block">{{ tenant.users_count || 1 }}</span>
+                            <div class="bg-slate-50/80 p-1.5 sm:p-2 rounded-xl border border-slate-100">
+                                <span class="font-bold font-mono text-slate-900 block truncate">{{ tenant.users_count || 1 }}</span>
                                 <span class="text-[9px] text-slate-400 uppercase font-bold">{{ t('Staff') }}</span>
                             </div>
-                            <div class="bg-slate-50/80 p-2 rounded-xl border border-slate-100">
-                                <span class="font-bold font-mono text-slate-900 block">{{ tenant.warehouses_count || 0 }}</span>
+                            <div class="bg-slate-50/80 p-1.5 sm:p-2 rounded-xl border border-slate-100">
+                                <span class="font-bold font-mono text-slate-900 block truncate">{{ tenant.warehouses_count || 0 }}</span>
                                 <span class="text-[9px] text-slate-400 uppercase font-bold">{{ t('Hubs') }}</span>
                             </div>
-                            <div class="bg-slate-50/80 p-2 rounded-xl border border-slate-100">
-                                <span class="font-bold font-mono text-slate-900 block">{{ tenant.products_count || 0 }}</span>
+                            <div class="bg-slate-50/80 p-1.5 sm:p-2 rounded-xl border border-slate-100">
+                                <span class="font-bold font-mono text-slate-900 block truncate">{{ tenant.products_count || 0 }}</span>
                                 <span class="text-[9px] text-slate-400 uppercase font-bold">{{ t('SKUs') }}</span>
                             </div>
-                            <div class="bg-slate-50/80 p-2 rounded-xl border border-slate-100">
-                                <span class="font-bold font-mono text-slate-900 block">{{ tenant.sales_orders_count || 0 }}</span>
+                            <div class="bg-slate-50/80 p-1.5 sm:p-2 rounded-xl border border-slate-100">
+                                <span class="font-bold font-mono text-slate-900 block truncate">{{ tenant.sales_orders_count || 0 }}</span>
                                 <span class="text-[9px] text-slate-400 uppercase font-bold">{{ t('Orders') }}</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Actions Toolbar -->
-                    <div class="pt-3 border-t border-slate-100 flex items-center gap-2">
+                    <div class="pt-3 border-t border-slate-100 flex flex-wrap sm:flex-nowrap items-center gap-2">
                         <button
                             type="button"
                             @click="switchToTenant(tenant)"
-                            class="flex-1 py-2 px-3 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition text-center cursor-pointer"
+                            class="flex-1 min-w-[90px] py-2 px-3 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition text-center cursor-pointer"
                         >
                             {{ t('Switch Workspace') }}
                         </button>
                         <button
                             type="button"
                             @click="openManageModal(tenant, 'profile')"
-                            class="py-2 px-3 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer"
+                            class="flex-1 min-w-[80px] py-2 px-3 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition text-center cursor-pointer"
                         >
                             {{ t('Manage') }}
                         </button>
@@ -511,22 +510,22 @@ function executeDeleteTenant() {
                             type="button"
                             @click="toggleStatus(tenant)"
                             :class="tenant.status === 'suspended' ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200' : 'text-rose-700 bg-rose-50 hover:bg-rose-100 border-rose-200'"
-                            class="py-2 px-2.5 text-xs font-bold rounded-xl border transition cursor-pointer"
+                            class="w-full sm:w-auto py-2 px-2.5 text-xs font-bold rounded-xl border transition cursor-pointer text-center shrink-0"
                         >
                             {{ tenant.status === 'suspended' ? t('Reactivate') : t('Suspend') }}
                         </button>
                     </div>
                 </div>
 
-                <div v-if="!tenants.data || tenants.data.length === 0" class="col-span-full bg-white p-12 text-center rounded-3xl border border-slate-200 text-slate-400">
+                <div v-if="!tenants.data || tenants.data.length === 0" class="col-span-full bg-white p-8 sm:p-12 text-center rounded-2xl sm:rounded-3xl border border-slate-200 text-slate-400">
                     <p class="font-semibold text-xs text-slate-600">No client tenant workspaces found matching your query.</p>
                 </div>
             </div>
 
             <!-- Pagination -->
-            <div v-if="tenants.links && tenants.links.length > 3" class="bg-white p-4 rounded-2xl border border-slate-200/80 flex items-center justify-between text-xs text-slate-500">
-                <div>Showing {{ tenants.from || 0 }} to {{ tenants.to || 0 }} of {{ tenants.total }} tenants</div>
-                <div class="flex items-center gap-1">
+            <div v-if="tenants.links && tenants.links.length > 3" class="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+                <div class="text-center sm:text-left">Showing {{ tenants.from || 0 }} to {{ tenants.to || 0 }} of {{ tenants.total }} tenants</div>
+                <div class="flex flex-wrap items-center justify-center gap-1">
                     <button
                         v-for="(link, idx) in tenants.links"
                         :key="idx"
@@ -547,7 +546,7 @@ function executeDeleteTenant() {
         <!-- MODAL 1: Provision / Create New Tenant                         -->
         <!-- ------------------------------------------------------------- -->
         <Modal :show="isCreateModalOpen" @close="isCreateModalOpen = false" max-width="lg">
-            <div class="p-6 md:p-8 space-y-4">
+            <div class="p-4 sm:p-6 md:p-8 space-y-4 max-h-[85vh] overflow-y-auto">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div>
                         <div class="flex items-center gap-2">
@@ -562,13 +561,13 @@ function executeDeleteTenant() {
 
                 <form @submit.prevent="submitCreateTenant" class="space-y-4 text-xs">
                     <!-- Company Info -->
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Company / Team Name *</label>
                             <input
                                 v-model="createForm.name"
                                 type="text"
-class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+                                class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                                 required
                             />
                             <p v-if="createForm.errors.name" class="text-rose-500 text-[11px] mt-1">{{ createForm.errors.name }}</p>
@@ -579,7 +578,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                             <input
                                 v-model="createForm.legal_name"
                                 type="text"
-class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+                                class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                     </div>
@@ -588,13 +587,13 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                     <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-3">
                         <div class="font-bold text-slate-900 text-xs">Tenant Owner Account Credentials</div>
 
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="block font-medium text-slate-600 mb-1">Owner Full Name *</label>
                                 <input
                                     v-model="createForm.owner_name"
                                     type="text"
-class="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+                                    class="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                                     required
                                 />
                                 <p v-if="createForm.errors.owner_name" class="text-rose-500 text-[11px] mt-1">{{ createForm.errors.owner_name }}</p>
@@ -605,7 +604,7 @@ class="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl focu
                                 <input
                                     v-model="createForm.owner_email"
                                     type="email"
-class="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+                                    class="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                                     required
                                 />
                                 <p v-if="createForm.errors.owner_email" class="text-rose-500 text-[11px] mt-1">{{ createForm.errors.owner_email }}</p>
@@ -617,7 +616,7 @@ class="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl focu
                             <input
                                 v-model="createForm.owner_password"
                                 type="password"
-class="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
+                                class="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-xs"
                                 required
                             />
                             <p v-if="createForm.errors.owner_password" class="text-rose-500 text-[11px] mt-1">{{ createForm.errors.owner_password }}</p>
@@ -625,7 +624,7 @@ class="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl focu
                     </div>
 
                     <!-- Plan & Subscription Details -->
-                    <div class="grid grid-cols-3 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Subscription Plan *</label>
                             <select
@@ -663,20 +662,20 @@ class="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl focu
                     </div>
 
                     <!-- Currency & Location -->
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Currency Code & Symbol</label>
                             <div class="flex items-center gap-2">
                                 <input
                                     v-model="createForm.currency_code"
                                     type="text"
-class="w-1/2 text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl uppercase font-mono"
+                                    class="w-1/2 text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl uppercase font-mono"
                                     required
                                 />
                                 <input
                                     v-model="createForm.currency_symbol"
                                     type="text"
-class="w-1/2 text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl font-mono text-center"
+                                    class="w-1/2 text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl font-mono text-center"
                                     required
                                 />
                             </div>
@@ -687,23 +686,23 @@ class="w-1/2 text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl
                             <input
                                 v-model="createForm.phone"
                                 type="text"
-class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl font-mono placeholder:text-slate-400 placeholder:text-xs"
+                                class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl font-mono placeholder:text-slate-400 placeholder:text-xs"
                             />
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                    <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-3 border-t border-slate-100">
                         <button
                             type="button"
                             @click="isCreateModalOpen = false"
-                            class="px-4 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition cursor-pointer"
+                            class="w-full sm:w-auto px-4 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition cursor-pointer text-center"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             :disabled="createForm.processing"
-                            class="px-5 py-2.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm transition disabled:opacity-50 cursor-pointer"
+                            class="w-full sm:w-auto px-5 py-2.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm transition disabled:opacity-50 cursor-pointer text-center"
                         >
                             {{ createForm.processing ? 'Provisioning...' : 'Confirm & Provision Workspace' }}
                         </button>
@@ -716,7 +715,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
         <!-- MODAL 2: Deep Tenant Management & Control Drawer               -->
         <!-- ------------------------------------------------------------- -->
         <Modal :show="isManageModalOpen" @close="isManageModalOpen = false" max-width="lg">
-            <div class="p-6 md:p-8 space-y-4">
+            <div class="p-4 sm:p-6 md:p-8 space-y-4 max-h-[85vh] overflow-y-auto">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div>
                         <div class="flex items-center gap-2">
@@ -724,17 +723,17 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                                 Tenant Control
                             </span>
                         </div>
-                        <h3 class="text-base font-extrabold text-slate-900 mt-1">Manage {{ managingTenant?.name }}</h3>
+                        <h3 class="text-base font-extrabold text-slate-900 mt-1 truncate max-w-[220px] sm:max-w-none">Manage {{ managingTenant?.name }}</h3>
                     </div>
                     <button @click="isManageModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1 text-lg leading-none cursor-pointer">&times;</button>
                 </div>
 
                 <!-- Navigation Tabs -->
-                <div class="flex items-center gap-2 p-1 bg-slate-100 rounded-xl border border-slate-200">
+                <div class="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200 text-center">
                     <button
                         type="button"
                         @click="activeTab = 'profile'"
-                        class="flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer"
+                        class="py-1.5 px-1 sm:px-2 text-[10px] sm:text-xs font-bold rounded-lg transition cursor-pointer truncate"
                         :class="activeTab === 'profile' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'"
                     >
                         Company Profile
@@ -742,15 +741,15 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                     <button
                         type="button"
                         @click="activeTab = 'subscription'"
-                        class="flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer"
+                        class="py-1.5 px-1 sm:px-2 text-[10px] sm:text-xs font-bold rounded-lg transition cursor-pointer truncate"
                         :class="activeTab === 'subscription' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'"
                     >
-                        Plan & Expiry Override
+                        Plan Override
                     </button>
                     <button
                         type="button"
                         @click="activeTab = 'danger'"
-                        class="flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer"
+                        class="py-1.5 px-1 sm:px-2 text-[10px] sm:text-xs font-bold rounded-lg transition cursor-pointer truncate"
                         :class="activeTab === 'danger' ? 'bg-rose-600 text-white shadow-xs' : 'text-rose-600 hover:text-rose-800'"
                     >
                         Danger Zone
@@ -759,7 +758,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
 
                 <!-- TAB 1: Company Profile -->
                 <form v-if="activeTab === 'profile'" @submit.prevent="submitUpdateProfile" class="space-y-3.5 text-xs pt-1">
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Company Name *</label>
                             <input
@@ -780,7 +779,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Billing Email</label>
                             <input
@@ -800,7 +799,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Tax / VAT ID</label>
                             <input
@@ -838,7 +837,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                         />
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">City</label>
                             <input
@@ -857,18 +856,18 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                    <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-3 border-t border-slate-100">
                         <button
                             type="button"
                             @click="isManageModalOpen = false"
-                            class="px-4 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition cursor-pointer"
+                            class="w-full sm:w-auto px-4 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition cursor-pointer text-center"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             :disabled="profileForm.processing"
-                            class="px-5 py-2.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm transition disabled:opacity-50 cursor-pointer"
+                            class="w-full sm:w-auto px-5 py-2.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm transition disabled:opacity-50 cursor-pointer text-center"
                         >
                             {{ profileForm.processing ? 'Saving...' : 'Save Profile Changes' }}
                         </button>
@@ -879,13 +878,13 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                 <form v-if="activeTab === 'subscription'" @submit.prevent="submitUpdateSubscription" class="space-y-4 text-xs pt-1">
                     <div class="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-100 space-y-1">
                         <span class="text-[10px] font-bold text-indigo-700 uppercase">Current Validity Status</span>
-                        <div class="flex items-baseline justify-between font-mono">
+                        <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 font-mono">
                             <span class="text-sm font-bold text-slate-900">{{ managingTenant?.subscription_info?.plan_name }}</span>
                             <span class="text-xs font-bold text-indigo-600">Expires: {{ managingTenant?.subscription_info?.formatted_ends_at }}</span>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Assign Plan Tier *</label>
                             <select
@@ -913,7 +912,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Billing Cycle *</label>
                             <select
@@ -932,7 +931,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                                 v-model.number="subForm.extension_days"
                                 type="number"
                                 min="0"
-class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl font-mono focus:bg-white focus:border-indigo-500"
+                                class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl font-mono focus:bg-white focus:border-indigo-500"
                             />
                         </div>
                     </div>
@@ -946,18 +945,18 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                         />
                     </div>
 
-                    <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                    <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-3 border-t border-slate-100">
                         <button
                             type="button"
                             @click="isManageModalOpen = false"
-                            class="px-4 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition cursor-pointer"
+                            class="w-full sm:w-auto px-4 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition cursor-pointer text-center"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             :disabled="subForm.processing"
-                            class="px-5 py-2.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm transition disabled:opacity-50 cursor-pointer"
+                            class="w-full sm:w-auto px-5 py-2.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm transition disabled:opacity-50 cursor-pointer text-center"
                         >
                             {{ subForm.processing ? 'Applying...' : 'Apply Subscription Overrides' }}
                         </button>
@@ -975,7 +974,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                             type="button"
                             @click="toggleStatus(managingTenant)"
                             :class="managingTenant?.status === 'suspended' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-amber-600 hover:bg-amber-700 text-white'"
-                            class="px-3.5 py-2 text-xs font-bold rounded-xl transition cursor-pointer shadow-xs"
+                            class="w-full sm:w-auto px-3.5 py-2 text-xs font-bold rounded-xl transition cursor-pointer shadow-xs text-center"
                         >
                             {{ managingTenant?.status === 'suspended' ? 'Reactivate Tenant Access' : 'Suspend Tenant Access' }}
                         </button>
@@ -989,7 +988,7 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                         <button
                             type="button"
                             @click="confirmDeleteTenant(managingTenant)"
-                            class="px-3.5 py-2 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl transition cursor-pointer shadow-xs"
+                            class="w-full sm:w-auto px-3.5 py-2 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl transition cursor-pointer shadow-xs text-center"
                         >
                             Permanently Delete Tenant
                         </button>

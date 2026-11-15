@@ -171,51 +171,51 @@ function resetFilters() {
         <Head :title="page_title" />
 
         <template #header>
-            <div class="flex items-center justify-between w-full">
-                <div>
-                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">
+            <div class="flex items-center justify-between gap-2 w-full">
+                <div class="min-w-0">
+                    <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">
                         {{ page_title }}
                     </h1>
                 </div>
             </div>
         </template>
 
-        <div class="space-y-6">
-
-            <!-- KPI Metric Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-                    <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Recorded</div>
-                    <div class="text-2xl font-bold text-slate-900 mt-1">
+        <div class="space-y-4 sm:space-y-6">
+            <!-- KPI Metric Cards (3-col compact) -->
+            <div class="grid grid-cols-3 gap-2 sm:gap-4">
+                <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <div class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Total Recorded</div>
+                    <div class="text-base sm:text-2xl font-bold text-slate-900 mt-1">
                         <CurrencyDisplay :amount="metrics.total_expenses" />
                     </div>
-                    <div class="text-[10px] text-slate-400 mt-0.5">Across {{ metrics.count }} vouchers</div>
+                    <div class="text-[9px] sm:text-[10px] text-slate-400 mt-0.5 hidden xs:block">{{ metrics.count }} vouchers</div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-                    <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">This Month</div>
-                    <div class="text-2xl font-bold text-rose-600 mt-1">
+                <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <div class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">This Month</div>
+                    <div class="text-base sm:text-2xl font-bold text-rose-600 mt-1">
                         <CurrencyDisplay :amount="metrics.this_month" />
                     </div>
-                    <div class="text-[10px] text-slate-400 mt-0.5">Current calendar cycle</div>
+                    <div class="text-[9px] sm:text-[10px] text-slate-400 mt-0.5 hidden xs:block">Current cycle</div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-                    <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Vouchers</div>
-                    <div class="text-2xl font-bold text-indigo-600 mt-1">{{ metrics.count }}</div>
-                    <div class="text-[10px] text-slate-400 mt-0.5">Logged expense claims</div>
+                <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <div class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Vouchers</div>
+                    <div class="text-base sm:text-2xl font-bold text-indigo-600 mt-1">{{ metrics.count }}</div>
+                    <div class="text-[9px] sm:text-[10px] text-slate-400 mt-0.5 hidden xs:block">Claims logged</div>
                 </div>
             </div>
 
             <!-- Filter Toolbar -->
-            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-2 items-center justify-between">
-                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto flex-1">
-                    <div class="relative w-full md:w-64">
+            <div class="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row gap-2.5 items-stretch md:items-center justify-between">
+                <div class="flex flex-wrap items-center gap-2 flex-1">
+                    <div class="relative flex-1 min-w-[130px] max-w-sm">
                         <input
                             v-model="search"
                             @keyup.enter="applyFilters"
                             type="text"
-                            class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
+                            placeholder="Search title, payee, voucher..."
+                            class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400"
                         />
                         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -225,7 +225,7 @@ function resetFilters() {
                     <select
                         v-model="categoryId"
                         @change="applyFilters"
-                        class="text-xs rounded-xl border border-slate-200 py-2 pl-3 pr-8 min-w-[140px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                        class="text-xs rounded-xl border border-slate-200 py-2 pl-2.5 pr-8 min-w-[110px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     >
                         <option value="">All Categories</option>
                         <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
@@ -235,19 +235,19 @@ function resetFilters() {
                         v-model="startDate"
                         @change="applyFilters"
                         type="date"
-                        class="text-xs rounded-xl border border-slate-200 py-2 px-3"
+                        class="text-xs rounded-xl border border-slate-200 py-2 px-2.5"
                     />
 
                     <input
                         v-model="endDate"
                         @change="applyFilters"
                         type="date"
-                        class="text-xs rounded-xl border border-slate-200 py-2 px-3"
+                        class="text-xs rounded-xl border border-slate-200 py-2 px-2.5"
                     />
 
                     <button
                         @click="applyFilters"
-                        class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold transition"
+                        class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold transition"
                     >
                         Filter
                     </button>
@@ -255,17 +255,17 @@ function resetFilters() {
                     <button
                         v-if="search || categoryId || startDate || endDate"
                         @click="resetFilters"
-                        class="px-3 py-2 text-slate-500 hover:text-slate-800 text-xs font-semibold transition"
+                        class="px-2 py-2 text-slate-500 hover:text-slate-800 text-xs font-semibold transition"
                     >
                         Reset
                     </button>
                 </div>
 
-                <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+                <div class="flex items-center gap-2 shrink-0">
                     <button
                         type="button"
                         @click="openCategoryModal"
-                        class="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition shrink-0"
+                        class="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition"
                     >
                         <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -275,7 +275,7 @@ function resetFilters() {
 
                     <button
                         @click="openModal"
-                        class="inline-flex items-center gap-2 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-indigo-600/30 transition-all hover:scale-[1.02] shrink-0"
+                        class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95"
                     >
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -285,10 +285,10 @@ function resetFilters() {
                 </div>
             </div>
 
-            <!-- Table -->
-            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-xs">
+            <!-- Table Container -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs min-w-[700px]">
                         <thead>
                             <tr class="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-bold text-[10px]">
                                 <th class="py-3 px-4 whitespace-nowrap">Expense Voucher</th>

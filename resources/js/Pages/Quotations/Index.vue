@@ -101,53 +101,65 @@ function executeDeleteQuotation() {
         <Head title="Quotations & Estimates" />
 
         <template #header>
-            <div class="flex items-center justify-between w-full">
-                <div>
-                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Quotations & Estimates</h1>
+            <div class="flex items-center justify-between gap-2 sm:gap-4 w-full">
+                <div class="min-w-0">
+                    <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">Quotations & Estimates</h1>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <Link
+                        :href="route('quotations.create')"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs shadow-indigo-600/30 transition-all shrink-0 cursor-pointer"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span>New<span class="hidden xs:inline"> Quotation</span></span>
+                    </Link>
                 </div>
             </div>
         </template>
 
-        <div class="space-y-6">
+        <div class="space-y-4 sm:space-y-6">
 
-            <!-- Metrics -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Proposals</span>
-                    <div class="text-2xl font-black text-slate-900 mt-2">
+            <!-- Metrics (2x2 Grid on Mobile, 4-col on Desktop) -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Total Proposals</span>
+                    <div class="text-base sm:text-2xl font-black text-slate-900 mt-1 sm:mt-2">
                         {{ metrics?.total_quotations || 0 }}
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Quoted Value</span>
-                    <div class="text-2xl font-black text-slate-900 mt-2">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Total Quoted Value</span>
+                    <div class="text-base sm:text-2xl font-black text-slate-900 mt-1 sm:mt-2">
                         <CurrencyDisplay :amount="metrics?.total_quoted_value || 0" />
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Accepted / Converted</span>
-                    <div class="text-2xl font-black text-indigo-600 mt-2">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Accepted / Converted</span>
+                    <div class="text-base sm:text-2xl font-black text-indigo-600 mt-1 sm:mt-2">
                         {{ metrics?.accepted_quotations || 0 }}
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Active / Pending</span>
-                    <div class="text-2xl font-black text-amber-600 mt-2">
+                <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Active / Pending</span>
+                    <div class="text-base sm:text-2xl font-black text-amber-600 mt-1 sm:mt-2">
                         {{ metrics?.pending_proposals || 0 }}
                     </div>
                 </div>
             </div>
 
             <!-- Filters -->
-            <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-center gap-2">
+            <div class="bg-white p-3 sm:p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5">
                 <div class="relative flex-1 w-full">
                     <input
                         v-model="search"
                         @keyup.enter="applyFilter"
                         type="text"
+                        placeholder="Search quotations by #, customer..."
                         class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
                     />
                     <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -155,11 +167,11 @@ function executeDeleteQuotation() {
                     </svg>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full lg:w-auto">
                     <select
                         v-model="status"
                         @change="applyFilter"
-                        class="py-2 pl-3 pr-8 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 min-w-[130px]"
+                        class="w-full sm:w-auto py-2 pl-3 pr-8 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                     >
                         <option value="">All Statuses</option>
                         <option value="draft">Draft</option>
@@ -172,7 +184,7 @@ function executeDeleteQuotation() {
                     <select
                         v-model="customerId"
                         @change="applyFilter"
-                        class="py-2 pl-3 pr-8 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 min-w-[135px] max-w-xs"
+                        class="w-full sm:w-auto py-2 pl-3 pr-8 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                     >
                         <option value="">All Customers</option>
                         <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
@@ -180,27 +192,17 @@ function executeDeleteQuotation() {
 
                     <button
                         @click="resetFilter"
-                        class="px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
+                        class="col-span-2 sm:col-span-1 px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition text-center"
                     >
                         Clear
                     </button>
-
-                    <Link
-                        :href="route('quotations.create')"
-                        class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs shadow-indigo-600/30 transition-all whitespace-nowrap"
-                    >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                        <span>New Quotation</span>
-                    </Link>
                 </div>
             </div>
 
-            <!-- Table -->
-            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
+            <!-- Quotations Table -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-sm min-w-[700px]">
                         <thead class="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                             <tr>
                                 <th class="py-3.5 px-4 whitespace-nowrap">Quotation #</th>
@@ -308,7 +310,7 @@ function executeDeleteQuotation() {
                                 </td>
                             </tr>
 
-                            <tr v-if="!quotations.data || quotations.data.length === 0">
+                            <tr v-if="!displayedQuotations || displayedQuotations.length === 0">
                                 <td colspan="7" class="text-center py-12 text-slate-400 font-medium">
                                     No quotations found.
                                 </td>
@@ -321,9 +323,9 @@ function executeDeleteQuotation() {
 
         <!-- Convert to SO Modal -->
         <Modal :show="isConvertModalOpen" max-width="md" @close="isConvertModalOpen = false">
-            <div class="p-6">
-                <h3 class="text-lg font-bold text-slate-900 mb-1">Convert Quotation to Sales Order</h3>
-                <p class="text-sm text-slate-500 mb-4">
+            <div class="p-4 sm:p-6">
+                <h3 class="text-base sm:text-lg font-bold text-slate-900 mb-1">Convert Quotation to Sales Order</h3>
+                <p class="text-xs sm:text-sm text-slate-500 mb-4">
                     Convert <span class="font-semibold text-slate-800">{{ selectedQuotation?.quotation_number }}</span>
                     into an official confirmed Sales Order. Please select the fulfilling warehouse hub:
                 </p>
@@ -334,25 +336,25 @@ function executeDeleteQuotation() {
                         <select
                             v-model="convertForm.warehouse_id"
                             required
-                            class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
+                            class="w-full text-xs sm:text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="" disabled>-- Select Warehouse Hub --</option>
                             <option v-for="w in $page.props.team?.warehouses || []" :key="w.id" :value="w.id">{{ w.name }}</option>
                         </select>
                     </div>
 
-                    <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                    <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-4 border-t border-slate-100">
                         <button
                             type="button"
                             @click="isConvertModalOpen = false"
-                            class="px-4 py-2 text-sm text-slate-600 hover:text-slate-900"
+                            class="px-4 py-2 text-xs sm:text-sm text-slate-600 hover:text-slate-900 text-center"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             :disabled="convertForm.processing"
-                            class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition"
+                            class="px-4 py-2 text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition text-center disabled:opacity-50"
                         >
                             Confirm Conversion
                         </button>
@@ -363,13 +365,13 @@ function executeDeleteQuotation() {
 
         <!-- View Quotation Details Modal -->
         <Modal :show="isViewModalOpen" max-width="3xl" @close="isViewModalOpen = false">
-            <div v-if="viewingQuotation" class="p-6 space-y-6">
+            <div v-if="viewingQuotation" class="p-4 sm:p-6 space-y-4 sm:space-y-6 max-h-[85vh] overflow-y-auto">
                 <!-- Modal Header -->
-                <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div class="flex items-start sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
                     <div>
-                        <div class="flex items-center gap-2.5">
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Formal Quotation</span>
-                            <span class="font-mono text-base font-bold text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded-lg border border-slate-200">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Formal Quotation</span>
+                            <span class="font-mono text-sm sm:text-base font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
                                 {{ viewingQuotation.quotation_number }}
                             </span>
                             <StatusBadge :status="viewingQuotation.status" />
@@ -380,16 +382,16 @@ function executeDeleteQuotation() {
                         </p>
                     </div>
 
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1.5 shrink-0">
                         <a
                             :href="route('quotations.pdf', viewingQuotation.id)"
                             target="_blank"
-                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
+                            class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
                         >
                             <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
-                            <span>Print PDF</span>
+                            <span class="hidden sm:inline">Print</span> PDF
                         </a>
                         <button
                             type="button"
@@ -404,8 +406,8 @@ function executeDeleteQuotation() {
                 </div>
 
                 <!-- Recipient & Summary Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                    <div class="bg-slate-50 p-3.5 sm:p-4 rounded-xl border border-slate-200/80">
                         <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Customer Client</span>
                         <div class="text-sm font-bold text-slate-900">{{ viewingQuotation.customer?.name || 'Walk-in Customer' }}</div>
                         <div class="text-xs text-slate-600 mt-0.5">Phone: {{ viewingQuotation.customer?.phone || '—' }}</div>
@@ -414,10 +416,10 @@ function executeDeleteQuotation() {
                         </div>
                     </div>
 
-                    <div class="bg-indigo-50/60 p-4 rounded-xl border border-indigo-100 flex flex-col justify-between">
+                    <div class="bg-indigo-50/60 p-3.5 sm:p-4 rounded-xl border border-indigo-100 flex flex-col justify-between">
                         <div>
                             <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-500 block mb-1">Total Valuation</span>
-                            <div class="text-2xl font-black text-indigo-700">
+                            <div class="text-xl sm:text-2xl font-black text-indigo-700">
                                 <CurrencyDisplay :amount="viewingQuotation.total_amount" />
                             </div>
                         </div>
@@ -429,38 +431,40 @@ function executeDeleteQuotation() {
 
                 <!-- Line Items Table -->
                 <div class="border border-slate-200 rounded-xl overflow-hidden">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px]">
-                            <tr>
-                                <th class="py-2.5 px-4">Item & SKU</th>
-                                <th class="py-2.5 px-3 text-center">Qty</th>
-                                <th class="py-2.5 px-3 text-right">Unit Price</th>
-                                <th class="py-2.5 px-4 text-right">Line Total</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            <tr v-for="it in viewingQuotation.items" :key="it.id" class="hover:bg-slate-50/50">
-                                <td class="py-2.5 px-4">
-                                    <div class="font-bold text-slate-900">{{ it.product?.name || 'Product Item' }}</div>
-                                    <div v-if="it.product?.sku" class="text-[10px] font-mono text-slate-400">SKU: {{ it.product.sku }}</div>
-                                </td>
-                                <td class="py-2.5 px-3 text-center font-mono font-semibold text-slate-700">
-                                    {{ it.quantity }}
-                                </td>
-                                <td class="py-2.5 px-3 text-right font-mono text-slate-600">
-                                    <CurrencyDisplay :amount="it.unit_price" />
-                                </td>
-                                <td class="py-2.5 px-4 text-right font-mono font-bold text-slate-900">
-                                    <CurrencyDisplay :amount="it.subtotal || (it.quantity * it.unit_price)" />
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left text-xs min-w-[450px]">
+                            <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px]">
+                                <tr>
+                                    <th class="py-2.5 px-4">Item & SKU</th>
+                                    <th class="py-2.5 px-3 text-center">Qty</th>
+                                    <th class="py-2.5 px-3 text-right">Unit Price</th>
+                                    <th class="py-2.5 px-4 text-right">Line Total</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr v-for="it in viewingQuotation.items" :key="it.id" class="hover:bg-slate-50/50">
+                                    <td class="py-2.5 px-4">
+                                        <div class="font-bold text-slate-900">{{ it.product?.name || 'Product Item' }}</div>
+                                        <div v-if="it.product?.sku" class="text-[10px] font-mono text-slate-400">SKU: {{ it.product.sku }}</div>
+                                    </td>
+                                    <td class="py-2.5 px-3 text-center font-mono font-semibold text-slate-700">
+                                        {{ it.quantity }}
+                                    </td>
+                                    <td class="py-2.5 px-3 text-right font-mono text-slate-600">
+                                        <CurrencyDisplay :amount="it.unit_price" />
+                                    </td>
+                                    <td class="py-2.5 px-4 text-right font-mono font-bold text-slate-900">
+                                        <CurrencyDisplay :amount="it.subtotal || (it.quantity * it.unit_price)" />
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <!-- Financial Breakdown -->
                 <div class="flex justify-end">
-                    <div class="w-72 space-y-1.5 text-xs text-slate-600 border-t border-slate-100 pt-3">
+                    <div class="w-full sm:w-72 space-y-1.5 text-xs text-slate-600 border-t border-slate-100 pt-3">
                         <div class="flex justify-between">
                             <span>Subtotal:</span>
                             <span class="font-semibold text-slate-900"><CurrencyDisplay :amount="viewingQuotation.subtotal" /></span>
@@ -481,7 +485,7 @@ function executeDeleteQuotation() {
                 </div>
 
                 <!-- Notes & Terms -->
-                <div v-if="viewingQuotation.notes || viewingQuotation.terms" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs pt-2 border-t border-slate-100">
+                <div v-if="viewingQuotation.notes || viewingQuotation.terms" class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 text-xs pt-2 border-t border-slate-100">
                     <div v-if="viewingQuotation.notes" class="bg-slate-50 p-3 rounded-xl border border-slate-200">
                         <span class="font-bold text-slate-700 block mb-1">Notes / Narration:</span>
                         <p class="text-slate-600 whitespace-pre-line">{{ viewingQuotation.notes }}</p>
@@ -493,20 +497,20 @@ function executeDeleteQuotation() {
                 </div>
 
                 <!-- Modal Actions -->
-                <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+                <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-4 border-t border-slate-100">
                     <button
                         type="button"
                         @click="isViewModalOpen = false"
-                        class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
+                        class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition text-center"
                     >
                         Close
                     </button>
 
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                         <Link
                             v-if="viewingQuotation.status !== 'converted'"
                             :href="route('quotations.edit', viewingQuotation.id)"
-                            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition"
+                            class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition text-center"
                         >
                             <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -518,7 +522,7 @@ function executeDeleteQuotation() {
                             v-if="viewingQuotation.status !== 'converted'"
                             @click="isViewModalOpen = false; openConvertModal(viewingQuotation)"
                             type="button"
-                            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-600/30 transition"
+                            class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-600/30 transition text-center"
                         >
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />

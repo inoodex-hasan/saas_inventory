@@ -257,8 +257,8 @@ function executeDeleteTicket() {
 
             <!-- Tickets Table -->
             <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-xs">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs min-w-[750px]">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-100 text-slate-500 font-semibold uppercase text-[10px] tracking-wider">
                                 <th class="py-3 px-4 whitespace-nowrap">Ticket / Date</th>

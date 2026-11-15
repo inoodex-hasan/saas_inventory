@@ -153,76 +153,76 @@ function previewReportBg() {
 
         <div class="space-y-6">
             <!-- Tab Navigation -->
-            <div class="flex items-center gap-2 border-b border-slate-200">
+            <div class="flex items-center gap-1.5 sm:gap-2 border-b border-slate-200 overflow-x-auto no-scrollbar scroll-smooth pb-px">
                 <button
                     type="button"
                     @click="activeTab = 'profile'"
                     :class="[
-                        'px-4 py-2.5 text-sm font-semibold transition border-b-2 -mb-px flex items-center gap-2',
+                        'px-3.5 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold transition border-b-2 -mb-px flex items-center gap-2 shrink-0 whitespace-nowrap',
                         activeTab === 'profile'
                             ? 'border-indigo-600 text-indigo-600'
                             : 'border-transparent text-slate-500 hover:text-slate-800'
                     ]"
                 >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
-                    Organization Identity
+                    <span>Organization Identity</span>
                 </button>
                 <button
                     type="button"
                     @click="activeTab = 'address'"
                     :class="[
-                        'px-4 py-2.5 text-sm font-semibold transition border-b-2 -mb-px flex items-center gap-2',
+                        'px-3.5 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold transition border-b-2 -mb-px flex items-center gap-2 shrink-0 whitespace-nowrap',
                         activeTab === 'address'
                             ? 'border-indigo-600 text-indigo-600'
                             : 'border-transparent text-slate-500 hover:text-slate-800'
                     ]"
                 >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    Physical Address
+                    <span>Physical Address</span>
                 </button>
                 <button
                     type="button"
                     @click="activeTab = 'localization'"
                     :class="[
-                        'px-4 py-2.5 text-sm font-semibold transition border-b-2 -mb-px flex items-center gap-2',
+                        'px-3.5 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold transition border-b-2 -mb-px flex items-center gap-2 shrink-0 whitespace-nowrap',
                         activeTab === 'localization'
                             ? 'border-indigo-600 text-indigo-600'
                             : 'border-transparent text-slate-500 hover:text-slate-800'
                     ]"
                 >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Currency & Prefixes
+                    <span>Currency & Prefixes</span>
                 </button>
                 <button
                     type="button"
                     @click="activeTab = 'letterhead'"
                     :class="[
-                        'px-4 py-2.5 text-sm font-semibold transition border-b-2 -mb-px flex items-center gap-2 relative',
+                        'px-3.5 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold transition border-b-2 -mb-px flex items-center gap-2 relative shrink-0 whitespace-nowrap',
                         activeTab === 'letterhead'
                             ? 'border-indigo-600 text-indigo-600'
                             : 'border-transparent text-slate-500 hover:text-slate-800'
                     ]"
                 >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    Print Letterheads & Backgrounds
+                    <span>Print Letterheads & Backgrounds</span>
                     <span 
                         v-if="settings.invoice_bg_path || settings.report_bg_path" 
-                        class="w-2 h-2 rounded-full bg-emerald-500"
+                        class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"
                         title="Custom Letterheads Active"
                     ></span>
                 </button>
             </div>
 
-            <form @submit.prevent="submit" class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-6">
+            <form @submit.prevent="submit" class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-6">
                 <!-- Tab 1: Organization Identity -->
                 <div v-show="activeTab === 'profile'" class="space-y-4">
                     <h2 class="text-base font-bold text-slate-900 border-b border-slate-100 pb-2">Business Profile</h2>
@@ -347,13 +347,13 @@ class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
 
                     <!-- Preset Popular Currencies Picker Card -->
                     <div class="p-4 rounded-2xl bg-slate-50/90 border border-slate-200/90 space-y-3">
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div>
                                 <span class="text-xs font-bold text-slate-800 uppercase tracking-wider block">Pre-Set Popular Currencies</span>
                                 <span class="text-[11px] text-slate-500">Click any preset or pick from the dropdown to automatically apply its standard ISO code and symbol.</span>
                             </div>
                             <!-- Fast Dropdown Selector -->
-                            <div class="sm:w-72">
+                            <div class="w-full sm:w-72">
                                 <select 
                                     :value="form.currency_code" 
                                     @change="onCurrencyDropdownChange"
@@ -456,7 +456,7 @@ class="w-full text-sm font-mono px-3 py-2 bg-slate-50 border border-slate-200 ro
                 <!-- Tab 4: Pre-Printed Letterheads & Margins -->
                 <div v-show="activeTab === 'letterhead'" class="space-y-6">
                     <div>
-                        <h2 class="text-base font-bold text-slate-900 border-b border-slate-100 pb-2 flex items-center justify-between">
+                        <h2 class="text-base font-bold text-slate-900 border-b border-slate-100 pb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                             <span>Pre-Printed Letterhead Backgrounds</span>
                             <span class="text-xs font-normal text-slate-500">A4 Dimensions (210mm × 297mm)</span>
                         </h2>
@@ -477,7 +477,7 @@ class="w-full text-sm font-mono px-3 py-2 bg-slate-50 border border-slate-200 ro
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         
                         <!-- 1. Invoice & Sales Letterhead -->
-                        <div class="p-5 rounded-2xl bg-slate-50/80 border border-slate-200/90 space-y-4">
+                        <div class="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200/90 space-y-4">
                             <div class="flex items-center justify-between">
                                 <div>
                                     <h3 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
@@ -560,7 +560,7 @@ class="w-full text-sm font-mono px-3 py-2 bg-slate-50 border border-slate-200 ro
                             <div class="pt-3 border-t border-slate-200/80 space-y-3">
                                 <span class="text-xs font-bold text-slate-800 uppercase tracking-wider block">Printable Area Margins (mm)</span>
                                 
-                                <div class="grid grid-cols-2 gap-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
                                         <label class="block text-[11px] font-semibold text-slate-600 mb-1 flex items-center justify-between">
                                             <span>Top Margin (Header Offset)</span>
@@ -612,7 +612,7 @@ class="w-full text-sm font-mono px-3 py-2 bg-slate-50 border border-slate-200 ro
                         </div>
 
                         <!-- 2. Financial Report Letterhead -->
-                        <div class="p-5 rounded-2xl bg-slate-50/80 border border-slate-200/90 space-y-4">
+                        <div class="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200/90 space-y-4">
                             <div class="flex items-center justify-between">
                                 <div>
                                     <h3 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
@@ -695,7 +695,7 @@ class="w-full text-sm font-mono px-3 py-2 bg-slate-50 border border-slate-200 ro
                             <div class="pt-3 border-t border-slate-200/80 space-y-3">
                                 <span class="text-xs font-bold text-slate-800 uppercase tracking-wider block">Printable Area Margins (mm)</span>
                                 
-                                <div class="grid grid-cols-2 gap-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
                                         <label class="block text-[11px] font-semibold text-slate-600 mb-1 flex items-center justify-between">
                                             <span>Top Margin (Header Offset)</span>
@@ -750,14 +750,14 @@ class="w-full text-sm font-mono px-3 py-2 bg-slate-50 border border-slate-200 ro
                 </div>
 
                 <!-- Submit Action Footer -->
-                <div class="flex items-center justify-between pt-4 border-t border-slate-100">
-                    <p class="text-xs text-slate-400">
+                <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-slate-100">
+                    <p class="text-xs text-slate-400 text-center sm:text-left">
                         Changes are saved to your current tenant workspace instantly.
                     </p>
                     <button
                         type="submit"
                         :disabled="form.processing"
-                        class="px-6 py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
+                        class="w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 text-center cursor-pointer"
                     >
                         Save Settings
                     </button>

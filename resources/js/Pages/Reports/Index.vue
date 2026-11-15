@@ -203,99 +203,101 @@ function exportSingle(scope, format) {
 
         <div class="space-y-6">
             <!-- Tab Selector Bar -->
-            <div class="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
-                <div class="inline-flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
-                    <button
-                        type="button"
-                        @click="setTab('financial_summary')"
-                        :class="currentTab === 'financial_summary' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
-                        class="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer"
-                    >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                        <span>{{ t('Financial Summary') }}</span>
-                    </button>
+            <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white border border-slate-200/80 rounded-2xl p-3 sm:p-4 shadow-xs">
+                <div class="overflow-x-auto custom-scrollbar p-0.5 -mx-1 sm:mx-0">
+                    <div class="inline-flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 gap-1 min-w-max">
+                        <button
+                            type="button"
+                            @click="setTab('financial_summary')"
+                            :class="currentTab === 'financial_summary' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                            class="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer whitespace-nowrap"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            <span>{{ t('Financial Summary') }}</span>
+                        </button>
 
-                    <button
-                        type="button"
-                        @click="setTab('valuation')"
-                        :class="currentTab === 'valuation' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
-                        class="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition"
-                    >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <span>Stock Valuation</span>
-                    </button>
+                        <button
+                            type="button"
+                            @click="setTab('valuation')"
+                            :class="currentTab === 'valuation' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                            class="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span>Stock Valuation</span>
+                        </button>
 
-                    <button
-                        type="button"
-                        @click="setTab('low_stock')"
-                        :class="currentTab === 'low_stock' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
-                        class="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition"
-                    >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                        </svg>
-                        <span>Low Stock Radar</span>
-                    </button>
+                        <button
+                            type="button"
+                            @click="setTab('low_stock')"
+                            :class="currentTab === 'low_stock' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                            class="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            <span>Low Stock Radar</span>
+                        </button>
 
-                    <button
-                        type="button"
-                        @click="setTab('movements')"
-                        :class="currentTab === 'movements' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
-                        class="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition"
-                    >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-                        </svg>
-                        <span>Stock Movements</span>
-                    </button>
+                        <button
+                            type="button"
+                            @click="setTab('movements')"
+                            :class="currentTab === 'movements' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                            class="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                            </svg>
+                            <span>Stock Movements</span>
+                        </button>
 
-                    <button
-                        type="button"
-                        @click="setTab('expiry')"
-                        :class="currentTab === 'expiry' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
-                        class="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition"
-                    >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span>{{ t('Batch Expiry') }}</span>
-                    </button>
+                        <button
+                            type="button"
+                            @click="setTab('expiry')"
+                            :class="currentTab === 'expiry' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                            class="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>{{ t('Batch Expiry') }}</span>
+                        </button>
 
-                    <button
-                        type="button"
-                        @click="setTab('aging')"
-                        :class="currentTab === 'aging' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
-                        class="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition"
-                    >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                        </svg>
-                        <span>{{ t('Stock Aging') }}</span>
-                    </button>
+                        <button
+                            type="button"
+                            @click="setTab('aging')"
+                            :class="currentTab === 'aging' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                            class="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            </svg>
+                            <span>{{ t('Stock Aging') }}</span>
+                        </button>
 
-                    <button
-                        type="button"
-                        @click="setTab('profitability')"
-                        :class="currentTab === 'profitability' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
-                        class="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition"
-                    >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                        <span>{{ t('Sales & Profit Margin') }}</span>
-                    </button>
+                        <button
+                            type="button"
+                            @click="setTab('profitability')"
+                            :class="currentTab === 'profitability' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                            class="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            <span>{{ t('Sales & Profit Margin') }}</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Export Actions: Excel & PDF -->
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
                     <button
                         type="button"
                         @click="downloadExcel"
-                        class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-600/30 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                        class="flex-1 sm:flex-none justify-center inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-600/30 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                         :title="t('Download Excel')"
                     >
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -307,7 +309,7 @@ function exportSingle(scope, format) {
                     <button
                         type="button"
                         @click="downloadPdf"
-                        class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm shadow-indigo-600/30 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                        class="flex-1 sm:flex-none justify-center inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm shadow-indigo-600/30 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                         :title="t('Download PDF')"
                     >
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -319,9 +321,9 @@ function exportSingle(scope, format) {
             </div>
 
             <!-- Date Range Filter Toolbar (Visible when Financial Summary, Movements or Profitability tab active) -->
-            <div v-if="currentTab === 'financial_summary' || currentTab === 'movements' || currentTab === 'profitability'" class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div v-if="currentTab === 'financial_summary' || currentTab === 'movements' || currentTab === 'profitability'" class="bg-white border border-slate-200/80 rounded-2xl p-3 sm:p-4 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
                 <div class="flex flex-wrap items-center gap-1.5">
-                    <span class="text-xs font-bold text-slate-500 mr-2 flex items-center gap-1.5">
+                    <span class="text-xs font-bold text-slate-500 mr-1 sm:mr-2 flex items-center gap-1.5">
                         <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
@@ -339,27 +341,27 @@ function exportSingle(scope, format) {
                     </button>
                 </div>
 
-                <div v-if="datePreset === 'custom'" class="flex flex-wrap items-center gap-2">
-                    <div class="flex items-center gap-1.5">
-                        <span class="text-[11px] text-slate-400 font-medium">{{ t('From Date') }}:</span>
+                <div v-if="datePreset === 'custom'" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+                    <div class="flex items-center gap-1.5 flex-1">
+                        <span class="text-[11px] text-slate-400 font-medium shrink-0">{{ t('From Date') }}:</span>
                         <input
                             type="date"
                             v-model="startDate"
-                            class="bg-white border border-slate-300 rounded-xl px-2.5 py-1 text-xs text-slate-800 focus:ring-indigo-500 focus:border-indigo-500"
+                            class="w-full bg-white border border-slate-300 rounded-xl px-2.5 py-1 text-xs text-slate-800 focus:ring-indigo-500 focus:border-indigo-500"
                         />
                     </div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="text-[11px] text-slate-400 font-medium">{{ t('To Date') }}:</span>
+                    <div class="flex items-center gap-1.5 flex-1">
+                        <span class="text-[11px] text-slate-400 font-medium shrink-0">{{ t('To Date') }}:</span>
                         <input
                             type="date"
                             v-model="endDate"
-                            class="bg-white border border-slate-300 rounded-xl px-2.5 py-1 text-xs text-slate-800 focus:ring-indigo-500 focus:border-indigo-500"
+                            class="w-full bg-white border border-slate-300 rounded-xl px-2.5 py-1 text-xs text-slate-800 focus:ring-indigo-500 focus:border-indigo-500"
                         />
                     </div>
                     <button
                         type="button"
                         @click="applyFilter"
-                        class="px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                        class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-xs cursor-pointer text-center"
                     >
                         {{ t('Apply') }}
                     </button>
@@ -451,91 +453,91 @@ function exportSingle(scope, format) {
                 </div>
 
                 <!-- 4 Top Executive KPI Cards -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                     <!-- 1. Total Sales Volume -->
-                    <div class="bg-white rounded-2xl p-5 border border-emerald-100 shadow-xs relative overflow-hidden transition hover:shadow-md">
+                    <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-emerald-100 shadow-xs relative overflow-hidden transition hover:shadow-md flex flex-col justify-between">
                         <div class="absolute -right-3 -top-3 w-16 h-16 bg-emerald-50 rounded-full opacity-60"></div>
                         <div class="relative z-10 flex items-start justify-between">
                             <div class="space-y-1">
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">{{ t('Total Sales') }}</span>
-                                <div class="text-2xl font-black text-emerald-950">
+                                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-emerald-700 truncate block">{{ t('Total Sales') }}</span>
+                                <div class="text-base sm:text-2xl font-black text-emerald-950">
                                     <CurrencyDisplay :amount="financialSummary?.summary?.total_sales || 0" />
                                 </div>
-                                <div class="text-[11px] text-slate-500 font-medium">
+                                <div class="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate">
                                     {{ Number(financialSummary?.summary?.sales_count || 0).toLocaleString() }} {{ t('Orders') }}
                                     <span v-if="(financialSummary?.summary?.sales_count || 0) > 0" class="text-slate-400">
                                         (Avg: <CurrencyDisplay :amount="financialSummary?.summary?.avg_order_value || 0" />)
                                     </span>
                                 </div>
                             </div>
-                            <div class="p-2.5 rounded-xl bg-emerald-100 text-emerald-700 shrink-0">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div class="p-2 sm:p-2.5 rounded-xl bg-emerald-100 text-emerald-700 shrink-0">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
                         </div>
-                        <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                        <div class="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between text-[10px] sm:text-[11px] gap-1">
                             <span class="text-slate-500">Collected: <strong class="text-emerald-700 font-mono"><CurrencyDisplay :amount="financialSummary?.summary?.sales_paid || 0" /></strong></span>
                             <span class="text-slate-500">Due: <strong class="text-rose-600 font-mono"><CurrencyDisplay :amount="financialSummary?.summary?.sales_due || 0" /></strong></span>
                         </div>
                     </div>
 
                     <!-- 2. Total Purchases Volume -->
-                    <div class="bg-white rounded-2xl p-5 border border-amber-100 shadow-xs relative overflow-hidden transition hover:shadow-md">
+                    <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-amber-100 shadow-xs relative overflow-hidden transition hover:shadow-md flex flex-col justify-between">
                         <div class="absolute -right-3 -top-3 w-16 h-16 bg-amber-50 rounded-full opacity-60"></div>
                         <div class="relative z-10 flex items-start justify-between">
                             <div class="space-y-1">
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-amber-700">{{ t('Total Purchases') }}</span>
-                                <div class="text-2xl font-black text-amber-950">
+                                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-amber-700 truncate block">{{ t('Total Purchases') }}</span>
+                                <div class="text-base sm:text-2xl font-black text-amber-950">
                                     <CurrencyDisplay :amount="financialSummary?.summary?.total_purchases || 0" />
                                 </div>
-                                <div class="text-[11px] text-slate-500 font-medium">
+                                <div class="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate">
                                     {{ Number(financialSummary?.summary?.purchases_count || 0).toLocaleString() }} POs
                                     <span v-if="(financialSummary?.summary?.purchases_count || 0) > 0" class="text-slate-400">
                                         (Avg: <CurrencyDisplay :amount="financialSummary?.summary?.avg_purchase_value || 0" />)
                                     </span>
                                 </div>
                             </div>
-                            <div class="p-2.5 rounded-xl bg-amber-100 text-amber-700 shrink-0">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div class="p-2 sm:p-2.5 rounded-xl bg-amber-100 text-amber-700 shrink-0">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                                 </svg>
                             </div>
                         </div>
-                        <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                        <div class="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between text-[10px] sm:text-[11px] gap-1">
                             <span class="text-slate-500">Paid: <strong class="text-slate-800 font-mono"><CurrencyDisplay :amount="financialSummary?.summary?.purchases_paid || 0" /></strong></span>
                             <span class="text-slate-500">Payable: <strong class="text-amber-700 font-mono"><CurrencyDisplay :amount="financialSummary?.summary?.purchases_due || 0" /></strong></span>
                         </div>
                     </div>
 
                     <!-- 3. Operating Expenses -->
-                    <div class="bg-white rounded-2xl p-5 border border-rose-100 shadow-xs relative overflow-hidden transition hover:shadow-md">
+                    <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-rose-100 shadow-xs relative overflow-hidden transition hover:shadow-md flex flex-col justify-between">
                         <div class="absolute -right-3 -top-3 w-16 h-16 bg-rose-50 rounded-full opacity-60"></div>
                         <div class="relative z-10 flex items-start justify-between">
                             <div class="space-y-1">
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-rose-700">{{ t('Total Expenses') }}</span>
-                                <div class="text-2xl font-black text-rose-950">
+                                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-rose-700 truncate block">{{ t('Total Expenses') }}</span>
+                                <div class="text-base sm:text-2xl font-black text-rose-950">
                                     <CurrencyDisplay :amount="financialSummary?.summary?.total_expenses || 0" />
                                 </div>
-                                <div class="text-[11px] text-slate-500 font-medium">
-                                    {{ Number(financialSummary?.summary?.expenses_count || 0).toLocaleString() }} vouchers recorded
+                                <div class="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate">
+                                    {{ Number(financialSummary?.summary?.expenses_count || 0).toLocaleString() }} vouchers
                                 </div>
                             </div>
-                            <div class="p-2.5 rounded-xl bg-rose-100 text-rose-700 shrink-0">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div class="p-2 sm:p-2.5 rounded-xl bg-rose-100 text-rose-700 shrink-0">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                                 </svg>
                             </div>
                         </div>
-                        <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                        <div class="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between text-[10px] sm:text-[11px] gap-1">
                             <span class="text-slate-500">Categories: <strong class="text-slate-800">{{ financialSummary?.by_category?.length || 0 }}</strong></span>
-                            <span class="text-slate-500">Overhead share: <strong class="text-rose-600">{{ (financialSummary?.summary?.total_sales || 0) > 0 ? Math.round(((financialSummary?.summary?.total_expenses || 0) / financialSummary?.summary?.total_sales) * 100) : 0 }}%</strong></span>
+                            <span class="text-slate-500">Overhead: <strong class="text-rose-600">{{ (financialSummary?.summary?.total_sales || 0) > 0 ? Math.round(((financialSummary?.summary?.total_expenses || 0) / financialSummary?.summary?.total_sales) * 100) : 0 }}%</strong></span>
                         </div>
                     </div>
 
                     <!-- 4. Net Operating Profit -->
                     <div
-                        class="bg-white rounded-2xl p-5 border shadow-xs relative overflow-hidden transition hover:shadow-md"
+                        class="bg-white rounded-2xl p-3.5 sm:p-5 border shadow-xs relative overflow-hidden transition hover:shadow-md flex flex-col justify-between"
                         :class="(financialSummary?.summary?.net_profit || 0) >= 0 ? 'border-indigo-100' : 'border-rose-200'"
                     >
                         <div
@@ -545,33 +547,32 @@ function exportSingle(scope, format) {
                         <div class="relative z-10 flex items-start justify-between">
                             <div class="space-y-1">
                                 <span
-                                    class="text-[11px] font-bold uppercase tracking-wider"
+                                    class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider truncate block"
                                     :class="(financialSummary?.summary?.net_profit || 0) >= 0 ? 'text-indigo-700' : 'text-rose-700'"
                                 >
                                     {{ t('Net Profit') }}
                                 </span>
                                 <div
-                                    class="text-2xl font-black"
+                                    class="text-base sm:text-2xl font-black"
                                     :class="(financialSummary?.summary?.net_profit || 0) >= 0 ? 'text-indigo-950' : 'text-rose-950'"
                                 >
                                     <CurrencyDisplay :amount="financialSummary?.summary?.net_profit || 0" />
                                 </div>
-                                <div class="text-[11px] text-slate-500 font-medium">
-                                    Net Margin: <strong :class="(financialSummary?.summary?.net_margin_percent || 0) >= 0 ? 'text-indigo-600' : 'text-rose-600'">{{ financialSummary?.summary?.net_margin_percent || 0 }}%</strong>
-                                    (Gross: {{ financialSummary?.summary?.gross_margin_percent || 0 }}%)
+                                <div class="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate">
+                                    Margin: <strong :class="(financialSummary?.summary?.net_margin_percent || 0) >= 0 ? 'text-indigo-600' : 'text-rose-600'">{{ financialSummary?.summary?.net_margin_percent || 0 }}%</strong>
                                 </div>
                             </div>
                             <div
-                                class="p-2.5 rounded-xl shrink-0"
+                                class="p-2 sm:p-2.5 rounded-xl shrink-0"
                                 :class="(financialSummary?.summary?.net_profit || 0) >= 0 ? 'bg-indigo-100 text-indigo-700' : 'bg-rose-100 text-rose-700'"
                             >
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                                 </svg>
                             </div>
                         </div>
-                        <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                            <span class="text-slate-500">Liquid Cash Flow:</span>
+                        <div class="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between text-[10px] sm:text-[11px] gap-1">
+                            <span class="text-slate-500">Liquid Cash:</span>
                             <span
                                 class="font-mono font-bold"
                                 :class="(financialSummary?.summary?.net_cash_flow || 0) >= 0 ? 'text-emerald-700' : 'text-rose-600'"
@@ -616,8 +617,8 @@ function exportSingle(scope, format) {
                         </div>
                     </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs">
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left text-xs min-w-[700px]">
                             <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                                 <tr>
                                     <th class="px-5 py-3.5 whitespace-nowrap">Order #</th>
@@ -707,8 +708,8 @@ function exportSingle(scope, format) {
                         </div>
                     </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs">
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left text-xs min-w-[700px]">
                             <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                                 <tr>
                                     <th class="px-5 py-3.5 whitespace-nowrap">PO #</th>
@@ -822,8 +823,8 @@ function exportSingle(scope, format) {
                         <div class="p-4 sm:p-5 border-b border-slate-100 bg-slate-50/50">
                             <h3 class="text-sm font-bold text-slate-900">Detailed Expense Vouchers ({{ financialSummary?.expenses_list?.length || 0 }})</h3>
                         </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs">
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="w-full text-left text-xs min-w-[700px]">
                                 <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                                     <tr>
                                         <th class="px-5 py-3.5 whitespace-nowrap">Expense #</th>
@@ -1249,8 +1250,8 @@ function exportSingle(scope, format) {
                     </div>
 
                     <!-- 1. Recent Sales Orders Table -->
-                    <div v-if="recentFinTab === 'sales'" class="overflow-x-auto">
-                        <table class="w-full text-left text-xs">
+                    <div v-if="recentFinTab === 'sales'" class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left text-xs min-w-[700px]">
                             <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                                 <tr>
                                     <th class="px-5 py-3.5 whitespace-nowrap">Order #</th>
@@ -1298,8 +1299,8 @@ function exportSingle(scope, format) {
                     </div>
 
                     <!-- 2. Recent Purchase Orders Table -->
-                    <div v-else-if="recentFinTab === 'purchases'" class="overflow-x-auto">
-                        <table class="w-full text-left text-xs">
+                    <div v-else-if="recentFinTab === 'purchases'" class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left text-xs min-w-[700px]">
                             <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                                 <tr>
                                     <th class="px-5 py-3.5 whitespace-nowrap">PO #</th>
@@ -1347,8 +1348,8 @@ function exportSingle(scope, format) {
                     </div>
 
                     <!-- 3. Recent Expenses Table -->
-                    <div v-else class="overflow-x-auto">
-                        <table class="w-full text-left text-xs">
+                    <div v-else class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left text-xs min-w-[700px]">
                             <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                                 <tr>
                                     <th class="px-5 py-3.5 whitespace-nowrap">Expense #</th>
@@ -1398,70 +1399,70 @@ function exportSingle(scope, format) {
         <!-- TAB 1: STOCK VALUATION -->
             <div v-if="currentTab === 'valuation'" class="space-y-6">
                 <!-- 4 Top KPI Cards -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                     <!-- Total Units -->
-                    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow transition">
+                    <div class="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-5 shadow-sm hover:shadow transition flex flex-col justify-between">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Units On Hand</span>
-                            <div class="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <span class="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">Total Units On Hand</span>
+                            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                                 </svg>
                             </div>
                         </div>
-                        <div class="text-2xl font-extrabold text-slate-900 mt-3">
+                        <div class="text-base sm:text-2xl font-extrabold text-slate-900 mt-2 sm:mt-3">
                             {{ Number(valuation?.total_units || 0).toLocaleString() }}
                         </div>
-                        <div class="text-xs text-slate-400 mt-1">Across all active facilities</div>
+                        <div class="text-[10px] sm:text-xs text-slate-400 mt-1 truncate">Across all facilities</div>
                     </div>
 
                     <!-- Total Cost Valuation -->
-                    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow transition">
+                    <div class="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-5 shadow-sm hover:shadow transition flex flex-col justify-between">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Asset Value (At Cost)</span>
-                            <div class="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <span class="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">Asset Value (At Cost)</span>
+                            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+                                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
                             </div>
                         </div>
-                        <div class="text-2xl font-extrabold text-indigo-600 mt-3">
+                        <div class="text-base sm:text-2xl font-extrabold text-indigo-600 mt-2 sm:mt-3">
                             <CurrencyDisplay :amount="valuation?.total_cost || 0" />
                         </div>
-                        <div class="text-xs text-slate-400 mt-1">Capital invested in physical stock</div>
+                        <div class="text-[10px] sm:text-xs text-slate-400 mt-1 truncate">Invested in stock</div>
                     </div>
 
                     <!-- Retail Value -->
-                    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow transition">
+                    <div class="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-5 shadow-sm hover:shadow transition flex flex-col justify-between">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Potential Sales Value</span>
-                            <div class="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <span class="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">Potential Sales Value</span>
+                            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                                 </svg>
                             </div>
                         </div>
-                        <div class="text-2xl font-extrabold text-emerald-600 mt-3">
+                        <div class="text-base sm:text-2xl font-extrabold text-emerald-600 mt-2 sm:mt-3">
                             <CurrencyDisplay :amount="valuation?.total_retail || 0" />
                         </div>
-                        <div class="text-xs text-slate-400 mt-1">Based on active selling prices</div>
+                        <div class="text-[10px] sm:text-xs text-slate-400 mt-1 truncate">Active selling prices</div>
                     </div>
 
                     <!-- Profit & Margin -->
-                    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow transition">
+                    <div class="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-5 shadow-sm hover:shadow transition flex flex-col justify-between">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Projected Gross Margin</span>
-                            <div class="w-8 h-8 rounded-lg bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <span class="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">Gross Margin</span>
+                            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+                                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                                 </svg>
                             </div>
                         </div>
-                        <div class="text-2xl font-extrabold text-purple-600 mt-3">
+                        <div class="text-base sm:text-2xl font-extrabold text-purple-600 mt-2 sm:mt-3">
                             {{ Number(valuation?.margin_percent || 0).toFixed(1) }}%
                         </div>
-                        <div class="text-xs text-slate-400 mt-1">
-                            +<CurrencyDisplay :amount="valuation?.potential_profit || 0" /> profit potential
+                        <div class="text-[10px] sm:text-xs text-slate-400 mt-1 truncate">
+                            +<CurrencyDisplay :amount="valuation?.potential_profit || 0" /> potential
                         </div>
                     </div>
                 </div>
@@ -1480,8 +1481,8 @@ function exportSingle(scope, format) {
                             </span>
                         </div>
 
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs text-slate-600">
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="w-full text-left text-xs text-slate-600 min-w-[650px]">
                                 <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-100">
                                     <tr>
                                         <th class="px-5 py-3">Warehouse Hub</th>
@@ -1528,8 +1529,8 @@ function exportSingle(scope, format) {
                             </span>
                         </div>
 
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs text-slate-600">
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="w-full text-left text-xs text-slate-600 min-w-[650px]">
                                 <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-100">
                                     <tr>
                                         <th class="px-5 py-3">Category</th>
@@ -1602,8 +1603,8 @@ function exportSingle(scope, format) {
 
                 <!-- Low Stock Table -->
                 <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs text-slate-600">
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left text-xs text-slate-600 min-w-[750px]">
                             <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-100">
                                 <tr>
                                     <th class="px-5 py-3.5">Product &amp; SKU</th>
@@ -1741,8 +1742,8 @@ function exportSingle(scope, format) {
 
                 <!-- Ledger Table -->
                 <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs text-slate-600">
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left text-xs text-slate-600 min-w-[750px]">
                             <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-100">
                                 <tr>
                                     <th class="px-5 py-3.5 whitespace-nowrap">Date</th>
@@ -1850,73 +1851,73 @@ function exportSingle(scope, format) {
             <!-- Tab 4: Batch & Expiry Radar -->
             <div v-if="currentTab === 'expiry'" class="space-y-6">
                 <!-- Summary KPI Cards -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="bg-white rounded-2xl p-5 border border-rose-100 shadow-xs relative overflow-hidden">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+                    <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-rose-100 shadow-xs relative overflow-hidden flex flex-col justify-between">
                         <div class="absolute -right-3 -top-3 w-16 h-16 bg-rose-50 rounded-full opacity-60"></div>
                         <div class="relative z-10 flex items-start justify-between">
                             <div>
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-rose-600">{{ t('Expired Batches') }}</span>
-                                <div class="text-2xl font-black text-rose-700 mt-1">
+                                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-rose-600 truncate block">{{ t('Expired Batches') }}</span>
+                                <div class="text-base sm:text-2xl font-black text-rose-700 mt-1">
                                     {{ (expiryData?.summary?.expired_count || 0).toLocaleString() }}
                                 </div>
-                                <span class="text-[11px] text-rose-500 font-medium">Critical immediate action</span>
+                                <span class="text-[10px] sm:text-[11px] text-rose-500 font-medium truncate block">Critical action</span>
                             </div>
-                            <div class="p-2.5 rounded-xl bg-rose-100 text-rose-600">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div class="p-2 sm:p-2.5 rounded-xl bg-rose-100 text-rose-600 shrink-0">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                 </svg>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-2xl p-5 border border-amber-100 shadow-xs relative overflow-hidden">
+                    <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-amber-100 shadow-xs relative overflow-hidden flex flex-col justify-between">
                         <div class="absolute -right-3 -top-3 w-16 h-16 bg-amber-50 rounded-full opacity-60"></div>
                         <div class="relative z-10 flex items-start justify-between">
                             <div>
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-amber-700">{{ t('Expiring (< 30 Days)') }}</span>
-                                <div class="text-2xl font-black text-amber-800 mt-1">
+                                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-amber-700 truncate block">{{ t('Expiring (< 30 Days)') }}</span>
+                                <div class="text-base sm:text-2xl font-black text-amber-800 mt-1">
                                     {{ (expiryData?.summary?.expiring_30_count || 0).toLocaleString() }}
                                 </div>
-                                <span class="text-[11px] text-amber-600 font-medium">Discount or prioritize sales</span>
+                                <span class="text-[10px] sm:text-[11px] text-amber-600 font-medium truncate block">Prioritize sales</span>
                             </div>
-                            <div class="p-2.5 rounded-xl bg-amber-100 text-amber-700">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div class="p-2 sm:p-2.5 rounded-xl bg-amber-100 text-amber-700 shrink-0">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-2xl p-5 border border-sky-100 shadow-xs relative overflow-hidden">
+                    <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-sky-100 shadow-xs relative overflow-hidden flex flex-col justify-between">
                         <div class="absolute -right-3 -top-3 w-16 h-16 bg-sky-50 rounded-full opacity-60"></div>
                         <div class="relative z-10 flex items-start justify-between">
                             <div>
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-sky-700">{{ t('Warning (< 90 Days)') }}</span>
-                                <div class="text-2xl font-black text-sky-800 mt-1">
+                                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-sky-700 truncate block">{{ t('Warning (< 90 Days)') }}</span>
+                                <div class="text-base sm:text-2xl font-black text-sky-800 mt-1">
                                     {{ (expiryData?.summary?.expiring_90_count || 0).toLocaleString() }}
                                 </div>
-                                <span class="text-[11px] text-sky-600 font-medium">Monitor movement rate</span>
+                                <span class="text-[10px] sm:text-[11px] text-sky-600 font-medium truncate block">Monitor rate</span>
                             </div>
-                            <div class="p-2.5 rounded-xl bg-sky-100 text-sky-700">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div class="p-2 sm:p-2.5 rounded-xl bg-sky-100 text-sky-700 shrink-0">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-2xl p-5 border border-indigo-100 shadow-xs relative overflow-hidden">
+                    <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-indigo-100 shadow-xs relative overflow-hidden flex flex-col justify-between">
                         <div class="absolute -right-3 -top-3 w-16 h-16 bg-indigo-50 rounded-full opacity-60"></div>
                         <div class="relative z-10 flex items-start justify-between">
                             <div>
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-700">{{ t('Capital at Risk') }}</span>
-                                <div class="text-2xl font-black text-indigo-900 mt-1">
+                                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-indigo-700 truncate block">{{ t('Capital at Risk') }}</span>
+                                <div class="text-base sm:text-2xl font-black text-indigo-900 mt-1">
                                     <CurrencyDisplay :amount="expiryData?.summary?.at_risk_cost || 0" />
                                 </div>
-                                <span class="text-[11px] text-indigo-500 font-medium">Expired &amp; Urgent inventory cost</span>
+                                <span class="text-[10px] sm:text-[11px] text-indigo-500 font-medium truncate block">Urgent stock cost</span>
                             </div>
-                            <div class="p-2.5 rounded-xl bg-indigo-100 text-indigo-700">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div class="p-2 sm:p-2.5 rounded-xl bg-indigo-100 text-indigo-700 shrink-0">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                                 </svg>
                             </div>
@@ -1984,8 +1985,8 @@ function exportSingle(scope, format) {
                     </div>
 
                     <!-- Table -->
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs">
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left text-xs min-w-[700px]">
                             <thead class="bg-slate-50/75 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                                 <tr>
                                     <th class="px-5 py-3.5 whitespace-nowrap">{{ t('Batch #') }}</th>
@@ -2075,76 +2076,76 @@ function exportSingle(scope, format) {
             <!-- Tab 5: Stock Aging & Dead Stock -->
             <div v-if="currentTab === 'aging'" class="space-y-6">
                 <!-- Summary KPI Cards -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="bg-white rounded-2xl p-5 border border-emerald-100 shadow-xs relative overflow-hidden">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+                    <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-emerald-100 shadow-xs relative overflow-hidden flex flex-col justify-between">
                         <div class="absolute -right-3 -top-3 w-16 h-16 bg-emerald-50 rounded-full opacity-60"></div>
                         <div class="relative z-10 flex items-start justify-between">
                             <div>
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">{{ t('Fresh (0-30 Days)') }}</span>
-                                <div class="text-2xl font-black text-emerald-800 mt-1">
+                                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-emerald-700 truncate block">{{ t('Fresh (0-30 Days)') }}</span>
+                                <div class="text-base sm:text-2xl font-black text-emerald-800 mt-1">
                                     {{ (agingData?.summary?.fresh_count || 0).toLocaleString() }}
                                 </div>
-                                <span class="text-[11px] text-emerald-600 font-medium">Fast-moving active inventory</span>
+                                <span class="text-[10px] sm:text-[11px] text-emerald-600 font-medium truncate block">Fast-moving stock</span>
                             </div>
-                            <div class="p-2.5 rounded-xl bg-emerald-100 text-emerald-700">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div class="p-2 sm:p-2.5 rounded-xl bg-emerald-100 text-emerald-700 shrink-0">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                                 </svg>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-2xl p-5 border border-sky-100 shadow-xs relative overflow-hidden">
+                    <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-sky-100 shadow-xs relative overflow-hidden flex flex-col justify-between">
                         <div class="absolute -right-3 -top-3 w-16 h-16 bg-sky-50 rounded-full opacity-60"></div>
                         <div class="relative z-10 flex items-start justify-between">
                             <div>
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-sky-700">{{ t('Moderate (31-60 Days)') }}</span>
-                                <div class="text-2xl font-black text-sky-800 mt-1">
+                                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-sky-700 truncate block">{{ t('Moderate (31-60 Days)') }}</span>
+                                <div class="text-base sm:text-2xl font-black text-sky-800 mt-1">
                                     {{ (agingData?.summary?.moderate_count || 0).toLocaleString() }}
                                 </div>
-                                <span class="text-[11px] text-sky-600 font-medium">Healthy turnover range</span>
+                                <span class="text-[10px] sm:text-[11px] text-sky-600 font-medium truncate block">Healthy turnover</span>
                             </div>
-                            <div class="p-2.5 rounded-xl bg-sky-100 text-sky-700">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div class="p-2 sm:p-2.5 rounded-xl bg-sky-100 text-sky-700 shrink-0">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-2xl p-5 border border-amber-100 shadow-xs relative overflow-hidden">
+                    <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-amber-100 shadow-xs relative overflow-hidden flex flex-col justify-between">
                         <div class="absolute -right-3 -top-3 w-16 h-16 bg-amber-50 rounded-full opacity-60"></div>
                         <div class="relative z-10 flex items-start justify-between">
                             <div>
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-amber-700">{{ t('Slow-Moving (61-90 Days)') }}</span>
-                                <div class="text-2xl font-black text-amber-800 mt-1">
+                                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-amber-700 truncate block">{{ t('Slow-Moving (61-90 Days)') }}</span>
+                                <div class="text-base sm:text-2xl font-black text-amber-800 mt-1">
                                     {{ (agingData?.summary?.slow_count || 0).toLocaleString() }}
                                 </div>
-                                <span class="text-[11px] text-amber-600 font-medium">Requires marketing push</span>
+                                <span class="text-[10px] sm:text-[11px] text-amber-600 font-medium truncate block">Needs promotion</span>
                             </div>
-                            <div class="p-2.5 rounded-xl bg-amber-100 text-amber-700">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div class="p-2 sm:p-2.5 rounded-xl bg-amber-100 text-amber-700 shrink-0">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-2xl p-5 border border-rose-100 shadow-xs relative overflow-hidden">
+                    <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-rose-100 shadow-xs relative overflow-hidden flex flex-col justify-between">
                         <div class="absolute -right-3 -top-3 w-16 h-16 bg-rose-50 rounded-full opacity-60"></div>
                         <div class="relative z-10 flex items-start justify-between">
                             <div>
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-rose-600">{{ t('Dead Stock (90+ Days)') }}</span>
-                                <div class="text-2xl font-black text-rose-700 mt-1">
+                                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-rose-600 truncate block">{{ t('Dead Stock (90+ Days)') }}</span>
+                                <div class="text-base sm:text-2xl font-black text-rose-700 mt-1">
                                     {{ (agingData?.summary?.dead_count || 0).toLocaleString() }}
                                 </div>
-                                <div class="text-[11px] text-rose-600 font-medium flex items-center gap-1 mt-0.5">
-                                    <span>{{ t('Frozen Capital') }}:</span>
+                                <div class="text-[10px] sm:text-[11px] text-rose-600 font-medium truncate block mt-0.5">
+                                    <span>{{ t('Frozen') }}: </span>
                                     <span class="font-bold"><CurrencyDisplay :amount="agingData?.summary?.dead_stock_cost || 0" /></span>
                                 </div>
                             </div>
-                            <div class="p-2.5 rounded-xl bg-rose-100 text-rose-600">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div class="p-2 sm:p-2.5 rounded-xl bg-rose-100 text-rose-600 shrink-0">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                                 </svg>
                             </div>
@@ -2212,8 +2213,8 @@ function exportSingle(scope, format) {
                     </div>
 
                     <!-- Table -->
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs">
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left text-xs min-w-[700px]">
                             <thead class="bg-slate-50/75 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                                 <tr>
                                     <th class="px-5 py-3.5 whitespace-nowrap">Product &amp; SKU</th>
@@ -2299,75 +2300,75 @@ function exportSingle(scope, format) {
             <!-- Tab 6: Product Sales & Gross Margin Profitability -->
             <div v-if="currentTab === 'profitability'" class="space-y-6">
                 <!-- Summary KPI Cards -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="bg-white rounded-2xl p-5 border border-emerald-100 shadow-xs relative overflow-hidden">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+                    <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-emerald-100 shadow-xs relative overflow-hidden flex flex-col justify-between">
                         <div class="absolute -right-3 -top-3 w-16 h-16 bg-emerald-50 rounded-full opacity-60"></div>
                         <div class="relative z-10 flex items-start justify-between">
                             <div>
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">{{ t('Total Revenue') }}</span>
-                                <div class="text-2xl font-black text-emerald-800 mt-1">
+                                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-emerald-700 truncate block">{{ t('Total Revenue') }}</span>
+                                <div class="text-base sm:text-2xl font-black text-emerald-800 mt-1">
                                     <CurrencyDisplay :amount="profitabilityData?.summary?.total_revenue || 0" />
                                 </div>
-                                <span class="text-[11px] text-emerald-600 font-medium">Across active sales orders</span>
+                                <span class="text-[10px] sm:text-[11px] text-emerald-600 font-medium truncate block">Active sales</span>
                             </div>
-                            <div class="p-2.5 rounded-xl bg-emerald-100 text-emerald-700">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div class="p-2 sm:p-2.5 rounded-xl bg-emerald-100 text-emerald-700 shrink-0">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs relative overflow-hidden">
+                    <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200 shadow-xs relative overflow-hidden flex flex-col justify-between">
                         <div class="absolute -right-3 -top-3 w-16 h-16 bg-slate-100 rounded-full opacity-60"></div>
                         <div class="relative z-10 flex items-start justify-between">
                             <div>
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-600">{{ t('Total COGS') }}</span>
-                                <div class="text-2xl font-black text-slate-800 mt-1">
+                                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-600 truncate block">{{ t('Total COGS') }}</span>
+                                <div class="text-base sm:text-2xl font-black text-slate-800 mt-1">
                                     <CurrencyDisplay :amount="profitabilityData?.summary?.total_cogs || 0" />
                                 </div>
-                                <span class="text-[11px] text-slate-500 font-medium">Acquisition cost basis</span>
+                                <span class="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate block">Cost basis</span>
                             </div>
-                            <div class="p-2.5 rounded-xl bg-slate-100 text-slate-700">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div class="p-2 sm:p-2.5 rounded-xl bg-slate-100 text-slate-700 shrink-0">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                                 </svg>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-2xl p-5 border border-indigo-100 shadow-xs relative overflow-hidden">
+                    <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-indigo-100 shadow-xs relative overflow-hidden flex flex-col justify-between">
                         <div class="absolute -right-3 -top-3 w-16 h-16 bg-indigo-50 rounded-full opacity-60"></div>
                         <div class="relative z-10 flex items-start justify-between">
                             <div>
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-700">{{ t('Gross Profit') }}</span>
-                                <div class="text-2xl font-black text-indigo-900 mt-1">
+                                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-indigo-700 truncate block">{{ t('Gross Profit') }}</span>
+                                <div class="text-base sm:text-2xl font-black text-indigo-900 mt-1">
                                     <CurrencyDisplay :amount="profitabilityData?.summary?.total_gross_profit || 0" />
                                 </div>
-                                <span class="text-[11px] text-indigo-500 font-medium">Net trading surplus</span>
+                                <span class="text-[10px] sm:text-[11px] text-indigo-500 font-medium truncate block">Net surplus</span>
                             </div>
-                            <div class="p-2.5 rounded-xl bg-indigo-100 text-indigo-700">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div class="p-2 sm:p-2.5 rounded-xl bg-indigo-100 text-indigo-700 shrink-0">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                                 </svg>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-2xl p-5 border border-sky-100 shadow-xs relative overflow-hidden">
+                    <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-sky-100 shadow-xs relative overflow-hidden flex flex-col justify-between">
                         <div class="absolute -right-3 -top-3 w-16 h-16 bg-sky-50 rounded-full opacity-60"></div>
                         <div class="relative z-10 flex items-start justify-between">
                             <div>
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-sky-700">{{ t('Gross Margin') }}</span>
-                                <div class="text-2xl font-black text-sky-900 mt-1">
+                                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-sky-700 truncate block">{{ t('Gross Margin') }}</span>
+                                <div class="text-base sm:text-2xl font-black text-sky-900 mt-1">
                                     {{ profitabilityData?.summary?.overall_margin_percent || 0 }}%
                                 </div>
-                                <div class="text-[11px] text-sky-600 font-medium">
-                                    {{ profitabilityData?.summary?.high_count || 0 }} high margin, {{ profitabilityData?.summary?.loss_count || 0 }} loss
+                                <div class="text-[10px] sm:text-[11px] text-sky-600 font-medium truncate block">
+                                    {{ profitabilityData?.summary?.high_count || 0 }} high, {{ profitabilityData?.summary?.loss_count || 0 }} loss
                                 </div>
                             </div>
-                            <div class="p-2.5 rounded-xl bg-sky-100 text-sky-700">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div class="p-2 sm:p-2.5 rounded-xl bg-sky-100 text-sky-700 shrink-0">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                 </svg>
                             </div>
@@ -2435,8 +2436,8 @@ function exportSingle(scope, format) {
                     </div>
 
                     <!-- Table -->
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs">
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left text-xs min-w-[700px]">
                             <thead class="bg-slate-50/75 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                                 <tr>
                                     <th class="px-5 py-3.5 whitespace-nowrap">Product &amp; SKU</th>
