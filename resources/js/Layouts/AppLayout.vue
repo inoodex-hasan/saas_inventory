@@ -372,12 +372,12 @@ onMounted(() => {
                         </Link>
 
                         <Link 
-                            :href="route('admin.payment-accounts')" 
+                            :href="route().has('admin.payment-accounts') ? route('admin.payment-accounts') : '/admin/payment-accounts'" 
                             :title="!isSidebarExpanded ? t('Payment Accounts & Banking') : ''"
                             class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
                             :class="[
                                 isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
-                                route().current('admin.payment-accounts*') ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                                route().has('admin.payment-accounts') && route().current('admin.payment-accounts*') ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
                             ]"
                         >
                             <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -403,12 +403,12 @@ onMounted(() => {
                         </Link>
 
                         <Link 
-                            :href="route('admin.sms-gateway')" 
+                            :href="route().has('admin.sms-gateway') ? route('admin.sms-gateway') : '/admin/sms-gateway'" 
                             :title="!isSidebarExpanded ? t('SMS Gateway & Balance') : ''"
                             class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
                             :class="[
                                 isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
-                                route().current('admin.sms-gateway*') ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                                route().has('admin.sms-gateway') && route().current('admin.sms-gateway*') ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
                             ]"
                         >
                             <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1324,7 +1324,7 @@ onMounted(() => {
                                     <span>{{ t('Payment Verifications') }}</span>
                                 </Link>
                                 <Link 
-                                    :href="route('admin.payment-accounts')" 
+                                    :href="route().has('admin.payment-accounts') ? route('admin.payment-accounts') : '/admin/payment-accounts'" 
                                     @click="topUserMenuOpen = false"
                                     class="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-amber-50 hover:text-amber-800 font-medium transition cursor-pointer"
                                 >
@@ -1345,7 +1345,7 @@ onMounted(() => {
                                     <span>{{ t('Site Settings & Branding') }}</span>
                                 </Link>
                                 <Link 
-                                    :href="route('admin.sms-gateway')" 
+                                    :href="route().has('admin.sms-gateway') ? route('admin.sms-gateway') : '/admin/sms-gateway'" 
                                     @click="topUserMenuOpen = false"
                                     class="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-amber-50 hover:text-amber-800 font-medium transition cursor-pointer"
                                 >
