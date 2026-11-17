@@ -11,6 +11,7 @@ use App\Models\TenantSubscription;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\AccountingService;
+use App\Services\SmsOtpService;
 use App\Services\SubscriptionService;
 use Carbon\Carbon;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -33,6 +34,7 @@ class SuperAdminController extends Controller
         $search = $request->input('search', '');
         $statusFilter = $request->input('status', '');
         $planFilter = $request->input('plan_id', '');
+        $verifiedFilter = $request->input('verified', '');
 
         // 1. Query Tenants with owners and subscriptions
         $query = Team::withoutGlobalScopes()
@@ -62,6 +64,22 @@ class SuperAdminController extends Controller
             $query->whereHas('subscription', function ($sq) use ($planFilter) {
                 $sq->where('plan_id', $planFilter);
             });
+        }
+
+        if ($request->filled('verified')) {
+            if ($verifiedFilter === 'verified' || $verifiedFilter === '1') {
+                $query->whereHas('owner', function ($oq) {
+                    $oq->where(function ($vq) {
+                        $vq->whereNotNull('phone_verified_at')
+                           ->orWhereNotNull('email_verified_at');
+                    });
+                });
+            } elseif ($verifiedFilter === 'unverified' || $verifiedFilter === '0') {
+                $query->whereHas('owner', function ($oq) {
+                    $oq->whereNull('phone_verified_at')
+                       ->whereNull('email_verified_at');
+                });
+            }
         }
 
         $tenants = $query->latest('id')->paginate(12)->withQueryString();
@@ -127,10 +145,12 @@ class SuperAdminController extends Controller
             }),
             'tenants' => $tenants,
             'plans' => fn () => Cache::remember('superadmin_active_plans', 300, fn () => Plan::where('is_active', true)->orderBy('sort_order')->get()),
+            'sms_balance' => fn () => app(SmsOtpService::class)->getBalance(),
             'filters' => [
                 'search' => $search,
                 'status' => $statusFilter,
                 'plan_id' => $planFilter,
+                'verified' => $verifiedFilter,
             ],
         ]);
     }
@@ -507,6 +527,34 @@ class SuperAdminController extends Controller
                 'faqs'             => $faqs,
                 'terms_and_conditions' => SiteSetting::get('terms_and_conditions', ''),
                 'privacy_policy'       => SiteSetting::get('privacy_policy', ''),
+
+                // Subscription Payment Accounts & Banking
+                'payment_bank_name'           => SiteSetting::get('payment_bank_name', 'City Bank Ltd'),
+                'payment_bank_account_number' => SiteSetting::get('payment_bank_account_number', '1102938475001'),
+                'payment_bank_account_name'   => SiteSetting::get('payment_bank_account_name', 'SaaS Inventory BD Ltd'),
+                'payment_bank_branch'         => SiteSetting::get('payment_bank_branch', 'Gulshan Branch'),
+                'payment_bank_routing'        => SiteSetting::get('payment_bank_routing', '225261145'),
+                'payment_bank_swift'          => SiteSetting::get('payment_bank_swift', 'CIBLBDDH'),
+                'payment_bank_type'           => SiteSetting::get('payment_bank_type', 'Corporate Account'),
+                'payment_bank_instructions'   => SiteSetting::get('payment_bank_instructions', 'Direct deposit, BEFTN, NPSB or RTGS to our corporate bank account'),
+
+                'payment_bkash_name'          => SiteSetting::get('payment_bkash_name', 'bKash Merchant'),
+                'payment_bkash_number'        => SiteSetting::get('payment_bkash_number', '01712-345678'),
+                'payment_bkash_counter'       => SiteSetting::get('payment_bkash_counter', 'Counter 1'),
+                'payment_bkash_type'          => SiteSetting::get('payment_bkash_type', 'Merchant Payment'),
+                'payment_bkash_instructions'  => SiteSetting::get('payment_bkash_instructions', 'Select "Payment" option in bKash App'),
+
+                'payment_nagad_name'          => SiteSetting::get('payment_nagad_name', 'Nagad Merchant'),
+                'payment_nagad_number'        => SiteSetting::get('payment_nagad_number', '01812-345678'),
+                'payment_nagad_counter'       => SiteSetting::get('payment_nagad_counter', 'Counter 1'),
+                'payment_nagad_type'          => SiteSetting::get('payment_nagad_type', 'Merchant Payment'),
+                'payment_nagad_instructions'  => SiteSetting::get('payment_nagad_instructions', 'Select "Merchant Pay" in Nagad App'),
+
+                'payment_rocket_name'         => SiteSetting::get('payment_rocket_name', 'Rocket Biller'),
+                'payment_rocket_number'       => SiteSetting::get('payment_rocket_number', '01912-345678-9'),
+                'payment_rocket_counter'      => SiteSetting::get('payment_rocket_counter', 'Biller ID 4567'),
+                'payment_rocket_type'         => SiteSetting::get('payment_rocket_type', 'Merchant / Biller'),
+                'payment_rocket_instructions' => SiteSetting::get('payment_rocket_instructions', 'Pay via Biller ID or Merchant Pay'),
             ],
         ]);
     }
@@ -541,6 +589,34 @@ class SuperAdminController extends Controller
             'faqs'             => ['nullable', 'array'],
             'terms_and_conditions' => ['nullable', 'string'],
             'privacy_policy'       => ['nullable', 'string'],
+
+            // Subscription Payment Accounts & Banking validation
+            'payment_bank_name'           => ['nullable', 'string', 'max:120'],
+            'payment_bank_account_number' => ['nullable', 'string', 'max:60'],
+            'payment_bank_account_name'   => ['nullable', 'string', 'max:150'],
+            'payment_bank_branch'         => ['nullable', 'string', 'max:120'],
+            'payment_bank_routing'        => ['nullable', 'string', 'max:60'],
+            'payment_bank_swift'          => ['nullable', 'string', 'max:60'],
+            'payment_bank_type'           => ['nullable', 'string', 'max:80'],
+            'payment_bank_instructions'   => ['nullable', 'string', 'max:500'],
+
+            'payment_bkash_name'          => ['nullable', 'string', 'max:120'],
+            'payment_bkash_number'        => ['nullable', 'string', 'max:60'],
+            'payment_bkash_counter'       => ['nullable', 'string', 'max:60'],
+            'payment_bkash_type'          => ['nullable', 'string', 'max:80'],
+            'payment_bkash_instructions'  => ['nullable', 'string', 'max:500'],
+
+            'payment_nagad_name'          => ['nullable', 'string', 'max:120'],
+            'payment_nagad_number'        => ['nullable', 'string', 'max:60'],
+            'payment_nagad_counter'       => ['nullable', 'string', 'max:60'],
+            'payment_nagad_type'          => ['nullable', 'string', 'max:80'],
+            'payment_nagad_instructions'  => ['nullable', 'string', 'max:500'],
+
+            'payment_rocket_name'         => ['nullable', 'string', 'max:120'],
+            'payment_rocket_number'       => ['nullable', 'string', 'max:60'],
+            'payment_rocket_counter'      => ['nullable', 'string', 'max:60'],
+            'payment_rocket_type'         => ['nullable', 'string', 'max:80'],
+            'payment_rocket_instructions' => ['nullable', 'string', 'max:500'],
         ]);
 
         // Handle logo upload or removal
@@ -638,6 +714,33 @@ class SuperAdminController extends Controller
             'hero_subtext',
             'terms_and_conditions',
             'privacy_policy',
+
+            // Payment Accounts
+            'payment_bank_name',
+            'payment_bank_account_number',
+            'payment_bank_account_name',
+            'payment_bank_branch',
+            'payment_bank_routing',
+            'payment_bank_type',
+            'payment_bank_instructions',
+
+            'payment_bkash_name',
+            'payment_bkash_number',
+            'payment_bkash_counter',
+            'payment_bkash_type',
+            'payment_bkash_instructions',
+
+            'payment_nagad_name',
+            'payment_nagad_number',
+            'payment_nagad_counter',
+            'payment_nagad_type',
+            'payment_nagad_instructions',
+
+            'payment_rocket_name',
+            'payment_rocket_number',
+            'payment_rocket_counter',
+            'payment_rocket_type',
+            'payment_rocket_instructions',
         ];
 
         foreach ($keys as $key) {
@@ -717,5 +820,164 @@ class SuperAdminController extends Controller
         }
 
         return redirect()->route('admin.site-settings')->with('success', 'Site settings updated successfully.');
+    }
+
+    /**
+     * Display the BulkSMS Portal and SMS Gateway management center.
+     */
+    public function smsGateway(Request $request, SmsOtpService $smsOtpService)
+    {
+        $balance = $smsOtpService->getBalance();
+        $config = $smsOtpService->getGatewayConfig();
+
+        $recentUsersWithPhone = User::query()
+            ->whereNotNull('phone')
+            ->select('id', 'name', 'phone', 'phone_verified_at', 'phone_otp_expires_at', 'created_at')
+            ->latest('id')
+            ->take(15)
+            ->get()
+            ->map(function ($u) use ($smsOtpService) {
+                return [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'masked_phone' => $smsOtpService->maskPhone($u->phone),
+                    'phone' => $u->phone,
+                    'is_verified' => !is_null($u->phone_verified_at),
+                    'verified_at' => $u->phone_verified_at ? $u->phone_verified_at->format('M d, Y h:i A') : null,
+                    'last_otp_at' => $u->phone_otp_expires_at ? $u->phone_otp_expires_at->copy()->subMinutes(SmsOtpService::OTP_EXPIRY_MINUTES)->format('M d, Y h:i A') : 'N/A',
+                ];
+            });
+
+        return Inertia::render('Admin/SmsGateway', [
+            'balance' => $balance,
+            'gatewayConfig' => $config,
+            'recentUsers' => $recentUsersWithPhone,
+        ]);
+    }
+
+    /**
+     * Force refresh the live BulkSMS balance.
+     */
+    public function refreshSmsBalance(Request $request, SmsOtpService $smsOtpService)
+    {
+        $balance = $smsOtpService->getBalance(forceRefresh: true);
+
+        if ($request->wantsJson()) {
+            return response()->json($balance);
+        }
+
+        return redirect()->back()->with('success', 'SMS portal balance refreshed successfully.');
+    }
+
+    /**
+     * Send a single direct test SMS from the control plane.
+     */
+    public function sendTestSms(Request $request, SmsOtpService $smsOtpService)
+    {
+        $validated = $request->validate([
+            'phone' => 'required|string|min:11|max:20',
+            'message' => 'required|string|max:160',
+        ]);
+
+        $result = $smsOtpService->sendTestSms($validated['phone'], $validated['message']);
+
+        if ($result['success']) {
+            return redirect()->back()->with('success', 'Test SMS successfully dispatched!');
+        }
+
+        return redirect()->back()->with('error', $result['message'] ?? 'Failed to dispatch test SMS.');
+    }
+
+    /**
+     * Display the subscription payment accounts management page.
+     */
+    public function paymentAccounts()
+    {
+        return Inertia::render('Admin/PaymentAccounts', [
+            'settings' => [
+                'payment_bank_active'         => filter_var(SiteSetting::get('payment_bank_active', true), FILTER_VALIDATE_BOOLEAN),
+                'payment_bank_name'           => SiteSetting::get('payment_bank_name', 'City Bank Ltd'),
+                'payment_bank_account_number' => SiteSetting::get('payment_bank_account_number', '1102938475001'),
+                'payment_bank_account_name'   => SiteSetting::get('payment_bank_account_name', 'SaaS Inventory BD Ltd'),
+                'payment_bank_branch'         => SiteSetting::get('payment_bank_branch', 'Gulshan Branch'),
+                'payment_bank_routing'        => SiteSetting::get('payment_bank_routing', '225261145'),
+                'payment_bank_swift'          => SiteSetting::get('payment_bank_swift', 'CIBLBDDH'),
+                'payment_bank_type'           => SiteSetting::get('payment_bank_type', 'Corporate Account'),
+                'payment_bank_instructions'   => SiteSetting::get('payment_bank_instructions', 'Direct deposit, BEFTN, NPSB or RTGS to our corporate bank account'),
+
+                'payment_bkash_active'        => filter_var(SiteSetting::get('payment_bkash_active', true), FILTER_VALIDATE_BOOLEAN),
+                'payment_bkash_name'          => SiteSetting::get('payment_bkash_name', 'bKash Merchant'),
+                'payment_bkash_number'        => SiteSetting::get('payment_bkash_number', '01712-345678'),
+                'payment_bkash_counter'       => SiteSetting::get('payment_bkash_counter', 'Counter 1'),
+                'payment_bkash_type'          => SiteSetting::get('payment_bkash_type', 'Merchant Payment'),
+                'payment_bkash_instructions'  => SiteSetting::get('payment_bkash_instructions', 'Select "Payment" option in bKash App'),
+
+                'payment_nagad_active'        => filter_var(SiteSetting::get('payment_nagad_active', true), FILTER_VALIDATE_BOOLEAN),
+                'payment_nagad_name'          => SiteSetting::get('payment_nagad_name', 'Nagad Merchant'),
+                'payment_nagad_number'        => SiteSetting::get('payment_nagad_number', '01812-345678'),
+                'payment_nagad_counter'       => SiteSetting::get('payment_nagad_counter', 'Counter 1'),
+                'payment_nagad_type'          => SiteSetting::get('payment_nagad_type', 'Merchant Payment'),
+                'payment_nagad_instructions'  => SiteSetting::get('payment_nagad_instructions', 'Select "Merchant Pay" in Nagad App'),
+
+                'payment_rocket_active'       => filter_var(SiteSetting::get('payment_rocket_active', true), FILTER_VALIDATE_BOOLEAN),
+                'payment_rocket_name'         => SiteSetting::get('payment_rocket_name', 'Rocket Biller'),
+                'payment_rocket_number'       => SiteSetting::get('payment_rocket_number', '01912-345678-9'),
+                'payment_rocket_counter'      => SiteSetting::get('payment_rocket_counter', 'Biller ID 4567'),
+                'payment_rocket_type'         => SiteSetting::get('payment_rocket_type', 'Merchant / Biller'),
+                'payment_rocket_instructions' => SiteSetting::get('payment_rocket_instructions', 'Pay via Biller ID or Merchant Pay'),
+            ],
+        ]);
+    }
+
+    /**
+     * Update subscription payment accounts and banking configurations.
+     */
+    public function updatePaymentAccounts(Request $request)
+    {
+        $validated = $request->validate([
+            'payment_bank_active'         => ['nullable', 'boolean'],
+            'payment_bank_name'           => ['nullable', 'string', 'max:120'],
+            'payment_bank_account_number' => ['nullable', 'string', 'max:60'],
+            'payment_bank_account_name'   => ['nullable', 'string', 'max:150'],
+            'payment_bank_branch'         => ['nullable', 'string', 'max:120'],
+            'payment_bank_routing'        => ['nullable', 'string', 'max:60'],
+            'payment_bank_swift'          => ['nullable', 'string', 'max:60'],
+            'payment_bank_type'           => ['nullable', 'string', 'max:80'],
+            'payment_bank_instructions'   => ['nullable', 'string', 'max:500'],
+
+            'payment_bkash_active'        => ['nullable', 'boolean'],
+            'payment_bkash_name'          => ['nullable', 'string', 'max:120'],
+            'payment_bkash_number'        => ['nullable', 'string', 'max:60'],
+            'payment_bkash_counter'       => ['nullable', 'string', 'max:60'],
+            'payment_bkash_type'          => ['nullable', 'string', 'max:80'],
+            'payment_bkash_instructions'  => ['nullable', 'string', 'max:500'],
+
+            'payment_nagad_active'        => ['nullable', 'boolean'],
+            'payment_nagad_name'          => ['nullable', 'string', 'max:120'],
+            'payment_nagad_number'        => ['nullable', 'string', 'max:60'],
+            'payment_nagad_counter'       => ['nullable', 'string', 'max:60'],
+            'payment_nagad_type'          => ['nullable', 'string', 'max:80'],
+            'payment_nagad_instructions'  => ['nullable', 'string', 'max:500'],
+
+            'payment_rocket_active'       => ['nullable', 'boolean'],
+            'payment_rocket_name'         => ['nullable', 'string', 'max:120'],
+            'payment_rocket_number'       => ['nullable', 'string', 'max:60'],
+            'payment_rocket_counter'      => ['nullable', 'string', 'max:60'],
+            'payment_rocket_type'         => ['nullable', 'string', 'max:80'],
+            'payment_rocket_instructions' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $activeKeys = ['payment_bank_active', 'payment_bkash_active', 'payment_nagad_active', 'payment_rocket_active'];
+        foreach ($activeKeys as $actKey) {
+            SiteSetting::set($actKey, $request->boolean($actKey) ? '1' : '0');
+        }
+
+        foreach ($validated as $key => $value) {
+            if (!in_array($key, $activeKeys)) {
+                SiteSetting::set($key, $value);
+            }
+        }
+
+        return redirect()->back()->with('success', 'Subscription payment accounts and banking details updated successfully.');
     }
 }

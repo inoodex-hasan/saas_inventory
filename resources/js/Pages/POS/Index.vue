@@ -7,7 +7,10 @@ import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import BarcodeCameraModal from '@/Components/BarcodeCameraModal.vue';
 import { useBarcodeScanner } from '@/Composables/useBarcodeScanner';
 import { playScanSuccess, playScanError } from '@/Utils/sound';
+import { useTranslation } from '@/Utils/translations';
 import axios from 'axios';
+
+const { t } = useTranslation();
 
 const props = defineProps({
     warehouses: {
@@ -59,6 +62,41 @@ const selectedBrand = ref('all');
 const searchQuery = ref('');
 const searchInput = ref(null);
 const mobileActiveTab = ref('catalog'); // 'catalog' | 'cart'
+
+// Reactive Products & Real-Time Stock
+const productsList = ref(props.products.map(p => ({
+    ...p,
+    variants: p.variants ? p.variants.map(v => ({ ...v })) : [],
+})));
+
+watch(() => props.products, (newProducts) => {
+    if (!newProducts || !Array.isArray(newProducts)) return;
+    productsList.value = newProducts.map(p => ({
+        ...p,
+        variants: p.variants ? p.variants.map(v => ({ ...v })) : [],
+    }));
+}, { deep: true });
+
+// Reactive Recent Orders
+const recentOrdersList = ref([...props.recentOrders]);
+
+watch(() => props.recentOrders, (newOrders) => {
+    if (!newOrders || !Array.isArray(newOrders)) return;
+    recentOrdersList.value = [...newOrders];
+}, { deep: true });
+
+// Manual Refresh / Sync Stock
+const isRefreshingStock = ref(false);
+function refreshProductsStock() {
+    isRefreshingStock.value = true;
+    router.reload({
+        only: ['products', 'recentOrders'],
+        onFinish: () => {
+            isRefreshingStock.value = false;
+            showToast('Catalog stock & recent orders synchronized.', 'success');
+        },
+    });
+}
 
 // Toast / Alert Notification System
 const toast = ref({
@@ -147,7 +185,7 @@ function persistCart() {
 
 watch(cart, persistCart, { deep: true });
 
-watch(() => props.products, (newProducts) => {
+watch(productsList, (newProducts) => {
     if (!newProducts || !Array.isArray(newProducts)) return;
     cart.value.forEach(item => {
         const prod = newProducts.find(p => p.id === item.product_id);
@@ -166,7 +204,7 @@ watch(() => props.products, (newProducts) => {
 
 // Filtered Products
 const filteredProducts = computed(() => {
-    let list = props.products;
+    let list = productsList.value;
 
     if (selectedCategory.value !== 'all') {
         list = list.filter(p => p.category_id === parseInt(selectedCategory.value));
@@ -202,7 +240,7 @@ const isVariantModalOpen = ref(false);
 const activeProductForVariant = ref(null);
 
 function openVariantModal(p) {
-    activeProductForVariant.value = p;
+    activeProductForVariant.value = productsList.value.find(item => item.id === p.id) || p;
     isVariantModalOpen.value = true;
 }
 
@@ -282,7 +320,7 @@ function handleBarcodeScanned(rawCode) {
     if (!code) return;
 
     // 1. Check for exact match against product variants first
-    for (const p of props.products) {
+    for (const p of productsList.value) {
         if (p.variants && p.variants.length > 0) {
             const matchedVariant = p.variants.find(v => 
                 (v.barcode && v.barcode.toLowerCase() === code.toLowerCase()) ||
@@ -305,7 +343,7 @@ function handleBarcodeScanned(rawCode) {
     }
 
     // 2. Check for exact match against base products (barcode or SKU)
-    const matchedProduct = props.products.find(p => 
+    const matchedProduct = productsList.value.find(p => 
         (p.barcode && p.barcode.toLowerCase() === code.toLowerCase()) ||
         (p.sku && p.sku.toLowerCase() === code.toLowerCase())
     );
@@ -485,16 +523,92 @@ function deleteParkedCart(id) {
 // Recent Invoices Modal
 const isRecentModalOpen = ref(false);
 
-// Quick Add Customer by Mobile
+// Quick Add Customer by Mobile & Details Modal
 const isAddingCustomer = ref(false);
 const customerPhoneInput = ref('');
+const customerNameInput = ref('');
 const customerPhoneInputRef = ref(null);
 const isSavingCustomer = ref(false);
+
+// Add Customer Details Modal
+const isAddCustomerModalOpen = ref(false);
+const modalPhoneInputRef = ref(null);
+const isSubmittingCustomer = ref(false);
+const customerFormErrors = ref({});
+const customerForm = ref({
+    phone: '',
+    name: '',
+    email: '',
+    address: '',
+});
+
+function openAddCustomerModal(prefillPhone = '', prefillName = '') {
+    customerForm.value = {
+        phone: typeof prefillPhone === 'string' && prefillPhone ? prefillPhone : (customerPhoneInput.value || ''),
+        name: typeof prefillName === 'string' && prefillName ? prefillName : (customerNameInput.value || ''),
+        email: '',
+        address: '',
+    };
+    customerFormErrors.value = {};
+    isAddCustomerModalOpen.value = true;
+    nextTick(() => {
+        modalPhoneInputRef.value?.focus();
+    });
+}
+
+function closeAddCustomerModal() {
+    isAddCustomerModalOpen.value = false;
+    customerFormErrors.value = {};
+}
+
+function saveCustomerDetails() {
+    const phone = customerForm.value.phone?.trim();
+    if (!phone) {
+        customerFormErrors.value = { phone: 'Phone number is required.' };
+        return;
+    }
+
+    customerFormErrors.value = {};
+    isSubmittingCustomer.value = true;
+
+    axios.post(route('pos.customer.store'), {
+        phone: phone,
+        name: customerForm.value.name?.trim() || null,
+        email: customerForm.value.email?.trim() || null,
+        address: customerForm.value.address?.trim() || null,
+    })
+    .then(res => {
+        if (res.data.success && res.data.customer) {
+            const cust = res.data.customer;
+            const idx = customersList.value.findIndex(c => c.id === cust.id);
+            if (idx >= 0) {
+                customersList.value[idx] = cust;
+            } else {
+                customersList.value.unshift(cust);
+            }
+            activeCustomerId.value = cust.id;
+            isAddingCustomer.value = false;
+            customerPhoneInput.value = '';
+            customerNameInput.value = '';
+            closeAddCustomerModal();
+            showToast(`Customer '${cust.name}' registered & selected.`, 'success');
+        }
+    })
+    .catch(err => {
+        const msg = err.response?.data?.message || 'Failed to save customer details.';
+        customerFormErrors.value = { phone: msg };
+        showToast(msg, 'error');
+    })
+    .finally(() => {
+        isSubmittingCustomer.value = false;
+    });
+}
 
 function enableAddingCustomer() {
     isAddingCustomer.value = true;
     isCustomerDropdownOpen.value = false;
     customerPhoneInput.value = '';
+    customerNameInput.value = '';
     nextTick(() => {
         customerPhoneInputRef.value?.focus();
     });
@@ -503,6 +617,7 @@ function enableAddingCustomer() {
 function cancelAddingCustomer() {
     isAddingCustomer.value = false;
     customerPhoneInput.value = '';
+    customerNameInput.value = '';
 }
 
 function saveQuickCustomerPhone() {
@@ -510,21 +625,29 @@ function saveQuickCustomerPhone() {
     if (!phone) return;
 
     isSavingCustomer.value = true;
-    axios.post(route('pos.customer.store'), { phone })
+    axios.post(route('pos.customer.store'), {
+        phone,
+        name: customerNameInput.value.trim() || null,
+    })
         .then(res => {
             if (res.data.success && res.data.customer) {
                 const cust = res.data.customer;
                 const exists = customersList.value.find(c => c.id === cust.id);
                 if (!exists) {
                     customersList.value.unshift(cust);
+                } else {
+                    const idx = customersList.value.findIndex(c => c.id === cust.id);
+                    if (idx >= 0) customersList.value[idx] = cust;
                 }
                 activeCustomerId.value = cust.id;
                 isAddingCustomer.value = false;
                 customerPhoneInput.value = '';
+                customerNameInput.value = '';
+                showToast(`Customer '${cust.name}' selected.`, 'success');
             }
         })
         .catch(err => {
-            alert(err.response?.data?.message || 'Failed to save customer phone.');
+            showToast(err.response?.data?.message || 'Failed to save customer phone.', 'error');
         })
         .finally(() => {
             isSavingCustomer.value = false;
@@ -556,6 +679,16 @@ function completeSale() {
         }
     }
 
+    // If customer addition is in progress
+    if (isAddingCustomer.value) {
+        const phone = customerPhoneInput.value ? customerPhoneInput.value.trim() : '';
+        if (!phone) {
+            showToast('Please add customer details (phone number) or cancel to proceed as Walk-in Customer.', 'error');
+            openAddCustomerModal();
+            return;
+        }
+    }
+
     isProcessingSale.value = true;
     checkoutError.value = '';
 
@@ -563,10 +696,13 @@ function completeSale() {
     const effectiveTendered = (!isNaN(rawTendered) && rawTendered > 0) ? rawTendered : calculatedTotal.value;
     const effectivePaid = Math.min(calculatedTotal.value, effectiveTendered);
 
+    const hasUnsavedCustomer = isAddingCustomer.value && customerPhoneInput.value.trim();
+
     const payload = {
         warehouse_id: activeWarehouseId.value,
-        customer_id: isAddingCustomer.value && customerPhoneInput.value.trim() ? null : activeCustomerId.value,
-        customer_phone: isAddingCustomer.value && customerPhoneInput.value.trim() ? customerPhoneInput.value.trim() : null,
+        customer_id: hasUnsavedCustomer ? null : activeCustomerId.value,
+        customer_phone: hasUnsavedCustomer ? customerPhoneInput.value.trim() : null,
+        customer_name: (hasUnsavedCustomer && customerNameInput.value.trim()) ? customerNameInput.value.trim() : null,
         items: cart.value.map(it => ({
             product_id: it.product_id,
             product_variant_id: it.product_variant_id,
@@ -601,6 +737,56 @@ function completeSale() {
                     pos_invoice_page_url: res.data.pos_invoice_page_url || route('pos.invoice', res.data.order_id),
                 };
 
+                // Sync newly registered/resolved customer into customer list
+                if (res.data.customer) {
+                    const cust = res.data.customer;
+                    const exists = customersList.value.find(c => c.id === cust.id);
+                    if (!exists) {
+                        customersList.value.unshift(cust);
+                    } else {
+                        const idx = customersList.value.findIndex(c => c.id === cust.id);
+                        if (idx >= 0) customersList.value[idx] = cust;
+                    }
+                    activeCustomerId.value = cust.id;
+                }
+
+                // 1. Optimistic stock deduction in local productsList
+                for (const it of payload.items) {
+                    const prod = productsList.value.find(p => p.id === it.product_id);
+                    if (prod) {
+                        if (it.product_variant_id && prod.variants) {
+                            const v = prod.variants.find(variant => variant.id === it.product_variant_id);
+                            if (v) {
+                                v.stock = Math.max(0, Number(v.stock || 0) - Number(it.quantity));
+                            }
+                            prod.stock = prod.variants.reduce((sum, itemVar) => sum + Math.max(0, Number(itemVar.stock || 0)), 0);
+                        } else {
+                            prod.stock = Math.max(0, Number(prod.stock || 0) - Number(it.quantity));
+                        }
+                    }
+                }
+
+                // 2. Authoritative sync with backend database updated_stocks
+                if (res.data.updated_stocks && Array.isArray(res.data.updated_stocks)) {
+                    for (const u of res.data.updated_stocks) {
+                        const prod = productsList.value.find(p => p.id === u.product_id);
+                        if (prod) {
+                            prod.stock = u.product_stock;
+                            if (u.product_variant_id && prod.variants) {
+                                const v = prod.variants.find(variant => variant.id === u.product_variant_id);
+                                if (v && u.variant_stock !== null) {
+                                    v.stock = u.variant_stock;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 3. Add to recent orders list
+                if (res.data.recent_order) {
+                    recentOrdersList.value.unshift(res.data.recent_order);
+                }
+
                 // Clear current cart
                 cart.value = [];
                 discountValue.value = 0;
@@ -610,6 +796,7 @@ function completeSale() {
                 notes.value = '';
                 isAddingCustomer.value = false;
                 customerPhoneInput.value = '';
+                customerNameInput.value = '';
                 localStorage.removeItem('pos_active_cart');
 
                 isSuccessModalOpen.value = true;
@@ -629,6 +816,8 @@ function startNewSale() {
     lastCompletedOrder.value = null;
     isAddingCustomer.value = false;
     customerPhoneInput.value = '';
+    customerNameInput.value = '';
+    closeAddCustomerModal();
     mobileActiveTab.value = 'catalog';
     nextTick(() => {
         searchInput.value?.focus();
@@ -671,7 +860,10 @@ function handleGlobalKeydown(e) {
         parkCurrentCart();
     } else if (e.key === 'Escape') {
         isVariantModalOpen.value = false;
+        isAddCustomerModalOpen.value = false;
         isAddingCustomer.value = false;
+        customerPhoneInput.value = '';
+        customerNameInput.value = '';
         isParkedModalOpen.value = false;
         isRecentModalOpen.value = false;
         isCustomerDropdownOpen.value = false;
@@ -849,6 +1041,19 @@ onUnmounted(() => {
                     </svg>
                     <span class="hidden md:inline">Recent Sales</span>
                 </button>
+
+                <!-- Sync Stock Button -->
+                <button
+                    @click="refreshProductsStock"
+                    :disabled="isRefreshingStock"
+                    class="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-indigo-600 border border-slate-200 transition flex items-center gap-1.5 text-xs font-semibold shrink-0 cursor-pointer disabled:opacity-50"
+                    title="Synchronize stock and catalog with server"
+                >
+                    <svg class="w-4 h-4 text-slate-500" :class="{ 'animate-spin text-indigo-600': isRefreshingStock }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span class="hidden md:inline">Sync</span>
+                </button>
             </div>
         </header>
 
@@ -919,7 +1124,7 @@ onUnmounted(() => {
                             class="px-2.5 sm:px-3 py-1.5 rounded-lg font-bold shrink-0 transition-all text-xs whitespace-nowrap cursor-pointer"
                             :class="selectedCategory === 'all' ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'bg-slate-50 text-slate-600 hover:bg-slate-200 border border-slate-200'"
                         >
-                            All Categories ({{ products.length }})
+                            All Categories ({{ productsList.length }})
                         </button>
                         <button
                             v-for="cat in categories"
@@ -1102,12 +1307,26 @@ onUnmounted(() => {
                                 v-if="isCustomerDropdownOpen"
                                 class="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl p-2 z-50 text-xs"
                             >
-                                <input
-                                    v-model="customerSearch"
-                                    type="text"
-                                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 mb-2 focus:border-indigo-500 focus:ring-0"
-                                    autofocus
-                                />
+                                <div class="flex items-center gap-1.5 mb-2">
+                                    <input
+                                        v-model="customerSearch"
+                                        type="text"
+                                        :placeholder="t('Search name or phone...')"
+                                        class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:border-indigo-500 focus:ring-0"
+                                        autofocus
+                                    />
+                                    <button
+                                        type="button"
+                                        @click="isCustomerDropdownOpen = false; openAddCustomerModal(customerSearch)"
+                                        class="px-2 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg text-[11px] whitespace-nowrap transition flex items-center gap-1 shrink-0"
+                                        title="Add Customer Details"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        <span>New</span>
+                                    </button>
+                                </div>
                                 <div class="max-h-48 overflow-y-auto space-y-1 custom-scrollbar">
                                     <button
                                         v-for="c in filteredCustomers"
@@ -1119,13 +1338,23 @@ onUnmounted(() => {
                                         <span class="truncate">{{ c.name }}</span>
                                         <span class="text-[10px] text-slate-400 font-mono">{{ c.phone }}</span>
                                     </button>
+                                    <div v-if="filteredCustomers.length === 0" class="p-3 text-center text-slate-400 text-xs">
+                                        No customer found.
+                                        <button
+                                            type="button"
+                                            @click="isCustomerDropdownOpen = false; openAddCustomerModal(customerSearch)"
+                                            class="block mx-auto mt-1 text-indigo-600 hover:text-indigo-800 font-bold underline"
+                                        >
+                                            + Add customer details
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Quick Mobile Number Field (Replaces Walk-in field when + Customer clicked) -->
-                        <div v-else class="flex-1 relative flex items-center gap-1.5">
-                            <div class="relative flex-1">
+                        <div v-else class="flex-1 relative flex items-center gap-1.5 min-w-0">
+                            <div class="relative flex-1 min-w-[130px]">
                                 <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-indigo-500">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -1135,11 +1364,33 @@ onUnmounted(() => {
                                     ref="customerPhoneInputRef"
                                     v-model="customerPhoneInput"
                                     type="tel"
+                                    :placeholder="t('Customer phone *')"
                                     @keydown.enter.prevent="saveQuickCustomerPhone"
                                     @keydown.esc.prevent="cancelAddingCustomer"
-                                    class="w-full pl-8 pr-2 py-2 rounded-xl border-2 border-indigo-500 bg-white text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition"
+                                    class="w-full pl-8 pr-2 py-2 rounded-xl border-2 border-indigo-500 bg-white text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition placeholder:text-slate-400 placeholder:font-normal placeholder:font-sans"
                                 />
                             </div>
+                            <div class="relative w-28 hidden sm:block">
+                                <input
+                                    v-model="customerNameInput"
+                                    type="text"
+                                    :placeholder="t('Name (optional)')"
+                                    @keydown.enter.prevent="saveQuickCustomerPhone"
+                                    @keydown.esc.prevent="cancelAddingCustomer"
+                                    class="w-full px-2.5 py-2 rounded-xl border border-indigo-300 bg-white text-xs font-medium text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200 transition placeholder:text-slate-400"
+                                />
+                            </div>
+                            <button
+                                @click="openAddCustomerModal(customerPhoneInput, customerNameInput)"
+                                type="button"
+                                class="px-2 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold transition shrink-0 flex items-center justify-center gap-1 shadow-2xs"
+                                title="Add full customer details (Address, Email)"
+                            >
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                <span class="text-[11px] font-bold hidden md:inline">Details</span>
+                            </button>
                             <button
                                 @click="saveQuickCustomerPhone"
                                 type="button"
@@ -1155,24 +1406,37 @@ onUnmounted(() => {
                         </div>
 
                         <!-- Toggle Button -->
-                        <button
-                            v-if="!isAddingCustomer"
-                            @click="enableAddingCustomer"
-                            type="button"
-                            class="px-3 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-indigo-600 hover:text-indigo-800 border border-slate-200 text-xs font-bold transition shrink-0 flex items-center gap-1 shadow-2xs"
-                            title="Add Customer by Mobile"
-                        >
-                            <span>+ Customer</span>
-                        </button>
-                        <button
-                            v-else
-                            @click="cancelAddingCustomer"
-                            type="button"
-                            class="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 border border-slate-200 text-xs font-bold transition shrink-0 flex items-center justify-center"
-                            title="Cancel"
-                        >
-                            <span class="text-sm leading-none">&times;</span>
-                        </button>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <button
+                                v-if="!isAddingCustomer"
+                                @click="enableAddingCustomer"
+                                type="button"
+                                class="px-2.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-indigo-600 hover:text-indigo-800 border border-slate-200 text-xs font-bold transition shrink-0 flex items-center gap-1 shadow-2xs"
+                                title="Add Customer by Mobile"
+                            >
+                                <span>+ Customer</span>
+                            </button>
+                            <button
+                                v-if="!isAddingCustomer"
+                                @click="openAddCustomerModal()"
+                                type="button"
+                                class="p-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition shrink-0 flex items-center justify-center shadow-2xs"
+                                title="Add Customer Details Modal"
+                            >
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                                </svg>
+                            </button>
+                            <button
+                                v-else
+                                @click="cancelAddingCustomer"
+                                type="button"
+                                class="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 border border-slate-200 text-xs font-bold transition shrink-0 flex items-center justify-center"
+                                title="Cancel"
+                            >
+                                <span class="text-sm leading-none">&times;</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -1527,7 +1791,7 @@ onUnmounted(() => {
 
                 <div class="mt-4 space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
                     <div
-                        v-for="o in recentOrders"
+                        v-for="o in recentOrdersList"
                         :key="o.id"
                         class="p-2.5 sm:p-3 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 text-xs"
                     >
@@ -1571,7 +1835,7 @@ onUnmounted(() => {
                         </div>
                     </div>
 
-                    <div v-if="recentOrders.length === 0" class="py-8 text-center text-slate-400 text-xs">
+                    <div v-if="recentOrdersList.length === 0" class="py-8 text-center text-slate-400 text-xs">
                         No previous POS orders found.
                     </div>
                 </div>
@@ -1661,6 +1925,101 @@ onUnmounted(() => {
                 >
                     Start Next Sale [Enter]
                 </button>
+            </div>
+        </Modal>
+
+        <!-- ===================================== -->
+        <!-- MODAL: ADD CUSTOMER DETAILS           -->
+        <!-- ===================================== -->
+        <Modal :show="isAddCustomerModalOpen" @close="closeAddCustomerModal" max-width="md">
+            <div class="p-5 sm:p-6 bg-white text-slate-900 rounded-2xl shadow-xl">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900">Add Customer Details</h3>
+                            <p class="text-[11px] text-slate-500">Fast customer registration for POS invoices & receipts</p>
+                        </div>
+                    </div>
+                    <button @click="closeAddCustomerModal" type="button" class="text-slate-400 hover:text-slate-600 text-xl leading-none cursor-pointer">&times;</button>
+                </div>
+
+                <form @submit.prevent="saveCustomerDetails" class="space-y-3.5">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">
+                            Phone Number <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <input
+                                ref="modalPhoneInputRef"
+                                v-model="customerForm.phone"
+                                type="tel"
+                                required
+                                placeholder="e.g. 01712345678"
+                                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            />
+                        </div>
+                        <p v-if="customerFormErrors.phone" class="text-[11px] text-rose-500 mt-1">{{ customerFormErrors.phone }}</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">
+                            Customer Full Name
+                        </label>
+                        <input
+                            v-model="customerForm.name"
+                            type="text"
+                            placeholder="e.g. Karim Rahman"
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">
+                            Email Address <span class="text-slate-400 font-normal">(Optional)</span>
+                        </label>
+                        <input
+                            v-model="customerForm.email"
+                            type="email"
+                            placeholder="customer@example.com"
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">
+                            Address / Notes <span class="text-slate-400 font-normal">(Optional)</span>
+                        </label>
+                        <input
+                            v-model="customerForm.address"
+                            type="text"
+                            placeholder="e.g. Dhanmondi, Dhaka"
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                        />
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 mt-4">
+                        <button
+                            type="button"
+                            @click="closeAddCustomerModal"
+                            class="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            :disabled="isSubmittingCustomer || !customerForm.phone?.trim()"
+                            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition disabled:opacity-50 shadow-xs flex items-center gap-1.5 cursor-pointer"
+                        >
+                            <span v-if="isSubmittingCustomer">Saving...</span>
+                            <span v-else>Save & Select Customer</span>
+                        </button>
+                    </div>
+                </form>
             </div>
         </Modal>
 

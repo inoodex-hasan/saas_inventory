@@ -6,6 +6,7 @@ use App\Exports\ProductsExport;
 use App\Models\Brand;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\ProductVariant;
 use App\Models\StockLevel;
 use App\Models\Warehouse;
 use App\Services\CatalogImportExportService;
@@ -13,6 +14,7 @@ use App\Services\StockService;
 use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -30,7 +32,11 @@ class ProductController extends Controller
         $stockFilter = $request->input('stock', 'all');
 
         $query = Product::where('team_id', $teamId)
-            ->with(['category', 'brand'])
+            ->with([
+                'category',
+                'brand',
+                'variants' => fn ($q) => $q->withSum('stockLevels as total_stock', 'quantity'),
+            ])
             ->withSum('stockLevels as total_stock', 'quantity')
             ->when($request->filled('search'), function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
@@ -109,6 +115,13 @@ class ProductController extends Controller
             return redirect()->back()->with('error', 'You have reached the maximum product limit for your subscription plan. Please upgrade your plan.');
         }
 
+        if (is_string($request->input('variants'))) {
+            $decoded = json_decode($request->input('variants'), true);
+            if (is_array($decoded)) {
+                $request->merge(['variants' => $decoded]);
+            }
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'sku' => ['required', 'string', 'max:100', Rule::unique('products', 'sku')->where('team_id', $teamId)],
@@ -121,41 +134,110 @@ class ProductController extends Controller
             'reorder_level' => 'required|integer|min:0',
             'reorder_quantity' => 'required|integer|min:0',
             'warranty_days' => 'nullable|integer|min:0',
+            'has_variants' => 'nullable|boolean',
             'is_serialized' => 'boolean',
             'is_active' => 'boolean',
             'image' => 'nullable|image|max:3072',
             'description' => 'nullable|string|max:1000',
             'initial_warehouse_id' => ['nullable', Rule::exists('warehouses', 'id')->where('team_id', $teamId)],
             'initial_stock_quantity' => 'nullable|numeric|min:0',
+            'variants' => 'nullable|array',
+            'variants.*.name' => 'required_if:has_variants,true|string|max:255',
+            'variants.*.sku' => 'required_if:has_variants,true|string|max:100',
+            'variants.*.barcode' => 'nullable|string|max:100',
+            'variants.*.attributes' => 'nullable|array',
+            'variants.*.cost_price' => 'nullable|numeric|min:0',
+            'variants.*.unit_price' => 'nullable|numeric|min:0',
+            'variants.*.selling_price' => 'nullable|numeric|min:0',
+            'variants.*.is_active' => 'boolean',
+            'variants.*.initial_stock_quantity' => 'nullable|numeric|min:0',
         ]);
+
+        $hasVariants = (bool) ($validated['has_variants'] ?? false);
+        $variants = $hasVariants ? ($validated['variants'] ?? []) : [];
+
+        if ($hasVariants && empty($variants)) {
+            return redirect()->back()->withErrors(['variants' => 'Please configure at least one variant combination or disable variants.']);
+        }
+
+        if ($hasVariants && !empty($variants)) {
+            $skus = array_filter(array_column($variants, 'sku'));
+            if (count($skus) !== count(array_unique($skus))) {
+                return redirect()->back()->withErrors(['variants' => 'Each product variant must have a unique SKU.']);
+            }
+            $existingVariant = ProductVariant::where('team_id', $teamId)->whereIn('sku', $skus)->first();
+            if ($existingVariant) {
+                return redirect()->back()->withErrors(['variants' => "Variant SKU '{$existingVariant->sku}' is already in use by another product."]);
+            }
+        }
 
         $validated['team_id'] = $teamId;
         $validated['unit_price'] = $validated['selling_price'];
         $validated['warranty_days'] = (int) ($validated['warranty_days'] ?? 0);
+        $validated['has_variants'] = $hasVariants;
         $validated['is_serialized'] = $validated['is_serialized'] ?? false;
         $validated['is_active'] = $validated['is_active'] ?? true;
 
         $initialWarehouseId = $validated['initial_warehouse_id'] ?? null;
         $initialStockQty = (float) ($validated['initial_stock_quantity'] ?? 0);
-        unset($validated['initial_warehouse_id'], $validated['initial_stock_quantity']);
+        unset($validated['initial_warehouse_id'], $validated['initial_stock_quantity'], $validated['variants']);
 
         if ($request->hasFile('image')) {
             $validated['image'] = $request->file('image')->store("products/{$teamId}", 'public');
         }
 
-        $product = Product::create($validated);
+        $product = DB::transaction(function () use ($validated, $hasVariants, $variants, $initialWarehouseId, $initialStockQty, $stockService, $teamId) {
+            $product = Product::create($validated);
 
-        if ($initialWarehouseId && $initialStockQty > 0) {
-            $stockService->stockIn(
-                warehouseId: $initialWarehouseId,
-                productId: $product->id,
-                quantity: $initialStockQty,
-                unitCost: (float) $product->cost_price,
-                referenceType: Product::class,
-                referenceId: $product->id,
-                reason: "Initial Opening Stock Allocation"
-            );
-        }
+            if ($hasVariants && !empty($variants)) {
+                foreach ($variants as $vData) {
+                    $costPrice = isset($vData['cost_price']) && $vData['cost_price'] !== '' ? (float) $vData['cost_price'] : (float) $product->cost_price;
+                    $sellingPrice = isset($vData['selling_price']) && $vData['selling_price'] !== '' 
+                        ? (float) $vData['selling_price'] 
+                        : (isset($vData['unit_price']) ? (float) $vData['unit_price'] : (float) $product->unit_price);
+
+                    $variant = ProductVariant::create([
+                        'team_id' => $teamId,
+                        'product_id' => $product->id,
+                        'name' => $vData['name'],
+                        'sku' => $vData['sku'],
+                        'barcode' => !empty($vData['barcode']) ? $vData['barcode'] : null,
+                        'attributes' => $vData['attributes'] ?? null,
+                        'cost_price' => $costPrice,
+                        'unit_price' => $sellingPrice,
+                        'is_active' => $vData['is_active'] ?? true,
+                    ]);
+
+                    $vQty = (float) ($vData['initial_stock_quantity'] ?? 0);
+                    if ($initialWarehouseId && $vQty > 0) {
+                        $stockService->stockIn(
+                            warehouseId: $initialWarehouseId,
+                            productId: $product->id,
+                            quantity: $vQty,
+                            unitCost: $costPrice,
+                            variantId: $variant->id,
+                            referenceType: ProductVariant::class,
+                            referenceId: $variant->id,
+                            reason: "Initial Variant Opening Stock ({$variant->name})"
+                        );
+                    }
+                }
+            } else {
+                if ($initialWarehouseId && $initialStockQty > 0) {
+                    $stockService->stockIn(
+                        warehouseId: $initialWarehouseId,
+                        productId: $product->id,
+                        quantity: $initialStockQty,
+                        unitCost: (float) $product->cost_price,
+                        referenceType: Product::class,
+                        referenceId: $product->id,
+                        reason: "Initial Opening Stock Allocation"
+                    );
+                }
+            }
+
+            return $product;
+        });
 
         return redirect()->route('products.index')->with('success', "Product '{$product->name}' created successfully.");
     }
@@ -164,6 +246,8 @@ class ProductController extends Controller
     {
         $teamId = Auth::user()->current_team_id;
         abort_if($product->team_id !== $teamId, 403);
+
+        $product->load(['variants' => fn ($q) => $q->withSum('stockLevels as total_stock', 'quantity')]);
 
         $categories = ProductCategory::where('team_id', $teamId)->orderBy('name')->get();
         $brands = Brand::where('team_id', $teamId)->orderBy('name')->get();
@@ -182,6 +266,13 @@ class ProductController extends Controller
         $teamId = Auth::user()->current_team_id;
         abort_if($product->team_id !== $teamId, 403);
 
+        if (is_string($request->input('variants'))) {
+            $decoded = json_decode($request->input('variants'), true);
+            if (is_array($decoded)) {
+                $request->merge(['variants' => $decoded]);
+            }
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'sku' => ['required', 'string', 'max:100', Rule::unique('products', 'sku')->ignore($product->id)->where('team_id', $teamId)],
@@ -194,15 +285,49 @@ class ProductController extends Controller
             'reorder_level' => 'required|integer|min:0',
             'reorder_quantity' => 'required|integer|min:0',
             'warranty_days' => 'nullable|integer|min:0',
+            'has_variants' => 'nullable|boolean',
             'is_serialized' => 'boolean',
             'is_active' => 'boolean',
             'image' => 'nullable|image|max:3072',
             'remove_image' => 'nullable|boolean',
             'description' => 'nullable|string|max:1000',
+            'variants' => 'nullable|array',
+            'variants.*.id' => 'nullable|integer',
+            'variants.*.name' => 'required_if:has_variants,true|string|max:255',
+            'variants.*.sku' => 'required_if:has_variants,true|string|max:100',
+            'variants.*.barcode' => 'nullable|string|max:100',
+            'variants.*.attributes' => 'nullable|array',
+            'variants.*.cost_price' => 'nullable|numeric|min:0',
+            'variants.*.unit_price' => 'nullable|numeric|min:0',
+            'variants.*.selling_price' => 'nullable|numeric|min:0',
+            'variants.*.is_active' => 'boolean',
         ]);
+
+        $hasVariants = (bool) ($validated['has_variants'] ?? false);
+        $variants = $hasVariants ? ($validated['variants'] ?? []) : [];
+
+        if ($hasVariants && empty($variants)) {
+            return redirect()->back()->withErrors(['variants' => 'Please configure at least one variant combination or disable variants.']);
+        }
+
+        if ($hasVariants && !empty($variants)) {
+            $skus = array_filter(array_column($variants, 'sku'));
+            if (count($skus) !== count(array_unique($skus))) {
+                return redirect()->back()->withErrors(['variants' => 'Each product variant must have a unique SKU.']);
+            }
+            $existingVariantIds = $product->variants()->pluck('id')->toArray();
+            $existingOther = ProductVariant::where('team_id', $teamId)
+                ->whereNotIn('id', $existingVariantIds)
+                ->whereIn('sku', $skus)
+                ->first();
+            if ($existingOther) {
+                return redirect()->back()->withErrors(['variants' => "Variant SKU '{$existingOther->sku}' is already in use by another product."]);
+            }
+        }
 
         $validated['unit_price'] = $validated['selling_price'];
         $validated['warranty_days'] = (int) ($validated['warranty_days'] ?? 0);
+        $validated['has_variants'] = $hasVariants;
         $validated['is_serialized'] = $validated['is_serialized'] ?? false;
         $validated['is_active'] = $validated['is_active'] ?? true;
 
@@ -220,8 +345,59 @@ class ProductController extends Controller
             unset($validated['image']);
         }
 
-        unset($validated['remove_image']);
-        $product->update($validated);
+        unset($validated['remove_image'], $validated['variants']);
+
+        DB::transaction(function () use ($product, $validated, $hasVariants, $variants, $teamId) {
+            $product->update($validated);
+
+            if ($hasVariants) {
+                $savedIds = [];
+                foreach ($variants as $vData) {
+                    $costPrice = isset($vData['cost_price']) && $vData['cost_price'] !== '' ? (float) $vData['cost_price'] : (float) $product->cost_price;
+                    $sellingPrice = isset($vData['selling_price']) && $vData['selling_price'] !== '' 
+                        ? (float) $vData['selling_price'] 
+                        : (isset($vData['unit_price']) ? (float) $vData['unit_price'] : (float) $product->unit_price);
+
+                    if (!empty($vData['id'])) {
+                        $existing = ProductVariant::where('product_id', $product->id)->where('id', $vData['id'])->first();
+                        if ($existing) {
+                            $existing->update([
+                                'name' => $vData['name'],
+                                'sku' => $vData['sku'],
+                                'barcode' => !empty($vData['barcode']) ? $vData['barcode'] : null,
+                                'attributes' => $vData['attributes'] ?? null,
+                                'cost_price' => $costPrice,
+                                'unit_price' => $sellingPrice,
+                                'is_active' => $vData['is_active'] ?? true,
+                            ]);
+                            $savedIds[] = $existing->id;
+                            continue;
+                        }
+                    }
+
+                    $newVariant = ProductVariant::create([
+                        'team_id' => $teamId,
+                        'product_id' => $product->id,
+                        'name' => $vData['name'],
+                        'sku' => $vData['sku'],
+                        'barcode' => !empty($vData['barcode']) ? $vData['barcode'] : null,
+                        'attributes' => $vData['attributes'] ?? null,
+                        'cost_price' => $costPrice,
+                        'unit_price' => $sellingPrice,
+                        'is_active' => $vData['is_active'] ?? true,
+                    ]);
+                    $savedIds[] = $newVariant->id;
+                }
+
+                // Soft-delete removed variants
+                ProductVariant::where('product_id', $product->id)
+                    ->whereNotIn('id', $savedIds)
+                    ->delete();
+            } else {
+                // If previously had variants, soft-delete them
+                $product->variants()->delete();
+            }
+        });
 
         return redirect()->route('products.index')->with('success', "Product '{$product->name}' updated successfully.");
     }
@@ -277,6 +453,30 @@ class ProductController extends Controller
             ]);
         }
 
+        $variant = ProductVariant::where('team_id', $teamId)
+            ->when($excludeId, fn($q) => $q->where('product_id', '!=', $excludeId))
+            ->where(function ($q) use ($code) {
+                $q->where('barcode', $code)->orWhere('sku', $code);
+            })
+            ->with('product')
+            ->first();
+
+        if ($variant) {
+            return response()->json([
+                'found' => true,
+                'product' => [
+                    'id' => $variant->product_id,
+                    'name' => ($variant->product?->name ?? 'Product') . " ({$variant->name})",
+                    'sku' => $variant->sku,
+                    'barcode' => $variant->barcode,
+                    'category' => $variant->product?->category?->name,
+                    'brand' => $variant->product?->brand?->name,
+                    'unit_price' => (float) $variant->unit_price,
+                    'cost_price' => (float) $variant->cost_price,
+                ],
+            ]);
+        }
+
         return response()->json(['found' => false]);
     }
 
@@ -301,6 +501,8 @@ class ProductController extends Controller
 
                 return [
                     'warehouse_name' => $warehouseName,
+                    'variant_name' => $level->variant?->name,
+                    'variant_sku' => $level->variant?->sku,
                     'quantity_on_hand' => $onHand,
                     'quantity_reserved' => $reserved,
                     'quantity_available' => $available,

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Plan;
+use App\Models\SiteSetting;
 use App\Models\SubscriptionPayment;
 use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
@@ -27,17 +28,56 @@ class TenantSubscriptionController extends Controller
             ->latest()
             ->paginate(10);
 
+        $paymentAccounts = [
+            'bkash' => [
+                'is_active'    => filter_var(SiteSetting::get('payment_bkash_active', true), FILTER_VALIDATE_BOOLEAN),
+                'name'         => SiteSetting::get('payment_bkash_name', 'bKash Merchant'),
+                'number'       => SiteSetting::get('payment_bkash_number', '01712-345678'),
+                'counter'      => SiteSetting::get('payment_bkash_counter', 'Counter 1'),
+                'type'         => SiteSetting::get('payment_bkash_type', 'Merchant Payment'),
+                'instructions' => SiteSetting::get('payment_bkash_instructions', 'Select "Payment" option in bKash App'),
+            ],
+            'nagad' => [
+                'is_active'    => filter_var(SiteSetting::get('payment_nagad_active', true), FILTER_VALIDATE_BOOLEAN),
+                'name'         => SiteSetting::get('payment_nagad_name', 'Nagad Merchant'),
+                'number'       => SiteSetting::get('payment_nagad_number', '01812-345678'),
+                'counter'      => SiteSetting::get('payment_nagad_counter', 'Counter 1'),
+                'type'         => SiteSetting::get('payment_nagad_type', 'Merchant Payment'),
+                'instructions' => SiteSetting::get('payment_nagad_instructions', 'Select "Merchant Pay" in Nagad App'),
+            ],
+            'rocket' => [
+                'is_active'    => filter_var(SiteSetting::get('payment_rocket_active', true), FILTER_VALIDATE_BOOLEAN),
+                'name'         => SiteSetting::get('payment_rocket_name', 'Rocket Biller'),
+                'number'       => SiteSetting::get('payment_rocket_number', '01912-345678-9'),
+                'counter'      => SiteSetting::get('payment_rocket_counter', 'Biller ID 4567'),
+                'type'         => SiteSetting::get('payment_rocket_type', 'Merchant / Biller'),
+                'instructions' => SiteSetting::get('payment_rocket_instructions', 'Pay via Biller ID or Merchant Pay'),
+            ],
+            'bank_transfer' => [
+                'is_active'    => filter_var(SiteSetting::get('payment_bank_active', true), FILTER_VALIDATE_BOOLEAN),
+                'name'         => SiteSetting::get('payment_bank_name', 'City Bank Ltd'),
+                'number'       => SiteSetting::get('payment_bank_account_number', '1102938475001'),
+                'counter'      => SiteSetting::get('payment_bank_branch', 'Gulshan Branch'),
+                'account_name' => SiteSetting::get('payment_bank_account_name', 'SaaS Inventory BD Ltd'),
+                'routing'      => SiteSetting::get('payment_bank_routing', '225261145'),
+                'swift'        => SiteSetting::get('payment_bank_swift', 'CIBLBDDH'),
+                'type'         => SiteSetting::get('payment_bank_type', 'Corporate Account'),
+                'instructions' => SiteSetting::get('payment_bank_instructions', 'Direct deposit, BEFTN, NPSB or RTGS to our corporate bank account'),
+            ],
+        ];
+
         return Inertia::render('Settings/Subscription/Index', [
             'page_title' => 'Subscription & Billing',
             'usage' => $usage,
             'plans' => $plans,
             'payments' => $payments,
             'payment_instructions' => [
-                'bkash' => 'Send Money / Payment to Merchant bKash: 01712-345678 (Counter 1)',
-                'nagad' => 'Send Money / Payment to Merchant Nagad: 01812-345678',
-                'rocket' => 'Merchant Biller ID: 4567 or Pay to 01912-345678-9',
-                'bank' => 'City Bank Ltd, Account: 1102938475001, Branch: Gulshan, Name: SaaS Inventory BD Ltd',
+                'bkash' => 'Send Money / Payment to ' . $paymentAccounts['bkash']['name'] . ': ' . $paymentAccounts['bkash']['number'] . ' (' . $paymentAccounts['bkash']['counter'] . ')',
+                'nagad' => 'Send Money / Payment to ' . $paymentAccounts['nagad']['name'] . ': ' . $paymentAccounts['nagad']['number'],
+                'rocket' => $paymentAccounts['rocket']['counter'] . ' or Pay to ' . $paymentAccounts['rocket']['number'],
+                'bank' => $paymentAccounts['bank_transfer']['name'] . ', Account: ' . $paymentAccounts['bank_transfer']['number'] . ', Branch: ' . $paymentAccounts['bank_transfer']['counter'] . ', Name: ' . $paymentAccounts['bank_transfer']['account_name'],
             ],
+            'payment_accounts' => $paymentAccounts,
         ]);
     }
 
@@ -65,6 +105,18 @@ class TenantSubscriptionController extends Controller
         ], [
             'trx_id.unique' => 'This Transaction ID (TrxID) has already been submitted and is currently active or being verified.',
         ]);
+
+        $methodActive = match($validated['payment_method']) {
+            'bkash' => filter_var(SiteSetting::get('payment_bkash_active', true), FILTER_VALIDATE_BOOLEAN),
+            'nagad' => filter_var(SiteSetting::get('payment_nagad_active', true), FILTER_VALIDATE_BOOLEAN),
+            'rocket' => filter_var(SiteSetting::get('payment_rocket_active', true), FILTER_VALIDATE_BOOLEAN),
+            'bank_transfer' => filter_var(SiteSetting::get('payment_bank_active', true), FILTER_VALIDATE_BOOLEAN),
+            default => false,
+        };
+
+        if (!$methodActive) {
+            return back()->withErrors(['payment_method' => 'This payment service is temporarily not available. Please choose an active payment method.']);
+        }
 
         $payment = $subscriptionService->submitPayment($team, $validated);
 

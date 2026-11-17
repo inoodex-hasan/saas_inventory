@@ -203,6 +203,41 @@ class PosModuleTest extends TestCase
         $this->assertEquals(8500.00, (float) $this->cashAccount->current_balance);
     }
 
+    public function test_pos_sale_can_complete_with_unregistered_customer_phone_without_customer_name(): void
+    {
+        $response = $this->postJson(route('pos.store'), [
+            'warehouse_id' => $this->warehouse->id,
+            'customer_phone' => '01988776655', // Customer phone entered in POS but not explicitly registered before sale
+            'items' => [
+                [
+                    'product_id' => $this->product->id,
+                    'quantity' => 1,
+                    'unit_price' => 1800.00,
+                ],
+            ],
+            'subtotal' => 1800.00,
+            'total_amount' => 1800.00,
+            'paid_amount' => 1800.00,
+            'financial_account_id' => $this->cashAccount->id,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'customer' => [
+                'phone' => '01988776655',
+                'name' => 'Customer 01988776655',
+            ],
+        ]);
+
+        // Customer was automatically created with phone
+        $this->assertDatabaseHas('customers', [
+            'team_id' => $this->team->id,
+            'phone' => '01988776655',
+            'name' => 'Customer 01988776655',
+        ]);
+    }
+
     public function test_pos_fails_gracefully_when_stock_is_insufficient(): void
     {
         $response = $this->postJson(route('pos.store'), [

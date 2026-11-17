@@ -13,17 +13,20 @@ const props = defineProps({
     tenants: Object,
     plans: Array,
     filters: Object,
+    sms_balance: Object,
 });
 
 const search = ref(props.filters.search || '');
 const status = ref(props.filters.status || '');
 const planFilter = ref(props.filters.plan_id ? String(props.filters.plan_id) : '');
+const verified = ref(props.filters.verified || '');
 
 watch(() => props.filters, (newVal) => {
     if (newVal) {
         search.value = newVal.search || '';
         status.value = newVal.status || '';
         planFilter.value = newVal.plan_id ? String(newVal.plan_id) : '';
+        verified.value = newVal.verified || '';
     }
 }, { deep: true });
 
@@ -32,6 +35,7 @@ function applyFilter() {
     if (search.value) params.search = search.value;
     if (status.value) params.status = status.value;
     if (planFilter.value) params.plan_id = planFilter.value;
+    if (verified.value) params.verified = verified.value;
     router.get(route('admin.dashboard'), params, { preserveState: true, replace: true });
 }
 
@@ -39,6 +43,7 @@ function resetFilter() {
     search.value = '';
     status.value = '';
     planFilter.value = '';
+    verified.value = '';
     router.get(route('admin.dashboard'), {}, { preserveState: false, replace: true });
 }
 
@@ -260,6 +265,19 @@ function executeDeleteTenant() {
                 </div>
 
                 <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <!-- Live SMS Balance Header Pill -->
+                    <Link
+                        v-if="sms_balance"
+                        :href="route('admin.sms-gateway')"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition border cursor-pointer"
+                        :class="sms_balance.is_low ? 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100 shadow-xs' : 'bg-white text-slate-700 border-slate-200/80 hover:bg-slate-50 shadow-2xs'"
+                        title="Click to view BulkSMS Portal & Gateway"
+                    >
+                        <span class="w-2 h-2 rounded-full shrink-0" :class="sms_balance.is_low ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'"></span>
+                        <span class="text-slate-400 font-normal">SMS:</span>
+                        <span class="font-mono text-slate-800 font-extrabold">{{ sms_balance.formatted_balance }}</span>
+                    </Link>
+
                     <div v-if="$page.props.auth?.user?.current_team_id" class="w-full sm:w-auto">
                         <Link
                             :href="route('admin.exit-tenant')"
@@ -276,6 +294,24 @@ function executeDeleteTenant() {
         </template>
 
         <div class="space-y-6">
+            <!-- Low Balance Warning Banner -->
+            <div
+                v-if="sms_balance?.is_low"
+                class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 shadow-xs"
+            >
+                <div class="flex items-center gap-2.5 text-xs text-amber-950 font-medium">
+                    <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span><strong>SMS Balance Alert:</strong> Your BulkSMSBD credit is low (<strong>{{ sms_balance.formatted_balance }}</strong>). User verification OTPs will fail if it runs out.</span>
+                </div>
+                <Link
+                    :href="route('admin.sms-gateway')"
+                    class="shrink-0 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition"
+                >
+                    Manage Gateway &rarr;
+                </Link>
+            </div>
             <!-- Platform System Metrics -->
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
                 <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
@@ -344,6 +380,16 @@ function executeDeleteTenant() {
                         <option v-for="p in plans" :key="p.id" :value="String(p.id)">{{ p.name }}</option>
                     </select>
 
+                    <select
+                        v-model="verified"
+                        @change="applyFilter"
+                        class="w-full sm:w-auto py-2 pl-3 pr-8 text-xs bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                        <option value="">{{ t('All Verification') }}</option>
+                        <option value="verified">{{ t('Verified Only') }}</option>
+                        <option value="unverified">{{ t('Unverified Only') }}</option>
+                    </select>
+
                     <button
                         @click="resetFilter"
                         class="w-full sm:w-auto px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer text-center"
@@ -410,7 +456,23 @@ function executeDeleteTenant() {
                         <div class="text-xs text-slate-500 space-y-1.5 pt-1 border-t border-slate-100">
                             <div class="flex items-center justify-between">
                                 <span class="font-medium text-slate-500">{{ t('Owner:') }}</span>
-                                <span class="font-bold text-slate-800">{{ tenant.owner?.name }}</span>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-bold text-slate-800">{{ tenant.owner?.name }}</span>
+                                    <span
+                                        v-if="tenant.owner?.phone_verified_at || tenant.owner?.email_verified_at"
+                                        class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-bold uppercase"
+                                        title="Verified Account"
+                                    >
+                                        {{ t('Verified') }}
+                                    </span>
+                                    <span
+                                        v-else
+                                        class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-bold uppercase"
+                                        title="Unverified Account"
+                                    >
+                                        {{ t('Unverified') }}
+                                    </span>
+                                </div>
                             </div>
                             <div class="flex items-center justify-between gap-2">
                                 <span class="font-medium text-slate-500">{{ t('Email:') }}</span>

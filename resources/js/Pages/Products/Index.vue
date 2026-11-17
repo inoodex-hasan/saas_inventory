@@ -194,6 +194,15 @@ function printBarcode() {
     printWindow.document.close();
 }
 
+const expandedProductIds = ref(new Set());
+function toggleExpandProduct(id) {
+    if (expandedProductIds.value.has(id)) {
+        expandedProductIds.value.delete(id);
+    } else {
+        expandedProductIds.value.add(id);
+    }
+}
+
 function submitCategory() {
     categoryForm.post(route('products.categories.store'), {
         preserveScroll: true,
@@ -480,7 +489,8 @@ function submitImport() {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <tr v-for="prod in displayedProducts" :key="prod.id" class="hover:bg-slate-50/70 transition-colors">
+                            <template v-for="prod in displayedProducts" :key="prod.id">
+                            <tr class="hover:bg-slate-50/70 transition-colors">
                                 <!-- Product & SKU -->
                                 <td class="py-3.5 px-4">
                                     <div class="flex items-center gap-3">
@@ -499,6 +509,18 @@ function submitImport() {
                                                 <span v-if="prod.barcode" class="font-mono text-slate-400 text-[10px] whitespace-nowrap">
                                                     UPC: {{ prod.barcode }}
                                                 </span>
+                                                <button 
+                                                    v-if="prod.has_variants && prod.variants?.length" 
+                                                    type="button" 
+                                                    @click="toggleExpandProduct(prod.id)"
+                                                    class="inline-flex items-center gap-1 font-bold text-[10px] bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200 px-2 py-0.5 rounded-full cursor-pointer transition shrink-0"
+                                                    :title="expandedProductIds.has(prod.id) ? 'Collapse variants' : 'Expand variants'"
+                                                >
+                                                    <span>{{ prod.variants.length }} Variants</span>
+                                                    <svg class="w-3 h-3 transition-transform duration-200" :class="expandedProductIds.has(prod.id) ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -599,6 +621,57 @@ function submitImport() {
                                     </ActionDropdown>
                                 </td>
                             </tr>
+
+                            <!-- Expandable Product Variants Sub-Table -->
+                            <tr v-if="prod.has_variants && expandedProductIds.has(prod.id)" class="bg-violet-50/30 border-b border-violet-100">
+                                <td colspan="7" class="py-3 px-6">
+                                    <div class="space-y-2">
+                                        <div class="text-[11px] font-bold text-violet-900 uppercase tracking-wider flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full bg-violet-600"></span>
+                                            Variants for {{ prod.name }} ({{ prod.variants?.length || 0 }})
+                                        </div>
+                                        <div class="overflow-x-auto rounded-xl border border-violet-100 bg-white shadow-xs">
+                                            <table class="w-full text-left text-xs">
+                                                <thead>
+                                                    <tr class="bg-violet-50/50 text-[10px] font-bold uppercase tracking-wider text-violet-800 border-b border-violet-100">
+                                                        <th class="py-2 px-3">Variant Name</th>
+                                                        <th class="py-2 px-3">SKU</th>
+                                                        <th class="py-2 px-3">Barcode</th>
+                                                        <th class="py-2 px-3 text-right">Cost Price</th>
+                                                        <th class="py-2 px-3 text-right">Selling Price</th>
+                                                        <th class="py-2 px-3 text-center">Stock on Hand</th>
+                                                        <th class="py-2 px-3 text-center">Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-slate-100">
+                                                    <tr v-for="v in prod.variants" :key="v.id" class="hover:bg-slate-50/80">
+                                                        <td class="py-2 px-3 font-bold text-slate-800">{{ v.name }}</td>
+                                                        <td class="py-2 px-3 font-mono font-bold text-slate-700">{{ v.sku }}</td>
+                                                        <td class="py-2 px-3 font-mono text-slate-400">{{ v.barcode || '—' }}</td>
+                                                        <td class="py-2 px-3 text-right font-mono text-slate-600">
+                                                            <CurrencyDisplay :amount="v.cost_price" />
+                                                        </td>
+                                                        <td class="py-2 px-3 text-right font-mono font-bold text-slate-900">
+                                                            <CurrencyDisplay :amount="v.unit_price" />
+                                                        </td>
+                                                        <td class="py-2 px-3 text-center font-mono">
+                                                            <span class="px-2 py-0.5 rounded text-[11px] font-bold" :class="(v.total_stock ?? 0) > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'">
+                                                                {{ v.total_stock ?? 0 }} {{ prod.unit }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="py-2 px-3 text-center">
+                                                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" :class="v.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'">
+                                                                {{ v.is_active ? 'Active' : 'Inactive' }}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </template>
                         </tbody>
                     </table>
                 </div>

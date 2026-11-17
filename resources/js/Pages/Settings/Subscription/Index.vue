@@ -13,6 +13,7 @@ const props = defineProps({
     plans: Array,
     payments: Object,
     payment_instructions: Object,
+    payment_accounts: Object,
 });
 
 const isPayModalOpen = ref(false);
@@ -43,7 +44,10 @@ function openPayModal(plan) {
     selectedPlan.value = plan;
     payForm.plan_id = plan.id;
     payForm.billing_cycle = billingCycle.value;
-    payForm.payment_method = 'bkash';
+    const activeMethods = ['bkash', 'nagad', 'rocket', 'bank_transfer'].filter(
+        (m) => paymentMethodDetails.value[m]?.is_active !== false
+    );
+    payForm.payment_method = activeMethods[0] || 'bkash';
     payForm.sender_number = '';
     payForm.trx_id = '';
     payForm.notes = '';
@@ -68,48 +72,62 @@ function getAmount() {
         : selectedPlan.value.price_bdt;
 }
 
-const paymentMethodDetails = {
-    bkash: {
-        name: 'bKash Merchant',
-        number: '01712-345678',
-        counter: 'Counter 1',
-        type: 'Merchant Payment',
-        color: 'from-pink-600 to-rose-600',
-        textColor: 'text-pink-600',
-        bgColor: 'bg-pink-50',
-        borderColor: 'border-pink-200',
-    },
-    nagad: {
-        name: 'Nagad Merchant',
-        number: '01812-345678',
-        counter: 'Counter 1',
-        type: 'Merchant Payment',
-        color: 'from-orange-500 to-amber-600',
-        textColor: 'text-orange-600',
-        bgColor: 'bg-orange-50',
-        borderColor: 'border-orange-200',
-    },
-    rocket: {
-        name: 'Rocket Biller',
-        number: '01912-345678-9',
-        counter: 'Biller ID 4567',
-        type: 'Merchant / Biller',
-        color: 'from-purple-600 to-indigo-600',
-        textColor: 'text-purple-600',
-        bgColor: 'bg-purple-50',
-        borderColor: 'border-purple-200',
-    },
-    bank_transfer: {
-        name: 'City Bank Ltd',
-        number: '1102938475001',
-        counter: 'Gulshan Branch',
-        type: 'Corporate Account',
-        color: 'from-blue-600 to-cyan-600',
-        textColor: 'text-blue-600',
-        bgColor: 'bg-blue-50',
-        borderColor: 'border-blue-200',
-    },
-};
+const paymentMethodDetails = computed(() => {
+    const acc = props.payment_accounts || {};
+    return {
+        bkash: {
+            is_active: acc.bkash?.is_active ?? true,
+            name: acc.bkash?.name || 'bKash Merchant',
+            number: acc.bkash?.number || '01712-345678',
+            counter: acc.bkash?.counter || 'Counter 1',
+            type: acc.bkash?.type || 'Merchant Payment',
+            instructions: acc.bkash?.instructions || 'Select "Payment" option in bKash App',
+            color: 'from-pink-600 to-rose-600',
+            textColor: 'text-pink-600',
+            bgColor: 'bg-pink-50',
+            borderColor: 'border-pink-200',
+        },
+        nagad: {
+            is_active: acc.nagad?.is_active ?? true,
+            name: acc.nagad?.name || 'Nagad Merchant',
+            number: acc.nagad?.number || '01812-345678',
+            counter: acc.nagad?.counter || 'Counter 1',
+            type: acc.nagad?.type || 'Merchant Payment',
+            instructions: acc.nagad?.instructions || 'Select "Merchant Pay" in Nagad App',
+            color: 'from-orange-500 to-amber-600',
+            textColor: 'text-orange-600',
+            bgColor: 'bg-orange-50',
+            borderColor: 'border-orange-200',
+        },
+        rocket: {
+            is_active: acc.rocket?.is_active ?? true,
+            name: acc.rocket?.name || 'Rocket Biller',
+            number: acc.rocket?.number || '01912-345678-9',
+            counter: acc.rocket?.counter || 'Biller ID 4567',
+            type: acc.rocket?.type || 'Merchant / Biller',
+            instructions: acc.rocket?.instructions || 'Pay via Biller ID or Merchant Pay',
+            color: 'from-purple-600 to-indigo-600',
+            textColor: 'text-purple-600',
+            bgColor: 'bg-purple-50',
+            borderColor: 'border-purple-200',
+        },
+        bank_transfer: {
+            is_active: acc.bank_transfer?.is_active ?? true,
+            name: acc.bank_transfer?.name || 'City Bank Ltd',
+            number: acc.bank_transfer?.number || '1102938475001',
+            counter: acc.bank_transfer?.counter || 'Gulshan Branch',
+            account_name: acc.bank_transfer?.account_name || 'SaaS Inventory BD Ltd',
+            routing: acc.bank_transfer?.routing || '225261145',
+            swift: acc.bank_transfer?.swift || 'CIBLBDDH',
+            type: acc.bank_transfer?.type || 'Corporate Account',
+            instructions: acc.bank_transfer?.instructions || 'Direct deposit, BEFTN, NPSB or RTGS to our corporate bank account',
+            color: 'from-blue-600 to-cyan-600',
+            textColor: 'text-blue-600',
+            bgColor: 'bg-blue-50',
+            borderColor: 'border-blue-200',
+        },
+    };
+});
 
 function statusBadgeClass(status) {
     switch (status) {
@@ -607,71 +625,144 @@ function paymentStatusBadge(status) {
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
                     <!-- bKash -->
-                    <div class="p-4 rounded-2xl border border-pink-100 bg-pink-50/50 hover:bg-pink-50 transition-colors space-y-2">
+                    <div 
+                        class="p-4 rounded-2xl border transition-colors space-y-2"
+                        :class="paymentMethodDetails.bkash.is_active ? 'border-pink-100 bg-pink-50/50 hover:bg-pink-50' : 'border-slate-200 bg-slate-50/80 opacity-90'"
+                    >
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-pink-700">bKash Merchant</span>
-                            <span class="text-[9px] uppercase font-bold px-2 py-0.5 rounded bg-pink-100 text-pink-800">Counter 1</span>
+                            <span class="text-xs font-bold" :class="paymentMethodDetails.bkash.is_active ? 'text-pink-700' : 'text-slate-500'">{{ paymentMethodDetails.bkash.name }}</span>
+                            <span v-if="paymentMethodDetails.bkash.is_active" class="text-[9px] uppercase font-bold px-2 py-0.5 rounded bg-pink-100 text-pink-800">{{ paymentMethodDetails.bkash.counter }}</span>
+                            <span v-else class="text-[9px] uppercase font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800">Paused</span>
                         </div>
-                        <div class="font-mono font-bold text-sm text-slate-900">01712-345678</div>
-                        <p class="text-[10px] text-slate-500">Select "Payment" option in bKash App</p>
-                        <button
-                            type="button"
-                            @click="copyToClipboard('01712345678', 'bkash')"
-                            class="w-full mt-1 py-1.5 px-3 rounded-lg text-[11px] font-bold bg-white text-pink-700 border border-pink-200 hover:bg-pink-100 transition flex items-center justify-center gap-1 cursor-pointer"
-                        >
-                            <span>{{ copiedKey === 'bkash' ? 'Copied!' : 'Copy Number' }}</span>
-                        </button>
+                        <template v-if="paymentMethodDetails.bkash.is_active">
+                            <div class="font-mono font-bold text-sm text-slate-900">{{ paymentMethodDetails.bkash.number }}</div>
+                            <p class="text-[10px] text-slate-500">{{ paymentMethodDetails.bkash.instructions }}</p>
+                            <button
+                                type="button"
+                                @click="copyToClipboard(paymentMethodDetails.bkash.number, 'bkash')"
+                                class="w-full mt-1 py-1.5 px-3 rounded-lg text-[11px] font-bold bg-white text-pink-700 border border-pink-200 hover:bg-pink-100 transition flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                                <span>{{ copiedKey === 'bkash' ? 'Copied!' : 'Copy Number' }}</span>
+                            </button>
+                        </template>
+                        <template v-else>
+                            <div class="py-2.5 px-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center space-y-0.5">
+                                <div class="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-800">
+                                    <svg class="w-3.5 h-3.5 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                    <span>Service temporary not available</span>
+                                </div>
+                                <p class="text-[10px] text-amber-600">Please choose another payment channel</p>
+                            </div>
+                        </template>
                     </div>
 
                     <!-- Nagad -->
-                    <div class="p-4 rounded-2xl border border-orange-100 bg-orange-50/50 hover:bg-orange-50 transition-colors space-y-2">
+                    <div 
+                        class="p-4 rounded-2xl border transition-colors space-y-2"
+                        :class="paymentMethodDetails.nagad.is_active ? 'border-orange-100 bg-orange-50/50 hover:bg-orange-50' : 'border-slate-200 bg-slate-50/80 opacity-90'"
+                    >
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-orange-700">Nagad Merchant</span>
-                            <span class="text-[9px] uppercase font-bold px-2 py-0.5 rounded bg-orange-100 text-orange-800">Counter 1</span>
+                            <span class="text-xs font-bold" :class="paymentMethodDetails.nagad.is_active ? 'text-orange-700' : 'text-slate-500'">{{ paymentMethodDetails.nagad.name }}</span>
+                            <span v-if="paymentMethodDetails.nagad.is_active" class="text-[9px] uppercase font-bold px-2 py-0.5 rounded bg-orange-100 text-orange-800">{{ paymentMethodDetails.nagad.counter }}</span>
+                            <span v-else class="text-[9px] uppercase font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800">Paused</span>
                         </div>
-                        <div class="font-mono font-bold text-sm text-slate-900">01812-345678</div>
-                        <p class="text-[10px] text-slate-500">Select "Merchant Pay" in Nagad App</p>
-                        <button
-                            type="button"
-                            @click="copyToClipboard('01812345678', 'nagad')"
-                            class="w-full mt-1 py-1.5 px-3 rounded-lg text-[11px] font-bold bg-white text-orange-700 border border-orange-200 hover:bg-orange-100 transition flex items-center justify-center gap-1 cursor-pointer"
-                        >
-                            <span>{{ copiedKey === 'nagad' ? 'Copied!' : 'Copy Number' }}</span>
-                        </button>
+                        <template v-if="paymentMethodDetails.nagad.is_active">
+                            <div class="font-mono font-bold text-sm text-slate-900">{{ paymentMethodDetails.nagad.number }}</div>
+                            <p class="text-[10px] text-slate-500">{{ paymentMethodDetails.nagad.instructions }}</p>
+                            <button
+                                type="button"
+                                @click="copyToClipboard(paymentMethodDetails.nagad.number, 'nagad')"
+                                class="w-full mt-1 py-1.5 px-3 rounded-lg text-[11px] font-bold bg-white text-orange-700 border border-orange-200 hover:bg-orange-100 transition flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                                <span>{{ copiedKey === 'nagad' ? 'Copied!' : 'Copy Number' }}</span>
+                            </button>
+                        </template>
+                        <template v-else>
+                            <div class="py-2.5 px-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center space-y-0.5">
+                                <div class="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-800">
+                                    <svg class="w-3.5 h-3.5 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                    <span>Service temporary not available</span>
+                                </div>
+                                <p class="text-[10px] text-amber-600">Please choose another payment channel</p>
+                            </div>
+                        </template>
                     </div>
 
                     <!-- Rocket -->
-                    <div class="p-4 rounded-2xl border border-purple-100 bg-purple-50/50 hover:bg-purple-50 transition-colors space-y-2">
+                    <div 
+                        class="p-4 rounded-2xl border transition-colors space-y-2"
+                        :class="paymentMethodDetails.rocket.is_active ? 'border-purple-100 bg-purple-50/50 hover:bg-purple-50' : 'border-slate-200 bg-slate-50/80 opacity-90'"
+                    >
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-purple-700">Rocket Biller</span>
-                            <span class="text-[9px] uppercase font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800">ID: 4567</span>
+                            <span class="text-xs font-bold" :class="paymentMethodDetails.rocket.is_active ? 'text-purple-700' : 'text-slate-500'">{{ paymentMethodDetails.rocket.name }}</span>
+                            <span v-if="paymentMethodDetails.rocket.is_active" class="text-[9px] uppercase font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800">{{ paymentMethodDetails.rocket.counter }}</span>
+                            <span v-else class="text-[9px] uppercase font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800">Paused</span>
                         </div>
-                        <div class="font-mono font-bold text-sm text-slate-900">01912-345678-9</div>
-                        <p class="text-[10px] text-slate-500">Pay via Biller ID or Merchant Pay</p>
-                        <button
-                            type="button"
-                            @click="copyToClipboard('019123456789', 'rocket')"
-                            class="w-full mt-1 py-1.5 px-3 rounded-lg text-[11px] font-bold bg-white text-purple-700 border border-purple-200 hover:bg-purple-100 transition flex items-center justify-center gap-1 cursor-pointer"
-                        >
-                            <span>{{ copiedKey === 'rocket' ? 'Copied!' : 'Copy Number' }}</span>
-                        </button>
+                        <template v-if="paymentMethodDetails.rocket.is_active">
+                            <div class="font-mono font-bold text-sm text-slate-900">{{ paymentMethodDetails.rocket.number }}</div>
+                            <p class="text-[10px] text-slate-500">{{ paymentMethodDetails.rocket.instructions }}</p>
+                            <button
+                                type="button"
+                                @click="copyToClipboard(paymentMethodDetails.rocket.number, 'rocket')"
+                                class="w-full mt-1 py-1.5 px-3 rounded-lg text-[11px] font-bold bg-white text-purple-700 border border-purple-200 hover:bg-purple-100 transition flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                                <span>{{ copiedKey === 'rocket' ? 'Copied!' : 'Copy Number' }}</span>
+                            </button>
+                        </template>
+                        <template v-else>
+                            <div class="py-2.5 px-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center space-y-0.5">
+                                <div class="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-800">
+                                    <svg class="w-3.5 h-3.5 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                    <span>Service temporary not available</span>
+                                </div>
+                                <p class="text-[10px] text-amber-600">Please choose another payment channel</p>
+                            </div>
+                        </template>
                     </div>
 
-                    <!-- City Bank -->
-                    <div class="p-4 rounded-2xl border border-blue-100 bg-blue-50/50 hover:bg-blue-50 transition-colors space-y-2">
+                    <!-- Bank Transfer -->
+                    <div 
+                        class="p-4 rounded-2xl border transition-colors space-y-2"
+                        :class="paymentMethodDetails.bank_transfer.is_active ? 'border-blue-100 bg-blue-50/50 hover:bg-blue-50' : 'border-slate-200 bg-slate-50/80 opacity-90'"
+                    >
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-blue-700">City Bank Ltd</span>
-                            <span class="text-[9px] uppercase font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">Gulshan</span>
+                            <span class="text-xs font-bold truncate mr-1" :class="paymentMethodDetails.bank_transfer.is_active ? 'text-blue-700' : 'text-slate-500'">{{ paymentMethodDetails.bank_transfer.name }}</span>
+                            <span v-if="paymentMethodDetails.bank_transfer.is_active" class="text-[9px] uppercase font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800 shrink-0">{{ paymentMethodDetails.bank_transfer.counter }}</span>
+                            <span v-else class="text-[9px] uppercase font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 shrink-0">Paused</span>
                         </div>
-                        <div class="font-mono font-bold text-xs text-slate-900 truncate">1102938475001</div>
-                        <p class="text-[10px] text-slate-500 truncate">SaaS Inventory BD Ltd</p>
-                        <button
-                            type="button"
-                            @click="copyToClipboard('1102938475001', 'bank')"
-                            class="w-full mt-1 py-1.5 px-3 rounded-lg text-[11px] font-bold bg-white text-blue-700 border border-blue-200 hover:bg-blue-100 transition flex items-center justify-center gap-1 cursor-pointer"
-                        >
-                            <span>{{ copiedKey === 'bank' ? 'Copied!' : 'Copy A/C No' }}</span>
-                        </button>
+                        <template v-if="paymentMethodDetails.bank_transfer.is_active">
+                            <div class="font-mono font-bold text-xs text-slate-900 truncate">{{ paymentMethodDetails.bank_transfer.number }}</div>
+                            <p class="text-[10px] text-slate-500 truncate">{{ paymentMethodDetails.bank_transfer.account_name }}</p>
+                            <p v-if="paymentMethodDetails.bank_transfer.routing || paymentMethodDetails.bank_transfer.swift" class="text-[9px] text-slate-500 font-mono truncate">
+                                <span v-if="paymentMethodDetails.bank_transfer.routing">Routing: {{ paymentMethodDetails.bank_transfer.routing }}</span>
+                                <span v-if="paymentMethodDetails.bank_transfer.routing && paymentMethodDetails.bank_transfer.swift"> • </span>
+                                <span v-if="paymentMethodDetails.bank_transfer.swift">SWIFT: {{ paymentMethodDetails.bank_transfer.swift }}</span>
+                            </p>
+                            <button
+                                type="button"
+                                @click="copyToClipboard(paymentMethodDetails.bank_transfer.number, 'bank')"
+                                class="w-full mt-1 py-1.5 px-3 rounded-lg text-[11px] font-bold bg-white text-blue-700 border border-blue-200 hover:bg-blue-100 transition flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                                <span>{{ copiedKey === 'bank' ? 'Copied!' : 'Copy A/C No' }}</span>
+                            </button>
+                        </template>
+                        <template v-else>
+                            <div class="py-2.5 px-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center space-y-0.5">
+                                <div class="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-800">
+                                    <svg class="w-3.5 h-3.5 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                    <span>Service temporary not available</span>
+                                </div>
+                                <p class="text-[10px] text-amber-600">Please choose another payment channel</p>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -839,50 +930,82 @@ function paymentStatusBadge(status) {
                             <button
                                 type="button"
                                 @click="payForm.payment_method = 'bkash'"
-                                class="p-2.5 rounded-xl border text-center transition cursor-pointer"
-                                :class="payForm.payment_method === 'bkash' ? 'border-pink-500 bg-pink-50/60 ring-1 ring-pink-500 text-pink-700 font-bold' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'"
+                                class="p-2.5 rounded-xl border text-center transition cursor-pointer relative"
+                                :class="[
+                                    payForm.payment_method === 'bkash' ? 'border-pink-500 bg-pink-50/60 ring-1 ring-pink-500 text-pink-700 font-bold' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
+                                    !paymentMethodDetails.bkash?.is_active ? 'opacity-70' : ''
+                                ]"
                             >
                                 <div class="text-xs font-extrabold">bKash</div>
-                                <div class="text-[10px] text-slate-400">Merchant</div>
+                                <div class="text-[10px]" :class="paymentMethodDetails.bkash?.is_active ? 'text-slate-400' : 'text-amber-600 font-bold'">
+                                    {{ paymentMethodDetails.bkash?.is_active ? 'Merchant' : 'Unavailable' }}
+                                </div>
                             </button>
 
                             <button
                                 type="button"
                                 @click="payForm.payment_method = 'nagad'"
-                                class="p-2.5 rounded-xl border text-center transition cursor-pointer"
-                                :class="payForm.payment_method === 'nagad' ? 'border-orange-500 bg-orange-50/60 ring-1 ring-orange-500 text-orange-700 font-bold' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'"
+                                class="p-2.5 rounded-xl border text-center transition cursor-pointer relative"
+                                :class="[
+                                    payForm.payment_method === 'nagad' ? 'border-orange-500 bg-orange-50/60 ring-1 ring-orange-500 text-orange-700 font-bold' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
+                                    !paymentMethodDetails.nagad?.is_active ? 'opacity-70' : ''
+                                ]"
                             >
                                 <div class="text-xs font-extrabold">Nagad</div>
-                                <div class="text-[10px] text-slate-400">Merchant</div>
+                                <div class="text-[10px]" :class="paymentMethodDetails.nagad?.is_active ? 'text-slate-400' : 'text-amber-600 font-bold'">
+                                    {{ paymentMethodDetails.nagad?.is_active ? 'Merchant' : 'Unavailable' }}
+                                </div>
                             </button>
 
                             <button
                                 type="button"
                                 @click="payForm.payment_method = 'rocket'"
-                                class="p-2.5 rounded-xl border text-center transition cursor-pointer"
-                                :class="payForm.payment_method === 'rocket' ? 'border-purple-500 bg-purple-50/60 ring-1 ring-purple-500 text-purple-700 font-bold' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'"
+                                class="p-2.5 rounded-xl border text-center transition cursor-pointer relative"
+                                :class="[
+                                    payForm.payment_method === 'rocket' ? 'border-purple-500 bg-purple-50/60 ring-1 ring-purple-500 text-purple-700 font-bold' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
+                                    !paymentMethodDetails.rocket?.is_active ? 'opacity-70' : ''
+                                ]"
                             >
                                 <div class="text-xs font-extrabold">Rocket</div>
-                                <div class="text-[10px] text-slate-400">Biller</div>
+                                <div class="text-[10px]" :class="paymentMethodDetails.rocket?.is_active ? 'text-slate-400' : 'text-amber-600 font-bold'">
+                                    {{ paymentMethodDetails.rocket?.is_active ? 'Biller' : 'Unavailable' }}
+                                </div>
                             </button>
 
                             <button
                                 type="button"
                                 @click="payForm.payment_method = 'bank_transfer'"
-                                class="p-2.5 rounded-xl border text-center transition cursor-pointer"
-                                :class="payForm.payment_method === 'bank_transfer' ? 'border-blue-500 bg-blue-50/60 ring-1 ring-blue-500 text-blue-700 font-bold' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'"
+                                class="p-2.5 rounded-xl border text-center transition cursor-pointer relative"
+                                :class="[
+                                    payForm.payment_method === 'bank_transfer' ? 'border-blue-500 bg-blue-50/60 ring-1 ring-blue-500 text-blue-700 font-bold' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
+                                    !paymentMethodDetails.bank_transfer?.is_active ? 'opacity-70' : ''
+                                ]"
                             >
-                                <div class="text-xs font-extrabold">City Bank</div>
-                                <div class="text-[10px] text-slate-400">Direct A/C</div>
+                                <div class="text-xs font-extrabold truncate">{{ paymentMethodDetails.bank_transfer?.name || 'Bank Transfer' }}</div>
+                                <div class="text-[10px]" :class="paymentMethodDetails.bank_transfer?.is_active ? 'text-slate-400' : 'text-amber-600 font-bold'">
+                                    {{ paymentMethodDetails.bank_transfer?.is_active ? 'Direct A/C' : 'Unavailable' }}
+                                </div>
                             </button>
                         </div>
                     </div>
 
                     <!-- Dynamic Instructions for Selected Method -->
-                    <div class="p-3.5 rounded-xl border text-xs space-y-1.5" :class="paymentMethodDetails[payForm.payment_method]?.bgColor + ' ' + paymentMethodDetails[payForm.payment_method]?.borderColor">
+                    <div v-if="!paymentMethodDetails[payForm.payment_method]?.is_active" class="p-3.5 rounded-xl border border-amber-300 bg-amber-50 text-xs space-y-1 text-amber-900">
+                        <div class="flex items-center gap-1.5 font-bold text-amber-800">
+                            <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <span>Service temporary not available</span>
+                        </div>
+                        <p class="text-[11px] text-amber-700">
+                            This payment channel is temporarily paused by platform administrators. Please choose an active payment channel above to proceed.
+                        </p>
+                    </div>
+
+                    <div v-else class="p-3.5 rounded-xl border text-xs space-y-1.5" :class="paymentMethodDetails[payForm.payment_method]?.bgColor + ' ' + paymentMethodDetails[payForm.payment_method]?.borderColor">
                         <div class="flex items-center justify-between">
                             <span class="font-extrabold text-[11px]" :class="paymentMethodDetails[payForm.payment_method]?.textColor">
-                                Send Payment To:
+                                Send Payment To ({{ paymentMethodDetails[payForm.payment_method]?.name }}):
                             </span>
                             <button
                                 type="button"
@@ -890,7 +1013,7 @@ function paymentStatusBadge(status) {
                                 class="text-[10px] font-bold underline cursor-pointer"
                                 :class="paymentMethodDetails[payForm.payment_method]?.textColor"
                             >
-                                {{ copiedKey === 'modal_' + payForm.payment_method ? 'Copied!' : 'Copy Number' }}
+                                {{ copiedKey === 'modal_' + payForm.payment_method ? 'Copied!' : (payForm.payment_method === 'bank_transfer' ? 'Copy A/C No' : 'Copy Number') }}
                             </button>
                         </div>
                         <div class="font-mono font-bold text-sm text-slate-900">
@@ -898,6 +1021,14 @@ function paymentStatusBadge(status) {
                         </div>
                         <p class="text-[11px] text-slate-600">
                             {{ paymentMethodDetails[payForm.payment_method]?.counter }} • {{ paymentMethodDetails[payForm.payment_method]?.type }}
+                            <span v-if="paymentMethodDetails[payForm.payment_method]?.account_name" class="block font-medium mt-0.5">
+                                A/C Name: {{ paymentMethodDetails[payForm.payment_method]?.account_name }}
+                                <span v-if="paymentMethodDetails[payForm.payment_method]?.routing"> | Routing: {{ paymentMethodDetails[payForm.payment_method]?.routing }}</span>
+                                <span v-if="paymentMethodDetails[payForm.payment_method]?.swift"> | SWIFT: {{ paymentMethodDetails[payForm.payment_method]?.swift }}</span>
+                            </span>
+                        </p>
+                        <p v-if="paymentMethodDetails[payForm.payment_method]?.instructions" class="text-[10px] text-slate-500 pt-0.5">
+                            {{ paymentMethodDetails[payForm.payment_method]?.instructions }}
                         </p>
                     </div>
 
@@ -945,10 +1076,12 @@ class="w-full text-xs px-3 py-2 bg-slate-50/70 border border-slate-200 rounded-x
                         </button>
                         <button
                             type="submit"
-                            :disabled="payForm.processing"
+                            :disabled="payForm.processing || !paymentMethodDetails[payForm.payment_method]?.is_active"
                             class="w-full sm:w-auto px-5 py-2.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm shadow-indigo-600/30 transition disabled:opacity-50 cursor-pointer text-center"
                         >
-                            {{ payForm.processing ? 'Submitting...' : 'Submit Payment for Verification' }}
+                            <span v-if="payForm.processing">Submitting...</span>
+                            <span v-else-if="!paymentMethodDetails[payForm.payment_method]?.is_active">Service temporary not available</span>
+                            <span v-else>Submit Payment for Verification</span>
                         </button>
                     </div>
                 </form>

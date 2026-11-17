@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -223,6 +224,157 @@ class SmsOtpService
                 'message' => 'SMS gateway connection failed. Please try again shortly.',
             ];
         }
+    }
+
+    /**
+     * Fetch current credit/BDT balance from BulkSMSBD.
+     * Cached for 10 minutes unless $forceRefresh is true.
+     *
+     * @return array{
+     *     success: bool,
+     *     driver: string,
+     *     balance: float|null,
+     *     formatted_balance: string,
+     *     status: string,
+     *     message: string,
+     *     last_checked_at: string,
+     *     is_low: bool
+     * }
+     */
+    public function getBalance(bool $forceRefresh = false): array
+    {
+        $driver = config('services.bulksmsbd.driver', 'bulksmsbd');
+        $apiKey = config('services.bulksmsbd.api_key');
+
+        if ($driver === 'log' || empty($apiKey)) {
+            return [
+                'success' => true,
+                'driver' => $driver,
+                'balance' => 999.00,
+                'formatted_balance' => '৳ 999.00 (Log/Dev Mode)',
+                'status' => 'mock',
+                'message' => 'Development / Log driver active. Real SMS gateway is disabled in this environment.',
+                'last_checked_at' => now()->format('M d, Y h:i A'),
+                'is_low' => false,
+            ];
+        }
+
+        $cacheKey = 'bulksmsbd_account_balance';
+        if ($forceRefresh) {
+            Cache::forget($cacheKey);
+        }
+
+        return Cache::remember($cacheKey, 600, function () use ($apiKey, $driver) {
+            try {
+                $response = Http::timeout(8)->get('https://bulksmsbd.net/api/getBalanceApi', [
+                    'api_key' => $apiKey,
+                ]);
+
+                if ($response->successful()) {
+                    $json = $response->json();
+                    $rawBalance = null;
+
+                    if (is_array($json)) {
+                        $rawBalance = $json['balance'] ?? $json['Balance'] ?? null;
+                    } elseif (is_numeric(trim($response->body()))) {
+                        $rawBalance = trim($response->body());
+                    }
+
+                    if ($rawBalance !== null && is_numeric($rawBalance)) {
+                        $numericBalance = (float) $rawBalance;
+                        return [
+                            'success' => true,
+                            'driver' => $driver,
+                            'balance' => $numericBalance,
+                            'formatted_balance' => '৳ ' . number_format($numericBalance, 2),
+                            'status' => $numericBalance <= 10 ? 'critical' : ($numericBalance <= 50 ? 'warning' : 'healthy'),
+                            'message' => 'Live balance retrieved from BulkSMSBD.',
+                            'last_checked_at' => now()->format('M d, Y h:i A'),
+                            'is_low' => $numericBalance <= 25,
+                        ];
+                    }
+
+                    return [
+                        'success' => false,
+                        'driver' => $driver,
+                        'balance' => null,
+                        'formatted_balance' => 'N/A',
+                        'status' => 'error',
+                        'message' => is_array($json) && isset($json['message']) ? $json['message'] : 'Unexpected response format from BulkSMSBD.',
+                        'last_checked_at' => now()->format('M d, Y h:i A'),
+                        'is_low' => false,
+                    ];
+                }
+
+                return [
+                    'success' => false,
+                    'driver' => $driver,
+                    'balance' => null,
+                    'formatted_balance' => 'Error',
+                    'status' => 'error',
+                    'message' => 'BulkSMSBD responded with HTTP ' . $response->status(),
+                    'last_checked_at' => now()->format('M d, Y h:i A'),
+                    'is_low' => false,
+                ];
+            } catch (\Throwable $e) {
+                Log::error('BulkSMSBD balance check failed', [
+                    'error' => $e->getMessage(),
+                ]);
+
+                return [
+                    'success' => false,
+                    'driver' => $driver,
+                    'balance' => null,
+                    'formatted_balance' => 'Offline',
+                    'status' => 'error',
+                    'message' => 'Connection to BulkSMSBD timed out or failed.',
+                    'last_checked_at' => now()->format('M d, Y h:i A'),
+                    'is_low' => false,
+                ];
+            }
+        });
+    }
+
+    /**
+     * Get safe metadata for SMS gateway status display.
+     */
+    public function getGatewayConfig(): array
+    {
+        $driver = config('services.bulksmsbd.driver', 'bulksmsbd');
+        $apiKey = config('services.bulksmsbd.api_key');
+        $senderId = config('services.bulksmsbd.sender_id');
+        $endpoint = config('services.bulksmsbd.endpoint', 'https://bulksmsbd.net/api/smsapi');
+
+        $maskedKey = null;
+        if (!empty($apiKey)) {
+            $len = strlen($apiKey);
+            $maskedKey = $len > 6 ? substr($apiKey, 0, 4) . str_repeat('•', max(4, $len - 8)) . substr($apiKey, -4) : '••••••';
+        }
+
+        return [
+            'driver' => $driver,
+            'is_live' => $driver === 'bulksmsbd' && !empty($apiKey) && !empty($senderId),
+            'has_api_key' => !empty($apiKey),
+            'masked_api_key' => $maskedKey,
+            'sender_id' => $senderId ?: 'Not Configured',
+            'endpoint' => $endpoint,
+        ];
+    }
+
+    /**
+     * Send a single direct test SMS.
+     */
+    public function sendTestSms(string $phone, string $message): array
+    {
+        $normalized = $this->normalizePhone($phone);
+        if (strlen($normalized) < 11) {
+            return [
+                'success' => false,
+                'message' => 'Please provide a valid 11-digit mobile number.',
+            ];
+        }
+
+        return $this->dispatchSms($normalized, $message, 'TEST');
     }
 }
 

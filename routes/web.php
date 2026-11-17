@@ -387,9 +387,18 @@ Route::middleware([
     Route::post('/admin/payments/{payment}/approve', [AdminPaymentController::class, 'approve'])->name('admin.payments.approve');
     Route::post('/admin/payments/{payment}/reject', [AdminPaymentController::class, 'reject'])->name('admin.payments.reject');
 
+    // Subscription Payment Accounts & Banking (Super Admin Only)
+    Route::get('/admin/payment-accounts', [SuperAdminController::class, 'paymentAccounts'])->name('admin.payment-accounts');
+    Route::post('/admin/payment-accounts', [SuperAdminController::class, 'updatePaymentAccounts'])->name('admin.payment-accounts.update');
+
     // Site Settings & Branding (Super Admin Only)
     Route::get('/admin/site-settings', [SuperAdminController::class, 'siteSettings'])->name('admin.site-settings');
     Route::post('/admin/site-settings', [SuperAdminController::class, 'updateSiteSettings'])->name('admin.site-settings.update');
+
+    // BulkSMS Gateway Portal & Balance Hub (Super Admin Only)
+    Route::get('/admin/sms-gateway', [SuperAdminController::class, 'smsGateway'])->name('admin.sms-gateway');
+    Route::post('/admin/sms-gateway/refresh', [SuperAdminController::class, 'refreshSmsBalance'])->name('admin.sms-gateway.refresh');
+    Route::post('/admin/sms-gateway/test', [SuperAdminController::class, 'sendTestSms'])->name('admin.sms-gateway.test');
 });
 
 // SSLCommerz Payment Gateway Callbacks (Sandbox & Production Verified)

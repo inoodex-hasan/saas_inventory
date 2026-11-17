@@ -236,18 +236,33 @@ class PosController extends Controller
             $order = DB::transaction(function () use ($validated, $teamId, $salesService) {
                 // 1. Resolve Customer
                 $customerId = $validated['customer_id'] ?? null;
-                if (!$customerId) {
+                $customer = null;
+
+                if ($customerId) {
+                    $customer = Customer::where('team_id', $teamId)->find($customerId);
+                }
+
+                if (!$customerId || !$customer) {
                     if (!empty($validated['customer_phone'])) {
+                        $phone = trim($validated['customer_phone']);
                         $customer = Customer::where('team_id', $teamId)
-                            ->where('phone', $validated['customer_phone'])
+                            ->where('phone', $phone)
                             ->first();
 
                         if (!$customer) {
+                            $custName = !empty($validated['customer_name'])
+                                ? trim($validated['customer_name'])
+                                : ('Customer ' . $phone);
+
+                            $custAddress = !empty($validated['customer_address'])
+                                ? trim($validated['customer_address'])
+                                : 'Counter Sale';
+
                             $customer = Customer::create([
                                 'team_id' => $teamId,
-                                'name' => $validated['customer_name'] ?: 'Customer ' . $validated['customer_phone'],
-                                'phone' => $validated['customer_phone'],
-                                'address' => $validated['customer_address'] ?? 'Counter Sale',
+                                'name' => $custName,
+                                'phone' => $phone,
+                                'address' => $custAddress,
                                 'is_active' => true,
                             ]);
                         }
@@ -392,11 +407,74 @@ class PosController extends Controller
                 return $order;
             });
 
+            // Calculate real-time updated stock levels for all sold items
+            $updatedStocks = [];
+            foreach ($validated['items'] as $item) {
+                $pId = (int) $item['product_id'];
+                $pvId = !empty($item['product_variant_id']) ? (int) $item['product_variant_id'] : null;
+
+                $prod = Product::where('team_id', $teamId)
+                    ->with([
+                        'variants' => fn ($q) => $q->where('is_active', true)->with(['stockLevels' => fn ($sl) => $sl->where('team_id', $teamId)]),
+                        'stockLevels' => fn ($sl) => $sl->where('team_id', $teamId),
+                    ])
+                    ->find($pId);
+
+                if ($prod) {
+                    if ($prod->has_variants && $prod->variants->isNotEmpty()) {
+                        $prodStock = (float) $prod->variants->sum(function ($v) {
+                            return max(0, (float) $v->stockLevels->sum('quantity') - (float) $v->stockLevels->sum('reserved_quantity'));
+                        });
+                    } else {
+                        $prodStock = max(0, (float) $prod->stockLevels->sum('quantity') - (float) $prod->stockLevels->sum('reserved_quantity'));
+                    }
+
+                    $variantStock = null;
+                    if ($pvId) {
+                        $vModel = $prod->variants->firstWhere('id', $pvId);
+                        if ($vModel) {
+                            $variantStock = max(0, (float) $vModel->stockLevels->sum('quantity') - (float) $vModel->stockLevels->sum('reserved_quantity'));
+                        }
+                    }
+
+                    $updatedStocks[] = [
+                        'product_id' => $pId,
+                        'product_variant_id' => $pvId,
+                        'product_stock' => $prodStock,
+                        'variant_stock' => $variantStock,
+                    ];
+                }
+            }
+
+            $recentOrder = [
+                'id' => $order->id,
+                'order_number' => $order->order_number,
+                'date' => $order->created_at->format('d M, h:i A'),
+                'customer_name' => $order->customer?->name ?? 'Walk-in Customer',
+                'customer_phone' => $order->customer?->phone ?? '',
+                'total_amount' => (float) $order->total_amount,
+                'paid_amount' => (float) $order->paid_amount,
+                'due_amount' => (float) $order->due_amount,
+                'status' => $order->status,
+                'payment_status' => $order->payment_status,
+                'items_summary' => $order->items->map(fn ($it) => ($it->product?->name ?? 'Item') . ' (' . (float) $it->quantity . ')')->implode(', '),
+                'pos_url' => route('sales.pos', $order->id),
+                'invoice_url' => route('sales.invoice', $order->id),
+                'pos_invoice_page_url' => route('pos.invoice', $order->id),
+            ];
+
             return response()->json([
                 'success' => true,
                 'message' => "Sale {$order->order_number} completed successfully!",
                 'order_id' => $order->id,
                 'order_number' => $order->order_number,
+                'customer' => $order->customer ? [
+                    'id' => $order->customer->id,
+                    'name' => $order->customer->name,
+                    'phone' => $order->customer->phone,
+                    'email' => $order->customer->email,
+                    'address' => $order->customer->address,
+                ] : null,
                 'total_amount' => (float) $order->total_amount,
                 'paid_amount' => (float) $order->paid_amount,
                 'tendered_amount' => (float) ($order->tendered_amount ?? $tenderedAmount),
@@ -405,6 +483,8 @@ class PosController extends Controller
                 'pos_slip_url' => route('sales.pos', $order->id),
                 'invoice_url' => route('sales.invoice', $order->id),
                 'pos_invoice_page_url' => route('pos.invoice', $order->id),
+                'updated_stocks' => $updatedStocks,
+                'recent_order' => $recentOrder,
             ]);
         } catch (\Throwable $e) {
             Log::error('POS transaction failed: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);

@@ -372,6 +372,21 @@ onMounted(() => {
                         </Link>
 
                         <Link 
+                            :href="route('admin.payment-accounts')" 
+                            :title="!isSidebarExpanded ? t('Payment Accounts & Banking') : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('admin.payment-accounts*') ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
+                        >
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                            </svg>
+                            <span v-show="isSidebarExpanded" class="truncate">{{ t('Payment Accounts & Banking') }}</span>
+                        </Link>
+
+                        <Link 
                             :href="route('admin.site-settings')" 
                             :title="!isSidebarExpanded ? t('Site Settings & Branding') : ''"
                             class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
@@ -385,6 +400,21 @@ onMounted(() => {
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
                             <span v-show="isSidebarExpanded" class="truncate">{{ t('Site Settings & Branding') }}</span>
+                        </Link>
+
+                        <Link 
+                            :href="route('admin.sms-gateway')" 
+                            :title="!isSidebarExpanded ? t('SMS Gateway & Balance') : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('admin.sms-gateway*') ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
+                        >
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            <span v-show="isSidebarExpanded" class="truncate">{{ t('SMS Gateway & Balance') }}</span>
                         </Link>
 
                         <div v-if="isSidebarExpanded" class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ t('Security & Account') }}</div>
@@ -1294,6 +1324,16 @@ onMounted(() => {
                                     <span>{{ t('Payment Verifications') }}</span>
                                 </Link>
                                 <Link 
+                                    :href="route('admin.payment-accounts')" 
+                                    @click="topUserMenuOpen = false"
+                                    class="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-amber-50 hover:text-amber-800 font-medium transition cursor-pointer"
+                                >
+                                    <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                    </svg>
+                                    <span>{{ t('Payment Accounts & Banking') }}</span>
+                                </Link>
+                                <Link 
                                     :href="route('admin.site-settings')" 
                                     @click="topUserMenuOpen = false"
                                     class="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-amber-50 hover:text-amber-800 font-medium transition cursor-pointer"
@@ -1303,6 +1343,16 @@ onMounted(() => {
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
                                     <span>{{ t('Site Settings & Branding') }}</span>
+                                </Link>
+                                <Link 
+                                    :href="route('admin.sms-gateway')" 
+                                    @click="topUserMenuOpen = false"
+                                    class="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-amber-50 hover:text-amber-800 font-medium transition cursor-pointer"
+                                >
+                                    <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                    </svg>
+                                    <span>{{ t('SMS Gateway & Balance') }}</span>
                                 </Link>
                                 <Link 
                                     v-if="isImpersonating"

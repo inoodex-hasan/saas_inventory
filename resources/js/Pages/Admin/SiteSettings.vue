@@ -188,7 +188,7 @@ function submit() {
     <AppLayout title="Site Settings & Branding">
         <Head title="Site Settings & Branding" />
 
-        <div class="py-6 sm:py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div class="space-y-6">
             <!-- Header Section -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-5">
                 <div>

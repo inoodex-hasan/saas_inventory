@@ -32,6 +32,34 @@ class ProductVariant extends Model
         'is_active' => 'boolean',
     ];
 
+    protected $appends = [
+        'total_stock',
+        'selling_price',
+    ];
+
+    public function getSellingPriceAttribute(): float
+    {
+        return (float) ($this->attributes['unit_price'] ?? 0.00);
+    }
+
+    public function setSellingPriceAttribute($value): void
+    {
+        $this->attributes['unit_price'] = $value;
+    }
+
+    public function getTotalStockAttribute(): float
+    {
+        if (array_key_exists('total_stock', $this->attributes)) {
+            return (float) $this->attributes['total_stock'];
+        }
+
+        if ($this->relationLoaded('stockLevels')) {
+            return (float) $this->stockLevels->sum('quantity');
+        }
+
+        return (float) $this->stockLevels()->sum('quantity');
+    }
+
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
