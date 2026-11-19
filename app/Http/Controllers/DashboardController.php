@@ -47,10 +47,12 @@ class DashboardController extends Controller
 
             // 2. Total Sales Volume & Orders
             $totalSalesVolume = (float) SalesOrder::where('team_id', $team->id)
-                ->whereIn('status', ['confirmed', 'dispatched', 'delivered'])
+                ->whereIn('status', ['confirmed', 'dispatched', 'completed'])
                 ->sum('total_amount');
 
-            $totalSalesOrders = SalesOrder::where('team_id', $team->id)->count();
+            $totalSalesOrders = SalesOrder::where('team_id', $team->id)
+                ->whereIn('status', ['confirmed', 'dispatched', 'completed'])
+                ->count();
 
             // 3. Open Purchase Orders (pending delivery)
             $pendingPurchasesCount = PurchaseOrder::where('team_id', $team->id)

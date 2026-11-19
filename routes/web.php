@@ -38,6 +38,7 @@ use App\Http\Controllers\WarrantyController;
 use App\Http\Controllers\SslCommerzPaymentController;
 use App\Http\Controllers\LegalPageController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\PreVerificationRegistrationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function (\Illuminate\Http\Request $request) {
@@ -75,6 +76,13 @@ Route::get('/terms-and-conditions', [LegalPageController::class, 'terms'])->name
 Route::get('/terms', [LegalPageController::class, 'terms']);
 Route::get('/privacy-policy', [LegalPageController::class, 'privacy'])->name('policy.show');
 Route::get('/privacy', [LegalPageController::class, 'privacy']);
+
+// Pre-Verification Registration Flow (Zero DB junk: only saves to DB after successful phone OTP)
+Route::get('/register', [PreVerificationRegistrationController::class, 'showRegistrationForm'])->middleware('guest')->name('register');
+Route::post('/register', [PreVerificationRegistrationController::class, 'submitRegistration'])->middleware(['guest', 'throttle:10,1'])->name('register.store');
+Route::get('/register/verify-phone', [PreVerificationRegistrationController::class, 'showVerifyForm'])->middleware('guest')->name('register.verify-phone');
+Route::post('/register/verify-phone', [PreVerificationRegistrationController::class, 'verifyAndCreateAccount'])->middleware(['guest', 'throttle:10,1'])->name('register.verify-phone.submit');
+Route::post('/register/resend-otp', [PreVerificationRegistrationController::class, 'resendOtp'])->middleware(['guest', 'throttle:3,1'])->name('register.resend-otp');
 
 // Password Reset via Phone SMS OTP (and Email)
 Route::get('/forgot-password', [ForgotPasswordController::class, 'showRequestForm'])->middleware('guest')->name('password.request');

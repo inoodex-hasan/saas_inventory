@@ -185,7 +185,7 @@ function submitPayment() {
                 <div class="min-w-0">
                     <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">Sales Orders & Commercial Invoices</h1>
                 </div>
-                <div class="flex items-center gap-2 shrink-0">
+                <!-- <div class="flex items-center gap-2 shrink-0">
                     <Link
                         :href="route('sales.create')"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs shadow-indigo-600/30 transition-all shrink-0 cursor-pointer"
@@ -195,7 +195,7 @@ function submitPayment() {
                         </svg>
                         <span>New<span class="hidden xs:inline"> Sale</span></span>
                     </Link>
-                </div>
+                </div> -->
             </div>
         </template>
 
@@ -286,6 +286,15 @@ function submitPayment() {
                     >
                         Clear
                     </button>
+                     <Link
+                        :href="route('sales.create')"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs shadow-indigo-600/30 transition-all shrink-0 cursor-pointer"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span>New<span class="hidden xs:inline"> Sale</span></span>
+                    </Link>
                 </div>
             </div>
 

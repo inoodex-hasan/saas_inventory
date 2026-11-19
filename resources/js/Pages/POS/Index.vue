@@ -1555,7 +1555,7 @@ onUnmounted(() => {
                         </div>
 
                         <div>
-                            <div class="text-[11px] font-semibold text-slate-500 mb-1">VAT / Tax (%)</div>
+                            <div class="text-[11px] font-semibold text-slate-500 mb-1">VAT (%)</div>
                             <input
                                 v-model.number="taxPercent"
                                 type="number"
@@ -1576,7 +1576,7 @@ onUnmounted(() => {
                             <span>-<CurrencyDisplay :amount="discountAmount" /></span>
                         </div>
                         <div v-if="taxAmount > 0" class="flex justify-between">
-                            <span>Tax:</span>
+                            <span>VAT:</span>
                             <span>+<CurrencyDisplay :amount="taxAmount" /></span>
                         </div>
                         <div v-if="roundingDiff !== 0" class="flex justify-between text-[10px] text-slate-400">

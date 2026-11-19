@@ -94,6 +94,101 @@ class ProductInertiaTest extends TestCase
         ]);
     }
 
+    public function test_tenant_can_create_serialized_product_with_initial_serials(): void
+    {
+        $warehouse = Warehouse::create([
+            'team_id' => $this->team->id,
+            'name' => 'Main Hub',
+            'code' => 'MAIN-02',
+            'is_default' => true,
+        ]);
+
+        $response = $this->post(route('products.store'), [
+            'name' => 'Dell Latitude Laptop',
+            'sku' => 'LAP-DELL-01',
+            'unit' => 'pcs',
+            'cost_price' => 500.00,
+            'selling_price' => 750.00,
+            'reorder_level' => 5,
+            'reorder_quantity' => 20,
+            'warranty_days' => 365,
+            'is_serialized' => true,
+            'initial_warehouse_id' => $warehouse->id,
+            'initial_stock_quantity' => 3,
+            'initial_serials' => "SN-DELL-001\nSN-DELL-002, SN-DELL-003",
+        ]);
+
+        $response->assertRedirect(route('products.index'));
+
+        $product = Product::where('team_id', $this->team->id)->where('sku', 'LAP-DELL-01')->firstOrFail();
+        $this->assertTrue($product->is_serialized);
+
+        $this->assertDatabaseHas('stock_levels', [
+            'team_id' => $this->team->id,
+            'product_id' => $product->id,
+            'warehouse_id' => $warehouse->id,
+            'quantity' => 3,
+        ]);
+
+        $this->assertDatabaseHas('product_serials', [
+            'team_id' => $this->team->id,
+            'product_id' => $product->id,
+            'serial_number' => 'SN-DELL-001',
+            'status' => 'in_stock',
+            'warehouse_id' => $warehouse->id,
+            'warranty_days' => 365,
+        ]);
+
+        $this->assertDatabaseHas('product_serials', [
+            'team_id' => $this->team->id,
+            'product_id' => $product->id,
+            'serial_number' => 'SN-DELL-002',
+            'status' => 'in_stock',
+        ]);
+
+        $this->assertDatabaseHas('product_serials', [
+            'team_id' => $this->team->id,
+            'product_id' => $product->id,
+            'serial_number' => 'SN-DELL-003',
+            'status' => 'in_stock',
+        ]);
+    }
+
+    public function test_cannot_create_serialized_product_when_serials_count_mismatches_quantity(): void
+    {
+        $warehouse = Warehouse::create([
+            'team_id' => $this->team->id,
+            'name' => 'Main Hub',
+            'code' => 'MAIN-03',
+            'is_default' => true,
+        ]);
+
+        // Opening quantity 5, but 6 serial numbers entered
+        $response = $this->post(route('products.store'), [
+            'name' => 'Logitech Mouse',
+            'sku' => 'LOGI-M01',
+            'unit' => 'pcs',
+            'cost_price' => 20.00,
+            'selling_price' => 35.00,
+            'reorder_level' => 2,
+            'reorder_quantity' => 10,
+            'warranty_days' => 180,
+            'is_serialized' => true,
+            'initial_warehouse_id' => $warehouse->id,
+            'initial_stock_quantity' => 5,
+            'initial_serials' => "SN-001, SN-002, SN-003, SN-004, SN-005, SN-006",
+        ]);
+
+        $response->assertSessionHasErrors(['initial_serials']);
+        $this->assertDatabaseMissing('products', [
+            'team_id' => $this->team->id,
+            'sku' => 'LOGI-M01',
+        ]);
+        $this->assertDatabaseMissing('product_serials', [
+            'serial_number' => 'SN-001',
+        ]);
+    }
+
     public function test_tenant_can_update_product(): void
     {
         $product = Product::create([

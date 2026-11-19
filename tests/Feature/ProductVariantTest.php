@@ -131,6 +131,58 @@ class ProductVariantTest extends TestCase
         $this->assertEquals(20, (float) $stock2->quantity);
     }
 
+    public function test_can_create_serialized_product_with_variants_and_serials(): void
+    {
+        $payload = [
+            'name' => 'iPhone 15 Pro',
+            'sku' => 'IPHONE-15-PRO',
+            'unit' => 'pcs',
+            'cost_price' => 1000,
+            'selling_price' => 1200,
+            'reorder_level' => 2,
+            'reorder_quantity' => 5,
+            'warranty_days' => 365,
+            'is_serialized' => true,
+            'has_variants' => true,
+            'initial_warehouse_id' => $this->warehouse->id,
+            'variants' => [
+                [
+                    'name' => 'Titanium / 128GB',
+                    'sku' => 'IPH-15-TIT-128',
+                    'attributes' => ['Color' => 'Titanium', 'Storage' => '128GB'],
+                    'cost_price' => 1000,
+                    'selling_price' => 1200,
+                    'initial_stock_quantity' => 2,
+                    'initial_serials' => "SN-IPH-001\nSN-IPH-002",
+                    'is_active' => true,
+                ],
+            ],
+        ];
+
+        $response = $this->actingAs($this->user)->post(route('products.store'), $payload);
+
+        $response->assertRedirect(route('products.index'));
+
+        $product = Product::where('sku', 'IPHONE-15-PRO')->firstOrFail();
+        $variant = ProductVariant::where('sku', 'IPH-15-TIT-128')->firstOrFail();
+
+        $this->assertDatabaseHas('product_serials', [
+            'team_id' => $this->team->id,
+            'product_id' => $product->id,
+            'product_variant_id' => $variant->id,
+            'serial_number' => 'SN-IPH-001',
+            'status' => 'in_stock',
+        ]);
+
+        $this->assertDatabaseHas('product_serials', [
+            'team_id' => $this->team->id,
+            'product_id' => $product->id,
+            'product_variant_id' => $variant->id,
+            'serial_number' => 'SN-IPH-002',
+            'status' => 'in_stock',
+        ]);
+    }
+
     public function test_cannot_create_variants_with_duplicate_skus(): void
     {
         $payload = [

@@ -36,8 +36,19 @@ const form = useForm({
     description: '',
     initial_warehouse_id: props.defaultWarehouseId || '',
     initial_stock_quantity: 0,
+    initial_serials: '',
     variants: [],
 });
+
+const parsedInitialSerials = computed(() => {
+    if (!form.initial_serials) return [];
+    return form.initial_serials.split(/[\r\n,]+/).map(s => s.trim()).filter(Boolean);
+});
+
+function getVariantSerialCount(serialsStr) {
+    if (!serialsStr) return 0;
+    return serialsStr.split(/[\r\n,]+/).map(s => s.trim()).filter(Boolean).length;
+}
 
 const imagePreview = ref(null);
 
@@ -288,6 +299,7 @@ function generateVariantMatrix() {
             cost_price: baseCost,
             selling_price: basePrice,
             initial_stock_quantity: defaultQty,
+            initial_serials: '',
             is_active: true,
         };
     });
@@ -313,6 +325,7 @@ function addSingleVariant() {
         cost_price: Number(form.cost_price) || 0,
         selling_price: Number(form.selling_price) || 0,
         initial_stock_quantity: Math.max(1, Number(bulkVariantQty.value) || 1),
+        initial_serials: '',
         is_active: true,
     });
 }
@@ -376,6 +389,31 @@ const totalVariantOpeningStock = computed(() => {
 });
 
 function submit() {
+    form.clearErrors();
+
+    if (!form.has_variants && form.is_serialized && Number(form.initial_stock_quantity) > 0 && form.initial_serials?.trim()) {
+        const count = parsedInitialSerials.value.length;
+        const required = Number(form.initial_stock_quantity);
+        if (count !== required) {
+            form.setError('initial_serials', `You entered ${count} serial number(s), but opening quantity is ${required}. Please provide exactly ${required} serial numbers.`);
+            return;
+        }
+    }
+
+    if (form.has_variants && form.is_serialized) {
+        for (let i = 0; i < form.variants.length; i++) {
+            const v = form.variants[i];
+            const vQty = Number(v.initial_stock_quantity) || 0;
+            if (vQty > 0 && v.initial_serials?.trim()) {
+                const count = getVariantSerialCount(v.initial_serials);
+                if (count !== vQty) {
+                    form.setError('variants', `Variant "${v.name}" has opening quantity of ${vQty}, but ${count} serial number(s) were entered. Please enter exactly ${vQty} serial numbers.`);
+                    return;
+                }
+            }
+        }
+    }
+
     form.post(route('products.store'));
 }
 </script>
@@ -714,6 +752,42 @@ required
                         </div>
                         <p class="text-[10px] text-slate-500 mt-0.5">Assigned to selected fulfillment hub across individual variants configured in the section below.</p>
                     </div>
+
+                    <!-- Single Product Opening Serials Input -->
+                    <div v-if="!form.has_variants && form.is_serialized && Number(form.initial_stock_quantity) > 0" class="col-span-full p-4 rounded-xl border border-indigo-200 bg-indigo-50/40 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <label class="block text-xs font-bold text-slate-800">
+                                    Opening Serial Numbers
+                                </label>
+                                <span 
+                                    class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                    :class="parsedInitialSerials.length === Number(form.initial_stock_quantity) ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-800 border border-amber-300'"
+                                >
+                                    {{ parsedInitialSerials.length }} of {{ form.initial_stock_quantity }} entered
+                                </span>
+                            </div>
+                            <span class="text-[10px] text-slate-500">Comma or line-break separated</span>
+                        </div>
+                        <textarea 
+                            v-model="form.initial_serials" 
+                            rows="3" 
+                            placeholder="Scan with barcode gun or type serials:&#10;SN-1001, SN-1002, SN-1003"
+                            class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                        ></textarea>
+                        <p v-if="form.errors.initial_serials" class="text-[11px] text-rose-600 font-semibold flex items-center gap-1">
+                            <span>✕ {{ form.errors.initial_serials }}</span>
+                        </p>
+                        <p v-else-if="parsedInitialSerials.length === 0" class="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+                            <span>Optional: Leave empty to receive serials later via Purchase Orders, or scan {{ form.initial_stock_quantity }} serial(s) now.</span>
+                        </p>
+                        <p v-else-if="parsedInitialSerials.length !== Number(form.initial_stock_quantity)" class="text-[11px] text-amber-700 font-medium flex items-center gap-1">
+                            <span>⚠ You entered {{ parsedInitialSerials.length }} serial(s). Please enter exactly {{ form.initial_stock_quantity }} serial numbers to match opening quantity.</span>
+                        </p>
+                        <p v-else class="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+                            <span>✓ All {{ form.initial_stock_quantity }} serial numbers ready for inventory opening.</span>
+                        </p>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4 pt-2">
@@ -921,6 +995,7 @@ required
                                         <th class="py-2.5 px-3 w-28">Cost Price</th>
                                         <th class="py-2.5 px-3 w-28">Selling Price</th>
                                         <th class="py-2.5 px-3 w-24">Opening Qty</th>
+                                        <th v-if="form.is_serialized" class="py-2.5 px-3 w-44">Opening Serials</th>
                                         <th class="py-2.5 px-2 text-center w-12">Active</th>
                                         <th class="py-2.5 px-2 text-center w-10"></th>
                                     </tr>
@@ -994,6 +1069,22 @@ required
                                                 v-model="v.initial_stock_quantity" 
                                                 class="w-full px-2 py-1 text-xs font-mono font-bold text-emerald-700 rounded-lg border border-slate-200 focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
                                             />
+                                        </td>
+                                        <td v-if="form.is_serialized" class="py-2 px-3">
+                                            <div class="space-y-1">
+                                                <textarea 
+                                                    v-model="v.initial_serials" 
+                                                    rows="1" 
+                                                    placeholder="SN1, SN2..."
+                                                    :disabled="!v.initial_stock_quantity || Number(v.initial_stock_quantity) <= 0"
+                                                    class="w-full px-2 py-1 text-xs font-mono rounded-lg border border-slate-200 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 disabled:bg-slate-50 disabled:opacity-50"
+                                                ></textarea>
+                                                <div v-if="Number(v.initial_stock_quantity) > 0" class="text-[10px]">
+                                                    <span :class="getVariantSerialCount(v.initial_serials) === Number(v.initial_stock_quantity) ? 'text-emerald-600 font-bold' : 'text-amber-600 font-medium'">
+                                                        {{ getVariantSerialCount(v.initial_serials) }} / {{ v.initial_stock_quantity }}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td class="py-2 px-2 text-center align-middle">
                                             <input 

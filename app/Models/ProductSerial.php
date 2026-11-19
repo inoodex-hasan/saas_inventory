@@ -16,6 +16,7 @@ class ProductSerial extends Model
     protected $fillable = [
         'team_id',
         'product_id',
+        'product_variant_id',
         'warehouse_id',
         'serial_number',
         'status',
@@ -39,6 +40,11 @@ class ProductSerial extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
     }
 
     public function warehouse(): BelongsTo

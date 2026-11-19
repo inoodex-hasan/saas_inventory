@@ -271,12 +271,6 @@ function submit() {
                         <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">New Outbound Sales Order & Invoice</h1>
                     </div>
                 </div>
-                <Link
-                    :href="route('sales.index')"
-                    class="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-xs"
-                >
-                    &larr; Back to Orders
-                </Link>
             </div>
         </template>
 
@@ -603,7 +597,7 @@ function submit() {
                             </div>
 
                             <div class="flex items-center justify-between gap-4">
-                                <span class="text-slate-600 text-xs uppercase font-semibold">Tax / VAT (%):</span>
+                                <span class="text-slate-600 text-xs uppercase font-semibold">VAT (%):</span>
                                 <input
                                     v-model.number="form.tax_rate"
                                     type="number"

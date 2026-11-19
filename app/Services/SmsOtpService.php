@@ -160,6 +160,18 @@ class SmsOtpService
     }
 
     /**
+     * Send OTP to a phone number directly (used in pre-registration verification).
+     *
+     * @return array{success: bool, message: string}
+     */
+    public function sendOtpToNumber(string $phone, string $otp): array
+    {
+        $normalized = $this->normalizePhone($phone);
+        $message = "Your InoManage verification code is {$otp}. Valid for " . self::OTP_EXPIRY_MINUTES . ' minutes.';
+        return $this->dispatchSms($normalized, $message, $otp);
+    }
+
+    /**
      * Send SMS through BulkSMSBD HTTP API or fallback to log driver.
      *
      * @return array{success: bool, message: string}

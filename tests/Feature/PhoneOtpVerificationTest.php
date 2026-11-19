@@ -68,13 +68,15 @@ class PhoneOtpVerificationTest extends TestCase
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
         ]);
 
-        $this->assertAuthenticated();
+        // Pre-verification ensures user is not saved to DB yet
+        $this->assertGuest();
+        $this->assertNull(User::where('email', 'trial@example.com')->first());
 
-        $user = User::where('email', 'trial@example.com')->firstOrFail();
-        $this->assertSame('8801712345678', $user->phone);
-        $this->assertNull($user->phone_verified_at);
-        $this->assertNotNull($user->phone_otp_code);
-        $this->assertNotNull($user->phone_otp_expires_at);
+        $token = session('pending_reg_token');
+        $this->assertNotNull($token);
+        $cached = \Illuminate\Support\Facades\Cache::get("pending_reg:{$token}");
+        $this->assertSame('8801712345678', $cached['phone']);
+        $this->assertNotNull($cached['otp_raw']);
 
         Http::assertSent(function ($request) {
             return $request->url() === 'https://bulksmsbd.net/api/smsapi'

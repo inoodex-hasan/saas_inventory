@@ -264,7 +264,7 @@ const totalOrdersInStatus = computed(() => {
             <div class="flex flex-wrap items-center justify-between gap-3 p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
                 <div class="flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">{{ t('Quick Operations') }}</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">{{ t('Quick Actions') }}</span>
                 </div>
                 <div class="flex flex-wrap items-center gap-2.5">
                     <Link 
@@ -272,7 +272,7 @@ const totalOrdersInStatus = computed(() => {
                         class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white text-xs font-bold shadow-sm shadow-indigo-600/30 transition-all hover:scale-[1.02]"
                     >
                         <Plus class="w-4 h-4" />
-                        <span>{{ t('New Sales Order') }}</span>
+                        <span>{{ t('New Sale') }}</span>
                     </Link>
 
                     <Link 
@@ -297,11 +297,11 @@ const totalOrdersInStatus = computed(() => {
 
             <!-- KPI Metric Cards -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-                <!-- Holding Valuation -->
+                <!-- Stock Value -->
                 <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-indigo-400 hover:shadow-md transition-all">
                     <div class="absolute -right-3 -top-3 w-16 sm:w-20 h-16 sm:h-20 bg-indigo-50/50 rounded-full blur-xl group-hover:bg-indigo-100/60 transition-colors"></div>
                     <div class="flex items-center justify-between mb-2 sm:mb-3 relative">
-                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">{{ t('Total Inventory Value') }}</span>
+                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">{{ t('Total Stock Value') }}</span>
                         <div class="w-7 sm:w-9 h-7 sm:h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs sm:text-sm shadow-xs font-mono">
                             ৳
                         </div>
@@ -314,11 +314,11 @@ const totalOrdersInStatus = computed(() => {
                     </p>
                 </div>
 
-                <!-- Monthly Sales Volume -->
+                <!-- Total Sales -->
                 <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-emerald-400 hover:shadow-md transition-all">
                     <div class="absolute -right-3 -top-3 w-16 sm:w-20 h-16 sm:h-20 bg-emerald-50/50 rounded-full blur-xl group-hover:bg-emerald-100/60 transition-colors"></div>
                     <div class="flex items-center justify-between mb-2 sm:mb-3 relative">
-                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">{{ t('Sales Dispatched') }}</span>
+                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">{{ t('Total Sales') }}</span>
                         <div class="w-7 sm:w-9 h-7 sm:h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs sm:text-sm shadow-xs">
                             <TrendingUp class="w-4 sm:w-5 h-4 sm:h-5 text-emerald-600" />
                         </div>
@@ -327,33 +327,33 @@ const totalOrdersInStatus = computed(() => {
                         <CurrencyDisplay :amount="totalSalesVolume" />
                     </div>
                     <p class="text-[10px] sm:text-xs text-slate-500 mt-1 font-medium relative truncate">
-                        <strong class="text-slate-800">{{ totalSalesOrders }}</strong> {{ t('confirmed orders') }}
+                        <strong class="text-slate-800">{{ totalSalesOrders }}</strong> {{ t('sales orders') }}
                     </p>
                 </div>
 
-                <!-- Inbound Procurement -->
+                <!-- Pending Purchases -->
                 <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-amber-400 hover:shadow-md transition-all">
                     <div class="absolute -right-3 -top-3 w-16 sm:w-20 h-16 sm:h-20 bg-amber-50/50 rounded-full blur-xl group-hover:bg-amber-100/60 transition-colors"></div>
                     <div class="flex items-center justify-between mb-2 sm:mb-3 relative">
-                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">{{ t('Inbound Purchases') }}</span>
+                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">{{ t('Pending Purchases') }}</span>
                         <div class="w-7 sm:w-9 h-7 sm:h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xs sm:text-sm shadow-xs">
                             <Truck class="w-4 sm:w-5 h-4 sm:h-5 text-amber-600" />
                         </div>
                     </div>
                     <div class="text-lg sm:text-2xl font-black text-slate-900 tracking-tight relative">
                         {{ pendingPurchasesCount }}
-                        <span class="text-xs sm:text-sm font-semibold text-slate-400">{{ t('Open POs') }}</span>
+                        <span class="text-xs sm:text-sm font-semibold text-slate-400">{{ t('Pending POs') }}</span>
                     </div>
                     <p class="text-[10px] sm:text-xs text-slate-500 mt-1 font-medium relative truncate">
                         {{ t('Worth') }} <strong class="text-slate-800"><CurrencyDisplay :amount="openPurchaseOrders" /></strong>
                     </p>
                 </div>
 
-                <!-- Low Stock Alert Radar -->
+                <!-- Low Stock Alert -->
                 <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-rose-400 hover:shadow-md transition-all">
                     <div class="absolute -right-3 -top-3 w-16 sm:w-20 h-16 sm:h-20 bg-rose-50/50 rounded-full blur-xl group-hover:bg-rose-100/60 transition-colors"></div>
                     <div class="flex items-center justify-between mb-2 sm:mb-3 relative">
-                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">{{ t('Low Stock Threshold') }}</span>
+                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">{{ t('Low Stock Items') }}</span>
                         <div class="w-7 sm:w-9 h-7 sm:h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-xs sm:text-sm shadow-xs">
                             <AlertTriangle class="w-4 sm:w-5 h-4 sm:h-5 text-rose-600" />
                         </div>
@@ -363,7 +363,7 @@ const totalOrdersInStatus = computed(() => {
                         <span class="text-xs sm:text-sm font-semibold text-slate-400">{{ t('Items Low') }}</span>
                     </div>
                     <p class="text-[10px] sm:text-xs text-slate-500 mt-1 font-medium relative truncate">
-                        {{ t('Needs purchase replenishment') }}
+                        {{ t('Needs restock') }}
                     </p>
                 </div>
             </div>
@@ -377,20 +377,20 @@ const totalOrdersInStatus = computed(() => {
                             <div>
                                 <div class="flex items-center gap-2">
                                     <BarChart3 class="w-4 h-4 text-indigo-600" />
-                                    <h2 class="text-sm font-bold text-slate-900">{{ t('Revenue & Procurement Trends') }}</h2>
+                                    <h2 class="text-sm font-bold text-slate-900">{{ t('Sales & Purchases') }}</h2>
                                 </div>
-                                <p class="text-xs text-slate-500 mt-0.5">{{ t('Monthly sales turnover vs. inventory procurement outlay') }}</p>
+                                <p class="text-xs text-slate-500 mt-0.5">{{ t('Monthly comparison of sales and purchases') }}</p>
                             </div>
 
                             <!-- Legend Pills -->
                             <div class="flex items-center gap-3 text-xs font-semibold">
                                 <div class="flex items-center gap-1.5">
                                     <span class="w-3 h-3 rounded-md bg-indigo-600 shadow-xs"></span>
-                                    <span class="text-slate-600">{{ t('Sales Invoices') }}</span>
+                                    <span class="text-slate-600">{{ t('Sales') }}</span>
                                 </div>
                                 <div class="flex items-center gap-1.5">
                                     <span class="w-3 h-3 rounded-md bg-amber-500 shadow-xs"></span>
-                                    <span class="text-slate-600">{{ t('Purchase POs') }}</span>
+                                    <span class="text-slate-600">{{ t('Purchases') }}</span>
                                 </div>
                             </div>
                         </div>
@@ -404,7 +404,7 @@ const totalOrdersInStatus = computed(() => {
                                     width="100%"
                                     :options="trendChartOptions"
                                     :series="trendChartSeries"
-                                />
+                                    />
                             </div>
                         </div>
                     </div>
@@ -413,12 +413,12 @@ const totalOrdersInStatus = computed(() => {
                     <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500">
                         <div class="flex items-center gap-1.5 font-medium">
                             <span class="text-emerald-600 font-bold flex items-center">
-                                &uarr; Active Trading
+                                &uarr; {{ t('Active Trading') }}
                             </span>
-                            <span>Historical 6-month transaction flow</span>
+                            <span>{{ t('Last 6 months trend') }}</span>
                         </div>
                         <div class="text-[11px] font-mono text-slate-400">
-                            Updated real-time from ledger
+                            {{ t('Real-time updates') }}
                         </div>
                     </div>
                 </div>
@@ -430,9 +430,9 @@ const totalOrdersInStatus = computed(() => {
                             <div>
                                 <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
                                     <PieChart class="w-4 h-4 text-emerald-600" />
-                                    <span>{{ t('Inventory Holding by Category') }}</span>
+                                    <span>{{ t('Stock by Category') }}</span>
                                 </h2>
-                                <p class="text-xs text-slate-500 mt-0.5">{{ t('Portfolio distribution and capital allocation') }}</p>
+                                <p class="text-xs text-slate-500 mt-0.5">{{ t('Stock distribution by category') }}</p>
                             </div>
                             <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono">
                                 {{ donutSlices.length }} {{ t('Categories') }}
@@ -481,7 +481,7 @@ const totalOrdersInStatus = computed(() => {
 
                     <div class="pt-3 border-t border-slate-100 text-center">
                         <Link :href="route('products.index')" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors">
-                            {{ t('View Full Catalog & Categories') }} &rarr;
+                            {{ t('View All Products') }} &rarr;
                         </Link>
                     </div>
                 </div>
@@ -493,12 +493,12 @@ const totalOrdersInStatus = computed(() => {
                     <div>
                         <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
                             <WarehouseIcon class="w-4 h-4 text-indigo-600" />
-                            <span>{{ t('Warehouse & Hub Holding Breakdown') }}</span>
+                            <span>{{ t('Stock by Warehouse') }}</span>
                         </h2>
-                        <p class="text-xs text-slate-500">{{ t('Capital valuation and physical inventory across active fulfillment locations') }}</p>
+                        <p class="text-xs text-slate-500">{{ t('Total items and value in each warehouse') }}</p>
                     </div>
                     <Link :href="route('warehouses.index')" class="text-xs font-bold text-indigo-600 hover:text-indigo-700">
-                        {{ t('Manage Hubs') }} &rarr;
+                        {{ t('Manage Warehouses') }} &rarr;
                     </Link>
                 </div>
 
@@ -527,19 +527,19 @@ const totalOrdersInStatus = computed(() => {
 
             <!-- Two Column Layout: Low Stock Radar & Recent Activity -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Low Stock Alert Radar -->
+                <!-- Low Stock Alert -->
                 <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 flex flex-col justify-between">
                     <div>
                         <div class="flex items-center justify-between mb-4">
                             <div>
                                 <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
                                     <AlertCircle class="w-4 h-4 text-rose-500" />
-                                    <span>{{ t('Low Stock Radar') }}</span>
+                                    <span>{{ t('Low Stock Alert') }}</span>
                                 </h2>
-                                <p class="text-xs text-slate-500">{{ t('Products requiring purchase requisition') }}</p>
+                                <p class="text-xs text-slate-500">{{ t('Products running low on stock') }}</p>
                             </div>
                             <Link :href="route('products.index')" class="text-xs font-bold text-indigo-600 hover:text-indigo-700">
-                                {{ t('View Catalog') }} &rarr;
+                                {{ t('View All Products') }} &rarr;
                             </Link>
                         </div>
 
@@ -556,7 +556,7 @@ const totalOrdersInStatus = computed(() => {
                                 <tbody class="divide-y divide-slate-100">
                                     <tr v-for="item in lowStockProducts" :key="item.id" class="hover:bg-slate-50">
                                         <td class="py-2.5">
-                                            <div class="font-bold text-slate-800">{{ item.name }}</div>
+                                             <div class="font-bold text-slate-800">{{ item.name }}</div>
                                             <div class="text-[10px] text-slate-400 font-mono">{{ item.sku }}</div>
                                         </td>
                                         <td class="py-2.5 text-center font-bold font-mono text-rose-600">
@@ -567,7 +567,7 @@ const totalOrdersInStatus = computed(() => {
                                         </td>
                                         <td class="py-2.5 text-right">
                                             <Link :href="route('purchases.create')" class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800">
-                                                {{ t('Order PO') }} &rarr;
+                                                {{ t('Purchase') }} &rarr;
                                             </Link>
                                         </td>
                                     </tr>
@@ -598,7 +598,7 @@ const totalOrdersInStatus = computed(() => {
                                 :class="activeTab === 'purchases' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'"
                             >
                                 <Truck class="w-3.5 h-3.5" />
-                                <span>{{ t('Recent Inbound') }}</span>
+                                <span>{{ t('Recent Purchases') }}</span>
                             </button>
                             <button 
                                 @click="activeTab = 'movements'" 
@@ -606,7 +606,7 @@ const totalOrdersInStatus = computed(() => {
                                 :class="activeTab === 'movements' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'"
                             >
                                 <History class="w-3.5 h-3.5" />
-                                <span>{{ t('Stock Ledger') }}</span>
+                                <span>{{ t('Stock History') }}</span>
                             </button>
                         </div>
                     </div>

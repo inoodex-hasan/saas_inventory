@@ -49,12 +49,62 @@ class SerialService
                 $created[] = ProductSerial::create([
                     'team_id' => $order->team_id,
                     'product_id' => $item->product_id,
+                    'product_variant_id' => $item->product_variant_id ?? null,
                     'warehouse_id' => $order->warehouse_id,
                     'serial_number' => $sn,
                     'status' => 'in_stock',
                     'purchase_order_id' => $order->id,
                     'purchase_order_item_id' => $item->id,
                     'warranty_days' => $warrantyDays,
+                ]);
+            }
+
+            return $created;
+        });
+    }
+
+    /**
+     * Ingest serial numbers for initial opening stock allocation at product creation.
+     *
+     * @param \App\Models\Product $product
+     * @param int $warehouseId
+     * @param array $serialNumbers
+     * @param int|null $variantId
+     * @return array<\App\Models\ProductSerial>
+     * @throws InvalidArgumentException
+     */
+    public function ingestSerialsForInitialStock(\App\Models\Product $product, int $warehouseId, array $serialNumbers, ?int $variantId = null): array
+    {
+        $cleanSerials = array_values(array_unique(array_filter(array_map('trim', $serialNumbers))));
+
+        if (empty($cleanSerials)) {
+            return [];
+        }
+
+        $existing = ProductSerial::where('team_id', $product->team_id)
+            ->whereIn('serial_number', $cleanSerials)
+            ->pluck('serial_number')
+            ->toArray();
+
+        if (!empty($existing)) {
+            $duplicateList = implode(', ', $existing);
+            throw new InvalidArgumentException("Serial number(s) already exist in your inventory: {$duplicateList}");
+        }
+
+        return DB::transaction(function () use ($product, $warehouseId, $cleanSerials, $variantId) {
+            $created = [];
+            $warrantyDays = (int) ($product->warranty_days ?? 0);
+
+            foreach ($cleanSerials as $sn) {
+                $created[] = ProductSerial::create([
+                    'team_id' => $product->team_id,
+                    'product_id' => $product->id,
+                    'product_variant_id' => $variantId,
+                    'warehouse_id' => $warehouseId,
+                    'serial_number' => $sn,
+                    'status' => 'in_stock',
+                    'warranty_days' => $warrantyDays,
+                    'notes' => 'Opening stock allocation at product creation',
                 ]);
             }
 

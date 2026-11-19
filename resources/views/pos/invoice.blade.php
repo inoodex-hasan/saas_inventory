@@ -692,7 +692,7 @@
                         <div class="tot-line disc"><span>Discount</span><b>- {{ $team->currency_symbol ?? '৳' }}{{ number_format($order->discount_amount, 2) }}</b></div>
                     @endif
                     @if($order->tax_amount > 0)
-                        <div class="tot-line"><span>VAT / Tax</span><b>{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->tax_amount, 2) }}</b></div>
+                        <div class="tot-line"><span>VAT</span><b>{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->tax_amount, 2) }}</b></div>
                     @endif
                     @if($order->shipping_cost > 0)
                         <div class="tot-line"><span>Shipping</span><b>{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->shipping_cost, 2) }}</b></div>

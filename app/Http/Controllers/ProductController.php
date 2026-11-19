@@ -10,6 +10,7 @@ use App\Models\ProductVariant;
 use App\Models\StockLevel;
 use App\Models\Warehouse;
 use App\Services\CatalogImportExportService;
+use App\Services\SerialService;
 use App\Services\StockService;
 use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
@@ -105,7 +106,7 @@ class ProductController extends Controller
         ]);
     }
 
-    public function store(Request $request, StockService $stockService, SubscriptionService $subscriptionService)
+    public function store(Request $request, StockService $stockService, SubscriptionService $subscriptionService, SerialService $serialService)
     {
         $user = Auth::user();
         $team = $user->currentTeam;
@@ -141,6 +142,7 @@ class ProductController extends Controller
             'description' => 'nullable|string|max:1000',
             'initial_warehouse_id' => ['nullable', Rule::exists('warehouses', 'id')->where('team_id', $teamId)],
             'initial_stock_quantity' => 'nullable|numeric|min:0',
+            'initial_serials' => 'nullable|string',
             'variants' => 'nullable|array',
             'variants.*.name' => 'required_if:has_variants,true|string|max:255',
             'variants.*.sku' => 'required_if:has_variants,true|string|max:100',
@@ -151,6 +153,7 @@ class ProductController extends Controller
             'variants.*.selling_price' => 'nullable|numeric|min:0',
             'variants.*.is_active' => 'boolean',
             'variants.*.initial_stock_quantity' => 'nullable|numeric|min:0',
+            'variants.*.initial_serials' => 'nullable|string',
         ]);
 
         $hasVariants = (bool) ($validated['has_variants'] ?? false);
@@ -180,13 +183,42 @@ class ProductController extends Controller
 
         $initialWarehouseId = $validated['initial_warehouse_id'] ?? null;
         $initialStockQty = (float) ($validated['initial_stock_quantity'] ?? 0);
-        unset($validated['initial_warehouse_id'], $validated['initial_stock_quantity'], $validated['variants']);
+        $initialSerials = $validated['initial_serials'] ?? null;
+
+        // If serial numbers are provided, enforce exact count matching opening quantity
+        if ($validated['is_serialized'] && !$hasVariants && $initialWarehouseId && $initialStockQty > 0 && !empty(trim((string) $initialSerials))) {
+            $serials = preg_split('/[\r\n,]+/', (string) $initialSerials, -1, PREG_SPLIT_NO_EMPTY);
+            $serials = array_values(array_unique(array_filter(array_map('trim', $serials))));
+            if (count($serials) !== (int) $initialStockQty) {
+                return redirect()->back()->withErrors([
+                    'initial_serials' => "You entered " . count($serials) . " serial numbers, but opening quantity is " . (int) $initialStockQty . ". Please provide exactly " . (int) $initialStockQty . " unique serial numbers."
+                ]);
+            }
+        }
+
+        if ($validated['is_serialized'] && $hasVariants && !empty($variants) && $initialWarehouseId) {
+            foreach ($variants as $idx => $vData) {
+                $vQty = (int) ($vData['initial_stock_quantity'] ?? 0);
+                $vSerialStr = trim((string) ($vData['initial_serials'] ?? ''));
+                if ($vQty > 0 && !empty($vSerialStr)) {
+                    $vSerials = preg_split('/[\r\n,]+/', $vSerialStr, -1, PREG_SPLIT_NO_EMPTY);
+                    $vSerials = array_values(array_unique(array_filter(array_map('trim', $vSerials))));
+                    if (count($vSerials) !== $vQty) {
+                        return redirect()->back()->withErrors([
+                            'variants' => "Variant '{$vData['name']}' has opening quantity {$vQty}, but " . count($vSerials) . " serial numbers were provided. Please enter exactly {$vQty} unique serial numbers."
+                        ]);
+                    }
+                }
+            }
+        }
+
+        unset($validated['initial_warehouse_id'], $validated['initial_stock_quantity'], $validated['initial_serials'], $validated['variants']);
 
         if ($request->hasFile('image')) {
             $validated['image'] = $request->file('image')->store("products/{$teamId}", 'public');
         }
 
-        $product = DB::transaction(function () use ($validated, $hasVariants, $variants, $initialWarehouseId, $initialStockQty, $stockService, $teamId) {
+        $product = DB::transaction(function () use ($validated, $hasVariants, $variants, $initialWarehouseId, $initialStockQty, $initialSerials, $stockService, $serialService, $teamId) {
             $product = Product::create($validated);
 
             if ($hasVariants && !empty($variants)) {
@@ -220,6 +252,14 @@ class ProductController extends Controller
                             referenceId: $variant->id,
                             reason: "Initial Variant Opening Stock ({$variant->name})"
                         );
+
+                        if ($product->is_serialized && !empty($vData['initial_serials'])) {
+                            $vSerials = preg_split('/[\r\n,]+/', (string) $vData['initial_serials'], -1, PREG_SPLIT_NO_EMPTY);
+                            $vSerials = array_values(array_unique(array_filter(array_map('trim', $vSerials))));
+                            if (!empty($vSerials)) {
+                                $serialService->ingestSerialsForInitialStock($product, (int) $initialWarehouseId, $vSerials, $variant->id);
+                            }
+                        }
                     }
                 }
             } else {
@@ -233,6 +273,14 @@ class ProductController extends Controller
                         referenceId: $product->id,
                         reason: "Initial Opening Stock Allocation"
                     );
+
+                    if ($product->is_serialized && !empty($initialSerials)) {
+                        $serials = preg_split('/[\r\n,]+/', (string) $initialSerials, -1, PREG_SPLIT_NO_EMPTY);
+                        $serials = array_values(array_unique(array_filter(array_map('trim', $serials))));
+                        if (!empty($serials)) {
+                            $serialService->ingestSerialsForInitialStock($product, (int) $initialWarehouseId, $serials);
+                        }
+                    }
                 }
             }
 

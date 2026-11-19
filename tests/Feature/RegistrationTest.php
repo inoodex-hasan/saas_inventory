@@ -2,8 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Fortify\Features;
+use Illuminate\Support\Facades\Cache;
 use Laravel\Jetstream\Jetstream;
 use Tests\TestCase;
 
@@ -13,42 +14,80 @@ class RegistrationTest extends TestCase
 
     public function test_registration_screen_can_be_rendered(): void
     {
-        if (! Features::enabled(Features::registration())) {
-            $this->markTestSkipped('Registration support is not enabled.');
-        }
-
         $response = $this->get('/register');
-
         $response->assertStatus(200);
     }
 
-    public function test_registration_screen_cannot_be_rendered_if_support_is_disabled(): void
+    public function test_registration_submits_and_does_not_create_user_in_database_yet(): void
     {
-        if (Features::enabled(Features::registration())) {
-            $this->markTestSkipped('Registration support is enabled.');
-        }
-
-        $response = $this->get('/register');
-
-        $response->assertStatus(404);
-    }
-
-    public function test_new_users_can_register(): void
-    {
-        if (! Features::enabled(Features::registration())) {
-            $this->markTestSkipped('Registration support is not enabled.');
-        }
-
         $response = $this->post('/register', [
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'Pending Merchant',
+            'email' => 'merchant@example.com',
             'phone' => '01712345678',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'SecurePass123!',
+            'password_confirmation' => 'SecurePass123!',
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
         ]);
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        // Must NOT create user in database yet!
+        $this->assertEquals(0, User::where('email', 'merchant@example.com')->count());
+        $this->assertGuest();
+
+        $response->assertRedirect(route('register.verify-phone'));
+        $this->assertTrue(session()->has('pending_reg_token'));
+
+        $token = session('pending_reg_token');
+        $this->assertTrue(Cache::has("pending_reg:{$token}"));
+    }
+
+    public function test_cannot_create_account_with_invalid_otp(): void
+    {
+        $this->post('/register', [
+            'name' => 'Pending Merchant',
+            'email' => 'merchant@example.com',
+            'phone' => '01712345678',
+            'password' => 'SecurePass123!',
+            'password_confirmation' => 'SecurePass123!',
+            'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
+        ]);
+
+        $response = $this->post(route('register.verify-phone.submit'), [
+            'otp' => '000000',
+        ]);
+
+        // Still ZERO users in database!
+        $this->assertEquals(0, User::where('email', 'merchant@example.com')->count());
+        $this->assertGuest();
+        $response->assertSessionHasErrors('otp');
+    }
+
+    public function test_user_and_tenant_created_only_upon_valid_otp(): void
+    {
+        $this->post('/register', [
+            'name' => 'Verified Merchant',
+            'email' => 'verified@example.com',
+            'phone' => '01799887766',
+            'password' => 'SecurePass123!',
+            'password_confirmation' => 'SecurePass123!',
+            'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
+        ]);
+
+        $token = session('pending_reg_token');
+        $cachedData = Cache::get("pending_reg:{$token}");
+        $validOtp = $cachedData['otp_raw'];
+
+        $response = $this->post(route('register.verify-phone.submit'), [
+            'otp' => $validOtp,
+        ]);
+
+        // NOW User & Team exist in database!
+        $this->assertEquals(1, User::where('email', 'verified@example.com')->count());
+        $user = User::where('email', 'verified@example.com')->first();
+        $this->assertNotNull($user->phone_verified_at);
+        $this->assertNotNull($user->current_team_id);
+        $this->assertEquals("Verified's Team", $user->currentTeam->name);
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect(route('dashboard'));
     }
 }

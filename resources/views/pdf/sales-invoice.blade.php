@@ -316,7 +316,7 @@
                                 </tr>
                                 @if($order->tax_amount > 0)
                                 <tr>
-                                    <td style="padding: 3.5px 0; color: #475569;">VAT / Tax:</td>
+                                    <td style="padding: 3.5px 0; color: #475569;">VAT:</td>
                                     <td style="padding: 3.5px 0; text-align: right; font-weight: 600; color: #0f172a;">{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->tax_amount, 2) }}</td>
                                 </tr>
                                 @endif
