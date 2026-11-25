@@ -6,6 +6,7 @@ use App\Exceptions\InsufficientStockException;
 use App\Exceptions\InvalidStockOperationException;
 use App\Models\Customer;
 use App\Models\FinancialAccount;
+use App\Models\OrderChargeField;
 use App\Models\Product;
 use App\Models\SalesOrder;
 use App\Models\Team;
@@ -63,12 +64,23 @@ class SalesOrderController extends Controller
 
         $orders = $query->latest('id')->paginate(15)->withQueryString();
 
-        $metrics = [
-            'total_sales' => (float) SalesOrder::where('team_id', $teamId)->where('status', '!=', 'cancelled')->sum('total_amount'),
-            'total_receivables' => (float) SalesOrder::where('team_id', $teamId)->where('status', '!=', 'cancelled')->sum('due_amount'),
-            'pending_dispatch' => SalesOrder::where('team_id', $teamId)->whereIn('status', ['draft', 'confirmed'])->count(),
-            'total_orders' => SalesOrder::where('team_id', $teamId)->count(),
-        ];
+        $metrics = \Illuminate\Support\Facades\Cache::remember("sales_metrics_{$teamId}", 30, function () use ($teamId) {
+            $row = \Illuminate\Support\Facades\DB::table('sales_orders')
+                ->where('team_id', $teamId)
+                ->selectRaw("
+                    COALESCE(SUM(CASE WHEN status != 'cancelled' THEN total_amount ELSE 0 END), 0) as total_sales,
+                    COALESCE(SUM(CASE WHEN status != 'cancelled' THEN due_amount ELSE 0 END), 0) as total_receivables,
+                    COUNT(CASE WHEN status IN ('draft','confirmed') THEN 1 END) as pending_dispatch,
+                    COUNT(*) as total_orders
+                ")
+                ->first();
+            return [
+                'total_sales'       => (float) $row->total_sales,
+                'total_receivables' => (float) $row->total_receivables,
+                'pending_dispatch'  => (int)   $row->pending_dispatch,
+                'total_orders'      => (int)   $row->total_orders,
+            ];
+        });
 
         return Inertia::render('Sales/Index', [
             'orders' => $orders,
@@ -122,11 +134,19 @@ class SalesOrderController extends Controller
 
         $financialAccounts = app(FinancialAccountService::class)->getActiveAccountsForTeam($teamId);
 
+        $chargeFields = OrderChargeField::where('team_id', $teamId)
+            ->where('is_active', true)
+            ->whereIn('applies_to', ['sales', 'both'])
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('Sales/Create', [
             'customers' => $customers,
             'warehouses' => $warehouses,
             'products' => $products,
             'financialAccounts' => $financialAccounts,
+            'chargeFields' => $chargeFields,
             'defaultWarehouseId' => $defaultWarehouse?->id,
             'todayDate' => now()->format('Y-m-d'),
         ]);
@@ -157,6 +177,8 @@ class SalesOrderController extends Controller
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.warranty_days' => 'nullable|integer|min:0',
+            'additional_charges' => 'nullable|array',
+            'additional_charges_total' => 'nullable|numeric|min:0',
         ];
 
         if ((float) $request->input('paid_amount') > 0) {
@@ -216,7 +238,20 @@ class SalesOrderController extends Controller
         $discount = (float) ($validated['discount_amount'] ?? 0.00);
         $tax = (float) ($validated['tax_amount'] ?? 0.00);
         $shipping = (float) ($validated['shipping_cost'] ?? 0.00);
-        $grandTotal = max(0, $subtotal + $tax + $shipping - $discount);
+
+        $additionalCharges = $request->input('additional_charges', []);
+        $additionalChargesTotal = (float) $request->input('additional_charges_total', 0.00);
+        if (!empty($additionalCharges) && is_array($additionalCharges)) {
+            $calcChargesTotal = 0.0;
+            foreach ($additionalCharges as $charge) {
+                $calcChargesTotal += (float) ($charge['amount'] ?? 0.0);
+            }
+            if ($additionalChargesTotal == 0 && $calcChargesTotal > 0) {
+                $additionalChargesTotal = $calcChargesTotal;
+            }
+        }
+
+        $grandTotal = max(0, $subtotal + $tax + $shipping + $additionalChargesTotal - $discount);
 
         $rawPaid = (float) ($validated['paid_amount'] ?? 0.00);
         if ($rawPaid > $grandTotal) {
@@ -235,6 +270,8 @@ class SalesOrderController extends Controller
             'discount_amount' => $discount,
             'tax_amount' => $tax,
             'shipping_cost' => $shipping,
+            'additional_charges_total' => $additionalChargesTotal,
+            'additional_charges' => $additionalCharges,
             'paid_amount' => $paidAmount,
             'tendered_amount' => $tenderedAmount,
             'change_amount' => $changeAmount,

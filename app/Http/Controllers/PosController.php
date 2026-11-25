@@ -7,6 +7,7 @@ use App\Exceptions\InvalidStockOperationException;
 use App\Models\Brand;
 use App\Models\Customer;
 use App\Models\FinancialAccount;
+use App\Models\OrderChargeField;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\SalesOrder;
@@ -178,6 +179,14 @@ class PosController extends Controller
         $nextSeq = $lastOrder ? str_pad((int) substr($lastOrder->order_number, -4) + 1, 4, '0', STR_PAD_LEFT) : '0001';
         $nextOrderNumber = $prefix . $nextSeq;
 
+        $chargeFields = OrderChargeField::where('team_id', $teamId)
+            ->where('is_active', true)
+            ->whereIn('applies_to', ['sales', 'both'])
+            ->where('show_in_pos', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('POS/Index', [
             'warehouses' => $warehouses,
             'selectedWarehouseId' => $selectedWarehouseId,
@@ -187,6 +196,7 @@ class PosController extends Controller
             'customers' => $customers,
             'defaultCustomerId' => $walkInCustomer->id,
             'financialAccounts' => $financialAccounts,
+            'chargeFields' => $chargeFields,
             'recentOrders' => $recentOrders,
             'nextOrderNumber' => $nextOrderNumber,
         ]);
@@ -224,6 +234,8 @@ class PosController extends Controller
             'discount_amount' => 'nullable|numeric|min:0',
             'tax_amount' => 'nullable|numeric|min:0',
             'shipping_cost' => 'nullable|numeric|min:0',
+            'additional_charges' => 'nullable|array',
+            'additional_charges_total' => 'nullable|numeric|min:0',
             'total_amount' => 'required|numeric|min:0',
             'paid_amount' => 'nullable|numeric|min:0',
             'tendered_amount' => 'nullable|numeric|min:0',
@@ -355,6 +367,8 @@ class PosController extends Controller
                     'discount_amount' => (float) ($validated['discount_amount'] ?? 0.00),
                     'tax_amount' => (float) ($validated['tax_amount'] ?? 0.00),
                     'shipping_cost' => (float) ($validated['shipping_cost'] ?? 0.00),
+                    'additional_charges' => $validated['additional_charges'] ?? null,
+                    'additional_charges_total' => (float) ($validated['additional_charges_total'] ?? 0.00),
                     'paid_amount' => $paidAmount,
                     'tendered_amount' => $tenderedAmount,
                     'change_amount' => $changeAmount,

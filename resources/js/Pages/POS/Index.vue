@@ -45,6 +45,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    chargeFields: {
+        type: Array,
+        default: () => [],
+    },
     recentOrders: {
         type: Array,
         default: () => [],
@@ -160,6 +164,16 @@ const discountType = ref('fixed'); // 'fixed' or 'percent'
 const discountValue = ref(0);
 const taxPercent = ref(0);
 const shippingCost = ref(0);
+const posCharges = ref(
+    (props.chargeFields || []).map(f => ({
+        id: f.id,
+        name: f.name,
+        type: f.type,
+        rate: f.type === 'percentage' ? (Number(f.default_amount) || 0) : 0,
+        amount: f.type === 'percentage' ? 0 : (Number(f.default_amount) || 0),
+        is_taxable: Boolean(f.is_taxable),
+    }))
+);
 const roundToInteger = ref(true);
 const tenderedAmount = ref(0);
 const notes = ref('');
@@ -427,6 +441,11 @@ function executeClearCart() {
     discountValue.value = 0;
     taxPercent.value = 0;
     shippingCost.value = 0;
+    posCharges.value.forEach(c => {
+        const orig = (props.chargeFields || []).find(f => f.id === c.id);
+        c.rate = orig && orig.type === 'percentage' ? (Number(orig.default_amount) || 0) : 0;
+        c.amount = orig && orig.type !== 'percentage' ? (Number(orig.default_amount) || 0) : 0;
+    });
     tenderedAmount.value = 0;
     notes.value = '';
     localStorage.removeItem('pos_active_cart');
@@ -453,13 +472,27 @@ const taxAmount = computed(() => {
     return (afterDiscount * pct) / 100;
 });
 
+const posChargesTotal = computed(() => {
+    return posCharges.value.reduce((sum, c) => {
+        let amt = 0;
+        if (c.type === 'percentage') {
+            const base = Math.max(0, subtotal.value - discountAmount.value);
+            amt = parseFloat(((base * (parseFloat(c.rate) || 0)) / 100).toFixed(2));
+            c.amount = amt;
+        } else {
+            amt = parseFloat(c.amount) || 0;
+        }
+        return sum + amt;
+    }, 0);
+});
+
 const calculatedTotal = computed(() => {
-    const raw = Math.max(0, subtotal.value - discountAmount.value + taxAmount.value + (parseFloat(shippingCost.value) || 0));
+    const raw = Math.max(0, subtotal.value - discountAmount.value + taxAmount.value + (parseFloat(shippingCost.value) || 0) + posChargesTotal.value);
     return roundToInteger.value ? Math.round(raw) : Number(raw.toFixed(2));
 });
 
 const roundingDiff = computed(() => {
-    const raw = Math.max(0, subtotal.value - discountAmount.value + taxAmount.value + (parseFloat(shippingCost.value) || 0));
+    const raw = Math.max(0, subtotal.value - discountAmount.value + taxAmount.value + (parseFloat(shippingCost.value) || 0) + posChargesTotal.value);
     return calculatedTotal.value - raw;
 });
 
@@ -714,6 +747,14 @@ function completeSale() {
         discount_amount: discountAmount.value,
         tax_amount: taxAmount.value,
         shipping_cost: parseFloat(shippingCost.value) || 0,
+        additional_charges: posCharges.value.map(c => ({
+            id: c.id,
+            name: c.name,
+            type: c.type,
+            rate: c.type === 'percentage' ? (parseFloat(c.rate) || 0) : null,
+            amount: parseFloat(c.amount) || 0,
+        })),
+        additional_charges_total: posChargesTotal.value,
         total_amount: calculatedTotal.value,
         paid_amount: effectivePaid,
         tendered_amount: effectiveTendered,
@@ -792,6 +833,11 @@ function completeSale() {
                 discountValue.value = 0;
                 taxPercent.value = 0;
                 shippingCost.value = 0;
+                posCharges.value.forEach(c => {
+                    const orig = (props.chargeFields || []).find(f => f.id === c.id);
+                    c.rate = orig && orig.type === 'percentage' ? (Number(orig.default_amount) || 0) : 0;
+                    c.amount = orig && orig.type !== 'percentage' ? (Number(orig.default_amount) || 0) : 0;
+                });
                 tenderedAmount.value = 0;
                 notes.value = '';
                 isAddingCustomer.value = false;
@@ -1565,6 +1611,38 @@ onUnmounted(() => {
                         </div>
                     </div>
 
+                    <!-- Additional Dynamic Charges Row -->
+                    <div v-if="posCharges.length > 0" class="pb-2 border-b border-slate-100 space-y-1.5">
+                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Additional Charges</div>
+                        <div v-for="charge in posCharges" :key="charge.id" class="flex items-center justify-between gap-2">
+                            <span class="text-[11px] font-medium text-slate-600 truncate">{{ charge.name }}</span>
+                            <div class="flex items-center gap-1 shrink-0">
+                                <template v-if="charge.type === 'percentage'">
+                                    <input
+                                        v-model.number="charge.rate"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        class="w-14 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 text-[11px] text-right"
+                                    />
+                                    <span class="text-[10px] text-slate-400">%</span>
+                                    <span class="text-[11px] font-semibold text-slate-700 w-14 text-right">
+                                        <CurrencyDisplay :amount="charge.amount" />
+                                    </span>
+                                </template>
+                                <template v-else>
+                                    <input
+                                        v-model.number="charge.amount"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        class="w-20 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 text-[11px] text-right font-semibold"
+                                    />
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Summary Lines -->
                     <div class="space-y-1 text-xs text-slate-500">
                         <div class="flex justify-between">
@@ -1578,6 +1656,10 @@ onUnmounted(() => {
                         <div v-if="taxAmount > 0" class="flex justify-between">
                             <span>VAT:</span>
                             <span>+<CurrencyDisplay :amount="taxAmount" /></span>
+                        </div>
+                        <div v-if="posChargesTotal > 0" class="flex justify-between text-indigo-600 font-semibold">
+                            <span>Additional Charges:</span>
+                            <span>+<CurrencyDisplay :amount="posChargesTotal" /></span>
                         </div>
                         <div v-if="roundingDiff !== 0" class="flex justify-between text-[10px] text-slate-400">
                             <span>Rounding adjustment:</span>

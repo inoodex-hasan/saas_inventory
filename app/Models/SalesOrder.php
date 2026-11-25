@@ -26,6 +26,8 @@ class SalesOrder extends Model
         'subtotal',
         'tax_amount',
         'shipping_cost',
+        'additional_charges_total',
+        'additional_charges',
         'discount_amount',
         'total_amount',
         'paid_amount',
@@ -41,6 +43,8 @@ class SalesOrder extends Model
         'subtotal' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'shipping_cost' => 'decimal:2',
+        'additional_charges_total' => 'decimal:2',
+        'additional_charges' => 'array',
         'discount_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
@@ -73,6 +77,11 @@ class SalesOrder extends Model
     public function serials(): HasMany
     {
         return $this->hasMany(ProductSerial::class);
+    }
+
+    public function returns(): HasMany
+    {
+        return $this->hasMany(ProductReturn::class);
     }
 
     /**

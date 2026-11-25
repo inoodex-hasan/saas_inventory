@@ -6,6 +6,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import BarcodeCameraModal from '@/Components/BarcodeCameraModal.vue';
+import SerialInputManager from '@/Components/SerialInputManager.vue';
 import { useBarcodeScanner } from '@/Composables/useBarcodeScanner';
 import { playScanSuccess, playScanError } from '@/Utils/sound';
 
@@ -48,6 +49,14 @@ const parsedInitialSerials = computed(() => {
 function getVariantSerialCount(serialsStr) {
     if (!serialsStr) return 0;
     return serialsStr.split(/[\r\n,]+/).map(s => s.trim()).filter(Boolean).length;
+}
+
+const isVariantSerialModalOpen = ref(false);
+const activeVariantForSerials = ref(null);
+
+function openVariantSerialModal(variant) {
+    activeVariantForSerials.value = variant;
+    isVariantSerialModalOpen.value = true;
 }
 
 const imagePreview = ref(null);
@@ -212,17 +221,32 @@ function onNameBlur() {
 // ==========================================
 // VARIANT MATRIX GENERATOR
 // ==========================================
-const variantOptions = ref([
-    { name: 'Color', values: ['Black', 'White'] },
-    { name: 'Size', values: ['M', 'L', 'XL'] },
-]);
+const variantOptions = ref([]);
 const newOptionName = ref('');
 const newOptionValueInputs = ref({});
 
 function toggleVariants() {
     form.has_variants = !form.has_variants;
-    if (form.has_variants && form.variants.length === 0) {
-        generateVariantMatrix();
+    if (!form.has_variants) {
+        form.variants = [];
+    }
+}
+
+function loadOptionPreset(presetKey) {
+    if (presetKey === 'apparel') {
+        variantOptions.value = [
+            { name: 'Color', values: ['Black', 'White', 'Blue'] },
+            { name: 'Size', values: ['S', 'M', 'L', 'XL'] },
+        ];
+    } else if (presetKey === 'storage') {
+        variantOptions.value = [
+            { name: 'Storage', values: ['64GB', '128GB', '256GB', '512GB'] },
+        ];
+    } else if (presetKey === 'ram_storage') {
+        variantOptions.value = [
+            { name: 'RAM', values: ['8GB', '16GB'] },
+            { name: 'Storage', values: ['256GB', '512GB', '1TB'] },
+        ];
     }
 }
 
@@ -270,11 +294,11 @@ function generateVariantMatrix() {
     const baseCost = Number(form.cost_price) || 0;
     const basePrice = Number(form.selling_price) || 0;
 
-    // Distribute from parent initial_stock_quantity or default to at least 1
+    // Distribute from parent initial_stock_quantity or default to 0
     const initialQty = Number(form.initial_stock_quantity) || 0;
-    let defaultQty = 1;
+    let defaultQty = 0;
     if (initialQty > 0 && combinations.length > 0) {
-        defaultQty = Math.max(1, Math.floor(initialQty / combinations.length));
+        defaultQty = Math.floor(initialQty / combinations.length);
     }
     bulkVariantQty.value = defaultQty;
 
@@ -305,7 +329,7 @@ function generateVariantMatrix() {
     });
 }
 
-const bulkVariantQty = ref(1);
+const bulkVariantQty = ref(0);
 
 function applyBulkQtyToAllVariants() {
     const q = Math.max(0, Number(bulkVariantQty.value) || 0);
@@ -324,7 +348,7 @@ function addSingleVariant() {
         attributes: {},
         cost_price: Number(form.cost_price) || 0,
         selling_price: Number(form.selling_price) || 0,
-        initial_stock_quantity: Math.max(1, Number(bulkVariantQty.value) || 1),
+        initial_stock_quantity: Math.max(0, Number(bulkVariantQty.value) || 0),
         initial_serials: '',
         is_active: true,
     });
@@ -382,6 +406,51 @@ function applyDefaultPricesToAllVariants() {
         v.cost_price = baseCost;
         v.selling_price = basePrice;
     });
+}
+
+const bulkSerialNotification = ref('');
+
+function generateSerialsForAllVariants() {
+    bulkSerialNotification.value = '';
+
+    if (!form.is_serialized) {
+        bulkSerialNotification.value = 'Please enable "Track Individual Serials & Warranties" first.';
+        setTimeout(() => { bulkSerialNotification.value = ''; }, 4000);
+        return;
+    }
+
+    if (!form.variants || form.variants.length === 0) {
+        bulkSerialNotification.value = 'No variants to generate serials for.';
+        setTimeout(() => { bulkSerialNotification.value = ''; }, 4000);
+        return;
+    }
+
+    let totalGenerated = 0;
+    let variantsAffected = 0;
+
+    form.variants.forEach((v, idx) => {
+        const qty = Number(v.initial_stock_quantity) || 0;
+        if (qty > 0) {
+            const baseSku = (v.sku || `${form.sku || 'PROD'}-V${idx + 1}`).trim().toUpperCase();
+            const serials = [];
+            for (let i = 1; i <= qty; i++) {
+                serials.push(`${baseSku}-${String(i).padStart(4, '0')}`);
+            }
+            v.initial_serials = serials.join('\n');
+            totalGenerated += qty;
+            variantsAffected++;
+        }
+    });
+
+    if (totalGenerated > 0) {
+        playScanSuccess();
+        bulkSerialNotification.value = `Generated ${totalGenerated} unique serials across ${variantsAffected} variant(s).`;
+    } else {
+        playScanError();
+        bulkSerialNotification.value = 'All variants have opening quantity set to 0. Please set variant quantities first.';
+    }
+
+    setTimeout(() => { bulkSerialNotification.value = ''; }, 4500);
 }
 
 const totalVariantOpeningStock = computed(() => {
@@ -754,38 +823,15 @@ required
                     </div>
 
                     <!-- Single Product Opening Serials Input -->
-                    <div v-if="!form.has_variants && form.is_serialized && Number(form.initial_stock_quantity) > 0" class="col-span-full p-4 rounded-xl border border-indigo-200 bg-indigo-50/40 space-y-2">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <label class="block text-xs font-bold text-slate-800">
-                                    Opening Serial Numbers
-                                </label>
-                                <span 
-                                    class="px-2 py-0.5 rounded-full text-[10px] font-bold"
-                                    :class="parsedInitialSerials.length === Number(form.initial_stock_quantity) ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-800 border border-amber-300'"
-                                >
-                                    {{ parsedInitialSerials.length }} of {{ form.initial_stock_quantity }} entered
-                                </span>
-                            </div>
-                            <span class="text-[10px] text-slate-500">Comma or line-break separated</span>
-                        </div>
-                        <textarea 
-                            v-model="form.initial_serials" 
-                            rows="3" 
-                            placeholder="Scan with barcode gun or type serials:&#10;SN-1001, SN-1002, SN-1003"
-                            class="w-full px-3 py-2 rounded-xl text-xs font-mono border border-slate-200 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                        ></textarea>
-                        <p v-if="form.errors.initial_serials" class="text-[11px] text-rose-600 font-semibold flex items-center gap-1">
+                    <div v-if="!form.has_variants && form.is_serialized && Number(form.initial_stock_quantity) > 0" class="col-span-full space-y-1">
+                        <SerialInputManager
+                            v-model="form.initial_serials"
+                            :required-quantity="Number(form.initial_stock_quantity) || 0"
+                            :product-sku="form.sku"
+                            title="Opening Serial Numbers"
+                        />
+                        <p v-if="form.errors.initial_serials" class="text-[11px] text-rose-600 font-semibold flex items-center gap-1 mt-1">
                             <span>✕ {{ form.errors.initial_serials }}</span>
-                        </p>
-                        <p v-else-if="parsedInitialSerials.length === 0" class="text-[11px] text-slate-500 font-medium flex items-center gap-1">
-                            <span>Optional: Leave empty to receive serials later via Purchase Orders, or scan {{ form.initial_stock_quantity }} serial(s) now.</span>
-                        </p>
-                        <p v-else-if="parsedInitialSerials.length !== Number(form.initial_stock_quantity)" class="text-[11px] text-amber-700 font-medium flex items-center gap-1">
-                            <span>⚠ You entered {{ parsedInitialSerials.length }} serial(s). Please enter exactly {{ form.initial_stock_quantity }} serial numbers to match opening quantity.</span>
-                        </p>
-                        <p v-else class="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
-                            <span>✓ All {{ form.initial_stock_quantity }} serial numbers ready for inventory opening.</span>
                         </p>
                     </div>
                 </div>
@@ -864,8 +910,48 @@ required
                             </button>
                         </div>
 
+                        <!-- Quick Presets -->
+                        <div class="flex items-center flex-wrap gap-2 text-xs pt-1">
+                            <span class="text-slate-500 text-[11px] font-semibold">Quick Presets:</span>
+                            <button
+                                type="button"
+                                @click="loadOptionPreset('apparel')"
+                                class="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-300 text-[11px] font-medium transition cursor-pointer"
+                            >
+                                + Color & Size
+                            </button>
+                            <button
+                                type="button"
+                                @click="loadOptionPreset('storage')"
+                                class="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-300 text-[11px] font-medium transition cursor-pointer"
+                            >
+                                + Storage
+                            </button>
+                            <button
+                                type="button"
+                                @click="loadOptionPreset('ram_storage')"
+                                class="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-300 text-[11px] font-medium transition cursor-pointer"
+                            >
+                                + RAM & Storage
+                            </button>
+                            <button
+                                v-if="variantOptions.length > 0"
+                                type="button"
+                                @click="variantOptions = []"
+                                class="px-2 py-0.5 rounded-md text-rose-600 hover:text-rose-800 text-[11px] font-medium transition cursor-pointer ml-auto"
+                            >
+                                Clear Options
+                            </button>
+                        </div>
+
+                        <!-- Empty Options Notice -->
+                        <div v-if="variantOptions.length === 0" class="text-center py-5 rounded-xl border border-dashed border-violet-200 bg-white/60">
+                            <p class="text-xs text-slate-600 font-medium">No options defined yet.</p>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Click a quick preset above or type an option name below (e.g. Size, Color, Storage, Material) to begin.</p>
+                        </div>
+
                         <!-- Options List -->
-                        <div class="space-y-3">
+                        <div v-else class="space-y-3">
                             <div 
                                 v-for="(opt, optIdx) in variantOptions" 
                                 :key="optIdx" 
@@ -976,6 +1062,15 @@ required
                                     Sync Base Prices
                                 </button>
                                 <button
+                                    v-if="form.is_serialized"
+                                    type="button"
+                                    @click="generateSerialsForAllVariants"
+                                    title="Auto-generate unique serial numbers for all variants based on their SKU"
+                                    class="text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1 rounded-lg cursor-pointer transition flex items-center gap-1 shadow-2xs"
+                                >
+                                    <span>Generate All Serials</span>
+                                </button>
+                                <button
                                     type="button"
                                     @click="addSingleVariant"
                                     class="text-[11px] font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 px-3 py-1 rounded-lg cursor-pointer"
@@ -983,6 +1078,12 @@ required
                                     + Add Variant
                                 </button>
                             </div>
+                        </div>
+
+                        <!-- Bulk Serial Generation Feedback Banner -->
+                        <div v-if="bulkSerialNotification" class="px-3 py-2 rounded-lg text-xs font-semibold border flex items-center justify-between" :class="bulkSerialNotification.includes('Generated') ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'">
+                            <span>{{ bulkSerialNotification }}</span>
+                            <button type="button" @click="bulkSerialNotification = ''" class="text-xs font-bold opacity-60 hover:opacity-100">&times;</button>
                         </div>
 
                         <div v-if="form.variants.length > 0" class="overflow-x-auto border border-slate-200/80 rounded-xl custom-scrollbar">
@@ -1070,21 +1171,17 @@ required
                                                 class="w-full px-2 py-1 text-xs font-mono font-bold text-emerald-700 rounded-lg border border-slate-200 focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
                                             />
                                         </td>
-                                        <td v-if="form.is_serialized" class="py-2 px-3">
-                                            <div class="space-y-1">
-                                                <textarea 
-                                                    v-model="v.initial_serials" 
-                                                    rows="1" 
-                                                    placeholder="SN1, SN2..."
-                                                    :disabled="!v.initial_stock_quantity || Number(v.initial_stock_quantity) <= 0"
-                                                    class="w-full px-2 py-1 text-xs font-mono rounded-lg border border-slate-200 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 disabled:bg-slate-50 disabled:opacity-50"
-                                                ></textarea>
-                                                <div v-if="Number(v.initial_stock_quantity) > 0" class="text-[10px]">
-                                                    <span :class="getVariantSerialCount(v.initial_serials) === Number(v.initial_stock_quantity) ? 'text-emerald-600 font-bold' : 'text-amber-600 font-medium'">
-                                                        {{ getVariantSerialCount(v.initial_serials) }} / {{ v.initial_stock_quantity }}
-                                                    </span>
-                                                </div>
-                                            </div>
+                                        <td v-if="form.is_serialized" class="py-2 px-3 text-center">
+                                            <button
+                                                type="button"
+                                                @click="openVariantSerialModal(v)"
+                                                :disabled="!v.initial_stock_quantity || Number(v.initial_stock_quantity) <= 0"
+                                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                                :class="getVariantSerialCount(v.initial_serials) === Number(v.initial_stock_quantity) && Number(v.initial_stock_quantity) > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100' : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'"
+                                            >
+                                                <span>Serials</span>
+                                                <span class="font-mono text-[11px] font-bold">({{ getVariantSerialCount(v.initial_serials) }}/{{ v.initial_stock_quantity || 0 }})</span>
+                                            </button>
                                         </td>
                                         <td class="py-2 px-2 text-center align-middle">
                                             <input 
@@ -1241,5 +1338,41 @@ class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-
             v-model:open="isCameraModalOpen"
             @scan="handleBarcodeScanned"
         />
+
+        <!-- Variant Serials Manager Modal -->
+        <Modal :show="isVariantSerialModalOpen" @close="isVariantSerialModalOpen = false" maxWidth="lg">
+            <div class="p-5 space-y-4" v-if="activeVariantForSerials">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Manage Variant Serials</h3>
+                        <p class="text-xs text-slate-500">{{ activeVariantForSerials.name }} (SKU: {{ activeVariantForSerials.sku }})</p>
+                    </div>
+                    <button 
+                        type="button" 
+                        @click="isVariantSerialModalOpen = false"
+                        class="text-slate-400 hover:text-slate-600 text-lg leading-none cursor-pointer"
+                    >
+                        &times;
+                    </button>
+                </div>
+
+                <SerialInputManager
+                    v-model="activeVariantForSerials.initial_serials"
+                    :required-quantity="Number(activeVariantForSerials.initial_stock_quantity) || 0"
+                    :product-sku="activeVariantForSerials.sku"
+                    :title="`Serials: ${activeVariantForSerials.name}`"
+                />
+
+                <div class="flex justify-end pt-2 border-t border-slate-100">
+                    <button
+                        type="button"
+                        @click="isVariantSerialModalOpen = false"
+                        class="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg cursor-pointer transition shadow-xs"
+                    >
+                        Done
+                    </button>
+                </div>
+            </div>
+        </Modal>
     </AppLayout>
 </template>

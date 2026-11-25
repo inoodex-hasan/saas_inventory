@@ -326,6 +326,16 @@
                                     <td style="padding: 3.5px 0; text-align: right; font-weight: 600; color: #0f172a;">{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->shipping_cost, 2) }}</td>
                                 </tr>
                                 @endif
+                                @if(!empty($order->additional_charges) && is_array($order->additional_charges))
+                                    @foreach($order->additional_charges as $charge)
+                                        @if(($charge['amount'] ?? 0) > 0)
+                                        <tr>
+                                            <td style="padding: 3.5px 0; color: #475569;">{{ $charge['name'] }}:</td>
+                                            <td style="padding: 3.5px 0; text-align: right; font-weight: 600; color: #0f172a;">{{ $team->currency_symbol ?? '৳' }}{{ number_format($charge['amount'], 2) }}</td>
+                                        </tr>
+                                        @endif
+                                    @endforeach
+                                @endif
                                 @if($order->discount_amount > 0)
                                 <tr>
                                     <td style="padding: 3.5px 0; color: #475569;">Discount:</td>

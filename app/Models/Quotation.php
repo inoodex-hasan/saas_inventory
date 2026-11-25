@@ -23,6 +23,8 @@ class Quotation extends Model
         'subtotal',
         'discount_amount',
         'tax_amount',
+        'additional_charges_total',
+        'additional_charges',
         'total_amount',
         'terms',
         'notes',
@@ -36,6 +38,8 @@ class Quotation extends Model
         'subtotal' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'tax_amount' => 'decimal:2',
+        'additional_charges_total' => 'decimal:2',
+        'additional_charges' => 'array',
         'total_amount' => 'decimal:2',
     ];
 

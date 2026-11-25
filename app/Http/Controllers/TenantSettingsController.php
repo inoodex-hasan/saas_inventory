@@ -41,15 +41,18 @@ class TenantSettingsController extends Controller
                 'currency_code' => $team->currency_code ?? 'BDT',
                 'invoice_prefix' => $team->invoice_prefix ?? 'INV-',
                 'po_prefix' => $team->po_prefix ?? 'PO-',
+                'invoice_template' => $team->invoice_template ?? 'invoice_pdf1',
+                'hide_header_on_pad' => (bool) ($team->hide_header_on_pad ?? false),
                 'invoice_bg_path' => $team->invoice_bg_path,
                 'invoice_bg_url' => $team->getInvoiceBgUrl(),
                 'report_bg_path' => $team->report_bg_path,
                 'report_bg_url' => $team->getReportBgUrl(),
-                'invoice_margin_top' => (int) ($team->invoice_margin_top ?? 48),
+                'invoice_margin_top' => (int) ($team->invoice_margin_top ?? 38),
                 'invoice_margin_bottom' => (int) ($team->invoice_margin_bottom ?? 25),
                 'report_margin_top' => (int) ($team->report_margin_top ?? 42),
                 'report_margin_bottom' => (int) ($team->report_margin_bottom ?? 25),
             ],
+            'availableTemplates' => \App\Models\InvoiceTemplate::active()->get(),
         ]);
     }
 
@@ -82,6 +85,8 @@ class TenantSettingsController extends Controller
             'currency_code' => 'required|string|max:10',
             'invoice_prefix' => 'required|string|max:20',
             'po_prefix' => 'required|string|max:20',
+            'invoice_template' => 'nullable|string|max:50',
+            'hide_header_on_pad' => 'nullable|boolean',
             'invoice_bg' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
             'report_bg' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
             'invoice_margin_top' => 'nullable|integer|min:0|max:150',
@@ -89,6 +94,8 @@ class TenantSettingsController extends Controller
             'report_margin_top' => 'nullable|integer|min:0|max:150',
             'report_margin_bottom' => 'nullable|integer|min:0|max:150',
         ]);
+
+        $validated['hide_header_on_pad'] = $request->boolean('hide_header_on_pad');
 
         // Handle Invoice Background Upload
         if ($request->hasFile('invoice_bg')) {
@@ -247,19 +254,29 @@ class TenantSettingsController extends Controller
 
         $sampleOrder->setRelation('items', collect([$item1, $item2]));
         $sampleOrder->setRelation('team', $team);
+        $sampleOrder->setRelation('returns', collect());
 
-        $marginTop = $team->invoice_bg_path ? ($team->invoice_margin_top ?? 48) : 12;
-        $marginBottom = $team->invoice_bg_path ? ($team->invoice_margin_bottom ?? 25) : 12;
+        $marginTop = $team->invoice_bg_path ? ($team->invoice_margin_top ?? 38) : 14;
+        $marginBottom = $team->invoice_bg_path ? ($team->invoice_margin_bottom ?? 25) : 14;
 
-        $pdf = PDF::loadView('pdf.sales-invoice', [
+        $templateKey = $request->query('template', $team->invoice_template ?? 'invoice_pdf1');
+        $viewName = view()->exists("pdf.invoices.{$templateKey}")
+            ? "pdf.invoices.{$templateKey}"
+            : (view()->exists('pdf.sales-invoice') ? 'pdf.sales-invoice' : 'pdf.invoices.invoice_pdf1');
+
+        $pdf = PDF::loadView($viewName, [
             'order' => $sampleOrder,
+            'sales' => $sampleOrder,
             'team' => $team,
+            'customer' => $sampleOrder->customer,
+            'items' => $sampleOrder->items,
+            'returns' => collect(),
         ], [], [
             'title' => "Invoice-Preview-{$sampleOrder->order_number}",
             'margin_top' => $marginTop,
             'margin_bottom' => $marginBottom,
-            'margin_left' => 12,
-            'margin_right' => 12,
+            'margin_left' => 14,
+            'margin_right' => 14,
         ]);
 
         return response($pdf->output(), 200, [

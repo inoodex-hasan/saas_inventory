@@ -14,6 +14,10 @@ const props = defineProps({
     customers: Array,
     products: Array,
     warehouses: Array,
+    chargeFields: {
+        type: Array,
+        default: () => [],
+    },
     todayDate: String,
     defaultValidUntil: String,
 });
@@ -31,6 +35,8 @@ const form = useForm({
     status: 'draft',
     discount_amount: 0,
     tax_rate: 0,
+    additional_charges: [],
+    additional_charges_total: 0,
     notes: '',
     terms: defaultTerms,
     items: [
@@ -160,14 +166,47 @@ const taxAmount = computed(() => {
     return base * (rate / 100);
 });
 
+const dynamicCharges = ref(
+    (props.chargeFields || []).map(field => ({
+        id: field.id,
+        name: field.name,
+        type: field.type,
+        rate: field.type === 'percentage' ? (Number(field.default_amount) || 0) : 0,
+        amount: field.type === 'percentage' ? 0 : (Number(field.default_amount) || 0),
+        is_taxable: Boolean(field.is_taxable),
+    }))
+);
+
+const additionalChargesTotal = computed(() => {
+    return dynamicCharges.value.reduce((sum, c) => {
+        let amt = 0;
+        if (c.type === 'percentage') {
+            const base = Math.max(0, subtotal.value - (parseFloat(form.discount_amount) || 0));
+            amt = parseFloat(((base * (parseFloat(c.rate) || 0)) / 100).toFixed(2));
+            c.amount = amt;
+        } else {
+            amt = parseFloat(c.amount) || 0;
+        }
+        return sum + amt;
+    }, 0);
+});
+
 const totalAmount = computed(() => {
     const sub = subtotal.value;
     const disc = parseFloat(form.discount_amount) || 0;
-    return Math.max(0, sub - disc + taxAmount.value);
+    return Math.max(0, sub - disc + taxAmount.value + additionalChargesTotal.value);
 });
 
 function submit(statusValue = 'draft') {
     form.status = statusValue;
+    form.additional_charges = dynamicCharges.value.map(c => ({
+        id: c.id,
+        name: c.name,
+        type: c.type,
+        rate: c.type === 'percentage' ? (parseFloat(c.rate) || 0) : null,
+        amount: parseFloat(c.amount) || 0,
+    }));
+    form.additional_charges_total = additionalChargesTotal.value;
     form.post(route('quotations.store'));
 }
 </script>
@@ -478,6 +517,41 @@ function submit(statusValue = 'draft') {
                                     class="w-28 text-right text-xs px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg"
                                 />
                             </div>
+
+                            <!-- Dynamic Additional Charges -->
+                            <template v-if="dynamicCharges.length > 0">
+                                <div class="pt-2 border-t border-slate-100 space-y-2">
+                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Additional Charges</div>
+                                    <div v-for="charge in dynamicCharges" :key="charge.id" class="flex items-center justify-between gap-4">
+                                        <span class="text-slate-600 text-xs font-semibold truncate">{{ charge.name }}:</span>
+                                        <div class="flex items-center gap-1.5 shrink-0">
+                                            <template v-if="charge.type === 'percentage'">
+                                                <input
+                                                    v-model.number="charge.rate"
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    placeholder="%"
+                                                    class="w-16 text-right text-xs px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg"
+                                                />
+                                                <span class="text-xs text-slate-400">%</span>
+                                                <span class="text-xs font-semibold text-slate-700 w-16 text-right">
+                                                    <CurrencyDisplay :amount="charge.amount" />
+                                                </span>
+                                            </template>
+                                            <template v-else>
+                                                <input
+                                                    v-model.number="charge.amount"
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    class="w-28 text-right text-xs px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg"
+                                                />
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
 
                             <div class="pt-3 border-t border-slate-200 flex justify-between text-base font-bold text-slate-900">
                                 <span>Grand Total:</span>

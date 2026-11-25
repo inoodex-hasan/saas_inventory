@@ -6,6 +6,10 @@ import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 
 const props = defineProps({
     settings: Object,
+    availableTemplates: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const activeTab = ref('profile');
@@ -58,6 +62,8 @@ const form = useForm({
     currency_code: props.settings.currency_code || 'BDT',
     invoice_prefix: props.settings.invoice_prefix || 'INV-',
     po_prefix: props.settings.po_prefix || 'PO-',
+    invoice_template: props.settings.invoice_template || 'invoice_pdf1',
+    hide_header_on_pad: Boolean(props.settings.hide_header_on_pad),
     invoice_bg: null,
     report_bg: null,
     invoice_margin_top: props.settings.invoice_margin_top ?? 48,
@@ -130,8 +136,9 @@ function executeRemoveLetterhead() {
     });
 }
 
-function previewInvoiceBg() {
-    window.open(route('settings.company.preview-invoice-bg'), '_blank');
+function previewInvoiceBg(templateKey = null) {
+    const tpl = (typeof templateKey === 'string' && templateKey) ? templateKey : (form.invoice_template || 'invoice_pdf1');
+    window.open(route('settings.company.preview-invoice-bg') + '?template=' + tpl, '_blank');
 }
 
 function previewReportBg() {
@@ -213,7 +220,7 @@ function previewReportBg() {
                     <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    <span>Print Letterheads & Backgrounds</span>
+                    <span>Invoice Templates &amp; Letterhead</span>
                     <span 
                         v-if="settings.invoice_bg_path || settings.report_bg_path" 
                         class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"
@@ -454,20 +461,79 @@ class="w-full text-sm font-mono px-3 py-2 bg-slate-50 border border-slate-200 ro
                 </div>
 
                 <!-- Tab 4: Pre-Printed Letterheads & Margins -->
-                <div v-show="activeTab === 'letterhead'" class="space-y-6">
-                    <div>
-                        <h2 class="text-base font-bold text-slate-900 border-b border-slate-100 pb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                            <span>Pre-Printed Letterhead Backgrounds</span>
-                            <span class="text-xs font-normal text-slate-500">A4 Dimensions (210mm × 297mm)</span>
-                        </h2>
-                        <div class="mt-2 p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 text-xs text-blue-900 flex items-start gap-2.5">
+                <div v-show="activeTab === 'letterhead'" class="space-y-8">
+                    <!-- 1. Invoice Design Template Selector -->
+                    <div class="space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-100 pb-2">
+                            <div>
+                                <h2 class="text-base font-bold text-slate-900">1. Invoice Design Template</h2>
+                                <p class="text-xs text-slate-500">Choose your preferred invoice style provided by the platform. You can preview each design with sample data.</p>
+                            </div>
+                            <span v-if="availableTemplates && availableTemplates.length" class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 self-start sm:self-auto">
+                                Selected: {{ availableTemplates.find(t => t.key === form.invoice_template)?.name || 'Classic Modern' }}
+                            </span>
+                        </div>
+
+                        <div v-if="availableTemplates && availableTemplates.length" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div
+                                v-for="tpl in availableTemplates"
+                                :key="tpl.id"
+                                @click="form.invoice_template = tpl.key"
+                                class="p-4 rounded-xl border-2 transition cursor-pointer flex flex-col justify-between"
+                                :class="form.invoice_template === tpl.key 
+                                    ? 'border-indigo-600 bg-indigo-50/40 ring-1 ring-indigo-500/30' 
+                                    : 'border-slate-200 bg-white hover:border-slate-300'"
+                            >
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2">
+                                            <input 
+                                                type="radio" 
+                                                :value="tpl.key" 
+                                                v-model="form.invoice_template" 
+                                                class="text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
+                                            />
+                                            <span class="text-sm font-extrabold text-slate-900">{{ tpl.name }}</span>
+                                        </div>
+                                        <span v-if="tpl.is_default" class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
+                                            Default
+                                        </span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-500 leading-relaxed">{{ tpl.description }}</p>
+                                </div>
+
+                                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                                    <span class="text-[10px] font-mono text-slate-400 font-medium">{{ tpl.key }}</span>
+                                    <button
+                                        type="button"
+                                        @click.stop="previewInvoiceBg(tpl.key)"
+                                        class="text-xs font-bold text-indigo-600 hover:text-indigo-800 underline flex items-center gap-1 cursor-pointer"
+                                    >
+                                        Live Preview &rarr;
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Pre-Printed Letterhead Backgrounds -->
+                    <div class="space-y-4">
+                        <div class="border-b border-slate-100 pb-2">
+                            <h2 class="text-base font-bold text-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                                <span>2. Official Pad &amp; Letterhead Backgrounds</span>
+                                <span class="text-xs font-normal text-slate-500">Standard A4 Dimensions (210mm × 297mm)</span>
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-1">Upload your official letterhead pad image to render all customer invoices layered on top of your printed pad.</p>
+                        </div>
+
+                        <div class="p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 text-xs text-blue-900 flex items-start gap-2.5">
                             <svg class="w-5 h-5 text-blue-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <div class="space-y-1">
-                                <p class="font-bold">How Pre-Printed Letterheads Work:</p>
+                                <p class="font-bold">How Official Letterhead Pad Backgrounds Work:</p>
                                 <p class="text-blue-800 leading-relaxed">
-                                    Upload an A4 graphic background that already includes your company logo, header artwork, legal address, and footer. When active, our PDF engine automatically suppresses digital text headers to avoid duplicate branding. Use the <strong>Top Margin</strong> control to align tables cleanly below your artwork.
+                                    Upload an A4 graphic background (PNG or JPG) that contains your official company header artwork and footer. Use the <strong>Top Margin</strong> control to align the invoice table cleanly below your artwork, and tick <em>Hide digital header</em> if your pad already contains your company name and address.
                                 </p>
                             </div>
                         </div>
@@ -593,6 +659,21 @@ class="w-full text-sm font-mono px-3 py-2 bg-slate-50 border border-slate-200 ro
                                         <p class="text-[10px] text-slate-400 mt-0.5">Leaves room for your bottom footer</p>
                                     </div>
                                 </div>
+                            </div>
+
+                            <!-- Hide Digital Header Toggle -->
+                            <div class="pt-2 border-t border-slate-200/80">
+                                <label class="flex items-start gap-2.5 cursor-pointer">
+                                    <input 
+                                        v-model="form.hide_header_on_pad" 
+                                        type="checkbox" 
+                                        class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 mt-0.5 cursor-pointer"
+                                    />
+                                    <div>
+                                        <span class="text-xs font-semibold text-slate-800 block">Hide digital header &amp; footer on official pad</span>
+                                        <span class="text-[10px] text-slate-500 block">Suppresses the digital company name and contact info so they don't print over your official pre-printed letterhead pad artwork.</span>
+                                    </div>
+                                </label>
                             </div>
 
                             <!-- Live Action Button -->

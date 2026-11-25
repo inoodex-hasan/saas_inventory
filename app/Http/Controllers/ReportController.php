@@ -57,26 +57,26 @@ class ReportController extends Controller
         $warehouses = Warehouse::where('team_id', $team->id)->orderBy('name')->get(['id', 'name', 'code']);
         $categories = ProductCategory::where('team_id', $team->id)->orderBy('name')->get(['id', 'name']);
 
-        // 1. Valuation aggregates
-        $valuation = $this->getValuationData($team->id);
+        // Only compute the dataset for the active tab — all others return null.
+        // Tab switches do a full router.get(), so this is safe and cuts 6 of 7 queries per visit.
+        $valuation        = null;
+        $lowStockItems    = [];
+        $movements        = ['data' => []];
+        $expiryData       = null;
+        $agingData        = null;
+        $profitabilityData = null;
+        $financialSummary = null;
 
-        // 2. Low-stock alerts
-        $lowStockItems = $this->getLowStockData($team->id, $lowStockSearch);
-
-        // 3. Stock Movements (paginated)
-        $movements = $this->getMovementsData($team->id, $movementType, $movementWarehouseId, $movementSearch, $startDate, $endDate);
-
-        // 4. Batch & Expiry Radar
-        $expiryData = $this->getExpiryData($team->id, $expiryStatus, $expiryWarehouseId, $expirySearch);
-
-        // 5. Stock Aging & Dead Stock
-        $agingData = $this->getAgingData($team->id, $agingBracket, $agingCategoryId, $agingSearch);
-
-        // 6. Product Sales & Gross Margin Profitability
-        $profitabilityData = $this->getProfitabilityData($team->id, $startDate, $endDate, $profitabilityPerformance, $profitabilityCategoryId, $profitabilitySearch);
-
-        // 7. Executive Financial Summary (Sales, Purchases, Expenses & Revenue)
-        $financialSummary = $this->getFinancialSummaryData($team->id, $startDate, $endDate);
+        match ($activeTab) {
+            'valuation'        => $valuation         = $this->getValuationData($team->id),
+            'low_stock'        => $lowStockItems      = $this->getLowStockData($team->id, $lowStockSearch),
+            'movements'        => $movements          = $this->getMovementsData($team->id, $movementType, $movementWarehouseId, $movementSearch, $startDate, $endDate),
+            'expiry'           => $expiryData         = $this->getExpiryData($team->id, $expiryStatus, $expiryWarehouseId, $expirySearch),
+            'aging'            => $agingData          = $this->getAgingData($team->id, $agingBracket, $agingCategoryId, $agingSearch),
+            'profitability'    => $profitabilityData  = $this->getProfitabilityData($team->id, $startDate, $endDate, $profitabilityPerformance, $profitabilityCategoryId, $profitabilitySearch),
+            'financial_summary' => $financialSummary = $this->getFinancialSummaryData($team->id, $startDate, $endDate),
+            default            => $valuation          = $this->getValuationData($team->id),
+        };
 
         return Inertia::render('Reports/Index', [
             'currencySymbol' => $currencySymbol,

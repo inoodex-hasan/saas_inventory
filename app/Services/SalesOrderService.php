@@ -106,7 +106,20 @@ class SalesOrderService
             $tax = (float) ($data['tax_amount'] ?? 0.00);
             $shipping = (float) ($data['shipping_cost'] ?? 0.00);
             $discount = (float) ($data['discount_amount'] ?? 0.00);
-            $totalAmount = max(0, $subtotal + $tax + $shipping - $discount);
+            $additionalCharges = $data['additional_charges'] ?? null;
+            $additionalChargesTotal = (float) ($data['additional_charges_total'] ?? 0.00);
+
+            if (!empty($additionalCharges) && is_array($additionalCharges)) {
+                $calcChargesTotal = 0.0;
+                foreach ($additionalCharges as $charge) {
+                    $calcChargesTotal += (float) ($charge['amount'] ?? 0.0);
+                }
+                if ($additionalChargesTotal == 0 && $calcChargesTotal > 0) {
+                    $additionalChargesTotal = $calcChargesTotal;
+                }
+            }
+
+            $totalAmount = max(0, $subtotal + $tax + $shipping + $additionalChargesTotal - $discount);
             $paidAmount = (float) ($data['paid_amount'] ?? 0.00);
             $dueAmount = max(0, $totalAmount - $paidAmount);
 
@@ -132,6 +145,8 @@ class SalesOrderService
                 'tax_amount' => $tax,
                 'shipping_cost' => $shipping,
                 'discount_amount' => $discount,
+                'additional_charges_total' => $additionalChargesTotal,
+                'additional_charges' => $additionalCharges,
                 'total_amount' => $totalAmount,
                 'paid_amount' => $paidAmount,
                 'tendered_amount' => isset($data['tendered_amount']) ? (float) $data['tendered_amount'] : null,

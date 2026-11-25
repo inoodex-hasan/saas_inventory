@@ -237,4 +237,61 @@ class ProductSerialAndWarrantyTest extends TestCase
             ->has('serials.data', 0)
         );
     }
+
+    public function test_check_uniqueness_endpoint_detects_existing_and_available_serials(): void
+    {
+        ProductSerial::create([
+            'team_id' => $this->team->id,
+            'product_id' => $this->product->id,
+            'warehouse_id' => $this->warehouse->id,
+            'serial_number' => 'SN-EXISTS-101',
+            'status' => 'in_stock',
+        ]);
+
+        $response = $this->postJson(route('serials.check-uniqueness'), [
+            'serials' => ['SN-EXISTS-101', 'SN-FRESH-102', 'SN-FRESH-103'],
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'available' => false,
+            'existing' => ['SN-EXISTS-101'],
+        ]);
+
+        // When all are unique
+        $freshResponse = $this->postJson(route('serials.check-uniqueness'), [
+            'serials' => ['SN-NEW-001', 'SN-NEW-002'],
+        ]);
+
+        $freshResponse->assertStatus(200);
+        $freshResponse->assertJson([
+            'available' => true,
+            'existing' => [],
+        ]);
+    }
+
+    public function test_check_uniqueness_is_tenant_isolated(): void
+    {
+        ProductSerial::create([
+            'team_id' => $this->team->id,
+            'product_id' => $this->product->id,
+            'warehouse_id' => $this->warehouse->id,
+            'serial_number' => 'SN-SHARED-CODE',
+            'status' => 'in_stock',
+        ]);
+
+        // Other tenant checking the same serial number can use it
+        $otherUser = User::factory()->withPersonalTeam()->create();
+        $this->actingAs($otherUser);
+
+        $response = $this->postJson(route('serials.check-uniqueness'), [
+            'serials' => ['SN-SHARED-CODE'],
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'available' => true,
+            'existing' => [],
+        ]);
+    }
 }

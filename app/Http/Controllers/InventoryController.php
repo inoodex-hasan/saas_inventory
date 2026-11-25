@@ -39,21 +39,27 @@ class InventoryController extends Controller
             ->whereNull('products.deleted_at')
             ->sum(DB::raw('stock_levels.quantity * products.cost_price'));
 
-        // Low stock count (threshold <= alert_quantity or default 5)
-        $lowStockCount = Product::where('team_id', $teamId)
-            ->whereHas('stockLevels')
+        // Low stock count — pure SQL aggregation, no PHP-side collection loading
+        $lowStockCount = DB::table('products')
+            ->join('stock_levels', 'products.id', '=', 'stock_levels.product_id')
+            ->where('stock_levels.team_id', $teamId)
+            ->whereNull('products.deleted_at')
+            ->where('products.is_active', true)
+            ->select('products.id')
+            ->groupBy('products.id', 'products.reorder_level')
+            ->havingRaw('SUM(stock_levels.quantity) > 0 AND SUM(stock_levels.quantity) <= COALESCE(products.reorder_level, 5)')
             ->get()
-            ->filter(function ($p) {
-                $stock = (float) $p->stockLevels->sum('quantity');
-                $threshold = (float) ($p->alert_quantity ?: 5);
-                return $stock > 0 && $stock <= $threshold;
-            })
             ->count();
 
-        // Out of stock count
-        $outOfStockCount = Product::where('team_id', $teamId)
-            ->whereDoesntHave('stockLevels', function ($q) {
-                $q->where('quantity', '>', 0);
+        // Out of stock count — single SQL COUNT, no Eloquent hydration
+        $outOfStockCount = (int) DB::table('products')
+            ->where('team_id', $teamId)
+            ->whereNull('deleted_at')
+            ->where('is_active', true)
+            ->whereNotExists(function ($q) {
+                $q->from('stock_levels')
+                    ->whereColumn('stock_levels.product_id', 'products.id')
+                    ->where('stock_levels.quantity', '>', 0);
             })
             ->count();
 
@@ -131,7 +137,7 @@ class InventoryController extends Controller
                 $available = max(0, $onHand - $reserved);
                 $cost = (float) $product->cost_price;
                 $valuation = $onHand * $cost;
-                $alertLevel = (float) ($product->alert_quantity ?: 5);
+                $alertLevel = (float) ($product->reorder_level ?: 5);
 
                 $stockStatus = 'in_stock';
                 if ($onHand <= 0) {

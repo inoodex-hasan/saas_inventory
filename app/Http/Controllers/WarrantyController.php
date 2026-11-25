@@ -89,4 +89,28 @@ class WarrantyController extends Controller
 
         return redirect()->back()->with('success', "Serial {$serial->serial_number} marked as defective.");
     }
+
+    public function checkUniqueness(Request $request)
+    {
+        $teamId = Auth::user()->current_team_id;
+        $serials = $request->input('serials', []);
+        if (is_string($serials)) {
+            $serials = preg_split('/[\r\n,]+/', $serials, -1, PREG_SPLIT_NO_EMPTY);
+        }
+        $serials = array_values(array_unique(array_filter(array_map('trim', (array) $serials))));
+
+        if (empty($serials)) {
+            return response()->json(['available' => true, 'existing' => []]);
+        }
+
+        $existing = ProductSerial::where('team_id', $teamId)
+            ->whereIn('serial_number', $serials)
+            ->pluck('serial_number')
+            ->toArray();
+
+        return response()->json([
+            'available' => empty($existing),
+            'existing' => $existing,
+        ]);
+    }
 }

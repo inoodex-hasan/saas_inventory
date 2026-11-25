@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Models\OrderChargeField;
 use App\Models\Product;
 use App\Models\Quotation;
 use App\Models\QuotationItem;
@@ -95,12 +96,20 @@ class QuotationController extends Controller
         $nextNum = $last ? str_pad((int) substr($last->quotation_number, -4) + 1, 4, '0', STR_PAD_LEFT) : '0001';
         $quotationNumber = $prefix . $nextNum;
 
+        $chargeFields = OrderChargeField::where('team_id', $teamId)
+            ->where('is_active', true)
+            ->whereIn('applies_to', ['sales', 'both'])
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('Quotations/Create', [
             'page_title' => 'Create Formal Quotation',
             'quotationNumber' => $quotationNumber,
             'customers' => $customers,
             'products' => $products,
             'warehouses' => $warehouses,
+            'chargeFields' => $chargeFields,
             'todayDate' => now()->toDateString(),
             'defaultValidUntil' => now()->addDays(15)->toDateString(),
         ]);
@@ -128,6 +137,8 @@ class QuotationController extends Controller
             'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('team_id', $teamId)],
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0',
+            'additional_charges' => 'nullable|array',
+            'additional_charges_total' => 'nullable|numeric|min:0',
         ];
 
         if ($request->input('customer_mode') === 'new') {
@@ -166,7 +177,20 @@ class QuotationController extends Controller
             $discount = (float) ($validated['discount_amount'] ?? 0.00);
             $taxRate = (float) ($validated['tax_rate'] ?? 0.00);
             $taxAmount = max(0, ($subtotal - $discount) * ($taxRate / 100));
-            $total = max(0, $subtotal - $discount + $taxAmount);
+
+            $additionalCharges = $validated['additional_charges'] ?? null;
+            $additionalChargesTotal = (float) ($validated['additional_charges_total'] ?? 0.00);
+            if (!empty($additionalCharges) && is_array($additionalCharges)) {
+                $calcChargesTotal = 0.0;
+                foreach ($additionalCharges as $charge) {
+                    $calcChargesTotal += (float) ($charge['amount'] ?? 0.0);
+                }
+                if ($additionalChargesTotal == 0 && $calcChargesTotal > 0) {
+                    $additionalChargesTotal = $calcChargesTotal;
+                }
+            }
+
+            $total = max(0, $subtotal - $discount + $taxAmount + $additionalChargesTotal);
 
             $quotation = Quotation::create([
                 'team_id' => $teamId,
@@ -179,6 +203,8 @@ class QuotationController extends Controller
                 'discount_amount' => $discount,
                 'tax_rate' => $taxRate,
                 'tax_amount' => $taxAmount,
+                'additional_charges_total' => $additionalChargesTotal,
+                'additional_charges' => $additionalCharges,
                 'total_amount' => $total,
                 'terms' => $validated['terms'] ?? null,
                 'notes' => $validated['notes'] ?? null,
@@ -239,12 +265,20 @@ class QuotationController extends Controller
             });
         $warehouses = Warehouse::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
 
+        $chargeFields = OrderChargeField::where('team_id', $teamId)
+            ->where('is_active', true)
+            ->whereIn('applies_to', ['sales', 'both'])
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('Quotations/Edit', [
             'page_title' => 'Edit Quotation ' . $quotation->quotation_number,
             'quotation' => $quotation,
             'customers' => $customers,
             'products' => $products,
             'warehouses' => $warehouses,
+            'chargeFields' => $chargeFields,
         ]);
     }
 
@@ -270,6 +304,8 @@ class QuotationController extends Controller
             'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('team_id', $teamId)],
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0',
+            'additional_charges' => 'nullable|array',
+            'additional_charges_total' => 'nullable|numeric|min:0',
         ]);
 
         return DB::transaction(function () use ($validated, $quotation, $teamId) {
@@ -281,7 +317,20 @@ class QuotationController extends Controller
             $discount = (float) ($validated['discount_amount'] ?? 0.00);
             $taxRate = (float) ($validated['tax_rate'] ?? 0.00);
             $taxAmount = max(0, ($subtotal - $discount) * ($taxRate / 100));
-            $total = max(0, $subtotal - $discount + $taxAmount);
+
+            $additionalCharges = array_key_exists('additional_charges', $validated) ? $validated['additional_charges'] : $quotation->additional_charges;
+            $additionalChargesTotal = array_key_exists('additional_charges_total', $validated) ? (float) $validated['additional_charges_total'] : (float) ($quotation->additional_charges_total ?? 0.00);
+            if (!empty($additionalCharges) && is_array($additionalCharges) && array_key_exists('additional_charges', $validated)) {
+                $calcChargesTotal = 0.0;
+                foreach ($additionalCharges as $charge) {
+                    $calcChargesTotal += (float) ($charge['amount'] ?? 0.0);
+                }
+                if ($additionalChargesTotal == 0 && $calcChargesTotal > 0) {
+                    $additionalChargesTotal = $calcChargesTotal;
+                }
+            }
+
+            $total = max(0, $subtotal - $discount + $taxAmount + $additionalChargesTotal);
 
             $quotation->update([
                 'customer_id' => $validated['customer_id'],
@@ -292,6 +341,8 @@ class QuotationController extends Controller
                 'discount_amount' => $discount,
                 'tax_rate' => $taxRate,
                 'tax_amount' => $taxAmount,
+                'additional_charges_total' => $additionalChargesTotal,
+                'additional_charges' => $additionalCharges,
                 'total_amount' => $total,
                 'terms' => $validated['terms'] ?? null,
                 'notes' => $validated['notes'] ?? null,
@@ -338,6 +389,8 @@ class QuotationController extends Controller
             'order_date' => now()->toDateString(),
             'discount_amount' => $quotation->discount_amount,
             'tax_amount' => $quotation->tax_amount,
+            'additional_charges' => $quotation->additional_charges,
+            'additional_charges_total' => $quotation->additional_charges_total,
             'notes' => "Converted from Quotation {$quotation->quotation_number}. " . $quotation->notes,
             'status' => 'confirmed',
         ];

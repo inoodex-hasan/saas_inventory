@@ -116,6 +116,7 @@ class HandleInertiaRequests extends Middleware
                         'hero_chip_text' => $raw['hero_chip_text'] ?? 'Enterprise Multi-Tenant SaaS • 99.99% Uptime SLA • Zero Race Conditions',
                         'hero_headline' => $raw['hero_headline'] ?? 'The Operating System for Modern Inventory & Supply Chains',
                         'hero_subtext' => $raw['hero_subtext'] ?? '',
+                        'maintenance_mode' => (bool) ($raw['maintenance_mode'] ?? false),
                     ];
                 });
             },
@@ -165,7 +166,7 @@ class HandleInertiaRequests extends Middleware
             },
             'subscription_login_alert' => fn () => (bool) $request->session()->get('subscription_login_alert'),
             'ziggy' => fn () => [
-                ...(new \Tighten\Ziggy\Ziggy)->toArray(),
+                ...\Illuminate\Support\Facades\Cache::remember('ziggy_routes_v1', 86400, fn () => (new \Tighten\Ziggy\Ziggy)->toArray()),
                 'location' => $request->url(),
             ],
         ];

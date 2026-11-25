@@ -9,6 +9,7 @@ import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import BarcodeCameraModal from '@/Components/BarcodeCameraModal.vue';
+import SerialInputManager from '@/Components/SerialInputManager.vue';
 import { useBarcodeScanner } from '@/Composables/useBarcodeScanner';
 import { playScanSuccess, playScanError } from '@/Utils/sound';
 import { formatDate } from '@/Utils/date';
@@ -246,6 +247,19 @@ useBarcodeScanner({
         }
     },
 });
+
+const isPoItemSerialModalOpen = ref(false);
+const activePoItemForSerials = ref(null);
+
+function openPoItemSerialModal(item) {
+    activePoItemForSerials.value = item;
+    isPoItemSerialModalOpen.value = true;
+}
+
+function getPoItemSerialCount(serialsStr) {
+    if (!serialsStr) return 0;
+    return serialsStr.split(/[\r\n,]+/).map(s => s.trim()).filter(Boolean).length;
+}
 
 function openReceiveModal(order) {
     receivingPo.value = order;
@@ -652,12 +666,16 @@ function submitReceive() {
                                     <td class="py-3">
                                         <div class="font-bold text-slate-800">{{ it.product_name }}</div>
                                         <div class="text-[10px] text-slate-400 font-mono">{{ it.sku }}</div>
-                                        <div v-if="it.is_serialized" class="mt-1">
-                                            <input 
-                                                type="text" 
-                                                v-model="it.serial_input"
-class="w-full px-2 py-1 rounded text-[11px] border border-amber-300 bg-amber-50/50"
-                                            />
+                                        <div v-if="it.is_serialized" class="mt-1.5 flex items-center gap-1.5">
+                                            <button 
+                                                type="button" 
+                                                @click="openPoItemSerialModal(it)"
+                                                class="px-2 py-0.5 rounded text-[10px] font-semibold border transition cursor-pointer"
+                                                :class="getPoItemSerialCount(it.serial_input) === Number(it.quantity) && Number(it.quantity) > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100' : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'"
+                                            >
+                                                <span>Serials</span>
+                                                <span class="font-mono font-bold ml-1">({{ getPoItemSerialCount(it.serial_input) }}/{{ it.quantity || 0 }})</span>
+                                            </button>
                                         </div>
                                     </td>
                                     <td class="py-3 text-center font-mono font-bold text-slate-600">
@@ -1210,5 +1228,41 @@ class="w-24 px-2 py-1 rounded-lg border border-slate-200 text-xs font-mono"
             title="Scan Delivery Box Barcode"
             @scan="handleReceiveBarcodeScanned"
         />
+
+        <!-- PO Item Serials Manager Modal -->
+        <Modal :show="isPoItemSerialModalOpen" @close="isPoItemSerialModalOpen = false" maxWidth="lg">
+            <div class="p-5 space-y-4" v-if="activePoItemForSerials">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Manage Item Serials</h3>
+                        <p class="text-xs text-slate-500">{{ activePoItemForSerials.product_name }} (SKU: {{ activePoItemForSerials.sku }})</p>
+                    </div>
+                    <button 
+                        type="button" 
+                        @click="isPoItemSerialModalOpen = false"
+                        class="text-slate-400 hover:text-slate-600 text-lg leading-none cursor-pointer"
+                    >
+                        &times;
+                    </button>
+                </div>
+
+                <SerialInputManager
+                    v-model="activePoItemForSerials.serial_input"
+                    :required-quantity="Number(activePoItemForSerials.quantity) || 0"
+                    :product-sku="activePoItemForSerials.sku"
+                    :title="`Serials: ${activePoItemForSerials.product_name}`"
+                />
+
+                <div class="flex justify-end pt-2 border-t border-slate-100">
+                    <button
+                        type="button"
+                        @click="isPoItemSerialModalOpen = false"
+                        class="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg cursor-pointer transition shadow-xs"
+                    >
+                        Done
+                    </button>
+                </div>
+            </div>
+        </Modal>
     </AppLayout>
 </template>

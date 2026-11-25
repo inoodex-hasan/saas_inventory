@@ -697,6 +697,13 @@
                     @if($order->shipping_cost > 0)
                         <div class="tot-line"><span>Shipping</span><b>{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->shipping_cost, 2) }}</b></div>
                     @endif
+                    @if(!empty($order->additional_charges) && is_array($order->additional_charges))
+                        @foreach($order->additional_charges as $charge)
+                            @if(($charge['amount'] ?? 0) > 0)
+                                <div class="tot-line"><span>{{ $charge['name'] }}</span><b>{{ $team->currency_symbol ?? '৳' }}{{ number_format($charge['amount'], 2) }}</b></div>
+                            @endif
+                        @endforeach
+                    @endif
                     <div class="tot-divider"></div>
                     <div class="tot-line-total"><span>Grand Total:</span><b>{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->total_amount, 2) }}</b></div>
                     <div class="tot-payment-summary">

@@ -52,10 +52,23 @@ class PurchaseOrderService
                 $subtotal += ($item['quantity'] * $item['unit_cost']);
             }
 
-            $tax = $data['tax_amount'] ?? 0.00;
-            $shipping = $data['shipping_cost'] ?? 0.00;
-            $discount = $data['discount_amount'] ?? 0.00;
-            $totalAmount = max(0, $subtotal + $tax + $shipping - $discount);
+            $tax = (float) ($data['tax_amount'] ?? 0.00);
+            $shipping = (float) ($data['shipping_cost'] ?? 0.00);
+            $discount = (float) ($data['discount_amount'] ?? 0.00);
+            $additionalCharges = $data['additional_charges'] ?? null;
+            $additionalChargesTotal = (float) ($data['additional_charges_total'] ?? 0.00);
+
+            if (!empty($additionalCharges) && is_array($additionalCharges)) {
+                $calcChargesTotal = 0.0;
+                foreach ($additionalCharges as $charge) {
+                    $calcChargesTotal += (float) ($charge['amount'] ?? 0.0);
+                }
+                if ($additionalChargesTotal == 0 && $calcChargesTotal > 0) {
+                    $additionalChargesTotal = $calcChargesTotal;
+                }
+            }
+
+            $totalAmount = max(0, $subtotal + $tax + $shipping + $additionalChargesTotal - $discount);
 
             $paidAmount = (float) ($data['paid_amount'] ?? 0.00);
             $dueAmount = max(0, $totalAmount - $paidAmount);
@@ -99,6 +112,8 @@ class PurchaseOrderService
                 'tax_amount' => $tax,
                 'shipping_cost' => $shipping,
                 'discount_amount' => $discount,
+                'additional_charges_total' => $additionalChargesTotal,
+                'additional_charges' => $additionalCharges,
                 'total_amount' => $totalAmount,
                 'paid_amount' => $paidAmount,
                 'due_amount' => $dueAmount,
@@ -172,7 +187,20 @@ class PurchaseOrderService
             $tax = (float) ($data['tax_amount'] ?? $order->tax_amount ?? 0.00);
             $shipping = (float) ($data['shipping_cost'] ?? $order->shipping_cost ?? 0.00);
             $discount = (float) ($data['discount_amount'] ?? $order->discount_amount ?? 0.00);
-            $totalAmount = max(0, $subtotal + $tax + $shipping - $discount);
+            $additionalCharges = array_key_exists('additional_charges', $data) ? $data['additional_charges'] : $order->additional_charges;
+            $additionalChargesTotal = array_key_exists('additional_charges_total', $data) ? (float) $data['additional_charges_total'] : (float) ($order->additional_charges_total ?? 0.00);
+
+            if (!empty($additionalCharges) && is_array($additionalCharges) && array_key_exists('additional_charges', $data)) {
+                $calcChargesTotal = 0.0;
+                foreach ($additionalCharges as $charge) {
+                    $calcChargesTotal += (float) ($charge['amount'] ?? 0.0);
+                }
+                if ($additionalChargesTotal == 0 && $calcChargesTotal > 0) {
+                    $additionalChargesTotal = $calcChargesTotal;
+                }
+            }
+
+            $totalAmount = max(0, $subtotal + $tax + $shipping + $additionalChargesTotal - $discount);
 
             $paidAmount = (float) $order->paid_amount;
             $dueAmount = max(0, $totalAmount - $paidAmount);
@@ -189,6 +217,8 @@ class PurchaseOrderService
                 'tax_amount' => $tax,
                 'shipping_cost' => $shipping,
                 'discount_amount' => $discount,
+                'additional_charges_total' => $additionalChargesTotal,
+                'additional_charges' => $additionalCharges,
                 'total_amount' => $totalAmount,
                 'due_amount' => $dueAmount,
                 'payment_status' => $paymentStatus,

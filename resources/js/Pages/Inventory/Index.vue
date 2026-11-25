@@ -580,7 +580,7 @@ const productOptions = computed(() => {
                                         v-else
                                         class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-100"
                                     >
-                                        Depleted
+                                        Out of Stock
                                     </span>
                                 </td>
                             </tr>

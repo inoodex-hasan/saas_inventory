@@ -225,6 +225,16 @@
                             <td style="text-align: right; font-weight: 600;">{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->shipping_cost, 2) }}</td>
                         </tr>
                     @endif
+                    @if(!empty($order->additional_charges) && is_array($order->additional_charges))
+                        @foreach($order->additional_charges as $charge)
+                            @if(($charge['amount'] ?? 0) > 0)
+                            <tr>
+                                <td class="meta-label">{{ $charge['name'] }}:</td>
+                                <td style="text-align: right; font-weight: 600;">{{ $team->currency_symbol ?? '৳' }}{{ number_format($charge['amount'], 2) }}</td>
+                            </tr>
+                            @endif
+                        @endforeach
+                    @endif
                     <tr class="grand-total">
                         <td>Total PO Value:</td>
                         <td style="text-align: right;">{{ $team->currency_symbol ?? '৳' }}{{ number_format($order->total_amount, 2) }}</td>

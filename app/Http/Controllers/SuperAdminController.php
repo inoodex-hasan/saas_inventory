@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\InvoiceTemplate;
+use App\Models\Customer;
+use App\Models\SalesOrderItem;
 use App\Models\Plan;
+use Mccarlosen\LaravelMpdf\Facades\LaravelMpdf as PDF;
 use App\Models\Product;
 use App\Models\SalesOrder;
 use App\Models\SiteSetting;
@@ -528,6 +532,13 @@ class SuperAdminController extends Controller
                 'terms_and_conditions' => SiteSetting::get('terms_and_conditions', ''),
                 'privacy_policy'       => SiteSetting::get('privacy_policy', ''),
 
+                // Platform Maintenance Mode
+                'maintenance_mode'          => (bool) SiteSetting::get('maintenance_mode', false),
+                'maintenance_title'         => SiteSetting::get('maintenance_title', 'System Upgrade in Progress'),
+                'maintenance_message'       => SiteSetting::get('maintenance_message', 'We are performing scheduled infrastructure upgrades and database optimizations. The platform will be back online shortly.'),
+                'maintenance_duration'      => SiteSetting::get('maintenance_duration', '15-30 minutes'),
+                'maintenance_bypass_secret' => SiteSetting::get('maintenance_bypass_secret', ''),
+
                 // Subscription Payment Accounts & Banking
                 'payment_bank_name'           => SiteSetting::get('payment_bank_name', 'City Bank Ltd'),
                 'payment_bank_account_number' => SiteSetting::get('payment_bank_account_number', '1102938475001'),
@@ -617,6 +628,13 @@ class SuperAdminController extends Controller
             'payment_rocket_counter'      => ['nullable', 'string', 'max:60'],
             'payment_rocket_type'         => ['nullable', 'string', 'max:80'],
             'payment_rocket_instructions' => ['nullable', 'string', 'max:500'],
+
+            // Platform Maintenance Mode
+            'maintenance_mode'          => ['nullable', 'boolean'],
+            'maintenance_title'         => ['nullable', 'string', 'max:150'],
+            'maintenance_message'       => ['nullable', 'string', 'max:1000'],
+            'maintenance_duration'      => ['nullable', 'string', 'max:100'],
+            'maintenance_bypass_secret' => ['nullable', 'string', 'max:100'],
         ]);
 
         // Handle logo upload or removal
@@ -741,11 +759,19 @@ class SuperAdminController extends Controller
             'payment_rocket_counter',
             'payment_rocket_type',
             'payment_rocket_instructions',
+
+            // Maintenance Mode text fields
+            'maintenance_title',
+            'maintenance_message',
+            'maintenance_duration',
+            'maintenance_bypass_secret',
         ];
 
         foreach ($keys as $key) {
             SiteSetting::set($key, $request->input($key));
         }
+
+        SiteSetting::set('maintenance_mode', $request->boolean('maintenance_mode') ? '1' : '0');
 
         if ($request->has('hero_slides')) {
             $slidesVal = $request->input('hero_slides');
@@ -965,6 +991,13 @@ class SuperAdminController extends Controller
             'payment_rocket_counter'      => ['nullable', 'string', 'max:60'],
             'payment_rocket_type'         => ['nullable', 'string', 'max:80'],
             'payment_rocket_instructions' => ['nullable', 'string', 'max:500'],
+
+            // Platform Maintenance Mode
+            'maintenance_mode'          => ['nullable', 'boolean'],
+            'maintenance_title'         => ['nullable', 'string', 'max:150'],
+            'maintenance_message'       => ['nullable', 'string', 'max:1000'],
+            'maintenance_duration'      => ['nullable', 'string', 'max:100'],
+            'maintenance_bypass_secret' => ['nullable', 'string', 'max:100'],
         ]);
 
         $activeKeys = ['payment_bank_active', 'payment_bkash_active', 'payment_nagad_active', 'payment_rocket_active'];
@@ -979,5 +1012,156 @@ class SuperAdminController extends Controller
         }
 
         return redirect()->back()->with('success', 'Subscription payment accounts and banking details updated successfully.');
+    }
+
+    /**
+     * Display Super Admin Invoice Templates Management.
+     */
+    public function invoiceTemplates()
+    {
+        $templates = InvoiceTemplate::orderBy('sort_order', 'asc')->get();
+
+        $stats = [
+            'total' => $templates->count(),
+            'active' => $templates->where('is_active', true)->count(),
+            'default' => $templates->firstWhere('is_default', true)?->name ?? 'None',
+        ];
+
+        return Inertia::render('Admin/InvoiceTemplates', [
+            'templates' => $templates,
+            'stats' => $stats,
+        ]);
+    }
+
+    /**
+     * Toggle active status of an invoice template.
+     */
+    public function toggleInvoiceTemplate(InvoiceTemplate $template)
+    {
+        if ($template->is_default && $template->is_active) {
+            return redirect()->back()->with('error', 'The default invoice template cannot be deactivated. Please set another template as default first.');
+        }
+
+        $template->update(['is_active' => !$template->is_active]);
+
+        $statusText = $template->is_active ? 'activated' : 'deactivated';
+        return redirect()->back()->with('success', "Invoice template '{$template->name}' has been {$statusText}.");
+    }
+
+    /**
+     * Set an invoice template as system default.
+     */
+    public function setDefaultInvoiceTemplate(InvoiceTemplate $template)
+    {
+        InvoiceTemplate::where('id', '!=', $template->id)->update(['is_default' => false]);
+        $template->update(['is_default' => true, 'is_active' => true]);
+
+        return redirect()->back()->with('success', "'{$template->name}' is now set as the system default invoice template.");
+    }
+
+    /**
+     * Stream a live sample preview for an invoice template.
+     */
+    public function previewInvoiceTemplate(InvoiceTemplate $template)
+    {
+        $mockTeam = new Team([
+            'name' => 'Demo Enterprise Logistics Ltd',
+            'legal_name' => 'Demo Enterprise Logistics Ltd',
+            'phone' => '+880 1812-345678',
+            'email' => 'billing@demo-enterprise.com',
+            'address_line1' => 'Plot 45, Gulshan Commercial Area',
+            'city' => 'Dhaka',
+            'country' => 'Bangladesh',
+            'tax_id' => 'VAT-88492019-BIN',
+            'currency_symbol' => '৳',
+            'currency_code' => 'BDT',
+            'invoice_prefix' => 'INV-',
+            'invoice_template' => $template->key,
+        ]);
+
+        $sampleOrder = new SalesOrder([
+            'order_number' => 'INV-DEMO-2026-001',
+            'order_date' => now(),
+            'payment_status' => 'paid',
+            'subtotal' => 4500.00,
+            'tax_amount' => 225.00,
+            'discount_amount' => 150.00,
+            'shipping_cost' => 100.00,
+            'additional_charges' => [
+                ['name' => 'Installation Charge', 'amount' => 200.00],
+                ['name' => 'Handling Fee', 'amount' => 50.00],
+            ],
+            'additional_charges_total' => 250.00,
+            'total_amount' => 4925.00,
+            'paid_amount' => 4925.00,
+            'tendered_amount' => 5000.00,
+            'change_amount' => 75.00,
+            'notes' => 'Sample preview of ' . $template->name . ' invoice template generated by Super Admin.',
+        ]);
+
+        $sampleOrder->setRelation('customer', new Customer([
+            'name' => 'Apex Global Technologies Ltd',
+            'company_name' => 'Apex Group',
+            'phone' => '+880 1711-987654',
+            'email' => 'accounts@apex-tech.com',
+            'address' => 'Tejgaon Industrial Area, Dhaka-1208',
+        ]));
+
+        $sampleOrder->setRelation('warehouse', new Warehouse([
+            'name' => 'Central Distribution Hub',
+            'code' => 'CDH-01',
+        ]));
+
+        $item1 = new SalesOrderItem([
+            'quantity' => 2,
+            'unit_price' => 1500.00,
+            'subtotal' => 3000.00,
+            'warranty_days' => 365,
+        ]);
+        $item1->setRelation('product', new Product([
+            'name' => 'Enterprise Smart Switch 24-Port Gigabit',
+            'sku' => 'NET-SW-24G',
+            'unit' => 'pcs',
+        ]));
+
+        $item2 = new SalesOrderItem([
+            'quantity' => 1,
+            'unit_price' => 1500.00,
+            'subtotal' => 1500.00,
+            'warranty_days' => 180,
+        ]);
+        $item2->setRelation('product', new Product([
+            'name' => 'Commercial Dual-Band Wi-Fi 6 AP Pro',
+            'sku' => 'WIFI-AP-AX3000',
+            'unit' => 'pcs',
+        ]));
+
+        $sampleOrder->setRelation('items', collect([$item1, $item2]));
+        $sampleOrder->setRelation('team', $mockTeam);
+        $sampleOrder->setRelation('returns', collect());
+
+        $viewName = view()->exists("pdf.invoices.{$template->key}")
+            ? "pdf.invoices.{$template->key}"
+            : (view()->exists('pdf.sales-invoice') ? 'pdf.sales-invoice' : 'pdf.invoices.invoice_pdf1');
+
+        $pdf = PDF::loadView($viewName, [
+            'order' => $sampleOrder,
+            'sales' => $sampleOrder,
+            'team' => $mockTeam,
+            'customer' => $sampleOrder->customer,
+            'items' => $sampleOrder->items,
+            'returns' => collect(),
+        ], [], [
+            'title' => "Invoice-Preview-{$template->key}",
+            'margin_top' => 14,
+            'margin_bottom' => 14,
+            'margin_left' => 14,
+            'margin_right' => 14,
+        ]);
+
+        return response($pdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "inline; filename=\"preview-{$template->key}.pdf\"",
+        ]);
     }
 }

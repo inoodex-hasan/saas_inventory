@@ -41,7 +41,24 @@ const form = useForm({
     faqs: Array.isArray(props.settings.faqs) ? JSON.parse(JSON.stringify(props.settings.faqs)) : [],
     terms_and_conditions: props.settings.terms_and_conditions || '',
     privacy_policy: props.settings.privacy_policy || '',
+    maintenance_mode: Boolean(props.settings.maintenance_mode),
+    maintenance_title: props.settings.maintenance_title || 'System Upgrade in Progress',
+    maintenance_message: props.settings.maintenance_message || 'We are performing scheduled maintenance and database optimizations. The platform will be back online shortly.',
+    maintenance_duration: props.settings.maintenance_duration || '15-30 minutes',
+    maintenance_bypass_secret: props.settings.maintenance_bypass_secret || '',
 });
+
+const copiedBypass = ref(false);
+function generateBypassSecret() {
+    form.maintenance_bypass_secret = 'bypass-' + Math.random().toString(36).substring(2, 9) + '-' + Math.floor(1000 + Math.random() * 9000);
+}
+function copyBypassUrl() {
+    if (!form.maintenance_bypass_secret) return;
+    const url = window.location.origin + '/maintenance-bypass/' + form.maintenance_bypass_secret;
+    navigator.clipboard.writeText(url);
+    copiedBypass.value = true;
+    setTimeout(() => { copiedBypass.value = false; }, 2500);
+}
 
 const logoPreview = ref(props.settings.logo_url);
 const faviconPreview = ref(props.settings.favicon_url);
@@ -292,6 +309,22 @@ function submit() {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                     <span>Privacy & Terms</span>
+                </button>
+
+                <button
+                    type="button"
+                    @click="setTab('maintenance')"
+                    class="flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer shrink-0"
+                    :class="activeTab === 'maintenance' 
+                        ? (form.maintenance_mode ? 'bg-rose-600 text-white shadow-xs shadow-rose-600/30' : 'bg-slate-900 text-white shadow-xs') 
+                        : (form.maintenance_mode ? 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100')"
+                >
+                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Maintenance Mode</span>
+                    <span v-if="form.maintenance_mode" class="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-white/20 text-white animate-pulse">ACTIVE</span>
                 </button>
             </div>
 
@@ -1270,6 +1303,182 @@ function submit() {
                     >
                         <LoadingSpinner v-if="form.processing" size="sm" color="text-white" />
                         <span>{{ form.processing ? 'Saving...' : 'Save Legal Documents' }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB 5: PLATFORM MAINTENANCE MODE -->
+            <div v-show="activeTab === 'maintenance'" class="space-y-6">
+                <!-- Status Banner Card -->
+                <div 
+                    class="rounded-3xl p-6 sm:p-8 border shadow-sm relative overflow-hidden transition-all"
+                    :class="form.maintenance_mode 
+                        ? 'bg-gradient-to-br from-rose-950/80 via-slate-900 to-rose-900/60 border-rose-500/40 text-white' 
+                        : 'bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-900 border-emerald-500/30 text-white'"
+                >
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                        <div class="flex items-start gap-4">
+                            <div 
+                                class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border"
+                                :class="form.maintenance_mode 
+                                    ? 'bg-rose-500/20 border-rose-500/40 text-rose-400' 
+                                    : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'"
+                            >
+                                <svg v-if="form.maintenance_mode" class="w-6 h-6 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <svg v-else class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h2 class="text-lg font-black tracking-tight">
+                                        {{ form.maintenance_mode ? 'Platform Maintenance Mode is ACTIVE' : 'Platform is ONLINE & Fully Operational' }}
+                                    </h2>
+                                    <span 
+                                        class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider"
+                                        :class="form.maintenance_mode ? 'bg-rose-500 text-white animate-pulse' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'"
+                                    >
+                                        {{ form.maintenance_mode ? 'Active' : 'Live' }}
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-400 max-w-xl leading-relaxed">
+                                    {{ form.maintenance_mode 
+                                        ? 'All public visitors and non-admin tenants are redirected to the branded 503 maintenance page. Only Super Admins and users with the bypass link can access the platform.' 
+                                        : 'All systems are operating normally. All tenants, POS terminals, and customers have unrestricted access.' }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Toggle Switch -->
+                        <div class="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                            <span class="text-xs font-bold text-slate-300">
+                                {{ form.maintenance_mode ? 'Enabled' : 'Disabled' }}
+                            </span>
+                            <button
+                                type="button"
+                                @click="form.maintenance_mode = !form.maintenance_mode"
+                                class="relative inline-flex h-7 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden"
+                                :class="form.maintenance_mode ? 'bg-rose-600' : 'bg-slate-700'"
+                            >
+                                <span
+                                    class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out"
+                                    :class="form.maintenance_mode ? 'translate-x-7' : 'translate-x-0'"
+                                />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Configuration Card -->
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                    <div class="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900">Maintenance Screen Customization</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Customize what visitors see when maintenance mode is turned on.</p>
+                        </div>
+                        <a 
+                            :href="route('admin.maintenance-preview')" 
+                            target="_blank" 
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                        >
+                            <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span>Preview 503 Page</span>
+                        </a>
+                    </div>
+
+                    <div class="p-5 sm:p-6 space-y-5">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Page Headline / Title</label>
+                                <input
+                                    type="text"
+                                    v-model="form.maintenance_title"
+                                    class="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Estimated Downtime / Duration</label>
+                                <input
+                                    type="text"
+                                    v-model="form.maintenance_duration"
+                                    class="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Public Explanation Message</label>
+                            <textarea
+                                v-model="form.maintenance_message"
+                                rows="3"
+                                class="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition resize-y"
+                            ></textarea>
+                            <p class="text-[11px] text-slate-400 mt-1">Displayed clearly in the center of the maintenance screen.</p>
+                        </div>
+
+                        <!-- Bypass Secret Section -->
+                        <div class="pt-4 border-t border-slate-100">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Secret Developer / Staff Bypass Token</label>
+                            <p class="text-[11px] text-slate-500 mb-2.5">
+                                Anyone who visits with this bypass token can browse and use the live application normally, even while maintenance mode is active.
+                            </p>
+
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                <div class="relative flex-1">
+                                    <input
+                                        type="text"
+                                        v-model="form.maintenance_bypass_secret"
+                                        placeholder="Enter or generate a secret key..."
+                                        class="w-full font-mono text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition pr-24"
+                                    />
+                                    <button
+                                        type="button"
+                                        @click="generateBypassSecret"
+                                        class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-indigo-600 hover:text-indigo-800 px-2 py-1 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition cursor-pointer"
+                                    >
+                                        Generate Key
+                                    </button>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    v-if="form.maintenance_bypass_secret"
+                                    @click="copyBypassUrl"
+                                    class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border text-xs font-bold transition shrink-0 cursor-pointer"
+                                    :class="copiedBypass ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'"
+                                >
+                                    <svg v-if="copiedBypass" class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <svg v-else class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    </svg>
+                                    <span>{{ copiedBypass ? 'Bypass URL Copied!' : 'Copy Bypass Link' }}</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Save Action Bar -->
+                <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+                    <span class="text-xs text-slate-500 font-medium text-center sm:text-left">
+                        {{ form.maintenance_mode ? '🚨 Maintenance mode is currently set to ON.' : 'Platform maintenance settings are ready to save.' }}
+                    </span>
+                    <button
+                        type="submit"
+                        :disabled="form.processing"
+                        class="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold text-white transition shadow-xs text-center cursor-pointer shrink-0"
+                        :class="form.maintenance_mode ? 'bg-rose-600 hover:bg-rose-700' : 'bg-indigo-600 hover:bg-indigo-700'"
+                    >
+                        <LoadingSpinner v-if="form.processing" size="sm" color="text-white" />
+                        <span>{{ form.processing ? 'Updating...' : (form.maintenance_mode ? 'Save & Enforce Maintenance' : 'Save Maintenance Settings') }}</span>
                     </button>
                 </div>
             </div>

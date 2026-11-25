@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\FinancialAccount;
+use App\Models\OrderChargeField;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
@@ -78,11 +79,19 @@ class PurchaseOrderController extends Controller
 
         $financialAccounts = app(FinancialAccountService::class)->getActiveAccountsForTeam($teamId);
 
+        $chargeFields = OrderChargeField::where('team_id', $teamId)
+            ->where('is_active', true)
+            ->whereIn('applies_to', ['purchases', 'both'])
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('Purchases/Create', [
             'suppliers' => $suppliers,
             'warehouses' => $warehouses,
             'products' => $products,
             'financialAccounts' => $financialAccounts,
+            'chargeFields' => $chargeFields,
             'defaultWarehouseId' => $defaultWarehouse?->id,
             'todayDate' => now()->format('Y-m-d'),
         ]);
@@ -111,6 +120,11 @@ class PurchaseOrderController extends Controller
             'items.*.batch_number' => 'nullable|string|max:100',
             'items.*.manufacture_date' => 'nullable|date',
             'items.*.expiry_date' => 'nullable|date',
+            'discount_amount' => 'nullable|numeric|min:0',
+            'tax_amount' => 'nullable|numeric|min:0',
+            'shipping_cost' => 'nullable|numeric|min:0',
+            'additional_charges' => 'nullable|array',
+            'additional_charges_total' => 'nullable|numeric|min:0',
         ];
 
         if ((float) $request->input('paid_amount') > 0) {
@@ -158,6 +172,11 @@ class PurchaseOrderController extends Controller
             'warehouse_id' => $validated['warehouse_id'],
             'order_date' => $validated['order_date'],
             'expected_date' => $validated['expected_delivery_date'] ?? null,
+            'discount_amount' => (float) ($validated['discount_amount'] ?? 0.00),
+            'tax_amount' => (float) ($validated['tax_amount'] ?? 0.00),
+            'shipping_cost' => (float) ($validated['shipping_cost'] ?? 0.00),
+            'additional_charges' => $validated['additional_charges'] ?? null,
+            'additional_charges_total' => (float) ($validated['additional_charges_total'] ?? 0.00),
             'paid_amount' => $validated['paid_amount'] ?? 0.00,
             'notes' => $validated['notes'] ?? null,
             'status' => 'ordered',
@@ -221,12 +240,19 @@ class PurchaseOrderController extends Controller
         $suppliers = Supplier::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
         $warehouses = Warehouse::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
         $products = Product::where('team_id', $teamId)->where('is_active', true)->orderBy('name')->get();
+        $chargeFields = OrderChargeField::where('team_id', $teamId)
+            ->where('is_active', true)
+            ->whereIn('applies_to', ['purchases', 'both'])
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
 
         return Inertia::render('Purchases/Edit', [
             'order' => $order,
             'suppliers' => $suppliers,
             'warehouses' => $warehouses,
             'products' => $products,
+            'chargeFields' => $chargeFields,
         ]);
     }
 
@@ -254,6 +280,11 @@ class PurchaseOrderController extends Controller
             'items.*.batch_number' => 'nullable|string|max:100',
             'items.*.manufacture_date' => 'nullable|date',
             'items.*.expiry_date' => 'nullable|date',
+            'discount_amount' => 'nullable|numeric|min:0',
+            'tax_amount' => 'nullable|numeric|min:0',
+            'shipping_cost' => 'nullable|numeric|min:0',
+            'additional_charges' => 'nullable|array',
+            'additional_charges_total' => 'nullable|numeric|min:0',
         ], [
             'supplier_id.required' => 'Please select a vendor / supplier.',
             'warehouse_id.required' => 'Please select the destination warehouse.',
@@ -265,6 +296,11 @@ class PurchaseOrderController extends Controller
             'warehouse_id' => $validated['warehouse_id'],
             'order_date' => $validated['order_date'],
             'expected_date' => $validated['expected_delivery_date'] ?? null,
+            'discount_amount' => (float) ($validated['discount_amount'] ?? $order->discount_amount ?? 0.00),
+            'tax_amount' => (float) ($validated['tax_amount'] ?? $order->tax_amount ?? 0.00),
+            'shipping_cost' => (float) ($validated['shipping_cost'] ?? $order->shipping_cost ?? 0.00),
+            'additional_charges' => array_key_exists('additional_charges', $validated) ? $validated['additional_charges'] : $order->additional_charges,
+            'additional_charges_total' => array_key_exists('additional_charges_total', $validated) ? (float) $validated['additional_charges_total'] : (float) ($order->additional_charges_total ?? 0.00),
             'notes' => $validated['notes'] ?? null,
         ];
 

@@ -16,25 +16,34 @@ class PdfDocumentController extends Controller
     public function salesInvoice(SalesOrder $order)
     {
         $user = Auth::user();
-        $order->load(['customer', 'warehouse', 'items.product', 'team']);
+        $order->load(['customer', 'warehouse', 'items.product', 'items.serials', 'creator', 'team', 'returns.items.product']);
 
         if (!$user->isSuperAdmin() && (!$order->team || !$user->belongsToTeam($order->team) || $order->team_id !== $user->current_team_id)) {
             abort(403, 'Unauthorized access to tenant document.');
         }
 
         $team = $order->team ?? $user->currentTeam;
-        $marginTop = $team->invoice_bg_path ? ($team->invoice_margin_top ?? 48) : 12;
-        $marginBottom = $team->invoice_bg_path ? ($team->invoice_margin_bottom ?? 25) : 12;
+        $marginTop = $team->invoice_bg_path ? ($team->invoice_margin_top ?? 38) : 14;
+        $marginBottom = $team->invoice_bg_path ? ($team->invoice_margin_bottom ?? 25) : 14;
 
-        $pdf = PDF::loadView('pdf.sales-invoice', [
+        $templateKey = $team->invoice_template ?? 'invoice_pdf1';
+        $viewName = view()->exists("pdf.invoices.{$templateKey}")
+            ? "pdf.invoices.{$templateKey}"
+            : (view()->exists('pdf.sales-invoice') ? 'pdf.sales-invoice' : 'pdf.invoices.invoice_pdf1');
+
+        $pdf = PDF::loadView($viewName, [
             'order' => $order,
+            'sales' => $order,
             'team' => $team,
+            'customer' => $order->customer,
+            'items' => $order->items,
+            'returns' => $order->returns ?? collect(),
         ], [], [
             'title' => "Invoice-{$order->order_number}",
             'margin_top' => $marginTop,
             'margin_bottom' => $marginBottom,
-            'margin_left' => 12,
-            'margin_right' => 12,
+            'margin_left' => 14,
+            'margin_right' => 14,
         ]);
 
         $filename = "Invoice-{$order->order_number}.pdf";

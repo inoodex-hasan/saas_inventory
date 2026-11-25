@@ -417,6 +417,21 @@ onMounted(() => {
                             <span v-show="isSidebarExpanded" class="truncate">{{ t('SMS Gateway & Balance') }}</span>
                         </Link>
 
+                        <Link 
+                            :href="route('admin.invoice-templates')" 
+                            :title="!isSidebarExpanded ? t('Invoice Templates') : ''"
+                            class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                            :class="[
+                                isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                                route().current('admin.invoice-templates*') ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            ]"
+                        >
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span v-show="isSidebarExpanded" class="truncate">{{ t('Invoice Templates') }}</span>
+                        </Link>
+
                         <div v-if="isSidebarExpanded" class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ t('Security & Account') }}</div>
                         <div v-else class="my-2 border-t border-slate-800/70 mx-1.5"></div>
 
@@ -985,6 +1000,21 @@ onMounted(() => {
                         <span v-show="isSidebarExpanded" class="truncate">{{ t('Team & Roles') }}</span>
                     </Link>
 
+                    <Link 
+                        :href="route('settings.order-charges.index')" 
+                        :title="!isSidebarExpanded ? t('Additional Charges') : ''"
+                        class="flex items-center rounded-xl text-xs font-semibold transition-all group overflow-hidden whitespace-nowrap"
+                        :class="[
+                            isSidebarExpanded ? 'gap-3 px-3.5 py-2.5' : 'justify-center p-2.5',
+                            route().current('settings.order-charges.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                        ]"
+                    >
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span v-show="isSidebarExpanded" class="truncate">{{ t('Additional Charges') }}</span>
+                    </Link>
+
                     <div v-if="isImpersonating" class="pt-3 pb-1">
                         <Link 
                             :href="route('admin.exit-tenant')" 
@@ -1011,6 +1041,32 @@ onMounted(() => {
             class="flex-1 flex flex-col min-h-screen min-w-0 w-full transition-[padding] duration-300"
             :class="isSidebarPinned ? 'md:pl-64' : 'md:pl-[72px]'"
         >
+            <!-- Maintenance Mode Banner for Super Admins -->
+            <div 
+                v-if="siteSettings?.maintenance_mode && isSuperAdmin" 
+                class="bg-rose-600 text-white px-3 sm:px-4 md:px-8 py-2 text-xs font-semibold flex items-center justify-between relative z-30 shrink-0 shadow-sm border-b border-rose-500 gap-2"
+            >
+                <div class="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 truncate">
+                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/20 text-white shrink-0">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </span>
+                    <span class="text-[11px] sm:text-xs truncate">
+                        <strong>Maintenance Mode is Active:</strong> Public visitors and non-admin tenants see the 503 maintenance page.
+                    </span>
+                </div>
+                <Link 
+                    :href="route('admin.site-settings') + '?tab=maintenance'" 
+                    class="shrink-0 px-2 sm:px-3 py-1 rounded-md bg-white text-rose-900 font-bold hover:bg-rose-50 text-[10px] sm:text-[11px] shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                    <span>Manage</span>
+                    <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </Link>
+            </div>
+
             <!-- Impersonation Alert Banner for Super Admin -->
             <div 
                 v-if="isImpersonating" 
@@ -1355,6 +1411,16 @@ onMounted(() => {
                                     <span>{{ t('SMS Gateway & Balance') }}</span>
                                 </Link>
                                 <Link 
+                                    :href="route('admin.invoice-templates')" 
+                                    @click="topUserMenuOpen = false"
+                                    class="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-amber-50 hover:text-amber-800 font-medium transition cursor-pointer"
+                                >
+                                    <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span>{{ t('Invoice Templates') }}</span>
+                                </Link>
+                                <Link 
                                     v-if="isImpersonating"
                                     :href="route('admin.exit-tenant')" 
                                     method="post"
@@ -1401,6 +1467,16 @@ onMounted(() => {
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                                         </svg>
                                         <span>{{ t('Team & Staff Roles') }}</span>
+                                    </Link>
+                                    <Link 
+                                        :href="route('settings.order-charges.index')" 
+                                        @click="topUserMenuOpen = false"
+                                        class="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-indigo-600 font-medium transition cursor-pointer"
+                                    >
+                                        <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span>{{ t('Additional Charges') }}</span>
                                     </Link>
                                     <Link 
                                         :href="route('subscription.index')" 

@@ -15,6 +15,10 @@ const props = defineProps({
     customers: Array,
     products: Array,
     warehouses: Array,
+    chargeFields: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const form = useForm({
@@ -24,6 +28,8 @@ const form = useForm({
     status: props.quotation.status || 'draft',
     discount_amount: Number(props.quotation.discount_amount || 0),
     tax_rate: Number(props.quotation.tax_rate || 0),
+    additional_charges: props.quotation.additional_charges || [],
+    additional_charges_total: Number(props.quotation.additional_charges_total || 0),
     notes: props.quotation.notes || '',
     terms: props.quotation.terms || '',
     items: props.quotation.items && props.quotation.items.length > 0 
@@ -147,6 +153,34 @@ const productSelectOptions = computed(() => {
     });
 });
 
+const savedCharges = Array.isArray(props.quotation.additional_charges) ? props.quotation.additional_charges : [];
+const dynamicCharges = ref(
+    (props.chargeFields || []).map(field => {
+        const existing = savedCharges.find(sc => sc.id === field.id || sc.name === field.name);
+        return {
+            id: field.id,
+            name: field.name,
+            type: field.type,
+            rate: existing ? (Number(existing.rate) || 0) : (field.type === 'percentage' ? (Number(field.default_amount) || 0) : 0),
+            amount: existing ? (Number(existing.amount) || 0) : (field.type === 'percentage' ? 0 : (Number(field.default_amount) || 0)),
+            is_taxable: Boolean(field.is_taxable),
+        };
+    })
+);
+
+savedCharges.forEach(sc => {
+    if (!dynamicCharges.value.some(dc => dc.id === sc.id || dc.name === sc.name)) {
+        dynamicCharges.value.push({
+            id: sc.id || null,
+            name: sc.name,
+            type: sc.type || 'fixed',
+            rate: Number(sc.rate) || 0,
+            amount: Number(sc.amount) || 0,
+            is_taxable: false,
+        });
+    }
+});
+
 const subtotal = computed(() => {
     return form.items.reduce((sum, item) => {
         return sum + ((parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0));
@@ -159,13 +193,35 @@ const taxAmount = computed(() => {
     return base * (rate / 100);
 });
 
+const additionalChargesTotal = computed(() => {
+    return dynamicCharges.value.reduce((sum, c) => {
+        let amt = 0;
+        if (c.type === 'percentage') {
+            const base = Math.max(0, subtotal.value - (parseFloat(form.discount_amount) || 0));
+            amt = parseFloat(((base * (parseFloat(c.rate) || 0)) / 100).toFixed(2));
+            c.amount = amt;
+        } else {
+            amt = parseFloat(c.amount) || 0;
+        }
+        return sum + amt;
+    }, 0);
+});
+
 const totalAmount = computed(() => {
     const sub = subtotal.value;
     const disc = parseFloat(form.discount_amount) || 0;
-    return Math.max(0, sub - disc + taxAmount.value);
+    return Math.max(0, sub - disc + taxAmount.value + additionalChargesTotal.value);
 });
 
 function submit() {
+    form.additional_charges = dynamicCharges.value.map(c => ({
+        id: c.id,
+        name: c.name,
+        type: c.type,
+        rate: c.type === 'percentage' ? (parseFloat(c.rate) || 0) : null,
+        amount: parseFloat(c.amount) || 0,
+    }));
+    form.additional_charges_total = additionalChargesTotal.value;
     form.put(route('quotations.update', props.quotation.id));
 }
 </script>
@@ -473,6 +529,41 @@ class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl f
                                     class="w-28 text-right text-xs px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg font-mono font-bold"
                                 />
                             </div>
+
+                            <!-- Dynamic Additional Charges -->
+                            <template v-if="dynamicCharges.length > 0">
+                                <div class="pt-2 border-t border-slate-100 space-y-2">
+                                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Additional Charges</div>
+                                    <div v-for="charge in dynamicCharges" :key="charge.id || charge.name" class="flex items-center justify-between gap-4">
+                                        <span class="text-slate-600 text-xs font-semibold truncate">{{ charge.name }}:</span>
+                                        <div class="flex items-center gap-1.5 shrink-0">
+                                            <template v-if="charge.type === 'percentage'">
+                                                <input
+                                                    v-model.number="charge.rate"
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    placeholder="%"
+                                                    class="w-16 text-right text-xs px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg font-mono"
+                                                />
+                                                <span class="text-xs text-slate-400">%</span>
+                                                <span class="text-xs font-semibold text-slate-700 w-16 text-right font-mono">
+                                                    <CurrencyDisplay :amount="charge.amount" />
+                                                </span>
+                                            </template>
+                                            <template v-else>
+                                                <input
+                                                    v-model.number="charge.amount"
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    class="w-28 text-right text-xs px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg font-mono font-bold"
+                                                />
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
 
                             <div class="pt-3 border-t border-slate-200 flex justify-between text-base font-bold text-slate-900">
                                 <span>Grand Total:</span>

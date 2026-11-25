@@ -13,6 +13,10 @@ const props = defineProps({
     warehouses: Array,
     products: Array,
     financialAccounts: Array,
+    chargeFields: {
+        type: Array,
+        default: () => [],
+    },
     defaultWarehouseId: Number,
     todayDate: String,
 });
@@ -43,6 +47,8 @@ const form = useForm({
     order_date: props.todayDate || new Date().toISOString().split('T')[0],
     expected_delivery_date: '',
     notes: '',
+    additional_charges: [],
+    additional_charges_total: 0,
     paid_amount: 0,
     financial_account_id: defaultAccount?.id || '',
     payment_reference: '',
@@ -150,12 +156,41 @@ function onProductSelected(item) {
     }
 }
 
-const grandTotal = computed(() => {
+const dynamicCharges = ref(
+    (props.chargeFields || []).map(field => ({
+        id: field.id,
+        name: field.name,
+        type: field.type,
+        rate: field.type === 'percentage' ? (Number(field.default_amount) || 0) : 0,
+        amount: field.type === 'percentage' ? 0 : (Number(field.default_amount) || 0),
+        is_taxable: Boolean(field.is_taxable),
+    }))
+);
+
+const itemsSubtotal = computed(() => {
     return form.items.reduce((acc, it) => {
         const qty = Number(it.quantity_ordered) || 0;
         const cost = Number(it.unit_cost) || 0;
         return acc + (qty * cost);
     }, 0);
+});
+
+const additionalChargesTotal = computed(() => {
+    return dynamicCharges.value.reduce((sum, c) => {
+        let amt = 0;
+        if (c.type === 'percentage') {
+            const base = itemsSubtotal.value;
+            amt = parseFloat(((base * (parseFloat(c.rate) || 0)) / 100).toFixed(2));
+            c.amount = amt;
+        } else {
+            amt = parseFloat(c.amount) || 0;
+        }
+        return sum + amt;
+    }, 0);
+});
+
+const grandTotal = computed(() => {
+    return itemsSubtotal.value + additionalChargesTotal.value;
 });
 
 const duePayable = computed(() => {
@@ -168,6 +203,14 @@ function setFullPayment() {
 }
 
 function submit() {
+    form.additional_charges = dynamicCharges.value.map(c => ({
+        id: c.id,
+        name: c.name,
+        type: c.type,
+        rate: c.type === 'percentage' ? (parseFloat(c.rate) || 0) : null,
+        amount: parseFloat(c.amount) || 0,
+    }));
+    form.additional_charges_total = additionalChargesTotal.value;
     form.post(route('purchases.store'));
 }
 </script>
@@ -486,6 +529,56 @@ class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:border-
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- Landed Costs & Additional Charges -->
+            <div v-if="dynamicCharges.length > 0" class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Landed Costs & Additional Charges</h3>
+                        <p class="text-[11px] text-slate-500">Customs duty, freight, handling, and other landed expenses.</p>
+                    </div>
+                    <div class="text-xs font-bold text-slate-700">
+                        Total Landed Charges: <CurrencyDisplay :amount="additionalChargesTotal" />
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                    <div v-for="charge in dynamicCharges" :key="charge.id" class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-xs font-bold text-slate-800 truncate">{{ charge.name }}</span>
+                            <span class="text-[10px] text-slate-400 capitalize font-medium">{{ charge.type }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <template v-if="charge.type === 'percentage'">
+                                <div class="relative flex-1">
+                                    <input
+                                        v-model.number="charge.rate"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        class="w-full text-xs font-bold rounded-lg border-slate-200 pr-6 py-1.5 focus:border-indigo-500 focus:ring-indigo-500"
+                                    />
+                                    <span class="absolute right-2 top-1.5 text-xs text-slate-400 font-bold">%</span>
+                                </div>
+                                <span class="text-xs font-bold text-slate-700 whitespace-nowrap">
+                                    <CurrencyDisplay :amount="charge.amount" />
+                                </span>
+                            </template>
+                            <template v-else>
+                                <div class="relative flex-1">
+                                    <input
+                                        v-model.number="charge.amount"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        class="w-full text-xs font-bold rounded-lg border-slate-200 py-1.5 focus:border-indigo-500 focus:ring-indigo-500"
+                                    />
+                                </div>
+                            </template>
+                        </div>
+                    </div>
                 </div>
             </div>
 

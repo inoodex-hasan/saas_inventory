@@ -232,6 +232,7 @@ Route::middleware([
     // Serials & Warranty Center
     Route::get('/warranties', [WarrantyController::class, 'index'])->name('warranties.index');
     Route::post('/warranties/{serial}/defective', [WarrantyController::class, 'markDefective'])->name('warranties.defective');
+    Route::post('/serials/check-uniqueness', [WarrantyController::class, 'checkUniqueness'])->name('serials.check-uniqueness');
 
     // Workshop & Repair Service Management
     Route::get('/services', [ServiceTicketController::class, 'index'])->name('services.index');
@@ -289,6 +290,14 @@ Route::middleware([
     Route::post('/settings/company/remove-report-bg', [TenantSettingsController::class, 'removeReportBg'])->name('settings.company.remove-report-bg');
     Route::get('/settings/company/preview-invoice-bg', [TenantSettingsController::class, 'previewInvoiceBg'])->name('settings.company.preview-invoice-bg');
     Route::get('/settings/company/preview-report-bg', [TenantSettingsController::class, 'previewReportBg'])->name('settings.company.preview-report-bg');
+
+    // Order Custom Charges & Landed Costs
+    Route::get('/settings/order-charges', [\App\Http\Controllers\OrderChargeFieldController::class, 'index'])->name('settings.order-charges.index');
+    Route::post('/settings/order-charges', [\App\Http\Controllers\OrderChargeFieldController::class, 'store'])->name('settings.order-charges.store');
+    Route::put('/settings/order-charges/{chargeField}', [\App\Http\Controllers\OrderChargeFieldController::class, 'update'])->name('settings.order-charges.update');
+    Route::delete('/settings/order-charges/{chargeField}', [\App\Http\Controllers\OrderChargeFieldController::class, 'destroy'])->name('settings.order-charges.destroy');
+    Route::post('/settings/order-charges/{chargeField}/toggle-active', [\App\Http\Controllers\OrderChargeFieldController::class, 'toggleActive'])->name('settings.order-charges.toggle-active');
+    Route::get('/api/order-charges/active', [\App\Http\Controllers\OrderChargeFieldController::class, 'apiActive'])->name('api.order-charges.active');
 
     // Tenant Subscription & Billing
     Route::get('/settings/subscription', [TenantSubscriptionController::class, 'index'])->name('subscription.index');
@@ -402,11 +411,26 @@ Route::middleware([
     // Site Settings & Branding (Super Admin Only)
     Route::get('/admin/site-settings', [SuperAdminController::class, 'siteSettings'])->name('admin.site-settings');
     Route::post('/admin/site-settings', [SuperAdminController::class, 'updateSiteSettings'])->name('admin.site-settings.update');
+    Route::get('/admin/maintenance-preview', function () {
+        return view('errors.503', [
+            'brandName' => \App\Models\SiteSetting::get('brand_name', config('app.name', 'InoManage')),
+            'title' => \App\Models\SiteSetting::get('maintenance_title', 'System Upgrade in Progress'),
+            'message' => \App\Models\SiteSetting::get('maintenance_message', 'We are performing scheduled maintenance and database optimizations. The platform will be back online shortly.'),
+            'duration' => \App\Models\SiteSetting::get('maintenance_duration', '15-30 minutes'),
+            'supportEmail' => \App\Models\SiteSetting::get('support_email', 'support@inomanage.com'),
+        ]);
+    })->name('admin.maintenance-preview');
 
     // BulkSMS Gateway Portal & Balance Hub (Super Admin Only)
     Route::get('/admin/sms-gateway', [SuperAdminController::class, 'smsGateway'])->name('admin.sms-gateway');
     Route::post('/admin/sms-gateway/refresh', [SuperAdminController::class, 'refreshSmsBalance'])->name('admin.sms-gateway.refresh');
     Route::post('/admin/sms-gateway/test', [SuperAdminController::class, 'sendTestSms'])->name('admin.sms-gateway.test');
+
+    // Invoice Templates Control Plane (Super Admin Only)
+    Route::get('/admin/invoice-templates', [SuperAdminController::class, 'invoiceTemplates'])->name('admin.invoice-templates');
+    Route::post('/admin/invoice-templates/{template}/toggle-status', [SuperAdminController::class, 'toggleInvoiceTemplate'])->name('admin.invoice-templates.toggle-status');
+    Route::post('/admin/invoice-templates/{template}/set-default', [SuperAdminController::class, 'setDefaultInvoiceTemplate'])->name('admin.invoice-templates.set-default');
+    Route::get('/admin/invoice-templates/{template}/preview', [SuperAdminController::class, 'previewInvoiceTemplate'])->name('admin.invoice-templates.preview');
 });
 
 // SSLCommerz Payment Gateway Callbacks (Sandbox & Production Verified)
@@ -414,6 +438,21 @@ Route::post('/sslcommerz/success', [SslCommerzPaymentController::class, 'success
 Route::post('/sslcommerz/fail', [SslCommerzPaymentController::class, 'fail'])->name('sslcommerz.fail');
 Route::post('/sslcommerz/cancel', [SslCommerzPaymentController::class, 'cancel'])->name('sslcommerz.cancel');
 Route::post('/sslcommerz/ipn', [SslCommerzPaymentController::class, 'ipn'])->name('sslcommerz.ipn');
+
+// Maintenance Mode Bypass Endpoints
+Route::get('/maintenance-bypass/{secret}', function (string $secret) {
+    $expected = \App\Models\SiteSetting::get('maintenance_bypass_secret');
+    if (!empty($expected) && hash_equals((string) $expected, (string) $secret)) {
+        session(['maintenance_bypassed' => true]);
+        return redirect()->route('home')->with('success', 'Maintenance mode bypassed successfully.');
+    }
+    abort(403, 'Invalid maintenance bypass token.');
+})->name('maintenance.bypass');
+
+Route::get('/maintenance-exit-bypass', function () {
+    session()->forget('maintenance_bypassed');
+    return redirect()->route('home')->with('success', 'Exited maintenance bypass mode.');
+})->name('maintenance.exit-bypass');
 
 // Storage File Fallback Route (ensures public/storage files serve even when symlink is missing or unsupported)
 Route::get('/storage/{path}', function ($path) {
