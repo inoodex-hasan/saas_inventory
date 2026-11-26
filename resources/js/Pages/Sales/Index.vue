@@ -9,6 +9,10 @@ import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import ActionDropdown from '@/Components/ActionDropdown.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { formatDate } from '@/Utils/date';
+import { useTableLoading } from '@/Composables/useLoadingState';
+import TableSkeleton from '@/Components/Skeletons/TableSkeleton.vue';
+
+const { isLoading: isTableLoading, inertiaCallbacks: tableLoadingCallbacks } = useTableLoading(120);
 
 const props = defineProps({
     orders: Object,
@@ -54,7 +58,7 @@ function applyFilter() {
     if (status.value) params.status = status.value;
     if (paymentStatus.value) params.payment_status = paymentStatus.value;
     if (customerId.value) params.customer_id = customerId.value;
-    router.get(route('sales.index'), params, { preserveState: true, replace: true });
+    router.get(route('sales.index'), params, { preserveState: true, replace: true, ...tableLoadingCallbacks });
 }
 
 function resetFilter() {
@@ -301,7 +305,8 @@ function submitPayment() {
             <!-- Orders Table -->
             <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
                 <div class="overflow-x-auto custom-scrollbar">
-                    <table class="w-full text-left text-sm min-w-[750px]">
+                    <TableSkeleton v-if="isTableLoading" :rows="8" :columns="7" :show-header="true" />
+                    <table v-else class="w-full text-left text-sm min-w-[750px]">
                         <thead class="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                             <tr>
                                 <th class="py-3.5 px-4 whitespace-nowrap">Order / Invoice #</th>

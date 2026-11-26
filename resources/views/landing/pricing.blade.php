@@ -220,7 +220,7 @@
                   <th scope="row" data-bn="শুরু করুন">Get Started</th>
                   @foreach ($comparisonPlans as $plan)
                     <td>
-                      <a href="{{ route('register') }}" class="btn {{ $plan->slug === 'professional' ? 'btn-tier-primary' : 'btn-tier-secondary' }} btn-sm px-3 py-1.5" style="font-size:0.78rem;">
+                      <a href="{{ route('register', ['plan' => $plan->slug]) }}" class="btn {{ $plan->slug === 'professional' ? 'btn-tier-primary' : 'btn-tier-secondary' }} btn-sm px-3 py-1.5" style="font-size:0.78rem;">
                         <span>Choose {{ $plan->name }}</span>
                       </a>
                     </td>

@@ -232,6 +232,8 @@ Route::middleware([
     // Serials & Warranty Center
     Route::get('/warranties', [WarrantyController::class, 'index'])->name('warranties.index');
     Route::post('/warranties/{serial}/defective', [WarrantyController::class, 'markDefective'])->name('warranties.defective');
+    Route::post('/warranties/{serial}/claim', [WarrantyController::class, 'claimWarranty'])->name('warranties.claim');
+    Route::get('/warranties/available-replacements/{product}', [WarrantyController::class, 'availableReplacements'])->name('warranties.available-replacements');
     Route::post('/serials/check-uniqueness', [WarrantyController::class, 'checkUniqueness'])->name('serials.check-uniqueness');
 
     // Workshop & Repair Service Management

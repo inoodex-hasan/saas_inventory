@@ -1,7 +1,8 @@
 <script setup>
-import { ref, computed, watch, onMounted, nextTick } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
 import { useTranslation } from '@/Utils/translations';
+import PageSkeleton from '@/Components/Skeletons/PageSkeleton.vue';
 
 const { t, currentLang, toggleLang } = useTranslation();
 
@@ -18,6 +19,20 @@ const props = defineProps({
 
 const page = usePage();
 const sidebarOpen = ref(false);
+const isNavigating = ref(false);
+const navSkeletonVariant = ref('table');
+let navSkeletonTimer = null;
+let removeStartListener = null;
+let removeFinishListener = null;
+
+function resolveSkeletonVariant(url) {
+    const path = (typeof url === 'string' ? url : url?.pathname || '').toLowerCase();
+    if (path.includes('/pos')) return 'pos';
+    if (path === '/dashboard' || path === '/admin' || path.endsWith('/dashboard')) return 'dashboard';
+    if (path.includes('/reports')) return 'report';
+    if (path.includes('/create') || path.includes('/edit') || path.includes('/settings') || path.includes('/profile')) return 'form';
+    return 'table';
+}
 const isSidebarPinned = ref(typeof window !== 'undefined' && localStorage.getItem('sidebar_pinned') === 'true');
 const isSidebarHovered = ref(false);
 const isSidebarExpanded = computed(() => {
@@ -182,7 +197,21 @@ onMounted(() => {
     scrollToActiveNav(false);
     setTimeout(() => scrollToActiveNav(true), 150);
 
-    router.on('finish', () => {
+    removeStartListener = router.on('start', (event) => {
+        const visit = event?.detail?.visit;
+        if (visit && visit.method === 'get' && !visit.preserveState && !visit.only?.length) {
+            navSkeletonVariant.value = resolveSkeletonVariant(visit.url);
+            clearTimeout(navSkeletonTimer);
+            navSkeletonTimer = setTimeout(() => {
+                isNavigating.value = true;
+            }, 180);
+        }
+    });
+
+    removeFinishListener = router.on('finish', () => {
+        clearTimeout(navSkeletonTimer);
+        navSkeletonTimer = null;
+        isNavigating.value = false;
         scrollToActiveNav(true);
     });
 
@@ -197,6 +226,12 @@ onMounted(() => {
             sessionStorage.setItem(alreadySeenKey, '1');
         }
     }
+});
+
+onUnmounted(() => {
+    clearTimeout(navSkeletonTimer);
+    if (typeof removeStartListener === 'function') removeStartListener();
+    if (typeof removeFinishListener === 'function') removeFinishListener();
 });
 </script>
 
@@ -1661,7 +1696,10 @@ onMounted(() => {
 
             <!-- Page Body -->
             <main class="flex-1 p-4 md:p-8 min-w-0 w-full">
-                <slot />
+                <PageSkeleton v-if="isNavigating" :variant="navSkeletonVariant" />
+                <div v-show="!isNavigating">
+                    <slot />
+                </div>
             </main>
         </div>
 

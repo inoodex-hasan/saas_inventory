@@ -30,14 +30,22 @@ class PreVerificationRegistrationController extends Controller
     /**
      * Show the main registration form.
      */
-    public function showRegistrationForm(): View|RedirectResponse
+    public function showRegistrationForm(Request $request): View|RedirectResponse
     {
         if (Auth::check()) {
             return redirect()->route('dashboard');
         }
 
+        $selectedPlan = null;
+        if ($request->filled('plan')) {
+            $selectedPlan = \App\Models\Plan::where('slug', (string) $request->query('plan'))
+                ->where('is_active', true)
+                ->first();
+        }
+
         return view('auth.register', [
             'siteSettings' => class_exists(\App\Models\SiteSetting::class) ? \App\Models\SiteSetting::getAll() : [],
+            'selectedPlan' => $selectedPlan,
         ]);
     }
 
@@ -77,6 +85,7 @@ class PreVerificationRegistrationController extends Controller
             'email' => strtolower(trim((string) $request->input('email'))),
             'phone' => $normalizedPhone,
             'password' => Hash::make((string) $request->input('password')),
+            'plan_slug' => $request->filled('plan') ? (string) $request->input('plan') : null,
             'otp' => Hash::make($otp),
             'otp_raw' => $otp,
             'attempts' => 0,
@@ -207,6 +216,21 @@ class PreVerificationRegistrationController extends Controller
             $user->assignRole('owner');
 
             $subscriptionService->ensureTenantSubscription($team);
+
+            if (!empty($data['plan_slug'])) {
+                $chosenPlan = \App\Models\Plan::where('slug', $data['plan_slug'])
+                    ->where('is_active', true)
+                    ->first();
+                if ($chosenPlan) {
+                    $team->update(['subscription_plan' => $chosenPlan->slug]);
+                    if ($team->subscription) {
+                        $team->subscription->update([
+                            'plan_id' => $chosenPlan->id,
+                            'trial_ends_at' => now()->addDays(max(1, (int) ($chosenPlan->trial_days ?? 3))),
+                        ]);
+                    }
+                }
+            }
 
             return $user;
         });

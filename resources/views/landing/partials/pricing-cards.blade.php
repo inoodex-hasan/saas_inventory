@@ -43,7 +43,7 @@
                 data-annual="Billed annually (৳{{ number_format($annualTotal) }}/yr)"
             >Billed monthly</div>
 
-            <a href="{{ route('register') }}" class="btn {{ $isFeatured ? 'btn-tier-primary' : 'btn-tier-secondary' }} w-100 mb-4">
+            <a href="{{ route('register', ['plan' => $plan->slug]) }}" class="btn {{ $isFeatured ? 'btn-tier-primary' : 'btn-tier-secondary' }} w-100 mb-4">
                 <span>Start {{ ($plan->trial_days ?? 3) > 0 ? $plan->trial_days : 3 }}-Day Free Trial</span>
                 @if ($isFeatured)
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>

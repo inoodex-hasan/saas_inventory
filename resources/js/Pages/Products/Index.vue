@@ -11,6 +11,10 @@ import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import BarcodeCameraModal from '@/Components/BarcodeCameraModal.vue';
 import { useBarcodeScanner } from '@/Composables/useBarcodeScanner';
 import { playScanSuccess, playScanError } from '@/Utils/sound';
+import { useTableLoading } from '@/Composables/useLoadingState';
+import TableSkeleton from '@/Components/Skeletons/TableSkeleton.vue';
+
+const { isLoading: isTableLoading, inertiaCallbacks: tableLoadingCallbacks } = useTableLoading(120);
 
 const props = defineProps({
     products: Object,
@@ -102,6 +106,7 @@ function applyFilters() {
     router.get(route('products.index'), params, {
         preserveState: true,
         replace: true,
+        ...tableLoadingCallbacks,
     });
 }
 
@@ -476,7 +481,8 @@ function submitImport() {
             <!-- Products Table -->
             <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
                 <div class="overflow-x-auto custom-scrollbar">
-                    <table class="w-full text-left text-xs min-w-[750px]">
+                    <TableSkeleton v-if="isTableLoading" :rows="8" :columns="7" :show-header="true" />
+                    <table v-else class="w-full text-left text-xs min-w-[750px]">
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-bold">
                                 <th class="py-3 px-4 whitespace-nowrap">Product & SKU</th>

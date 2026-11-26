@@ -5,8 +5,12 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import CurrencyDisplay from '@/Components/CurrencyDisplay.vue';
 import { formatDate } from '@/Utils/date';
 import { useTranslation } from '@/Utils/translations';
+import { useTableLoading } from '@/Composables/useLoadingState';
+import CardGridSkeleton from '@/Components/Skeletons/CardGridSkeleton.vue';
+import TableSkeleton from '@/Components/Skeletons/TableSkeleton.vue';
 
 const { t } = useTranslation();
+const { isLoading: isReportLoading, inertiaCallbacks: reportLoadingCallbacks } = useTableLoading(120);
 
 const props = defineProps({
     currencySymbol: String,
@@ -101,6 +105,7 @@ function applyFilter() {
         preserveState: true,
         replace: true,
         preserveScroll: true,
+        ...reportLoadingCallbacks,
     });
 }
 
@@ -111,7 +116,7 @@ function resetMovementsFilter() {
     datePreset.value = 'all_time';
     startDate.value = '';
     endDate.value = '';
-    router.get(route('reports.index'), { tab: currentTab.value }, { preserveState: false, replace: true, preserveScroll: true });
+    router.get(route('reports.index'), { tab: currentTab.value }, { preserveState: false, replace: true, preserveScroll: true, ...reportLoadingCallbacks });
 }
 
 function resetExpiryFilter() {
@@ -369,7 +374,15 @@ function exportSingle(scope, format) {
             </div>
 
             <!-- TAB 0: EXECUTIVE FINANCIAL SUMMARY (SALES, PURCHASES, EXPENSES & REVENUE) -->
-            <div v-if="currentTab === 'financial_summary'" class="space-y-6">
+            <!-- Loading Skeleton State for Tab / Filter Transitions -->
+            <div v-if="isReportLoading" class="space-y-6">
+                <CardGridSkeleton :count="4" />
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                    <TableSkeleton :rows="8" :columns="6" :show-header="true" />
+                </div>
+            </div>
+
+            <div v-else-if="currentTab === 'financial_summary'" class="space-y-6">
                 <!-- Individual Report Scope Selector Bar -->
                 <div class="bg-white border border-slate-200/80 rounded-2xl p-3 sm:p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
                     <div class="flex flex-wrap items-center gap-1.5">
@@ -1397,7 +1410,7 @@ function exportSingle(scope, format) {
         </div>
 
         <!-- TAB 1: STOCK VALUATION -->
-            <div v-if="currentTab === 'valuation'" class="space-y-6">
+            <div v-if="!isReportLoading && currentTab === 'valuation'" class="space-y-6">
                 <!-- 4 Top KPI Cards -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                     <!-- Total Units -->
@@ -1567,7 +1580,7 @@ function exportSingle(scope, format) {
             </div>
 
             <!-- TAB 2: LOW-STOCK ALERTS -->
-            <div v-if="currentTab === 'low_stock'" class="space-y-6">
+            <div v-if="!isReportLoading && currentTab === 'low_stock'" class="space-y-6">
                 <!-- Search & Actions Bar -->
                 <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div class="relative w-full sm:w-80">
@@ -1680,7 +1693,7 @@ function exportSingle(scope, format) {
             </div>
 
             <!-- TAB 3: STOCK MOVEMENT AUDIT LEDGER -->
-            <div v-if="currentTab === 'movements'" class="space-y-6">
+            <div v-if="!isReportLoading && currentTab === 'movements'" class="space-y-6">
                 <!-- Filter Toolbar -->
                 <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-2">
                     <div class="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
@@ -1849,7 +1862,7 @@ function exportSingle(scope, format) {
             </div>
 
             <!-- Tab 4: Batch & Expiry Radar -->
-            <div v-if="currentTab === 'expiry'" class="space-y-6">
+            <div v-if="!isReportLoading && currentTab === 'expiry'" class="space-y-6">
                 <!-- Summary KPI Cards -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                     <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-rose-100 shadow-xs relative overflow-hidden flex flex-col justify-between">
@@ -2074,7 +2087,7 @@ function exportSingle(scope, format) {
             </div>
 
             <!-- Tab 5: Stock Aging & Dead Stock -->
-            <div v-if="currentTab === 'aging'" class="space-y-6">
+            <div v-if="!isReportLoading && currentTab === 'aging'" class="space-y-6">
                 <!-- Summary KPI Cards -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                     <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-emerald-100 shadow-xs relative overflow-hidden flex flex-col justify-between">
@@ -2298,7 +2311,7 @@ function exportSingle(scope, format) {
             </div>
 
             <!-- Tab 6: Product Sales & Gross Margin Profitability -->
-            <div v-if="currentTab === 'profitability'" class="space-y-6">
+            <div v-if="!isReportLoading && currentTab === 'profitability'" class="space-y-6">
                 <!-- Summary KPI Cards -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                     <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-emerald-100 shadow-xs relative overflow-hidden flex flex-col justify-between">

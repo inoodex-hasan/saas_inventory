@@ -17,8 +17,32 @@
     <section class="signup-card" aria-labelledby="signup-title">
       <header class="signup-heading">
         <h1 id="signup-title">Create your account</h1>
-        <p>Get started with a 3-day free trial, no credit card required</p>
+        <p>Get started with a {{ ($selectedPlan->trial_days ?? 3) > 0 ? ($selectedPlan->trial_days ?? 3) : 3 }}-day free trial, no credit card required</p>
       </header>
+
+      @if (!empty($selectedPlan))
+        @php
+          $trialDays = ($selectedPlan->trial_days ?? 3) > 0 ? $selectedPlan->trial_days : 3;
+        @endphp
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;margin-bottom:16px;border-radius:12px;background:#eef2ff;border:1px solid #c7d2fe;">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#4f46e5;">Selected Plan</span>
+              <span style="font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:#dcfce7;color:#166534;">{{ $trialDays }}-Day Free Trial</span>
+            </div>
+            <div style="font-size:14px;font-weight:800;color:#0f172a;margin-top:4px;">
+              {{ $selectedPlan->name }}
+            </div>
+            <div style="font-size:12px;color:#475569;margin-top:2px;">
+              Regular Price: <strong style="color:#0f172a;">৳{{ number_format((float) $selectedPlan->price_bdt) }}/mo</strong>
+              @if(!empty($selectedPlan->annual_price_bdt) && (float) $selectedPlan->annual_price_bdt > 0)
+                <span> &middot; ৳{{ number_format((float) $selectedPlan->annual_price_bdt) }}/yr</span>
+              @endif
+            </div>
+          </div>
+          <a href="{{ route('pricing') }}" style="font-size:12px;font-weight:700;color:#4f46e5;text-decoration:underline;white-space:nowrap;">Change</a>
+        </div>
+      @endif
 
       @if ($errors->any())
         <p class="signup-error" role="alert" aria-live="polite" style="margin-bottom: 12px;">
@@ -28,6 +52,7 @@
 
       <form class="auth-form" method="POST" action="{{ route('register') }}">
         @csrf
+        <input type="hidden" name="plan" value="{{ old('plan', $selectedPlan->slug ?? request('plan')) }}" />
 
         <label for="name">Full Name</label>
         <input id="name" name="name" type="text" value="{{ old('name') }}" placeholder="Enter your full name" autocomplete="name" required autofocus />
